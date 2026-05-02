@@ -13,12 +13,19 @@ import { MenuOutline } from '@vicons/ionicons5'
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { databaseClient } from '@/shared/api/storage/DatabaseClient'
+import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { t } = useI18n()
+const route = useRoute()
+const { t, locale } = useI18n()
+
+// Update SEO when locale changes
+watch(locale, () => {
+  updateSeoWithRoute(route.meta as RouteMetaWithSeo, t)
+})
 
 watch(
   () => [authStore.userProfile?.id] as const,

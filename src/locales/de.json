@@ -1,4 +1,46 @@
 {
+  "seo": {
+    "default": {
+      "title": "EXTRAPAWN — Professionelles Schach-Trainings-Ökosystem",
+      "description": "Das geschlossene Schach-Gym für Turnierspieler (1500+). Eröffnungen, Taktik und Endspiele mit menschenähnlicher KI-Resistenz trainieren.",
+      "keywords": "Schachtraining, Turniervorbereitung, Schachgym, Schachtraining online"
+    },
+    "welcome": {
+      "title": "Willkommen",
+      "description": "Das geschlossene Schach-Gym für Turnierspieler (1500+). Hör auf zu spielen, fang an zu trainieren."
+    },
+    "finishHim": {
+      "title": "Finish Him — Die Kunst der Realisierung",
+      "description": "Verwerte deinen Gewinnvorteil gegen menschenähnliche KI-Resistenz. Lerne, deine Gegner eiskalt zu besiegen.",
+      "keywords": "Vorteilsverwertung, Maia Chess, Endspieltechnik"
+    },
+    "tornado": {
+      "title": "Tornado Taktik",
+      "description": "Hochintensives, dynamisches Schachtaktik-Training mit Glicko-2-Rating und tiefer Fehleranalyse.",
+      "keywords": "Schachtaktik-Trainer, dynamische Puzzles, Blitz-Taktik"
+    },
+    "diamondHunter": {
+      "title": "Diamond Hunter — Falle gestellt",
+      "description": "Finde versteckte Juwelen in deiner Eröffnung. Meistere die Bestrafung typischer Eröffnungsfehler.",
+      "keywords": "Eröffnungsfallen, Eröffnungsfehler, Diamond Hunter Schach"
+    },
+    "theoryEndings": {
+      "title": "Theoretische Endspiele",
+      "description": "Übe klassische Endspielpositionen bis zur Perfektion. Rette Remis und zerstöre die Hoffnungen deiner Gegner."
+    },
+    "userCabinet": {
+      "title": "User Cabinet — Deine Schach-DNA",
+      "description": "Handlungsorientierte Analysen für dein Schachwachstum. Identifiziere Schwächen und starte gezieltes Training."
+    },
+    "about": {
+      "title": "Über ExtraPawn — Die Philosophie des Schach-Gyms",
+      "description": "Erfahre mehr über die Philosophie hinter ExtraPawn. Ein professionelles Schach-Gym für Spieler, die das nächste Level erreichen wollen."
+    },
+    "pricing": {
+      "title": "Preise & Pläne — Werde Teil des ExtraPawn Clubs",
+      "description": "Entdecke unsere Abonnements: Pawn, Knight, Bishop, Rook, Queen und King. Wähle den besten Plan für dein Wachstum."
+    }
+  },
   "common": {
     "actions": {
       "loading": "Laden...",

@@ -1,4 +1,46 @@
 {
+  "seo": {
+    "default": {
+      "title": "EXTRAPAWN — Professional Chess Training Ecosystem",
+      "description": "The closed-loop chess gym for tournament players (1500+). Master openings, tactics, and endgames with human-like AI resistance.",
+      "keywords": "chess training, tournament preparation, chess gym, chess improvement"
+    },
+    "welcome": {
+      "title": "Welcome",
+      "description": "The closed-loop chess gym for tournament players (1500+). Stop playing, start training."
+    },
+    "finishHim": {
+      "title": "Finish Him — Master Realization",
+      "description": "Convert your winning advantage against human-like AI resistance. Learn to finish off your opponents.",
+      "keywords": "chess realization, maia chess, endgame conversion"
+    },
+    "tornado": {
+      "title": "Tornado Tactics",
+      "description": "High-intensity dynamic chess tactics training with Glicko-2 rating and deep error analysis.",
+      "keywords": "chess tactics trainer, dynamic puzzles, blitz tactics"
+    },
+    "diamondHunter": {
+      "title": "Diamond Hunter — Trap Your Opponent",
+      "description": "Find hidden diamonds in your opening. Master the art of punishing typical opening mistakes.",
+      "keywords": "chess opening traps, opening mistakes, diamond hunter chess"
+    },
+    "theoryEndings": {
+      "title": "Theoretical Endings",
+      "description": "Practice classic endgame positions to perfection. Save draws and break your opponent's hopes."
+    },
+    "userCabinet": {
+      "title": "User Cabinet — Your Chess DNA",
+      "description": "Actionable analytics for your chess growth. Identify weaknesses and launch targeted training."
+    },
+    "about": {
+      "title": "About ExtraPawn — The Chess Gym Philosophy",
+      "description": "Learn about the philosophy behind ExtraPawn. A professional chess gym built for players who want to reach the next level."
+    },
+    "pricing": {
+      "title": "Pricing & Plans — Join the ExtraPawn Club",
+      "description": "Explore our subscription tiers: Pawn, Knight, Bishop, Rook, Queen, and King. Choose the best plan for your chess growth."
+    }
+  },
   "common": {
     "actions": {
       "loading": "Loading...",
