@@ -1,8 +1,8 @@
-# ♟️ extrapawn.com — Professional Chess Training Ecosystem
+# ♟️ extrapawn.com — The Chess Gym for Serious Players
 
-**Bridge the gap between amateur play and Grandmaster-level preparation.**
+**Bridge the gap between amateur play and Grandmaster-level preparation with a professional-grade training ecosystem.**
 
-**extrapawn.com** is a high-performance interactive platform designed for chess enthusiasts who seek a disciplined, professional-grade training environment. We combine deep engine-backed analysis with realistic, human-like AI resistance to transform study into a repeatable, high-impact skill.
+**extrapawn.com** is a closed-loop interactive platform designed for tournament players (1500+) who seek a disciplined training environment. We combine deep engine-backed analysis with realistic, human-like AI sparring to transform chess study into a repeatable, high-impact skill.
 
 <p align="center">
   <img src="tech_docs/screenshots/hero_preview.png" width="900" alt="extrapawn.com Interface Preview">
@@ -10,67 +10,47 @@
 
 ---
 
-## 🚀 The Vision: Depth over Simplicity
+## 🚀 The Vision: A Full-Fledged Chess Gym
 
-> "I've always dreamed of a tool that doesn't just show you the engine's best move, but teaches you how to *find* it, *convert* it, and *memorize* it." — **Moser**, Project Architect
-
-Most chess platforms focus on casual play or simple puzzles. **extrapawn.com** is different. We believe that true improvement requires:
-- **Analytical Depth**: Every position is verified by a distributed cluster of elite engines.
-- **Human-Centric AI**: We use specialized neural networks (Maia) to simulate the mistakes, traps, and "stubbornness" of real human opponents.
-- **The Memorization Loop**: It's not enough to find a brilliant move once; our "Secure" system ensures you internalize the logic forever.
+Most chess platforms focus on casual play or disconnected puzzles. **extrapawn.com** is different. We provide a **closed-loop training cycle**:
+1.  **Build your weapon** in the STUDY laboratory.
+2.  **Test it in sparring** against rating-specific human-like AI.
+3.  **Hone the realization** of gained advantages.
+4.  **Analyze weaknesses** in your interactive dashboard.
+5.  **Fix and repeat** until mastery.
 
 ---
 
-## 💎 Flagship Features
+## 💎 Flagship Modules
 
-### 🥇 Diamond Hunter (The Killer Feature)
-Stop relying on luck to find brilliant moves. 
-- **The "Hunt & Secure" Loop**: Find a Diamond (`!!`), refute the bot's blunder, and then **replay the entire game from memory** to secure your achievement.
-- **Gravity Map Guidance**: Visualize tactical tension with real-time arrow-based gravity mapping and "Distance" metrics.
+### 🔬 STUDY — Analytical Laboratory
+Your interactive command center for repertoire building.
+- **Speedrun & Reply Training**: Move beyond passive reading with active recall and memory-stress training.
+- **MozerBook Integration**: Leverage elite statistics and engine-verified trees to build bulletproof preparation.
+- **Lichess Sync**: Two-way synchronization with your Lichess studies.
 
-<p align="center">
-  <img src="tech_docs/screenshots/DiamondHunter&GRAVITY_MAP.png" width="800" alt="Diamond Hunter & Gravity Map">
-</p>
+### ⚔️ OPENING SPARRING — Repertoire Simulator
+Test your preparation in a realistic tournament environment.
+- **Dynamic Opponents**: Bots move based on live player statistics (Lichess 1000–2200+) with adjustable variability.
+- **Personality Types**: Choose between **Master** (theoretical), **Hustler** (statistical), or **Swindler** (poisonous traps).
+- **Playout Transition**: Seamlessly transition from the opening to advantage realization against Maia AI.
 
-### 📊 Tactical Fingerprint (User Cabinet)
-Raw data transformed into actionable insights via **Apache ECharts**.
-- **Nightingale Rose Charts**: A visual DNA of your tactical strengths and weaknesses across dozens of themes (Pins, Forks, X-Rays, etc.).
-- **Mastery Ladder**: Stacked column charts tracking your progress through three tiers (**Novice**, **Pro**, **Master**) in every endgame and opening category.
-
-<p align="center">
-  <img src="tech_docs/screenshots/user_cabinet.png" width="800" alt="User Cabinet Analytics">
-</p>
-
-> **🔗 Live Experience:** [Explore the User Cabinet Demo](https://extrapawn.com/user-cabinet/example)
+### 💎 DIAMOND HUNTER — Brilliancy Trainer
+Learn to punish typical mistakes and secure "Brilliant" achievements.
+- **Hunt & Secure**: Find the "Diamond" move (`!!`), refute the bot's blunder, and **replay the entire line from memory** to lock in the knowledge.
+- **Gravity Map Guidance**: Visualize tactical tension with real-time arrow-based mapping.
 
 ---
 
 ## 🎮 Training Ecosystem
 
-| Mode | Focus | Engine & Intelligence |
+| Module | Focus | Engine & Intelligence |
 | :--- | :--- | :--- |
-| **🌪️ Tornado** | Speed & Pattern Recognition | High-intensity time-assault (1m to 10m) |
-| **⚔️ Finish Him** | Conversion Technique | Play positions with +2.0 advantage until Mate |
-| **📖 Open Sparring** | Strategic Preparation | Interactive debut study with "Remote Commentator" |
-| **📘 Study!** | Knowledge & Training | Lichess-integrated studies with SRS "Weed Pressure" & Speedruns |
-| **🧩 Practical** | Calculation & Intuition | Real-game "messy" endgames with side selection |
-| **🎓 Theoretical** | Fundamental Endgames | Structured mastery of classic endgame positions |
-
-### Professional Study & Training Tools
-<p align="center">
-  <img src="tech_docs/screenshots/Opening_Sparring_Selection.png" width="440" alt="Mode Selection">
-  <img src="tech_docs/screenshots/StudyManager.png" width="440" alt="Study Manager">
-</p>
-
-- **Study! (The Grandmaster's Studio)**: Manage and train your Lichess studies with gamified **Speedruns** and SRS-based **Reply Training** (using the "Weed Pressure" algorithm).
-- **Interactive Opening Sparring**: Train your preparation against the engine with real-time feedback and theoretical notes from **MozerBook**.
-- **Specialized Endgames**: Master precision in both theoretical basics and practical "messy" endgames.
-
-<p align="center">
-  <img src="tech_docs/screenshots/Theoretical_Endgames.png" width="290" alt="Theoretical Endgames">
-  <img src="tech_docs/screenshots/Finish_Him.png" width="290" alt="Finish Him Mode">
-  <img src="tech_docs/screenshots/Practical_Chess.png" width="290" alt="Practical Chess">
-</p>
+| **🌪️ Tornado** | Tactical Storm | Adaptive Glicko-2 trainer with 15 thematic vectors. |
+| **⚔️ Finish Him** | Art of Realization | Master the skill of coldly finishing off won positions vs Maia. |
+| **♟️ Practical** | Real-game Scenarios | Converting extra pawns and positional intuition training. |
+| **📖 Theoretical** | Book Master | Master classic endgame positions against provocative engines. |
+| **📊 User Cabinet** | Command Center | Rose Charts visualizing your technical DNA and progress. |
 
 ---
 
@@ -78,58 +58,49 @@ Raw data transformed into actionable insights via **Apache ECharts**.
 
 Our infrastructure utilizes a distributed engine cluster to provide specialized computations for every training scenario.
 
-<p align="center">
-  <img src="tech_docs/screenshots/Opening_Sparring_Book_Ended_Analysis.png" width="800" alt="Engine Analysis Detail">
-</p>
-
 | Engine | Role | Playstyle |
 | :--- | :--- | :--- |
 | **Stockfish 18** | Absolute Truth | Mathematically perfect, optimal for strict "best" moves. |
-| **Maia 1900/2200** | Human Sparring | Simulates realistic human errors and rating-specific patterns. |
-| **BadGyal 8** | Tactical Aggressor | High-impact, sharp movements for tactical classification. |
+| **Maia (1900-2400)** | Human Sparring | Predicts moves that feel human, including realistic error patterns. |
+| **LCZero** | AI Intuition | Deep neural network analysis for strategic and positional evaluation. |
 | **MozerBook** | Theoretical Hub | Curated database of opening theory and statistical winrates. |
 
 ---
 
 ## 🌍 Economy & Club Integration
 
-We operate on an **"Active-First"** model that rewards community engagement over passive consumption.
-- **PawnCoins**: Power your high-intensity engine playouts and advanced analytics.
-- **Lichess Club Bonus**: Earn automatic tier upgrades (**Knight**, **Bishop**) by participating in club tournaments and being an active player.
-- **Verification**: All achievements are verified and linked directly to your **Lichess profile**.
-
-> **🏆 Hall of Fame:** [Check the Current Leaders & Records](https://extrapawn.com/records/example)
+We operate on an **"Active-First"** model that rewards community engagement.
+- **PawnCoins**: Power your high-intensity playouts and advanced repertoire generation.
+- **Bonus Program**: Earn automatic tier upgrades (**Knight**, **Bishop**, **King**) by being an active member of the ExtraPawn club on Lichess.
+- **Verification**: Achievements and progress are verified and linked directly to your Lichess profile.
 
 ---
 
 ## 🛠️ Technical Stack
 
 - **Frontend**: Vue.js 3.5+ (Composition API), TypeScript (Strict), Vite, Pinia, Naive UI.
-- **Backend Orchestration**: NestJS (Node.js) & FastAPI (Python).
-- **Persistence**: Supabase (Postgres), IndexedDB (Dexie), LMDB (high-speed tactical lookups).
-- **Core Libraries**: [Chessground](https://github.com/lichess-org/chessground) (Rendering) and [Chessops](https://github.com/niklasf/chessops) (Logic).
-- **Nervous System**: [n8n.io](https://n8n.io/) visual workplace automation.
+- **Backend**: NestJS (Node.js) & FastAPI (Python) distributed architecture.
+- **Persistence**: Supabase (Postgres), IndexedDB (Dexie), LMDB.
+- **Core Logic**: [Chessground](https://github.com/lichess-org/chessground) and [Chessops](https://github.com/niklasf/chessops).
+- **Automation**: [n8n.io](https://n8n.io/) workflow orchestration.
 
 ---
 
-## 📚 Technical Documentation
-
-Explore our deep-dive documentation for modular details:
+## 📚 Documentation
 1. [Project Overview](tech_docs/01_Project_Overview_Mission.md)
 2. [Technical Stack](tech_docs/02_Technical_Stack.md)
 3. [Architecture Overview](tech_docs/03_Architecture_Overview.md)
-4. [Game Modes Deep-Dive](tech_docs/04_GameModes_Overview.md) (Details on [Diamond Hunter](tech_docs/04_5_Diamond_Hunter.md), [Tornado](tech_docs/04_2_Tornado.md), etc.)
-5. [User Ecosystem & Economy](tech_docs/05_3_Monetization_Economy.md)
-6. [Acknowledgments & Credits](tech_docs/06_DANKSAGUNG.md)
+4. [Game Modes Deep-Dive](tech_docs/04_GameModes_Overview.md)
 
 ---
 
-## ❤️ About the Author & Acknowledgments
+## ❤️ Author & Acknowledgments
 
-**Moser** — A mechanical engineer and lifelong chess enthusiast. **extrapawn.com** represents the convergence of modern AI and a long-held dream to create professional-grade training tools.
+**Moser** — Mechanical engineer and lifelong chess student. **ExtraPawn** represents the dream of a professional tool that empowers players to study effectively through AI and automation.
 
-Special thanks to the [Lichess.org](https://lichess.org) team, the **Stockfish** project, **LCZero**, and **Maia Chess** for the foundational tools that make this platform possible.
+Special thanks to the [Lichess.org](https://lichess.org) team, the **Stockfish** project, **LCZero**, and **Maia Chess**.
 
-_License: GNU General Public License v3.0 | Made with ❤️ for the global chess community._
+_License: GNU General Public License v3.0 | Built for those who seek chess mastery._
+
 
 

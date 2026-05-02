@@ -1178,46 +1178,60 @@
     }
   },
   "about": {
-    "title": "EXTRAPAWN",
-    "intro": " is a professional chess training ecosystem designed to bridge the gap between amateur play and Grandmaster-level preparation through deep analysis and realistic AI sparring.",
-    "sections": {
-      "mainModesTitle": "Training Ecosystem",
-      "keyFeaturesTitle": "Flagship Features & Innovation",
-      "techStackTitle": "Advanced Tech Stack",
-      "contributingTitle": "Contributing & Community",
-      "licenseAndAcknowledgementsTitle": "Licensing & Acknowledgements"
+    "hero": {
+      "title": "ExtraPawn — The Chess Gym for Serious Players",
+      "subtitle": "A complete preparation ecosystem for tournament players (1500+)"
     },
-    "modes": {
-      "conversionTitle": "Conversion Mastery (Finish Him): ",
-      "conversion": "Master the art of winning won positions. Proves your advantage against elite engines until Mate or clear resignation.",
-      "automaticTacticalTrainerTitle": "Brilliants (The Search for !!): ",
-      "automaticTacticalTrainer": "Our flagship mode. Transform the discovery of brilliant moves into a repeatable skill. Use Gravity Maps to find 'Diamonds', refute blunders, and secure achievements by replaying lines from memory.",
-      "botSelectionTitle": "Engine & AI Intelligence: ",
-      "botSelectionIntro": "Choose your sparring partner based on your training goals:",
-      "bots": {
-        "stockfish_2500": " (Stockfish 18 - Absolute truth, mathematically perfect defense)",
-        "maia-2200": " (Maia-2200 - Master-level human-like play and realistic error patterns)",
-        "maia-1900": " (Maia-1900 - Club-level human-like play with typical amateur traps)",
-        "maia-2400": " (Maia-2400 - Top-tier human-like play with extremely refined technique)"
+    "concept": {
+      "what": {
+        "title": "What is it?",
+        "text": "**ExtraPawn** is a professional training environment where every module flows logically into the next. Not just a place for puzzles, but a full-fledged gym designed to bridge the gap between amateur play and Grandmaster-level preparation."
       },
-      "userCabinetTitle": "Tactical Fingerprint: ",
-      "userCabinet": "Your personal command center. Visualize your technical DNA with Nightingale Rose charts across 25+ tactical themes.",
-      "analysisPanelTitle": "Strategy Studio: ",
-      "analysisPanel": "Professional variations management, infinite-depth tree navigation, and real-time MozerBook validation."
+      "forWho": {
+        "title": "For Whom?",
+        "text": "For those stuck on a plateau who want real progress. ExtraPawn doesn't teach the basic rules — it digitizes your weaknesses and eliminates them systematically."
+      },
+      "uniqueness": {
+        "title": "What makes us unique?",
+        "text": "The market is flooded with disconnected tools. ExtraPawn combines everything into a **single closed-loop training cycle**: Build your repertoire → Test it in sparring → Hone the realization → Analyze weaknesses → Fix. All modules sync progress in one unified dashboard."
+      }
     },
-    "features": {
-      "lichessIntegrationTitle": "Lichess Verification: ",
-      "lichessIntegration": "Safe OAuth login and direct linking of achievements to your Lichess profile.",
-      "advancedStatsTitle": "Mastery Ladder: ",
-      "advancedStats": "Track your progress through Novice, Pro, and Master tiers in every endgame and opening chapter.",
-      "puzzleDatabaseTitle": "Elite Foundations: ",
-      "puzzleDatabase": "Leveraging the high-quality Lichess puzzle and evaluation databases: ",
-      "modernUITitle": "Reactive Design: ",
-      "modernUI": "A premium, high-performance interface built with Vue.js 3.5 and strict TypeScript.",
-      "localizationTitle": "Global Reach: ",
-      "localization": "Full support for English, German, and Russian localized environments."
+    "modules": {
+      "study": {
+        "title": "STUDY — Analytical Laboratory",
+        "text": "An interactive tool for building and **actively memorizing** your opening repertoire. 1-click generator based on elite statistics (MozerBook), visual trees, and hardcore training modes like Speedrun and Reply Training. Full Lichess Study synchronization."
+      },
+      "openingSparring": {
+        "title": "OPENING SPARRING — Opening Simulator",
+        "text": "Simulate real tournament openings. Our bot moves based on live player statistics (Lichess 1000–2200+) with adjustable variability. Choose between Master, Hustler, or Swindler personalities. Follow up with realization training against Maia AI."
+      },
+      "diamondHunter": {
+        "title": "DIAMOND HUNTER — Brilliancy Trainer",
+        "text": "Learn to punish typical mistakes. A two-phase system: hunt with hints until the blunder, then mandatory reproduction of the entire line from memory. Turn opponent errors into your learned victories."
+      },
+      "tornado": {
+        "title": "TORNADO — Tactical Storm",
+        "text": "Adaptive tactical trainer based on Glicko-2. No error limits, no boring warm-ups — high-level difficulty from the first minute. 15 thematic vectors and a dedicated mode for fixing your mistakes."
+      },
+      "finishHim": {
+        "title": "FINISH HIM — Art of Realization",
+        "text": "Two-phase trainer: first a tactical strike, then mandatory realization of the advantage against human-like Maia AI (1900-2400). Master the skill of coldly finishing off won positions."
+      },
+      "practicalChess": {
+        "title": "PRACTICAL CHESS — Game Scenarios",
+        "text": "Real game positions with an advantage against stubborn Maia. Features exclusive modes: **ExtraPawn** for converting extra material and **Black or White** for training positional intuition. Play to win."
+      },
+      "theoreticalEndings": {
+        "title": "THEORETICAL ENDINGS — Book Master",
+        "text": "A testing ground for classic book endings. Our provocateur engine tricks and sets traps even in drawn positions. Train for both the win and the save with a dedicated endgame rating."
+      },
+      "userCabinet": {
+        "title": "USER CABINET — Command Center",
+        "text": "Your interactive mission control. Rose Charts visualize your technical DNA across all themes. Launch targeted training for your weak spots with one click. Manage subscriptions and track your progress."
+      }
     },
     "techStack": {
+      "title": "Advanced Tech Stack",
       "frontend": "Frontend: ",
       "frontendStack": "Vue 3.5 (Composition API), Vite, Pinia, Naive UI",
       "backend": "Orchestration: ",
@@ -1229,10 +1243,11 @@
       "chessEngine": "Analysis Cluster: ",
       "chessEngineStack": "Stockfish 18, LCZero (Maia), n8n workflow core",
       "api": "Protocols: ",
-      "apiStack": "Lichess REST API & OAuth2 ("
+      "apiStack": "Lichess REST API & OAuth2"
     },
     "contributing": "We welcome all contributions to make EXTRAPAWN the ultimate training tool! If you have ideas or found a bug, please create an issue or a PR on GitHub.",
     "licenseAndAcknowledgements": {
+      "title": "Licensing & Acknowledgements",
       "gplIntro": "This project is licensed under the GNU General Public License v3.0, promoting transparency and community growth.",
       "stockfish": {
         "title": "Stockfish 18",
@@ -1295,6 +1310,7 @@
     },
     "footerNote": "Built with \u2764\ufe0f for those who seek chess mastery."
   },
+
   "welcome": {
     "titleV2": "Select a Game Mode",
     "slogan": "Consistency is the key to mastery.",

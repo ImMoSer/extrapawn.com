@@ -1179,46 +1179,60 @@
     }
   },
   "about": {
-    "title": "EXTRAPAWN",
-    "intro": " ist ein professionelles Schach-Trainings-Ökosystem, das die Lücke zwischen Amateurspiel und Vorbereitung auf Großmeister-Niveau durch tiefe Analysen und realistisches KI-Sparring schließt.",
-    "sections": {
-      "mainModesTitle": "Trainings-Ökosystem",
-      "keyFeaturesTitle": "Hauptmerkmale & Innovationen",
-      "techStackTitle": "Technologie-Stack",
-      "contributingTitle": "Beitragen & Community",
-      "licenseAndAcknowledgementsTitle": "Lizenzen & Danksagungen"
+    "hero": {
+      "title": "ExtraPawn — Das Schach-Gym für ernsthafte Spieler",
+      "subtitle": "Ein komplettes Ökosystem für die Vorbereitung von Turnierspielern (1500+)"
     },
-    "modes": {
-      "conversionTitle": "Gewinnführung (Finish Him): ",
-      "conversion": "Meistere die Kunst, gewonnene Stellungen zu gewinnen. Beweise deinen Vorteil gegen Elite-Engines bis zum Matt oder zur klaren Aufgabe.",
-      "automaticTacticalTrainerTitle": "Brilliante (Suche nach !!): ",
-      "automaticTacticalTrainer": "Unser Flaggschiff-Modus. Verwandle das Entdecken brillanter Züge in eine wiederholbare Fähigkeit. Nutze Gravity Maps, um 'Diamanten' zu finden, Fehler zu widerlegen und Erfolge zu sichern.",
-      "botSelectionTitle": "Engine & KI Intelligenz: ",
-      "botSelectionIntro": "Wähle deinen Sparringspartner basierend auf deinen Trainingszielen:",
-      "bots": {
-        "stockfish_2500": " (Stockfish 18 - Absolute Wahrheit, mathematisch perfekte Verteidigung)",
-        "maia-2200": " (Maia-2200 - Menschliches Spiel auf Meisterniveau und realistische Fehlermuster)",
-        "maia-1900": " (Maia-1900 - Menschliches Spiel auf Vereinsniveau mit typischen Amateur-Fallen)",
-        "maia-2400": " (Maia-2400 - Menschliches Spiel auf Top-Niveau mit extrem verfeinerter Technik)"
+    "concept": {
+      "what": {
+        "title": "Was ist das?",
+        "text": "**ExtraPawn** ist ein professionelles Trainingsumfeld, in dem jedes Modul logisch in das nächste übergeht. Keine reine Unterhaltungsplattform, sondern ein vollwertiges Fitnessstudio, das die Lücke zwischen Amateurspiel und Vorbereitung auf Großmeister-Niveau schließt."
       },
-      "userCabinetTitle": "Taktischer Fingerabdruck: ",
-      "userCabinet": "Dein persönliches Kommandozentrum. Visualisiere deine technische DNA mit Nightingale-Rose-Diagrammen über 25+ taktische Themen.",
-      "analysisPanelTitle": "Strategie-Studio: ",
-      "analysisPanel": "Professionelles Variantenmanagement, Baum-Navigation mit unendlicher Tiefe und Echtzeit-Validierung durch MozerBook."
+      "forWho": {
+        "title": "Für wen?",
+        "text": "Für alle, die auf einem Plateau feststecken und echte Fortschritte erzielen wollen. ExtraPawn lehrt nicht die Grundregeln – es digitalisiert deine Schwachstellen und beseitigt sie systematisch."
+      },
+      "uniqueness": {
+        "title": "Was macht uns einzigartig?",
+        "text": "Der Markt ist überladen mit isolierten Werkzeugen. ExtraPawn vereint alles in einem **einzigen geschlossenen Vorbereitungszyklus**: Repertoire erstellen → im Sparring testen → die Realisierung verfeinern → Schwächen analysieren → beheben. Alle Module synchronisieren den Fortschritt in einem zentralen Dashboard."
+      }
     },
-    "features": {
-      "lichessIntegrationTitle": "Lichess-Verifizierung: ",
-      "lichessIntegration": "Sicherer OAuth-Login und direkte Verknüpfung von Erfolgen mit deinem Lichess-Profil.",
-      "advancedStatsTitle": "Meisterschafts-Leiter: ",
-      "advancedStats": "Verfolge deinen Fortschritt durch die Stufen Anfänger, Profi und Meister in jedem Endspiel und Eröffnungskapitel.",
-      "puzzleDatabaseTitle": "Elite-Fundament: ",
-      "puzzleDatabase": "Nutzung der hochwertigen Lichess-Aufgaben- und Bewertungsdatenbanken: ",
-      "modernUITitle": "Reaktives Design: ",
-      "modernUI": "Ein hochwertiges, performantes Interface, entwickelt mit Vue.js 3.5 und strengem TypeScript.",
-      "localizationTitle": "Globale Reichweite: ",
-      "localization": "Volle Unterstützung für Deutsch, Englisch und Russisch."
+    "modules": {
+      "study": {
+        "title": "STUDY — Analytisches Labor",
+        "text": "Ein interaktives Tool zum Aufbau und **aktiven Einprägen** deines Eröffnungsrepertoires. 1-Klick-Generator basierend auf Elite-Statistiken (MozerBook), visuelle Variantenbäume und Hardcore-Trainingsmodi wie Speedrun und Reply Training. Volle Lichess-Synchronisation."
+      },
+      "openingSparring": {
+        "title": "OPENING SPARRING — Eröffnungssimulator",
+        "text": "Simuliere reale Turniereröffnungen. Unser Bot zieht basierend auf Live-Spielerstatistiken (Lichess 1000–2200+) mit anpassbarer Variabilität. Wähle zwischen den Charakteren Master, Hustler oder Swindler. Verfeinere danach die Realisierung gegen die Maia-KI."
+      },
+      "diamondHunter": {
+        "title": "DIAMOND HUNTER — Fehler-Jäger",
+        "text": "Lerne, typische Fehler zu bestrafen. Ein Zwei-Phasen-System: Erst Jagd mit Hinweisen bis zum Patzer, dann obligatorische Reproduktion der gesamten Variante aus dem Gedächtnis. Verwandle die Fehler anderer in deine gelernten Siege."
+      },
+      "tornado": {
+        "title": "TORNADO — Taktischer Sturm",
+        "text": "Adaptiver Taktiktrainer basierend auf Glicko-2. Keine Fehlerlimits, kein langweiliges Aufwärmen – hohes Schwierigkeitsniveau ab der ersten Minute. 15 thematische Vektoren und ein spezieller Modus zur Bearbeitung deiner Fehler."
+      },
+      "finishHim": {
+        "title": "FINISH HIM — Die Kunst der Realisierung",
+        "text": "Zwei-Phasen-Trainer: Erst ein taktischer Schlag, dann die obligatorische Realisierung des Vorteils gegen die menschenähnliche Maia-KI (1900-2400). Meistere die Fähigkeit, gewonnene Stellungen eiskalt zu Ende zu führen."
+      },
+      "practicalChess": {
+        "title": "PRACTICAL CHESS — Spielszenarien",
+        "text": "Reale Partiestellungen mit Vorteil gegen die zähe Maia. Exklusive Modi: **ExtraPawn** zur Konvertierung von Materialvorteil und **Black or White** zum Training der positionellen Intuition. Nur der Sieg zählt."
+      },
+      "theoreticalEndings": {
+        "title": "THEORETICAL ENDINGS — Buch-Endspiele",
+        "text": "Prüfstand für klassische Buchendspiele. Unsere Engine provoziert und stellt Fallen selbst in Remisstellungen. Trainiere sowohl auf Sieg als auch auf Rettung mit einem eigenen Endspiel-Rating."
+      },
+      "userCabinet": {
+        "title": "USER CABINET — Kommandozentrale",
+        "text": "Dein interaktives Kontrollzentrum. Rose-Charts visualisieren deine technische DNA über alle Themen hinweg. Starte mit einem Klick gezieltes Training für deine Schwachstellen. Verwalte Abonnements und verfolge deinen Fortschritt."
+      }
     },
     "techStack": {
+      "title": "Moderner Tech-Stack",
       "frontend": "Frontend: ",
       "frontendStack": "Vue 3.5 (Composition API), Vite, Pinia, Naive UI",
       "backend": "Orchestrierung: ",
@@ -1230,10 +1244,11 @@
       "chessEngine": "Analyse-Cluster: ",
       "chessEngineStack": "Stockfish 18, LCZero (Maia), n8n Workflow-Kern",
       "api": "Protokolle: ",
-      "apiStack": "Lichess REST API & OAuth2 ("
+      "apiStack": "Lichess REST API & OAuth2"
     },
-    "contributing": "Wir freuen uns über alle Beiträge, um EXTRAPAWN zum ultimativen Trainingstool zu machen! Wenn du Ideen hast oder einen Fehler gefunden hast, erstelle bitte ein Issue oder einen PR auf GitHub.",
+    "contributing": "Wir freuen uns über jeden Beitrag, um EXTRAPAWN zum ultimativen Trainingstool zu machen! Wenn du Ideen hast oder einen Fehler gefunden hast, erstelle bitte ein Issue oder einen PR auf GitHub.",
     "licenseAndAcknowledgements": {
+      "title": "Lizenzen & Danksagungen",
       "gplIntro": "Dieses Projekt steht unter der GNU General Public License v3.0, was Transparenz und Gemeinschaftswachstum fördert.",
       "stockfish": {
         "title": "Stockfish 18",
@@ -1296,6 +1311,7 @@
     },
     "footerNote": "Gebaut mit ❤️ für alle, die nach schachlicher Meisterschaft streben."
   },
+
   "welcome": {
     "titleV2": "Wähle einen Modus",
     "slogan": "Übung macht den Meister!",
