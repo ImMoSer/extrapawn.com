@@ -7,12 +7,16 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient } from '@/shared/api/client'
 import { useAuthStore } from '@/entities/user'
+import { useUiStore } from '@/shared/ui/model/ui.store'
+import { useRouter } from 'vue-router'
 import type { UserStatsUpdate } from '@/shared/types/api.types'
 
 export const useSpeedrunStore = defineStore('speedrun', () => {
   const gameStore = useGameStore()
   const studyStore = useStudyStore()
   const authStore = useAuthStore()
+  const uiStore = useUiStore()
+  const router = useRouter()
   
   const chaptersToPlay = ref<StudyChapter[]>([])
   const currentChapterIndex = ref(0)
@@ -211,7 +215,10 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
       playCurrentChapter()
     } catch (error) {
       console.error('[SpeedrunStore] Failed to start speedrun:', error)
-      throw error // Re-throw to handle in UI (e.g. show InsufficientPawnCoins error)
+      const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
+      if (!handled) {
+        throw error // Re-throw if not handled by UI (e.g. show generic error)
+      }
     }
   }
 

@@ -7,7 +7,6 @@ import {
 } from '@/entities/game'
 import { type TopInfoDisplay } from '@/entities/puzzle'
 import { useAuthStore } from '@/entities/user'
-import { InsufficientPawnCoinsError } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -241,27 +240,12 @@ export const useFinishHimStore = defineStore('finishHim', () => {
 
       feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
     } catch (error) {
-      if (error instanceof InsufficientPawnCoinsError) {
-        const e = error as InsufficientPawnCoinsError
-        const confirmed = await uiStore.showConfirmation(
-          t('features.pricing.insufficientCoins.title'),
-          t('features.pricing.insufficientCoins.message', {
-            required: e.required,
-            available: e.available,
-          }) +
-          '\n\n' +
-          t('features.pricing.insufficientCoins.subMessage'),
-          {
-            confirmText: t('features.pricing.insufficientCoins.goToPricing'),
-            cancelText: t('common.actions.close'),
-          },
-        )
-        if (confirmed === 'confirm') {
-          router.push('/pricing')
-        } else {
-          router.push('/')
-        }
-      } else {
+      const handled = await uiStore.handlePawnCoinsError(
+        error,
+        () => router.push('/pricing'),
+        () => router.push('/'),
+      )
+      if (!handled) {
         logger.error('[FinishHimStore] Failed to load puzzle:', error)
         feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
         gameStore.setGamePhase('IDLE')

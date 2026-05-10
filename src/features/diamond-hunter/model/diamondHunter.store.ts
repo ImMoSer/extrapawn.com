@@ -88,30 +88,14 @@ export const useDiamondHunterStore = defineStore('diamondHunter', () => {
     try {
       await diamondApiService.startSession()
     } catch (e: unknown) {
-      const err = e as Error
-      if (err.message === 'Insufficient PawnCoins') {
-        message.value = 'Insufficient PawnCoins to start Diamond Hunter!'
-        const confirmed = await uiStore.showConfirmation(
-          t('features.pricing.insufficientCoins.title'),
-          t('features.pricing.insufficientCoins.message', {
-            required: 15,
-            available: 0,
-          }) +
-          '\n\n' +
-          t('features.pricing.insufficientCoins.subMessage'),
-          {
-            confirmText: t('features.pricing.insufficientCoins.goToPricing'),
-            cancelText: t('common.actions.close'),
-          },
-        )
-        if (confirmed === 'confirm') {
-          router.push('/pricing')
-        } else {
-          router.push('/')
-        }
-        return false
+      const handled = await uiStore.handlePawnCoinsError(
+        e,
+        () => router.push('/pricing'),
+        () => router.push('/'),
+      )
+      if (!handled) {
+        message.value = 'Failed to start Diamond Hunter session.'
       }
-      message.value = 'Failed to start Diamond Hunter session.'
       return false
     }
 

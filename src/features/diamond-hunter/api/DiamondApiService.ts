@@ -1,5 +1,6 @@
 import { theoryRepository } from '@/entities/opening'
 import logger from '@/shared/lib/logger'
+import { apiClient } from '@/shared/api/client'
 
 export interface GravityMove {
   uci: string
@@ -16,8 +17,6 @@ export interface GravityResponse {
 }
 
 class DiamondApiService {
-  private readonly BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:3000/api'
-
   private toCleanFen(fen: string): string {
     return fen.split(' ').slice(0, 4).join(' ')
   }
@@ -35,18 +34,6 @@ class DiamondApiService {
     fen: string,
   ): Promise<GravityResponse | null> {
     const cleanFen = this.toCleanFen(fen)
-
-    // 1. Check Cache
-    // We use a composite key "color:cleanFen" because the DB structure in backend is separate,
-    // although technically FEN should be unique enough, but better safe if we ever mix.
-    // Actually, OpeningCacheService expects just a FEN key.
-    // But since White and Black databases are totally different,
-    // we should include color in the key passed to cache, or assume the FEN dictates whose turn it is?
-    // Wait, FEN includes turn color ("w" or "b").
-    // BUT here we force-query a specific DB (White or Black) regardless of turn.
-    // So "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -" queried against Black DB
-    // gives different result (if valid) than White DB.
-    // So we MUST prefix the key.
     const cacheKey = `gravity:${color}:${cleanFen}`
 
     const cached = await theoryRepository.getCachedStats<GravityResponse>(
@@ -59,16 +46,9 @@ class DiamondApiService {
 
     try {
       const params = new URLSearchParams({ fen: cleanFen })
-      const response = await fetch(`${this.BACKEND_URL}/diamond/${color}?${params.toString()}`, {
+      const data = await apiClient<GravityResponse>(`/diamond/${color}?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-        credentials: 'include',
       })
-
-      if (!response.ok) throw new Error(`Diamond Gravity API Error: ${response.statusText}`)
-      const data = await response.json()
 
       // 2. Save to Cache
       await theoryRepository.cacheStats(cacheKey, [], data, 'diamondGravity')
@@ -82,22 +62,9 @@ class DiamondApiService {
 
   async startSession(): Promise<{ status: string } | null> {
     try {
-      const response = await fetch(`${this.BACKEND_URL}/diamond/start`, {
+      return await apiClient<{ status: string }>('/diamond/start', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        credentials: 'include',
       })
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('Insufficient PawnCoins')
-        }
-        throw new Error(`Diamond Session Start Error: ${response.statusText}`)
-      }
-      return await response.json()
     } catch (error) {
       logger.error(`[DiamondApiService] Error starting session:`, error)
       throw error

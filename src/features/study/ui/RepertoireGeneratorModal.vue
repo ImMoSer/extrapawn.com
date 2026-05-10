@@ -6,6 +6,8 @@ import {
   type RepertoireStyle,
 } from '../api/RepertoireApiService'
 import { useStudyStore } from '../index'
+import { useUiStore } from '@/shared/ui/model/ui.store'
+import { useRouter } from 'vue-router'
 import { pgnParserService } from '@/shared/lib/pgn/PgnParserService'
 import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { FlashOutline } from '@vicons/ionicons5'
@@ -23,6 +25,8 @@ const emit = defineEmits<{
 
 const studyStore = useStudyStore()
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
+const router = useRouter()
 const message = useMessage()
 const { t } = useI18n()
 
@@ -107,9 +111,12 @@ async function handleGenerateRepertoire() {
       message.error(t('features.study.repertoireGenerator.messages.error'))
     }
   } catch (e: unknown) {
-    const error = e as Error
-    console.error(error)
-    message.error(error.message || t('features.study.repertoireGenerator.messages.error'))
+    const handled = await uiStore.handlePawnCoinsError(e, () => router.push('/pricing'))
+    if (!handled) {
+      const error = e as Error
+      console.error(error)
+      message.error(error.message || t('features.study.repertoireGenerator.messages.error'))
+    }
   } finally {
     isGenerating.value = false
   }

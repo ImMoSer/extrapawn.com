@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import i18n from '@/shared/config/i18n'
+import { InsufficientPawnCoinsError } from '@/shared/api/client'
 
 const t = i18n.global.t
 
@@ -48,6 +49,41 @@ export const useUiStore = defineStore('ui', () => {
     return new Promise<'confirm' | 'cancel' | 'extra' | null>((resolve) => {
       resolvePromise = resolve
     })
+  }
+
+  /**
+   * Centralized handler for InsufficientPawnCoinsError.
+   * Shows the confirmation modal and executes a callback if the user confirms (e.g., redirect to pricing).
+   */
+  async function handlePawnCoinsError(
+    error: unknown,
+    onPricingRedirect?: () => void,
+    onCancel?: () => void,
+  ): Promise<boolean> {
+    if (error instanceof InsufficientPawnCoinsError) {
+      const e = error as InsufficientPawnCoinsError
+      const confirmed = await showConfirmation(
+        t('features.pricing.insufficientCoins.title'),
+        t('features.pricing.insufficientCoins.message', {
+          required: e.required,
+          available: e.available,
+        }) +
+          '\n\n' +
+          t('features.pricing.insufficientCoins.subMessage'),
+        {
+          confirmText: t('features.pricing.insufficientCoins.goToPricing'),
+          cancelText: t('common.actions.close'),
+        },
+      )
+
+      if (confirmed === 'confirm') {
+        if (onPricingRedirect) onPricingRedirect()
+      } else {
+        if (onCancel) onCancel()
+      }
+      return true
+    }
+    return false
   }
 
   function handleConfirm() {
@@ -103,6 +139,7 @@ export const useUiStore = defineStore('ui', () => {
     isCancelButtonVisible,
     isExtraButtonVisible,
     showConfirmation,
+    handlePawnCoinsError,
     handleConfirm,
     handleCancel,
     handleExtra,

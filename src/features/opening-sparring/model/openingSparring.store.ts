@@ -12,7 +12,6 @@ import { type TopInfoDisplay, type TopInfoStat } from '@/entities/puzzle'
 import i18n from '@/shared/config/i18n'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { InsufficientPawnCoinsError } from '@/shared/api/client'
 
 const t = i18n.global.t
 
@@ -170,30 +169,15 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       try {
         await startSparringMutation()
       } catch (err) {
-        if (err instanceof InsufficientPawnCoinsError) {
-          const e = err as InsufficientPawnCoinsError
-          const confirmed = await uiStore.showConfirmation(
-            t('features.pricing.insufficientCoins.title'),
-            t('features.pricing.insufficientCoins.message', {
-              required: e.required,
-              available: e.available,
-            }) +
-            '\n\n' +
-            t('features.pricing.insufficientCoins.subMessage'),
-            {
-              confirmText: t('features.pricing.insufficientCoins.goToPricing'),
-              cancelText: t('common.actions.close'),
-            },
-          )
-          if (confirmed === 'confirm') {
-            router.push('/pricing')
-          } else {
-            router.push('/')
-          }
-          return
-        }
+        const handled = await uiStore.handlePawnCoinsError(
+          err,
+          () => router.push('/pricing'),
+          () => router.push('/'),
+        )
+        if (handled) return
+
         logger.error('[OpeningSparring] Failed to start session on backend', err)
-        throw err;
+        throw err
       }
 
       reset()

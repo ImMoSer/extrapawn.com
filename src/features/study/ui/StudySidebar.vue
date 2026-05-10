@@ -9,6 +9,7 @@ import { srsService, useReplyTrainingStore } from '../../study-reply-training'
 import { LichessApiError } from '../api/LichessSyncService'
 import { useBoardStore } from '@/entities/game'
 import { useStudyStore, type StudyChapter, isChapterTrimmed } from '@/entities/study'
+import { useUiStore } from '@/shared/ui/model/ui.store'
 import ChapterSettingsModal from './ChapterSettingsModal.vue'
 import LichessErrorModal from './LichessErrorModal.vue'
 import { apiClient } from '@/shared/api/client'
@@ -16,6 +17,7 @@ import { apiClient } from '@/shared/api/client'
 const studyStore = useStudyStore()
 const trainingStore = useReplyTrainingStore()
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
 const router = useRouter()
 const message = useMessage()
 const dialog = useDialog()
@@ -39,8 +41,20 @@ const startReplyTraining = async (chapter: StudyChapter) => {
     trainingStore.isReplyTrainingActive = true
     message.success(t('features.study.replyTraining.startedMessage'))
   } catch (error: unknown) {
-    const err = error as { response?: { data?: { message?: string } }, message?: string }
-    message.error(err.response?.data?.message || err.message || t('features.study.replyTraining.errorStarting'))
+    const handled = await uiStore.handlePawnCoinsError(error, () =>
+      router.push('/pricing'),
+    )
+    if (!handled) {
+      const err = error as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      message.error(
+        err.response?.data?.message ||
+          err.message ||
+          t('features.study.replyTraining.errorStarting'),
+      )
+    }
   } finally {
     isStartingReply.value = false
   }
