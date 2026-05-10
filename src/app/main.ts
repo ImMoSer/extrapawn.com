@@ -39,6 +39,11 @@ async function boot() {
 
   // Branch A: User not logged in -> Show minimal Login Screen
   if (!authStore.isAuthenticated) {
+    // Save the current path to redirect back after login
+    if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
+      localStorage.setItem('redirect_after_login', window.location.pathname + window.location.search)
+    }
+
     const LoginApp = (await import('./LoginApp.vue')).default
     const loginApp = createApp(LoginApp)
     loginApp.use(pinia)
