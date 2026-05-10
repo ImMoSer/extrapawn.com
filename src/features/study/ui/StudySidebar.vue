@@ -292,7 +292,7 @@ async function handlePush(chapter: StudyChapter, e: Event) {
       </div>
 
       <div v-if="isSpeedrunReady" class="speedrun-ready-badge" @click="handleStartSpeedrun">
-        SPEEDRUN READY
+        START SPEEDRUN
       </div>
 
       <div class="chapter-count-badge">{{ t('features.study.sidebar.chapterCount', { count: activeStudyChapters.length }) }}</div>
@@ -466,24 +466,42 @@ async function handlePush(chapter: StudyChapter, e: Event) {
 }
 
 .speedrun-ready-badge {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 900;
   color: white;
   background: var(--neon-bordeaux);
-  border-radius: 4px;
-  padding: 2px 8px;
+  border-radius: 8px;
+  padding: 8px 20px;
   cursor: pointer;
-  align-self: flex-start;
-  margin-top: 2px;
-  letter-spacing: 1px;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 10px rgba(217, 0, 76, 0.3);
+  align-self: center;
+  margin: 12px 0;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  animation: pulse-speedrun 2s infinite ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  width: 90%;
 }
 
 .speedrun-ready-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(217, 0, 76, 0.6);
-  filter: brightness(1.1);
+  filter: brightness(1.2);
+  animation-play-state: paused;
+  transform: scale(1.1);
+}
+
+@keyframes pulse-speedrun {
+  0% {
+    box-shadow: 0 0 10px rgba(217, 0, 76, 0.6), 0 0 5px rgba(0, 242, 255, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(217, 0, 76, 0.9), 0 0 15px rgba(247, 213, 71, 0.6);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(217, 0, 76, 0.6), 0 0 5px rgba(0, 242, 255, 0.3);
+    transform: scale(1);
+  }
 }
 
 .chapters-scroll {

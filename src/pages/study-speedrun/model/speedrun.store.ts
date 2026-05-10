@@ -127,13 +127,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
 
   function playCurrentChapter() {
     const chapter = chaptersToPlay.value[currentChapterIndex.value]
-    if (!chapter) {
-      // Speedrun finished
-      isPlaying.value = false
-      isFinished.value = true
-      soundService.playSound('game_speedrun_finished')
-      return
-    }
+    if (!chapter) return
 
     // Reset attempt moves
     currentAttemptMoves.value = []
@@ -165,8 +159,34 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     console.log(`[Speedrun] Success! Time needed: ${timeNeededMs}ms`)
     chapterTimes.value[currentChapterIndex.value] = timeNeededMs
     
-    currentChapterIndex.value++
+    // Check if there are any uncompleted chapters left
+    const nextIndex = chaptersToPlay.value.findIndex((_, idx) => chapterTimes.value[idx] === undefined)
+    
+    if (nextIndex === -1) {
+      // Speedrun finished! All chapters solved.
+      stopTimer()
+      isPlaying.value = false
+      isFinished.value = true
+      soundService.playSound('game_speedrun_finished')
+      return
+    }
+
+    // Auto-navigate to the next uncompleted chapter
+    currentChapterIndex.value = nextIndex
     playCurrentChapter()
+  }
+
+  function restartCurrentChapter() {
+    if (!isPlaying.value) return
+    playCurrentChapter()
+  }
+
+  function jumpToChapter(index: number) {
+    if (!isPlaying.value) return
+    if (index >= 0 && index < totalChapters.value) {
+      currentChapterIndex.value = index
+      playCurrentChapter()
+    }
   }
 
   async function startSpeedrun(chapters: StudyChapter[]) {
@@ -225,6 +245,8 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     chapterTimes,
     formatMs,
     startSpeedrun,
-    quitSpeedrun
+    quitSpeedrun,
+    restartCurrentChapter,
+    jumpToChapter
   }
 })

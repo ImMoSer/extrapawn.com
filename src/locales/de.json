@@ -234,6 +234,7 @@
       "of": "von",
       "target": "Ziel",
       "quitRun": "Run abbrechen",
+      "restartChapter": "Kapitel neustarten",
       "listTitle": "SPEEDRUN LISTE",
       "totalTime": "Gesamtzeit",
       "noValidChapters": "Keine gültigen Speedrun-Kapitel gefunden. (Benötigt Result-Tag 1-0, 0-1 oder 1/2-1/2)"

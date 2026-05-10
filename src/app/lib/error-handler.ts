@@ -5,7 +5,7 @@ export function setupErrorHandler(app: App) {
   // 1. Vue Global Error Handler
   app.config.errorHandler = (err: unknown, instance: ComponentPublicInstance | null, info: string) => {
     const error = err instanceof Error ? err : new Error(String(err));
-    
+
     logger.error('[Vue Error]:', error, {
         info,
         component: instance?.$options?.name || instance?.$options?.__name || 'UnknownComponent'

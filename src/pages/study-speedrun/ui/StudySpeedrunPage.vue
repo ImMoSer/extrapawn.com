@@ -2,7 +2,7 @@
 import { useSpeedrunStore } from '../model/speedrun.store'
 import { GameLayout } from '@/widgets/game-layout'
 import { NButton, NIcon, NText, NProgress, NList, NListItem, NScrollbar, NThing } from 'naive-ui'
-import { CloseCircleOutline } from '@vicons/ionicons5'
+import { CloseCircleOutline, RefreshOutline as RestartIcon } from '@vicons/ionicons5'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
@@ -68,6 +68,18 @@ function handleQuit() {
   router.push('/study')
 }
 
+function handleRestart() {
+  speedrunStore.restartCurrentChapter()
+}
+
+function handleJump(index: number) {
+  // Only allow jumping to chapters that haven't been completed yet
+  // OR the current one (which is effectively a restart)
+  if (speedrunStore.chapterTimes[index] === undefined || speedrunStore.currentChapterIndex === index) {
+    speedrunStore.jumpToChapter(index)
+  }
+}
+
 onBeforeRouteLeave(() => {
   analysisStore.hidePanel()
 })
@@ -118,6 +130,13 @@ onUnmounted(() => {
         </div>
 
         <div class="quit-section" v-if="!speedrunStore.isFinished">
+          <NButton block type="warning" @click="handleRestart" style="margin-bottom: 12px;">
+            <template #icon>
+              <NIcon><RestartIcon /></NIcon>
+            </template>
+            {{ t('features.speedrun.restartChapter') }}
+          </NButton>
+
           <NButton block type="error" dashed @click="handleQuit">
             <template #icon>
               <NIcon><CloseCircleOutline /></NIcon>
@@ -153,7 +172,11 @@ onUnmounted(() => {
             <NListItem
               v-for="(chapter, index) in speedrunStore.chaptersToPlay"
               :key="chapter.id"
-              :class="{ active: speedrunStore.currentChapterIndex === index }"
+              :class="{ 
+                active: speedrunStore.currentChapterIndex === index,
+                'is-clickable': speedrunStore.chapterTimes[index] === undefined
+              }"
+              @click="handleJump(index)"
             >
               <NThing>
                 <template #avatar>
@@ -405,6 +428,14 @@ onUnmounted(() => {
 
 .active {
   background-color: rgba(var(--color-primary-rgb), 0.1) !important;
+}
+
+.is-clickable {
+  cursor: pointer;
+}
+
+.is-clickable:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .analysis-toggle-section {

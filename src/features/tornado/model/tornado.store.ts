@@ -10,14 +10,14 @@ import { soundService } from '@/shared/lib/sound.service'
 import type { TornadoPuzzle, TornadoSessionResult } from '@/shared/types/api.types'
 import { type TornadoMode } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { makeFen, parseFen } from 'chessops/fen'
+import { useQueryClient } from '@tanstack/vue-query'
 import { Chess } from 'chessops/chess'
+import { makeFen, parseFen } from 'chessops/fen'
 import { parseUci } from 'chessops/util'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTornadoQueries } from '../api/tornado.queries'
-import { useQueryClient } from '@tanstack/vue-query'
 
 
 export type { TornadoMode } from '@/shared/types/api.types'
@@ -212,10 +212,10 @@ export const useTornadoStore = defineStore('tornado', () => {
           results: pendingResults.value,
         },
       })
-      
+
       if (response && response.userStatsUpdate) {
         authStore.updateUserStats(response.userStatsUpdate)
-        
+
         if (response.userStatsUpdate.tornado) {
           queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'detailed-stats'] })
         }
