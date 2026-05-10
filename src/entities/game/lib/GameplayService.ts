@@ -14,8 +14,6 @@ interface EngineConfig {
   fallback?: boolean // Используем ли локальный движок как фолбэк
 }
 
-const FALLBACK_TIMEOUT_MS = 1500
-
 // --- НОВАЯ КОНФИГУРАЦИЯ ДВИЖКОВ ---
 export const engineConfigs: Record<EngineId, EngineConfig> = {
   'SF_2200': { type: 'local', depth: 15 },
@@ -67,43 +65,85 @@ class GameplayServiceController {
   }
 
   private async getMoveWithFallback(fen: string, modelId: string): Promise<string | null> {
-    const controller = new AbortController()
-    let fallbackTimer: number | null = null
+    const HEDGE_DELAY_MS = 250;
+    const HARD_TIMEOUT_MS = 750;
+
+    const controllerA = new AbortController();
+    const controllerB = new AbortController();
+    let timerB: number | null = null;
+    let hardTimeout: number | null = null;
 
     try {
-      const serverPromise = serverEngineService.getMoveFromServer(fen, modelId, controller.signal)
+      const startTime = performance.now();
 
-      const timeoutPromise = new Promise<null>((resolve) => {
-        fallbackTimer = window.setTimeout(() => resolve(null), FALLBACK_TIMEOUT_MS)
-      })
+      // Request A
+      const promiseA = serverEngineService.getMoveFromServer(fen, modelId, controllerA.signal)
+        .then(res => ({ source: 'A', result: res }))
+        .catch(err => {
+          if (err.name === 'AbortError') throw err;
+          logger.warn(`[GameplayService] Request A failed:`, err);
+          throw err;
+        });
 
-      const result = await Promise.race([serverPromise, timeoutPromise])
+      // Request B (delayed)
+      const promiseB = new Promise<{source: string, result: string | null}>((resolve, reject) => {
+        timerB = window.setTimeout(() => {
+          logger.info(`[GameplayService] Request A takes >${HEDGE_DELAY_MS}ms. Firing Hedged Request B.`);
+          serverEngineService.getMoveFromServer(fen, modelId, controllerB.signal)
+            .then(res => resolve({ source: 'B', result: res }))
+            .catch(err => reject(err));
+        }, HEDGE_DELAY_MS);
+      });
 
-      if (fallbackTimer) clearTimeout(fallbackTimer)
+      // Hard Timeout
+      const timeoutPromise = new Promise<{source: string, result: null}>((_, reject) => {
+        hardTimeout = window.setTimeout(() => {
+          reject(new Error('HARD_TIMEOUT'));
+        }, HARD_TIMEOUT_MS);
+      });
 
-      if (result !== null) {
-        logger.info(`[GameplayService] Server engine responded in time with move: ${result}`)
-        return result
-      }
+      const winner = await Promise.race([
+        new Promise<{source: string, result: string | null}>((resolve, reject) => {
+          let errors = 0;
+          promiseA.then(resolve).catch(() => {
+            errors++;
+            if (errors === 2) reject(new Error('All promises were rejected'));
+          });
+          promiseB.then(resolve).catch(() => {
+            errors++;
+            if (errors === 2) reject(new Error('All promises were rejected'));
+          });
+        }),
+        timeoutPromise
+      ]);
 
-      // If we are here, the timeoutPromise won. Cancel the server request.
-      controller.abort()
-      logger.warn(`[GameplayService] Server engine timed out after ${FALLBACK_TIMEOUT_MS}ms. Aborting request.`)
+      const elapsed = Math.round(performance.now() - startTime);
+      logger.info(`[GameplayService] Server engine responded via Request ${winner.source} in ${elapsed}ms.`);
+
+      if (timerB) clearTimeout(timerB);
+      if (hardTimeout) clearTimeout(hardTimeout);
+      
+      if (winner.source === 'A') controllerB.abort();
+      if (winner.source === 'B') controllerA.abort();
+
+      return winner.result;
 
     } catch (error: unknown) {
-      if (fallbackTimer) clearTimeout(fallbackTimer)
+      if (timerB) clearTimeout(timerB);
+      if (hardTimeout) clearTimeout(hardTimeout);
+      controllerA.abort();
+      controllerB.abort();
 
-      if (error instanceof Error && error.name === 'AbortError') {
-        // This was our own abort, we already logged the warning above.
+      const errMsg = error instanceof Error ? error.message : String(error);
+      if (errMsg === 'HARD_TIMEOUT') {
+        logger.warn(`[GameplayService] Server engine hard timeout after ${HARD_TIMEOUT_MS}ms. Falling back.`);
       } else {
-        logger.error(`[GameplayService] Server engine request for model ${modelId} failed:`, error)
+        logger.error(`[GameplayService] Both hedged requests failed. Falling back. Error:`, error);
       }
-    }
 
-    logger.warn(`[GameplayService] Falling back to local engine.`)
-    // В качестве фолбэка используем среднюю силу
-    await singleThreadEngineManager.ensureReady()
-    return singleThreadEngineManager.getBestMoveOnly(fen, { depth: 8 })
+      await singleThreadEngineManager.ensureReady();
+      return singleThreadEngineManager.getBestMoveOnly(fen, { depth: 8 });
+    }
   }
 }
 

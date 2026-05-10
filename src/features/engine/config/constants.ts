@@ -7,4 +7,4 @@ export const ENGINE_NAMES: Record<EngineId, string> = {
   'SF_2200': 'Stockfish 18',
 }
 
-export const AVAILABLE_ENGINES: EngineId[] = ['maia-2200', 'maia-1900', 'maia-2400','SF_2200']
+export const AVAILABLE_ENGINES: EngineId[] = ['maia-2200', 'maia-1900', 'maia-2400']

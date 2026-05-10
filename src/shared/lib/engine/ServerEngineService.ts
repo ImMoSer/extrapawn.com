@@ -3,7 +3,6 @@ import logger from '@/shared/lib/logger'
 
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL as string
 const SERVER_ENGINE_ENDPOINT = `${BACKEND_API_URL}/bestmove`
-const MOVE_TIMEOUT_MS = 15000
 
 
 
@@ -63,10 +62,11 @@ export class ServerEngineServiceController {
     logger.info(
       `[ServerEngineService] Requesting move for FEN: ${fen} using engine: ${engine}`,
     )
+    const startTime = performance.now()
 
     try {
       const internalController = new AbortController()
-      const timeoutId = setTimeout(() => internalController.abort(), MOVE_TIMEOUT_MS)
+      const timeoutId = setTimeout(() => internalController.abort(), 10000)
 
       const params = new URLSearchParams({
         fen: fen,
@@ -98,10 +98,11 @@ export class ServerEngineServiceController {
       logger.info(`[ServerEngineService] Received best move: ${bestMove}`)
       return bestMove
     } catch (error: unknown) {
+      const elapsed = Math.round(performance.now() - startTime)
       if (error instanceof Error && error.name === 'AbortError') {
-        logger.error(`[ServerEngineService] Request timed out after ${MOVE_TIMEOUT_MS}ms.`)
+        logger.warn(`[ServerEngineService] Request aborted after ${elapsed}ms.`)
       } else {
-        logger.error('[ServerEngineService] Failed to fetch move from server:', error)
+        logger.error(`[ServerEngineService] Failed to fetch move from server after ${elapsed}ms:`, error)
       }
       throw error
     } finally {
