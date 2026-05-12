@@ -10,21 +10,26 @@ export type TornadoMode = 'bullet' | 'blitz' | 'rapid' | 'classic'
 
 export const TORNADO_THEMES = [
   'fork',
+  'kingAttack',
+  'sacrifice',
   'pin',
-  'attraction',
   'discoveredAttack',
+  'advancedPawn',
+  'attraction',
   'deflection',
-  'skewer',
-  'promotion',
-  'trappedPiece',
+  'defensiveMove',
   'quietMove',
+  'hangingPiece',
+  'skewer',
+  'trappedPiece',
+  'intermezzo',
   'clearance',
   'capturingDefender',
+  'zugzwang',
   'backRankMate',
   'interference',
   'xRayAttack',
-  'doubleCheck',
-] as const
+] as const;
 
 export type TornadoTheme = (typeof TORNADO_THEMES)[number]
 
