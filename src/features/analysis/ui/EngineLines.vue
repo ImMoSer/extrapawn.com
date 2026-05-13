@@ -4,6 +4,7 @@ import type { EvaluatedLineWithSan } from '@/entities/analysis'
 import { useAnalysisStore } from '../index'
 import { NButton, NText, NTooltip } from 'naive-ui'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const analysisStore = useAnalysisStore()
@@ -20,7 +21,7 @@ const formatScore = (line: EvaluatedLineWithSan) => {
   return t('features.analysis.mateInShort', { value: Math.abs(line.score.value) })
 }
 
-const getScoreType = (index: number) => {
+const getScoreType = (index: number): 'success' | 'warning' | 'info' => {
   if (index === 0) return 'success'
   if (index === 1) return 'warning'
   return 'info'
@@ -46,6 +47,15 @@ const formatPv = (line: EvaluatedLineWithSan) => {
   return pvString.trim()
 }
 
+const formattedLines = computed(() => {
+  return analysisLines.value.slice(0, 3).map((line, index) => ({
+    ...line,
+    formattedScore: formatScore(line),
+    formattedPv: formatPv(line),
+    scoreType: getScoreType(index),
+  }))
+})
+
 const handleLineClick = (line: EvaluatedLineWithSan) => {
   const uciMove = line.pvUci[0]
   if (uciMove) {
@@ -58,23 +68,23 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
   <div class="engine-lines-container">
     <transition name="fade-slide">
       <div v-if="isAnalysisActive" class="lines-wrapper">
-        <div v-if="analysisLines.length > 0" class="lines-list">
-          <div v-for="(line, index) in analysisLines.slice(0, 3)" :key="line.id" class="line-item">
+        <div v-if="formattedLines.length > 0" class="lines-list">
+          <div v-for="line in formattedLines" :key="line.id" class="line-item">
             <n-text class="line-depth" depth="3">{{ line.depth }}</n-text>
             <n-button
               size="tiny"
-              :type="getScoreType(index)"
+              :type="line.scoreType"
               class="score-btn"
               strong
               @click="handleLineClick(line)"
             >
-              {{ formatScore(line) }}
+              {{ line.formattedScore }}
             </n-button>
             <n-tooltip trigger="hover">
               <template #trigger>
-                <n-text class="pv-text" @click="handleLineClick(line)">{{ formatPv(line) }}</n-text>
+                <n-text class="pv-text" @click="handleLineClick(line)">{{ line.formattedPv }}</n-text>
               </template>
-              {{ formatPv(line) }}
+              {{ line.formattedPv }}
             </n-tooltip>
           </div>
         </div>

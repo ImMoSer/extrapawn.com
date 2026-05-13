@@ -1,7 +1,6 @@
 // src/features/analysis/model/analysis.store.ts
-import { useBoardStore } from '@/entities/game'
-import { useGameStore } from '@/entities/game'
 import { useAnalysisEngineStore, type EvaluatedLineWithSan } from '@/entities/analysis'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
@@ -9,9 +8,9 @@ import { defineStore, storeToRefs } from 'pinia'
 import { ref, watch } from 'vue'
 
 const ARROW_STYLES = [
-  { brush: 'blue', lineWidth: 15 },
-  { brush: 'green', lineWidth: 9 },
-  { brush: 'yellow', lineWidth: 5 },
+  { brush: 'blue', lineWidth: 14 },
+  { brush: 'blue', lineWidth: 10 },
+  { brush: 'blue', lineWidth: 8 },
 ]
 
 export const useAnalysisStore = defineStore('analysis', () => {
@@ -22,6 +21,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
   // --- FEATURE STATE ---
   const isPanelVisible = ref(false)
   let lastArrowsSignature = ''
+  let lastRenderedDepth = 0
   let fenDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
   // --- ENTITY STATE PROXIES ---
@@ -53,6 +53,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
         if (fenDebounceTimer) clearTimeout(fenDebounceTimer)
         fenDebounceTimer = setTimeout(() => {
           logger.debug(`[AnalysisFeature] FEN changed (debounced). Restarting analysis.`)
+          lastRenderedDepth = 0
           // Delegate to engineStore
           engineStore.startAnalysis(newFen)
         }, 250)
@@ -70,10 +71,24 @@ export const useAnalysisStore = defineStore('analysis', () => {
   // Watch lines to update board arrows (Pure Feature Logic)
   watch(analysisLines, (lines) => {
     // Only draw arrows if this feature is "active" (panel visible or toggled on)
-    if (isAnalysisActive.value) {
-      drawAnalysisArrows(lines)
+    if (isAnalysisActive.value && lines.length > 0) {
+      const currentDepth = lines[0]!.depth
+      if (shouldUpdateBoard(currentDepth)) {
+        drawAnalysisArrows(lines)
+        lastRenderedDepth = currentDepth
+      }
     }
   })
+
+  function shouldUpdateBoard(depth: number): boolean {
+    // Render milestones: 1, 10, 15, 20, 21, 22, ...
+    if (depth === 1) return true
+    if (lastRenderedDepth < 10 && depth >= 10) return true
+    if (lastRenderedDepth < 15 && depth >= 15) return true
+    if (lastRenderedDepth < 20 && depth >= 20) return true
+    if (lastRenderedDepth >= 20 && depth > lastRenderedDepth) return true
+    return false
+  }
 
   // --- ACTIONS ---
   async function showPanel(startActive = false) {
@@ -95,6 +110,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function toggleAnalysis() {
     if (!isAnalysisActive.value) {
+      lastRenderedDepth = 0
       await engineStore.startNewGame()
       await engineStore.startAnalysis(boardStore.fen)
     } else {
@@ -146,6 +162,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     const wasActive = isAnalysisActive.value
     isPanelVisible.value = false
     lastArrowsSignature = ''
+    lastRenderedDepth = 0
 
     if (wasActive) {
       await engineStore.stopAnalysis()

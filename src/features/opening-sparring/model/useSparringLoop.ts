@@ -334,6 +334,10 @@ export function useSparringLoop() {
   }
 
   function createStrategy(): IGameplayStrategy {
+    // Reset playout state to ensure fresh evaluation for the new session/phase
+    lastEvalAfter = undefined
+    recordQueue = Promise.resolve()
+
     return {
       config: {
       },
