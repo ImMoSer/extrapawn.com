@@ -72,13 +72,24 @@
       <div v-if="explanation.summary_text" class="expanded-section">
         <div class="summary-header">
           <div class="section-title" style="margin-bottom: 0">Full summary</div>
-          <button
-            class="copy-btn"
-            @click="copyJson"
-            title="Copy the full structured explanation as JSON"
-          >
-            Copy JSON
-          </button>
+          <div class="summary-actions">
+            <button
+              class="mentor-btn"
+              @click="coachStore.askMentor"
+              :disabled="coachStore.isMentorLoading"
+              title="Ask the Lead Chess Mentor for a deep insight"
+            >
+              <span v-if="coachStore.isMentorLoading" class="btn-spinner"></span>
+              {{ coachStore.isMentorLoading ? 'Asking...' : 'Ask Mentor' }}
+            </button>
+            <button
+              class="copy-btn"
+              @click="copyJson"
+              title="Copy the full structured explanation as JSON"
+            >
+              Copy JSON
+            </button>
+          </div>
         </div>
         <div class="narrative-text thin-scroll">
           {{ explanation.summary_text }}
@@ -523,6 +534,45 @@ const copyJson = () => {
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 4px;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mentor-btn {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background-color: rgba(0, 242, 255, 0.1);
+  color: #00f2ff;
+  border: 1px solid rgba(0, 242, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.mentor-btn:hover:not(:disabled) {
+  background-color: rgba(0, 242, 255, 0.2);
+  border-color: rgba(0, 242, 255, 0.5);
+}
+
+.mentor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(0, 242, 255, 0.2);
+  border-top: 2px solid #00f2ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .copy-btn {

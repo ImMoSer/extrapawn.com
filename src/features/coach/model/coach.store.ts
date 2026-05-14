@@ -23,6 +23,9 @@ export const useCoachStore = defineStore('coach', () => {
   const topMoves = ref<Record<string, unknown>[]>([])
   const topMovesLoading = ref(false)
 
+  // State for Mentor
+  const isMentorLoading = ref(false)
+
   // State for "Last Move"
   const lastMoveAnalysis = ref<Record<string, unknown> | null>(null)
 
@@ -197,9 +200,45 @@ export const useCoachStore = defineStore('coach', () => {
     })
   })
 
+  async function askMentor() {
+    if (!currentExplanation.value || !currentExplanation.value.llm_payload) {
+      logger.warn('[CoachStore] No LLM payload available to send to mentor.')
+      return
+    }
+
+    const webhookUrl = import.meta.env.VITE_LLM_BRIDGE
+    if (!webhookUrl) {
+      logger.error('[CoachStore] VITE_LLM_BRIDGE webhook URL not defined in .env')
+      return
+    }
+
+    try {
+      isMentorLoading.value = true
+      logger.info('[CoachStore] Sending payload to Mentor via n8n...', currentExplanation.value.llm_payload)
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentExplanation.value.llm_payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status ${response.status}`)
+      }
+
+      logger.info('[CoachStore] Mentor successfully received the payload.')
+    } catch (error) {
+      logger.error('[CoachStore] Failed to send payload to Mentor:', error)
+    } finally {
+      isMentorLoading.value = false
+    }
+  }
+
   return {
     isCoachEnabled,
     isAnalyzing,
+    isMentorLoading,
     currentExplanation,
     previousExplanation,
     topMoves,
@@ -212,5 +251,6 @@ export const useCoachStore = defineStore('coach', () => {
     toggleCoach,
     setCoachEnabled,
     explainTopMove,
+    askMentor,
   }
 })

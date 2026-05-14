@@ -22,6 +22,7 @@
 import engine, { getEngineDefaults } from './engine'
 import { explainPosition, analyzeMove, isReady as wasmReady } from './analyzer-rs'
 import { getSideToMove } from './chess'
+import { extractLlmPayload } from './llm-bridge'
 
 // The plan walker needs enough breadth to compare alternative continuations
 // when classifying the move's character. Bump below this floor.
@@ -368,6 +369,10 @@ export async function buildFullExplanation(fen, opts = {}) {
       description: staticBlob.principal_plan.description || `Plan: ${planTheme}`,
     })
   }
+
+  // ── LLM Bridge ──────────────────────────────────────────────────────
+  // Extract a token-efficient DTO for the LLM mentor.
+  staticBlob.llm_payload = extractLlmPayload(staticBlob)
 
   return staticBlob
 }
