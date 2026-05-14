@@ -73,8 +73,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
-import { coachEngineManager } from '../lib/engine/CoachEngineManager'
-import { getEngineDefaults } from '@/features/coach/lib/engine/engine'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { getEngineDefaults } from '@/shared/lib/engine/coach/engine'
 
 const emit = defineEmits(['change'])
 

@@ -1,6 +1,6 @@
 // src/services/GameplayService.ts
 import { serverEngineService } from '@/shared/lib/engine'
-import { coachEngineManager } from '@/features/coach'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import logger from '@/shared/lib/logger'
 import type { EngineId } from '@/shared/types/api.types'
 

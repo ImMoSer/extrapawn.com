@@ -1,6 +1,6 @@
-import { buildFullExplanation } from '@/features/coach/lib/engine/full-explanation'
-import engine, { setEngineDefaults } from '@/features/coach/lib/engine/engine'
-import { ensureReady as ensureWasmReady } from '@/features/coach/lib/engine/analyzer-rs'
+import { buildFullExplanation } from '@/shared/lib/engine/coach/full-explanation'
+import engine, { setEngineDefaults } from '@/shared/lib/engine/coach/engine'
+import { ensureReady as ensureWasmReady } from '@/shared/lib/engine/coach/analyzer-rs'
 import logger from '@/shared/lib/logger'
 
 export class CoachEngineManager {
@@ -79,7 +79,7 @@ export class CoachEngineManager {
   public stop() {
     try {
       engine._send('stop') // Internal method access to force stop
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -88,7 +88,7 @@ export class CoachEngineManager {
     try {
       engine.shutdown()
       this.initPromise = null
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }

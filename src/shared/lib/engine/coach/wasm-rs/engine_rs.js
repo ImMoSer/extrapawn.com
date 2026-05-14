@@ -1,3 +1,4 @@
+/* eslint-disable */
 /* @ts-self-types="./engine_rs.d.ts" */
 
 /**

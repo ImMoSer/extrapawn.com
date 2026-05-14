@@ -88,8 +88,7 @@
             Engine plan{{ plan.depth ? ` · depth ${plan.depth}` : '' }}
           </div>
           <div class="plan-san">
-            {{ plan.moves.map((m: any) => m.san).join('  ') }}
-          </div>
+            {{ plan.moves.map((m: { san: string }) => m.san).join('  ') }}          </div>
           <div v-if="plan.description" class="plan-desc-muted">{{ plan.description }}</div>
         </div>
 
@@ -123,7 +122,7 @@ import CoachSettings from './CoachSettings.vue'
 const coachStore = useCoachStore()
 const expanded = ref(false)
 
-const explanation = computed(() => coachStore.currentExplanation)
+const explanation = computed<any>(() => coachStore.currentExplanation)
 
 const onSettingsChange = () => {
   if (coachStore.isCoachEnabled) {
@@ -134,9 +133,10 @@ const onSettingsChange = () => {
 }
 
 // ── Verdict formatting ──
-const verdictData = computed(() => {
-  if (!explanation.value) return { side: null, text: '' }
-  const cp = explanation.value.eval_cp ?? 0
+const verdictData = computed<any>(() => {
+  const blob = explanation.value as any
+  if (!blob) return { side: null, text: '' }
+  const cp = blob.eval_cp ?? 0
   if (Math.abs(cp) < 25) return { side: null, text: 'Roughly equal' }
   const side = cp > 0 ? 'White' : 'Black'
   const m = Math.abs(cp)
@@ -147,7 +147,7 @@ const verdictData = computed(() => {
 })
 
 // ── Facts extraction (Ported from AboutPosition.jsx) ──
-const allFacts = computed(() => {
+const allFacts = computed<any[]>(() => {
   const blob = explanation.value
   if (!blob) return []
   const facts: any[] = []
@@ -356,7 +356,7 @@ const allFacts = computed(() => {
     })
 
   // Endgame concepts
-  const eg = blob.endgame || {}
+  const eg = (blob.endgame || {}) as any
   if (eg.opposition)
     facts.push({ side: eg.opposition.holder, importance: 88, text: eg.opposition.description })
   for (const k of eg.key_squares || []) {
@@ -402,14 +402,14 @@ const allFacts = computed(() => {
 const FACT_COUNT_DEFAULT = 3
 const FACT_IMPORTANCE_MIN = 60
 
-const decisiveFacts = computed(() =>
+const decisiveFacts = computed<any[]>(() =>
   allFacts.value.filter((f) => f.importance >= FACT_IMPORTANCE_MIN),
 )
-const visibleFacts = computed(() => decisiveFacts.value.slice(0, FACT_COUNT_DEFAULT))
-const remainingFacts = computed(() => allFacts.value.length - visibleFacts.value.length)
+const visibleFacts = computed<any[]>(() => decisiveFacts.value.slice(0, FACT_COUNT_DEFAULT))
+const remainingFacts = computed<number>(() => allFacts.value.length - visibleFacts.value.length)
 
-const plan = computed(() => explanation.value?.principal_plan)
-const hasPlan = computed(
+const plan = computed<any>(() => explanation.value?.principal_plan)
+const hasPlan = computed<boolean>(
   () => plan.value && Array.isArray(plan.value.moves) && plan.value.moves.length >= 2,
 )
 

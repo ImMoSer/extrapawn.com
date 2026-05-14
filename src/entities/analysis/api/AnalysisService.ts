@@ -10,7 +10,6 @@ import { parseFen } from 'chessops/fen'
 import { makeSan } from 'chessops/san'
 import type { Color as ChessopsColor } from 'chessops/types'
 import { parseUci } from 'chessops/util'
-import { useCoachStore } from '@/features/coach'
 
 export interface EvaluatedLineWithSan extends EvaluatedLine {
   pvSan: string[]
@@ -66,16 +65,6 @@ class AnalysisServiceController {
     callback: (lines: EvaluatedLineWithSan[]) => void,
     multiPV = 3,
   ) {
-    try {
-      const coachStore = useCoachStore()
-      if (coachStore.isCoachEnabled) {
-        logger.info('[AnalysisService] Toggling off Coach to start deep analysis.')
-        coachStore.setCoachEnabled(false)
-      }
-    } catch (e) {
-      // Ignore if called outside of pinia context
-    }
-
     if (!this.activeEngineManager) {
       logger.info('[AnalysisService] Engine manager not active. Waiting for initialization...')
       await this.initialize()

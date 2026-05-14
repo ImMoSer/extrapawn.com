@@ -1,31 +1,31 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useBoardStore } from '@/entities/game'
-import { useAnalysisEngineStore } from '@/entities/analysis/model/analysis-engine.store'
-import { coachEngineManager } from '../lib/engine/CoachEngineManager'
-import { getTopMoves, explainMoveAt } from '@/features/coach/lib/engine/analysis'
+import { useAnalysisEngineStore } from '@/entities/analysis'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { getTopMoves, explainMoveAt } from '@/shared/lib/engine/coach/analysis'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import logger from '@/shared/lib/logger'
 import type { Key } from '@lichess-org/chessground/types'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
+  const analysisEngineStore = useAnalysisEngineStore()
 
   const isCoachEnabled = ref(false)
   const isAnalyzing = ref(false)
 
   // State for "About Position"
-  const currentExplanation = ref<any>(null)
+  const currentExplanation = ref<Record<string, unknown> | null>(null)
 
   // State for "Top Moves"
-  const topMoves = ref<any[]>([])
+  const topMoves = ref<Record<string, unknown>[]>([])
   const topMovesLoading = ref(false)
 
   // State for "Last Move"
-  const lastMoveAnalysis = ref<any>(null)
+  const lastMoveAnalysis = ref<Record<string, unknown> | null>(null)
 
   function toggleCoach() {
-    const analysisEngineStore = useAnalysisEngineStore()
     isCoachEnabled.value = !isCoachEnabled.value
     if (!isCoachEnabled.value) {
       coachEngineManager.stop()
@@ -45,7 +45,6 @@ export const useCoachStore = defineStore('coach', () => {
   function setCoachEnabled(enabled: boolean) {
     if (isCoachEnabled.value === enabled) return
 
-    const analysisEngineStore = useAnalysisEngineStore()
     isCoachEnabled.value = enabled
     if (!enabled) {
       coachEngineManager.stop()
@@ -76,10 +75,10 @@ export const useCoachStore = defineStore('coach', () => {
 
       if (
         explanation &&
-        explanation.principal_plan &&
-        explanation.principal_plan.moves?.length > 0
+        (explanation.principal_plan as any) &&
+        (explanation.principal_plan as any).moves?.length > 0
       ) {
-        const bestMove = explanation.principal_plan.moves[0]
+        const bestMove = (explanation.principal_plan as any).moves[0]
         if (bestMove.from && bestMove.to) {
           boardStore.setAutoShapes([
             {
@@ -93,8 +92,8 @@ export const useCoachStore = defineStore('coach', () => {
       } else {
         boardStore.setAutoShapes([])
       }
-    } catch (e) {
-      logger.error('[CoachStore] Error generating explanation:', e)
+    } catch {
+      logger.error('[CoachStore] Error generating explanation')
     } finally {
       isAnalyzing.value = false
     }
@@ -104,9 +103,9 @@ export const useCoachStore = defineStore('coach', () => {
     topMovesLoading.value = true
     try {
       const result = await getTopMoves(fen, 10)
-      topMoves.value = result.moves || []
-    } catch (error) {
-      logger.error('[CoachStore] Top moves failed', error)
+      topMoves.value = (result as any).moves || []
+    } catch {
+      logger.error('[CoachStore] Top moves failed')
     } finally {
       topMovesLoading.value = false
     }
@@ -127,17 +126,17 @@ export const useCoachStore = defineStore('coach', () => {
     try {
       const r = await explainMoveAt(prevFen, lastNode.uci)
       lastMoveAnalysis.value = { ...r, loading: false }
-    } catch (e) {
+    } catch {
       lastMoveAnalysis.value = null
     }
   }
 
   // Handle click on a top move in the UI to explain it
   const selectedMoveIndex = ref<number | null>(null)
-  const selectedMoveExplanation = ref<any>(null)
+  const selectedMoveExplanation = ref<Record<string, unknown> | null>(null)
   const selectedMoveExplanationLoading = ref(false)
 
-  async function explainTopMove(move: any, index: number) {
+  async function explainTopMove(move: { move: string }, index: number) {
     if (selectedMoveIndex.value === index) {
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
@@ -147,9 +146,9 @@ export const useCoachStore = defineStore('coach', () => {
     selectedMoveExplanationLoading.value = true
     try {
       const result = await explainMoveAt(boardStore.fen, move.move)
-      selectedMoveExplanation.value = result
-    } catch (error) {
-      logger.error('[CoachStore] Top Move Explanation failed', error)
+      selectedMoveExplanation.value = result as Record<string, unknown>
+    } catch {
+      logger.error('[CoachStore] Top Move Explanation failed')
     } finally {
       selectedMoveExplanationLoading.value = false
     }
@@ -163,6 +162,17 @@ export const useCoachStore = defineStore('coach', () => {
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
       triggerAnalysis(newFen)
+    },
+  )
+
+  // Watch deep analysis and disable coach if analysis starts
+  watch(
+    () => analysisEngineStore.isAnalysisActive,
+    (isActive) => {
+      if (isActive && isCoachEnabled.value) {
+        logger.info('[CoachStore] Toggling off Coach because deep analysis started.')
+        setCoachEnabled(false)
+      }
     },
   )
 
