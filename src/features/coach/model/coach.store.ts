@@ -227,6 +227,37 @@ export const useCoachStore = defineStore('coach', () => {
         throw new Error(`Webhook failed with status ${response.status}`)
       }
 
+      const data = await response.json()
+      
+      if (data && data.output) {
+        if ('speechSynthesis' in window) {
+          // Cancel any ongoing speech
+          window.speechSynthesis.cancel()
+          
+          const utterance = new SpeechSynthesisUtterance(data.output)
+          
+          // Basic language detection for TTS
+          if (/[А-Яа-яЁё]/.test(data.output)) {
+            utterance.lang = 'ru-RU'
+          } else if (/[ÄäÖöÜüß]/.test(data.output)) {
+            utterance.lang = 'de-DE'
+          } else {
+            utterance.lang = 'en-US'
+          }
+
+          // Optionally pick a specific Google voice if available
+          const voices = window.speechSynthesis.getVoices()
+          const preferredVoice = voices.find(v => v.lang === utterance.lang && v.name.includes('Google'))
+          if (preferredVoice) {
+            utterance.voice = preferredVoice
+          }
+
+          window.speechSynthesis.speak(utterance)
+        } else {
+          logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
+        }
+      }
+
       logger.info('[CoachStore] Mentor successfully received the payload.')
     } catch (error) {
       logger.error('[CoachStore] Failed to send payload to Mentor:', error)
