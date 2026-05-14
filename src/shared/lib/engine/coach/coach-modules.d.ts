@@ -21,3 +21,11 @@ declare module '@/shared/lib/engine/coach/analyzer-rs' {
 declare module '@/shared/lib/engine/coach/full-explanation' {
   export function buildFullExplanation(fen: string, options?: { depth?: number; multipv?: number }): Promise<Record<string, unknown>>
 }
+
+declare module '@/shared/lib/engine/coach/connectors' {
+  export function topConsequenceLine(
+    prevExplanation: Record<string, unknown>,
+    currExplanation: Record<string, unknown>,
+    options: { movingSide: string; motifs: any[]; evalSwingCp: number }
+  ): string | null
+}

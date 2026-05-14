@@ -1,12 +1,12 @@
-import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import { useBoardStore } from '@/entities/game'
 import { useAnalysisEngineStore } from '@/entities/analysis'
+import { useBoardStore } from '@/entities/game'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { getTopMoves, explainMoveAt } from '@/shared/lib/engine/coach/analysis'
-import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
+import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import logger from '@/shared/lib/logger'
-import type { Key } from '@lichess-org/chessground/types'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
@@ -17,6 +17,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // State for "About Position"
   const currentExplanation = ref<Record<string, unknown> | null>(null)
+  const previousExplanation = ref<Record<string, unknown> | null>(null)
 
   // State for "Top Moves"
   const topMoves = ref<Record<string, unknown>[]>([])
@@ -30,6 +31,7 @@ export const useCoachStore = defineStore('coach', () => {
     if (!isCoachEnabled.value) {
       coachEngineManager.stop()
       currentExplanation.value = null
+      previousExplanation.value = null
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setAutoShapes([])
@@ -49,6 +51,7 @@ export const useCoachStore = defineStore('coach', () => {
     if (!enabled) {
       coachEngineManager.stop()
       currentExplanation.value = null
+      previousExplanation.value = null
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setAutoShapes([])
@@ -70,9 +73,14 @@ export const useCoachStore = defineStore('coach', () => {
     fetchLastMoveAnalysis()
 
     try {
+      // Capture the current explanation before overwriting it
+      previousExplanation.value = currentExplanation.value || previousExplanation.value
       const explanation = await coachEngineManager.getExplanation(fen)
       currentExplanation.value = explanation
 
+      // For now, we don't draw arrows on the board as per user request.
+      // This will be reactivated when blunder detection logic is implemented.
+      /*
       if (
         explanation &&
         (explanation.principal_plan as any) &&
@@ -92,6 +100,8 @@ export const useCoachStore = defineStore('coach', () => {
       } else {
         boardStore.setAutoShapes([])
       }
+      */
+      boardStore.setAutoShapes([])
     } catch {
       logger.error('[CoachStore] Error generating explanation')
     } finally {
@@ -176,13 +186,26 @@ export const useCoachStore = defineStore('coach', () => {
     },
   )
 
+  const lastMoveConsequence = computed(() => {
+    if (!previousExplanation.value || !currentExplanation.value || !lastMoveAnalysis.value) return null
+    if (lastMoveAnalysis.value.loading) return null
+
+    return topConsequenceLine(previousExplanation.value, currentExplanation.value, {
+      movingSide: previousExplanation.value.side_to_move as string,
+      motifs: (lastMoveAnalysis.value.motifs as any[]) || [],
+      evalSwingCp: ((currentExplanation.value.eval_cp as number) || 0) - ((previousExplanation.value.eval_cp as number) || 0),
+    })
+  })
+
   return {
     isCoachEnabled,
     isAnalyzing,
     currentExplanation,
+    previousExplanation,
     topMoves,
     topMovesLoading,
     lastMoveAnalysis,
+    lastMoveConsequence,
     selectedMoveIndex,
     selectedMoveExplanation,
     selectedMoveExplanationLoading,
