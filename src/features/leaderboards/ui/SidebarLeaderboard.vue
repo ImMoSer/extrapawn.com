@@ -12,12 +12,14 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const { data, isLoading } = useSidebarLeaderboardQuery(computed(() => ({
-  gameMode: props.gameMode,
-  subMode: props.subMode,
-  theme: props.theme,
-  difficulty: props.difficulty
-})))
+const { data, isLoading } = useSidebarLeaderboardQuery(
+  computed(() => ({
+    gameMode: props.gameMode,
+    subMode: props.subMode,
+    theme: props.theme,
+    difficulty: props.difficulty,
+  })),
+)
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
@@ -26,7 +28,7 @@ const tierToPieceMap: Record<string, string> = {
   Rook: 'wR.svg',
   Queen: 'wQ.svg',
   King: 'wK.svg',
-  administrator: 'wK.svg'
+  administrator: 'wK.svg',
 }
 
 const getSubscriptionIcon = (tier?: string) => {
@@ -44,7 +46,9 @@ const calculateWinRate = (solved: number, failed: number) => {
 <template>
   <div class="sidebar-leaderboard glass">
     <div class="leaderboard-header">
-      <span class="header-title">{{ t('features.leaderboards.sidebar.title', 'Top 10 (30d)') }}</span>
+      <span class="header-title">{{
+        t('features.leaderboards.sidebar.title', 'Top 10 (30d)')
+      }}</span>
       <div v-if="isLoading" class="loading-spinner"></div>
     </div>
 
@@ -56,7 +60,9 @@ const calculateWinRate = (solved: number, failed: number) => {
             <th class="col-player">{{ t('features.leaderboards.table.player') }}</th>
             <th class="col-solved">{{ t('features.userCabinet.stats.modes.all', 'Solved') }}</th>
             <th class="col-rate">{{ t('features.leaderboards.sidebar.winRate', 'Quote') }}</th>
-            <th class="col-score">{{ t('features.userCabinet.detailedAnalytics.bestScore', 'Best') }}</th>
+            <th class="col-score">
+              {{ t('features.userCabinet.detailedAnalytics.bestScore', 'Best') }}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -64,7 +70,11 @@ const calculateWinRate = (solved: number, failed: number) => {
             <td class="col-rank">{{ index + 1 }}</td>
             <td class="col-player">
               <div class="player-info">
-                <img v-if="getSubscriptionIcon(entry.tier)" :src="getSubscriptionIcon(entry.tier)!" class="tier-icon" />
+                <img
+                  v-if="getSubscriptionIcon(entry.tier)"
+                  :src="getSubscriptionIcon(entry.tier)!"
+                  class="tier-icon"
+                />
                 <span class="username" :title="entry.username">{{ entry.username }}</span>
               </div>
             </td>
@@ -87,12 +97,20 @@ const calculateWinRate = (solved: number, failed: number) => {
             <td class="col-rank">-</td>
             <td class="col-player">
               <div class="player-info">
-                <img v-if="getSubscriptionIcon(data.currentUser.tier)" :src="getSubscriptionIcon(data.currentUser.tier)!" class="tier-icon" />
-                <span class="username" :title="data.currentUser.username">{{ data.currentUser.username }}</span>
+                <img
+                  v-if="getSubscriptionIcon(data.currentUser.tier)"
+                  :src="getSubscriptionIcon(data.currentUser.tier)!"
+                  class="tier-icon"
+                />
+                <span class="username" :title="data.currentUser.username">{{
+                  data.currentUser.username
+                }}</span>
               </div>
             </td>
             <td class="col-solved">{{ data.currentUser.solved }}</td>
-            <td class="col-rate">{{ calculateWinRate(data.currentUser.solved, data.currentUser.failed) }}%</td>
+            <td class="col-rate">
+              {{ calculateWinRate(data.currentUser.solved, data.currentUser.failed) }}%
+            </td>
             <td class="col-score">{{ data.currentUser.maxRating }}</td>
           </tr>
         </tbody>
@@ -159,11 +177,26 @@ const calculateWinRate = (solved: number, failed: number) => {
   text-overflow: ellipsis;
 }
 
-.col-rank { width: 25px; text-align: center !important; }
-.col-player { width: auto; }
-.col-solved { width: 45px; text-align: center !important; }
-.col-rate { width: 45px; text-align: center !important; }
-.col-score { width: 50px; text-align: right !important; padding-right: 8px !important; }
+.col-rank {
+  width: 25px;
+  text-align: center !important;
+}
+.col-player {
+  width: auto;
+}
+.col-solved {
+  width: 45px;
+  text-align: center !important;
+}
+.col-rate {
+  width: 45px;
+  text-align: center !important;
+}
+.col-score {
+  width: 50px;
+  text-align: right !important;
+  padding-right: 8px !important;
+}
 
 .player-info {
   display: flex;
@@ -225,7 +258,9 @@ const calculateWinRate = (solved: number, failed: number) => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Custom Scrollbar */

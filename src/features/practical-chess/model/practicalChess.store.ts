@@ -126,7 +126,8 @@ export const usePracticalChessStore = defineStore('practicalChess', () => {
 
         await uiStore.showConfirmation(
           t('common.actions.error'),
-          t('features.gameplay.feedback.loadFailed') || 'Failed to load puzzle. It might not exist.',
+          t('features.gameplay.feedback.loadFailed') ||
+            'Failed to load puzzle. It might not exist.',
           {
             showCancel: false,
             confirmText: t('common.actions.ok'),
@@ -173,7 +174,7 @@ export const usePracticalChessStore = defineStore('practicalChess', () => {
           const delta = response.ratingDelta
           const sign = delta >= 0 ? '+' : ''
           const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
-          
+
           if (delta >= 0) {
             window.$message?.success(msg)
           } else {
@@ -183,7 +184,7 @@ export const usePracticalChessStore = defineStore('practicalChess', () => {
 
         if (response.userStatsUpdate) {
           authStore.updateUserStats(response.userStatsUpdate)
-          
+
           if (response.userStatsUpdate.practical) {
             queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'detailed-stats'] })
           }
@@ -254,9 +255,7 @@ export const usePracticalChessStore = defineStore('practicalChess', () => {
           { text: 'PRACTICAL' },
           { text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() },
         ],
-        stats: [
-          { value: puzzle.rating || '?', label: 'Rating' },
-        ],
+        stats: [{ value: puzzle.rating || '?', label: 'Rating' }],
       }
     }),
     activeCategory,

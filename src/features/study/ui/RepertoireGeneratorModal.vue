@@ -81,7 +81,7 @@ async function handleGenerateRepertoire() {
       min_games: 5,
       opponent_coverage: opponentCoverageDisplay.value / 100, // Convert 50 -> 0.5
       max_depth: 20,
-      opponent_data: 'MASTERS'
+      opponent_data: 'MASTERS',
     }
 
     const pgn = await repertoireApiService.generateRepertoire(request)
@@ -105,7 +105,9 @@ async function handleGenerateRepertoire() {
       pgnService.mergeSubtree(pgnService.getCurrentNode(), sourceNode)
       boardStore.syncBoardWithPgn()
 
-      message.success(t('features.study.repertoireGenerator.messages.success', { style: styleLabel }))
+      message.success(
+        t('features.study.repertoireGenerator.messages.success', { style: styleLabel }),
+      )
       emit('update:show', false)
     } else {
       message.error(t('features.study.repertoireGenerator.messages.error'))
@@ -133,7 +135,13 @@ async function handleGenerateRepertoire() {
   >
     <NSpace vertical size="large">
       <div v-if="studyStore.activeChapter?.color">
-        {{ t('features.study.repertoireGenerator.generatingFor', { color: t(`features.study.chapterSettings.form.${studyStore.activeChapter.color}`).toLowerCase() }) }}
+        {{
+          t('features.study.repertoireGenerator.generatingFor', {
+            color: t(
+              `features.study.chapterSettings.form.${studyStore.activeChapter.color}`,
+            ).toLowerCase(),
+          })
+        }}
       </div>
       <div v-else class="warning-text">
         {{ t('features.study.repertoireGenerator.warningColorNotSet') }}
@@ -158,24 +166,36 @@ async function handleGenerateRepertoire() {
 
       <!-- Parameters -->
       <div class="params-section">
-        <label class="section-label">{{ t('features.study.repertoireGenerator.actuarialParameters') }}</label>
-        
+        <label class="section-label">{{
+          t('features.study.repertoireGenerator.actuarialParameters')
+        }}</label>
+
         <div class="param-row">
           <div class="param-info">
-            <span class="param-name">{{ t('features.study.repertoireGenerator.opponentCoverage') }}</span>
+            <span class="param-name">{{
+              t('features.study.repertoireGenerator.opponentCoverage')
+            }}</span>
             <span class="param-desc">
               {{ t('features.study.repertoireGenerator.coverageDesc') }}
             </span>
           </div>
           <div class="param-control">
             <NSlider v-model:value="opponentCoverageDisplay" :min="30" :max="90" :step="1" />
-            <NInputNumber v-model:value="opponentCoverageDisplay" size="small" :min="30" :max="90" style="width: 80px" />
+            <NInputNumber
+              v-model:value="opponentCoverageDisplay"
+              size="small"
+              :min="30"
+              :max="90"
+              style="width: 80px"
+            />
           </div>
         </div>
       </div>
 
-      <NSpace justify="end" style="margin-top: 10px;">
-        <NButton @click="emit('update:show', false)">{{ t('features.study.repertoireGenerator.messages.abort') }}</NButton>
+      <NSpace justify="end" style="margin-top: 10px">
+        <NButton @click="emit('update:show', false)">{{
+          t('features.study.repertoireGenerator.messages.abort')
+        }}</NButton>
         <NButton
           type="primary"
           :loading="isGenerating"
@@ -185,7 +205,11 @@ async function handleGenerateRepertoire() {
           <template #icon>
             <NIcon><FlashOutline /></NIcon>
           </template>
-          {{ t('features.study.repertoireGenerator.generateWithStyle', { style: selectedStyleCleanName }) }}
+          {{
+            t('features.study.repertoireGenerator.generateWithStyle', {
+              style: selectedStyleCleanName,
+            })
+          }}
         </NButton>
       </NSpace>
     </NSpace>

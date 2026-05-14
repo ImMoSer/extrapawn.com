@@ -29,10 +29,9 @@ export const TORNADO_THEMES = [
   'backRankMate',
   'interference',
   'xRayAttack',
-] as const;
+] as const
 
 export type TornadoTheme = (typeof TORNADO_THEMES)[number]
-
 
 export interface TornadoSessionResult {
   puzzleId: string
@@ -119,7 +118,6 @@ export interface TheoryEndingResultDto {
   wasCorrect: boolean
 }
 
-
 // --- END THEORY ENDINGS ---
 
 // --- PRACTICAL CHESS MODE ---
@@ -145,7 +143,6 @@ export interface PracticalChessResultDto {
   initial_fen?: string
   user_color?: string
 }
-
 
 // --- END PRACTICAL CHESS ---
 
@@ -253,8 +250,6 @@ export interface GamePuzzle {
   weak_side?: string // for Theory
   result?: string // for Theory
 }
-
-
 
 export interface PlanStreakLeaderboardEntry {
   id: string
@@ -581,4 +576,3 @@ export interface TrainingPlanCompleteResponse {
   message?: string
   streak?: number
 }
-

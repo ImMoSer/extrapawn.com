@@ -23,8 +23,7 @@ function checkTreeTrimmed(node: PgnNode, userColor: 'white' | 'black'): boolean 
   // If userColor is 'white', user makes the move AT ply 0, 2, 4... (even ply)
   // If userColor is 'black', user makes the move AT ply 1, 3, 5... (odd ply)
   const isUserTurnToMove =
-    (userColor === 'white' && node.ply % 2 === 0) ||
-    (userColor === 'black' && node.ply % 2 !== 0)
+    (userColor === 'white' && node.ply % 2 === 0) || (userColor === 'black' && node.ply % 2 !== 0)
 
   if (isUserTurnToMove && node.children.length > 1) {
     return false
@@ -54,8 +53,7 @@ export function isNodeNeedingTrim(node: PgnNode, userColor: 'white' | 'black'): 
   // The parent's ply determines whose turn it was to make THIS move.
   const parentPly = node.parent.ply
   const isUserMove =
-    (userColor === 'white' && parentPly % 2 === 0) ||
-    (userColor === 'black' && parentPly % 2 !== 0)
+    (userColor === 'white' && parentPly % 2 === 0) || (userColor === 'black' && parentPly % 2 !== 0)
 
   if (!isUserMove) return false
 

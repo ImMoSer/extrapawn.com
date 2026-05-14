@@ -1,0 +1,236 @@
+<template>
+  <div class="relative" ref="wrapRef">
+    <button
+      @click="toggleOpen"
+      title="Engine settings (depth, multi-PV)"
+      aria-label="Open engine settings"
+      :aria-expanded="open"
+      aria-haspopup="dialog"
+      class="icon-btn settings-btn"
+      :class="{ 'is-open': open }"
+    >
+      <n-icon size="14"><SettingsOutline /></n-icon>
+    </button>
+    <div v-if="open" class="settings-dropdown">
+      <div class="settings-title">Engine settings</div>
+
+      <!-- Depth -->
+      <div class="setting-group">
+        <div class="setting-header">
+          <label for="setting-depth">Search depth</label>
+          <span class="setting-value">{{ depth }}</span>
+        </div>
+        <input
+          id="setting-depth"
+          type="range"
+          min="6"
+          max="22"
+          step="1"
+          v-model.number="depth"
+          class="setting-slider"
+        />
+        <div class="setting-labels">
+          <span>fast (6)</span>
+          <span>deep (22)</span>
+        </div>
+        <div class="setting-desc">
+          Higher depth → stronger analysis, slower per move. Default 12 is a good balance.
+        </div>
+      </div>
+
+      <!-- MultiPV -->
+      <div class="setting-group">
+        <div class="setting-header">
+          <label for="setting-multipv">Top moves shown</label>
+          <span class="setting-value">{{ multipv }}</span>
+        </div>
+        <input
+          id="setting-multipv"
+          type="range"
+          min="1"
+          max="10"
+          step="1"
+          v-model.number="multipv"
+          class="setting-slider"
+        />
+        <div class="setting-labels">
+          <span>1</span>
+          <span>10</span>
+        </div>
+        <div class="setting-desc">How many candidate moves the engine evaluates per position.</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="settings-actions">
+        <button class="btn-cancel" @click="open = false">Cancel</button>
+        <button class="btn-apply" @click="apply">Apply</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import { SettingsOutline } from '@vicons/ionicons5'
+import { NIcon } from 'naive-ui'
+import { coachEngineManager } from '../lib/engine/CoachEngineManager'
+import { getEngineDefaults } from '@/features/coach/lib/engine/engine'
+
+const emit = defineEmits(['change'])
+
+const open = ref(false)
+const defaults = getEngineDefaults()
+const depth = ref(defaults.depth)
+const multipv = ref(defaults.multipv)
+const wrapRef = ref<HTMLElement | null>(null)
+
+const toggleOpen = () => {
+  open.value = !open.value
+}
+
+const handleClickOutside = (e: MouseEvent) => {
+  if (wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
+    open.value = false
+  }
+}
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    open.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside)
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
+  document.removeEventListener('keydown', handleKeyDown)
+})
+
+const apply = () => {
+  coachEngineManager.setDefaults({ depth: depth.value, multipv: multipv.value })
+  open.value = false
+  emit('change', { depth: depth.value, multipv: multipv.value })
+}
+</script>
+
+<style scoped>
+.relative {
+  position: relative;
+}
+
+.settings-btn {
+  padding: 7px;
+  border-radius: 6px;
+  background-color: #1f1f23;
+  color: #a1a1aa;
+  border: 1px solid #27272a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.settings-btn.is-open {
+  background-color: #3f3f46;
+  color: #fafafa;
+  border-color: #52525b;
+}
+
+.settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 260px;
+  padding: 12px;
+  background-color: #0e0e10;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  font-size: 11px;
+}
+
+.settings-title {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #71717a;
+  margin-bottom: 8px;
+}
+
+.setting-group {
+  margin-bottom: 12px;
+}
+
+.setting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.setting-header label {
+  color: #d4d4d8;
+  font-weight: 600;
+}
+
+.setting-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #86efac;
+  font-weight: 700;
+}
+
+.setting-slider {
+  width: 100%;
+  accent-color: #86efac;
+}
+
+.setting-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #52525b;
+  margin-top: 2px;
+}
+
+.setting-desc {
+  font-size: 10px;
+  color: #71717a;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  background-color: transparent;
+  color: #a1a1aa;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-apply {
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  background-color: rgba(74, 222, 128, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>

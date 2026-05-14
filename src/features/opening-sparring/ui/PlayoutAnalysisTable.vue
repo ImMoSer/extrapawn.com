@@ -2,12 +2,12 @@
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { type SessionMove } from '@/shared/types/openingSparring.types'
 import {
-    NDataTable,
-    NTag,
-    NText,
-    NTooltip,
-    type DataTableBaseColumn,
-    type DataTableColumns,
+  NDataTable,
+  NTag,
+  NText,
+  NTooltip,
+  type DataTableBaseColumn,
+  type DataTableColumns,
 } from 'naive-ui'
 import { computed, h } from 'vue'
 import { useOpeningSparringStore } from '../index'
@@ -207,10 +207,6 @@ const renderEval = (move: SessionMove | null) => {
 
   return cellContent
 }
-
-
-
-
 
 const createColorColumns = (side: 'white' | 'black'): DataTableBaseColumn<PlayoutPair>[] => [
   {

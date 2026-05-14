@@ -49,13 +49,15 @@ function handleStart() {
     <template #sections>
       <!-- Difficulty Selection -->
       <div class="section">
-        <n-text class="section-label">{{ t('features.theoryEndgames.selection.difficultyLabel') }}</n-text>
+        <n-text class="section-label">{{
+          t('features.theoryEndgames.selection.difficultyLabel')
+        }}</n-text>
         <n-radio-group v-model:value="selectedDifficulty" size="large" expand>
           <n-radio-button
             v-for="diff in difficultyLevels"
             :key="diff"
             :value="diff"
-            style="text-align: center;"
+            style="text-align: center"
           >
             {{ t(`common.difficulties.level_${diff.toLowerCase()}`) }}
           </n-radio-button>
@@ -64,11 +66,10 @@ function handleStart() {
 
       <!-- Categories / Themes Selection -->
       <div class="section">
-        <n-text class="section-label">{{ t('features.practicalChess.selection.categoryLabel') }}</n-text>
-        <VisualRadioGroup
-          v-model:value="selectedCategory"
-          :options="themeOptions"
-        />
+        <n-text class="section-label">{{
+          t('features.practicalChess.selection.categoryLabel')
+        }}</n-text>
+        <VisualRadioGroup v-model:value="selectedCategory" :options="themeOptions" />
       </div>
     </template>
 

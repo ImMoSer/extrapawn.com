@@ -32,7 +32,7 @@ const { t } = useI18n()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'TORNADO',
   subMode: route.params.mode as string,
-  theme: (route.query.theme as string) || ''
+  theme: (route.query.theme as string) || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -48,7 +48,7 @@ const activeModeStr = computed({
     // Wenn der User über die Radio-Buttons im Chart den Modus wechselt,
     // navigieren wir einfach dorthin.
     router.push({ name: 'tornado', params: { mode: val } })
-  }
+  },
 })
 
 const currentTornadoThemes = computed(() => {
@@ -62,17 +62,19 @@ const handleImprove = (options: GameLaunchOptions) => {
     if (!options.subMode) {
       throw new Error('[TornadoView] handleImprove was called without a subMode!')
     }
-    
+
     // Tornado restart logic uses router or store
-    router.push({
-      name: 'tornado',
-      params: { mode: options.subMode },
-      query: options.theme ? { theme: options.theme } : {},
-    }).then(() => {
-      // Wichtig: Da wir auf der gleichen Route bleiben (nur params/query ändern sich),
-      // müssen wir den Store manuell neustarten, da onMounted nicht feuert.
-      tornadoStore.startSession(options.subMode as TornadoMode, options.theme)
-    })
+    router
+      .push({
+        name: 'tornado',
+        params: { mode: options.subMode },
+        query: options.theme ? { theme: options.theme } : {},
+      })
+      .then(() => {
+        // Wichtig: Da wir auf der gleichen Route bleiben (nur params/query ändern sich),
+        // müssen wir den Store manuell neustarten, da onMounted nicht feuert.
+        tornadoStore.startSession(options.subMode as TornadoMode, options.theme)
+      })
   }
 }
 
@@ -95,7 +97,7 @@ watch(
     if (isActive && !wasActive) {
       smartHintStore.resetHints(3)
     }
-  }
+  },
 )
 
 watch(
@@ -142,7 +144,9 @@ watch(
 
     <template #right-panel>
       <div class="panel-content-wrapper">
-        <AnalysisPanel v-if="gameStore.gamePhase === 'GAMEOVER' || gameStore.gamePhase === 'IDLE'" />
+        <AnalysisPanel
+          v-if="gameStore.gamePhase === 'GAMEOVER' || gameStore.gamePhase === 'IDLE'"
+        />
         <template v-if="isTaskInActivePlan">
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>

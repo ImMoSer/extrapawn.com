@@ -20,7 +20,7 @@ import {
   NTag,
   NText,
   NH1,
-  NCard
+  NCard,
 } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -69,20 +69,18 @@ const progressPercent = computed(() => {
 </script>
 
 <template>
-  <n-modal
-    :show="show"
-    :style="{ width: 'min(550px, calc(100vw - 32px))' }"
-    :mask-closable="false"
-  >
-    <n-card class="glass selection-card summary-card" :bordered="false" content-style="padding: 32px">
-      <n-space vertical :size="24" style="width: 100%;">
+  <n-modal :show="show" :style="{ width: 'min(550px, calc(100vw - 32px))' }" :mask-closable="false">
+    <n-card
+      class="glass selection-card summary-card"
+      :bordered="false"
+      content-style="padding: 32px"
+    >
+      <n-space vertical :size="24" style="width: 100%">
         <div class="header">
-          <n-h1 class="title" style="color: var(--color-success, #63e2b7); margin: 0;">
+          <n-h1 class="title" style="color: var(--color-success, #63e2b7); margin: 0">
             {{ t('features.diamondHunter.header.bookEnded') }}
           </n-h1>
-          <n-text depth="3" class="subtitle">
-            Session Summary
-          </n-text>
+          <n-text depth="3" class="subtitle"> Session Summary </n-text>
         </div>
 
         <div class="selection-sections">
@@ -91,16 +89,26 @@ const progressPercent = computed(() => {
             <n-grid :cols="2" :x-gap="12">
               <n-grid-item>
                 <div class="stat-box">
-                  <n-statistic :label="t('features.diamondHunter.header.popularity')" :value="openingStore.averagePopularity">
-                    <template #prefix><n-icon class="stat-icon"><PulseOutline /></n-icon></template>
+                  <n-statistic
+                    :label="t('features.diamondHunter.header.popularity')"
+                    :value="openingStore.averagePopularity"
+                  >
+                    <template #prefix
+                      ><n-icon class="stat-icon"><PulseOutline /></n-icon
+                    ></template>
                     <template #suffix>%</template>
                   </n-statistic>
                 </div>
               </n-grid-item>
               <n-grid-item>
                 <div class="stat-box">
-                  <n-statistic :label="t('features.diamondHunter.header.winRate')" :value="openingStore.averageWinRate">
-                    <template #prefix><n-icon class="stat-icon"><TrendingUpOutline /></n-icon></template>
+                  <n-statistic
+                    :label="t('features.diamondHunter.header.winRate')"
+                    :value="openingStore.averageWinRate"
+                  >
+                    <template #prefix
+                      ><n-icon class="stat-icon"><TrendingUpOutline /></n-icon
+                    ></template>
                     <template #suffix>%</template>
                   </n-statistic>
                 </div>
@@ -110,11 +118,26 @@ const progressPercent = computed(() => {
 
           <!-- Engine Evaluation Section -->
           <div class="section eval-section" :class="{ loading: openingStore.isFinalEvaluating }">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-               <n-text class="section-label" style="margin: 0;">{{ t('features.analysis.engine') }} Assessment</n-text>
-               <n-tag v-if="!openingStore.isFinalEvaluating" :type="evalStatus" round size="small" strong>
-                 {{ evalText }}
-               </n-tag>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <n-text class="section-label" style="margin: 0"
+                >{{ t('features.analysis.engine') }} Assessment</n-text
+              >
+              <n-tag
+                v-if="!openingStore.isFinalEvaluating"
+                :type="evalStatus"
+                round
+                size="small"
+                strong
+              >
+                {{ evalText }}
+              </n-tag>
             </div>
 
             <div v-if="openingStore.isFinalEvaluating" class="eval-loading">
@@ -127,7 +150,11 @@ const progressPercent = computed(() => {
                 :height="6"
                 border-radius="4px"
               />
-              <n-text depth="3" class="depth-text" style="font-size: 0.8rem; margin-top: 6px; display: block;">
+              <n-text
+                depth="3"
+                class="depth-text"
+                style="font-size: 0.8rem; margin-top: 6px; display: block"
+              >
                 Analyzing depth: {{ openingStore.finalEvalDepth }} / 20
               </n-text>
             </div>
@@ -139,9 +166,15 @@ const progressPercent = computed(() => {
                   <CloseOutline v-else-if="evalStatus === 'error'" />
                   <SearchOutline v-else />
                 </n-icon>
-                <n-text v-if="evalStatus === 'success'" strong>Exited opening with a great advantage!</n-text>
-                <n-text v-else-if="evalStatus === 'info'" strong>Solid position out of the opening.</n-text>
-                <n-text v-else-if="evalStatus === 'error'" strong>Slightly worse position. Don't worry!</n-text>
+                <n-text v-if="evalStatus === 'success'" strong
+                  >Exited opening with a great advantage!</n-text
+                >
+                <n-text v-else-if="evalStatus === 'info'" strong
+                  >Solid position out of the opening.</n-text
+                >
+                <n-text v-else-if="evalStatus === 'error'" strong
+                  >Slightly worse position. Don't worry!</n-text
+                >
                 <n-text v-else strong>Equality has been maintained.</n-text>
               </n-space>
             </div>
@@ -149,7 +182,9 @@ const progressPercent = computed(() => {
 
           <!-- Engine Selection for Playout -->
           <div class="section">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.engineHint', 'Playout Engine') }}</n-text>
+            <n-text class="section-label">{{
+              t('features.diamondHunter.settings.engineHint', 'Playout Engine')
+            }}</n-text>
             <div class="engine-selector-wrapper">
               <slot name="engine-selector" />
             </div>
@@ -160,21 +195,49 @@ const progressPercent = computed(() => {
           <n-space vertical :size="12">
             <n-grid :cols="2" :x-gap="12">
               <n-grid-item>
-                <n-button block secondary type="success" size="large" :disabled="openingStore.isFinalEvaluating" @click="emit('playout')" class="action-btn">
-                  <template #icon><n-icon><PlayOutline /></n-icon></template>
+                <n-button
+                  block
+                  secondary
+                  type="success"
+                  size="large"
+                  :disabled="openingStore.isFinalEvaluating"
+                  @click="emit('playout')"
+                  class="action-btn"
+                >
+                  <template #icon
+                    ><n-icon><PlayOutline /></n-icon
+                  ></template>
                   Playout
                 </n-button>
               </n-grid-item>
               <n-grid-item>
-                <n-button block secondary type="info" size="large" :disabled="openingStore.isFinalEvaluating" @click="emit('analyze')" class="action-btn">
-                  <template #icon><n-icon><SearchOutline /></n-icon></template>
+                <n-button
+                  block
+                  secondary
+                  type="info"
+                  size="large"
+                  :disabled="openingStore.isFinalEvaluating"
+                  @click="emit('analyze')"
+                  class="action-btn"
+                >
+                  <template #icon
+                    ><n-icon><SearchOutline /></n-icon
+                  ></template>
                   Analyze
                 </n-button>
               </n-grid-item>
             </n-grid>
 
-            <n-button block quaternary size="large" @click="emit('restart')" style="margin-top: 8px;">
-              <template #icon><n-icon><RefreshOutline /></n-icon></template>
+            <n-button
+              block
+              quaternary
+              size="large"
+              @click="emit('restart')"
+              style="margin-top: 8px"
+            >
+              <template #icon
+                ><n-icon><RefreshOutline /></n-icon
+              ></template>
               {{ t('features.diamondHunter.header.newSession') }}
             </n-button>
           </n-space>
@@ -188,7 +251,7 @@ const progressPercent = computed(() => {
 .selection-card {
   width: 100%;
   border-radius: 20px;
-  background: var(--bg-0, rgba(16, 16, 20, 0.7)); 
+  background: var(--bg-0, rgba(16, 16, 20, 0.7));
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -239,7 +302,9 @@ const progressPercent = computed(() => {
   padding: 16px;
   text-align: center;
 }
-:deep(.n-statistic .n-statistic-value__prefix) { margin-right: 8px; }
+:deep(.n-statistic .n-statistic-value__prefix) {
+  margin-right: 8px;
+}
 
 /* Eval Section Styling */
 .eval-section {

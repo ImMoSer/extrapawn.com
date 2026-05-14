@@ -1,6 +1,23 @@
 <script setup lang="ts">
-import { AddOutline, CloudDownloadOutline, SettingsOutline, ArrowUpOutline, CloudUploadOutline } from '@vicons/ionicons5'
-import { NButton, NIcon, NList, NListItem, NScrollbar, NSpace, NText, NThing, useDialog, useMessage } from 'naive-ui'
+import {
+  AddOutline,
+  CloudDownloadOutline,
+  SettingsOutline,
+  ArrowUpOutline,
+  CloudUploadOutline,
+} from '@vicons/ionicons5'
+import {
+  NButton,
+  NIcon,
+  NList,
+  NListItem,
+  NScrollbar,
+  NSpace,
+  NText,
+  NThing,
+  useDialog,
+  useMessage,
+} from 'naive-ui'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -41,9 +58,7 @@ const startReplyTraining = async (chapter: StudyChapter) => {
     trainingStore.isReplyTrainingActive = true
     message.success(t('features.study.replyTraining.startedMessage'))
   } catch (error: unknown) {
-    const handled = await uiStore.handlePawnCoinsError(error, () =>
-      router.push('/pricing'),
-    )
+    const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
     if (!handled) {
       const err = error as {
         response?: { data?: { message?: string } }
@@ -74,7 +89,7 @@ const activeStudyChapters = computed(() => {
   const study = studyStore.activeStudy
   if (!study) return []
 
-  const chapters = studyStore.chapters.filter(c => c.studyId === study.id)
+  const chapters = studyStore.chapters.filter((c) => c.studyId === study.id)
   const orderMap = new Map(study.chapterIds.map((id, index) => [id, index]))
 
   return chapters.sort((a, b) => {
@@ -89,13 +104,12 @@ const cooldownActive = computed(() => cooldownRemaining.value > 0)
 
 const isSpeedrunReady = computed(() => {
   if (activeStudyChapters.value.length === 0) return false
-  return activeStudyChapters.value.every(chapter =>
-    chapter.chapter_type === 'speedrun' &&
-    ['1-0', '0-1', '1/2-1/2'].includes(chapter.tags.Result || '')
+  return activeStudyChapters.value.every(
+    (chapter) =>
+      chapter.chapter_type === 'speedrun' &&
+      ['1-0', '0-1', '1/2-1/2'].includes(chapter.tags.Result || ''),
   )
 })
-
-
 
 const getChapterProgress = (chapter: StudyChapter): number => {
   return srsService.getChapterCleanliness(chapter.root)
@@ -123,15 +137,15 @@ function updateCooldowns() {
 
   // Chapter Cooldowns
   let anyChapterCooldown = false
-  studyStore.chapters.forEach(chapter => {
+  studyStore.chapters.forEach((chapter) => {
     const pushLast = parseInt(localStorage.getItem(`push_${chapter.id}`) || '0', 10)
     const pubLast = parseInt(localStorage.getItem(`pub_${chapter.id}`) || '0', 10)
-    
+
     const pushVal = Math.max(0, Math.ceil((PUSH_COOLDOWN_MS - (now - pushLast)) / 1000))
     const pubVal = Math.max(0, Math.ceil((PUBLISH_COOLDOWN_MS - (now - pubLast)) / 1000))
-    
+
     if (pushVal > 0 || pubVal > 0) anyChapterCooldown = true
-    
+
     chapterCooldowns.value[chapter.id] = { push: pushVal, pub: pubVal }
   })
 
@@ -185,15 +199,16 @@ function openSettings(chapter: StudyChapter, e: Event) {
 function handleStartSpeedrun() {
   console.log('[StudySidebar] START_SPEEDRUN clicked for study:', studyStore.activeStudy?.id)
 
-  const speedrunChapters = activeStudyChapters.value.filter(chapter =>
-    chapter.chapter_type === 'speedrun' &&
-    ['1-0', '0-1', '1/2-1/2'].includes(chapter.tags.Result || '')
+  const speedrunChapters = activeStudyChapters.value.filter(
+    (chapter) =>
+      chapter.chapter_type === 'speedrun' &&
+      ['1-0', '0-1', '1/2-1/2'].includes(chapter.tags.Result || ''),
   )
 
   if (speedrunChapters.length > 0) {
     router.push({
       name: 'study-speedrun',
-      query: { studyId: studyStore.activeStudy?.id }
+      query: { studyId: studyStore.activeStudy?.id },
     })
   } else {
     message.warning(t('features.speedrun.noValidChapters'))
@@ -220,7 +235,10 @@ async function handleSyncFromLichess() {
 
         // Set cooldown
         lastSyncTime.value = Date.now()
-        localStorage.setItem(`lastSync_${studyStore.activeStudy?.id}`, lastSyncTime.value.toString())
+        localStorage.setItem(
+          `lastSync_${studyStore.activeStudy?.id}`,
+          lastSyncTime.value.toString(),
+        )
         startTimerIfNeeded()
 
         loadingMsg.destroy()
@@ -236,7 +254,7 @@ async function handleSyncFromLichess() {
           message.error(error)
         }
       }
-    }
+    },
   })
 }
 
@@ -298,9 +316,15 @@ async function handlePush(chapter: StudyChapter, e: Event) {
             circle
             @click="handleSyncFromLichess"
             :disabled="cooldownActive"
-            :title="cooldownActive ? t('features.study.sidebar.cooldownTooltip', { seconds: cooldownRemaining }) : t('features.study.sidebar.syncTooltip')"
+            :title="
+              cooldownActive
+                ? t('features.study.sidebar.cooldownTooltip', { seconds: cooldownRemaining })
+                : t('features.study.sidebar.syncTooltip')
+            "
           >
-            <template #icon><NIcon class="sync-icon"><CloudDownloadOutline /></NIcon></template>
+            <template #icon
+              ><NIcon class="sync-icon"><CloudDownloadOutline /></NIcon
+            ></template>
           </NButton>
         </NSpace>
       </div>
@@ -309,11 +333,15 @@ async function handlePush(chapter: StudyChapter, e: Event) {
         START SPEEDRUN
       </div>
 
-      <div class="chapter-count-badge">{{ t('features.study.sidebar.chapterCount', { count: activeStudyChapters.length }) }}</div>
+      <div class="chapter-count-badge">
+        {{ t('features.study.sidebar.chapterCount', { count: activeStudyChapters.length }) }}
+      </div>
 
       <!-- Reply Training Action Header -->
       <div v-if="trainingStore.isReadyToReply" class="reply-training-toggle">
-        <NText :depth="2" style="font-size: 0.8rem; font-weight: bold;">{{ t('features.study.replyTraining.title') }}</NText>
+        <NText :depth="2" style="font-size: 0.8rem; font-weight: bold">{{
+          t('features.study.replyTraining.title')
+        }}</NText>
       </div>
     </div>
 
@@ -335,8 +363,18 @@ async function handlePush(chapter: StudyChapter, e: Event) {
             <template #header-extra>
               <NSpace size="small" align="center" :wrap="false">
                 <template v-if="chapter.chapter_type === 'repertoire'">
-                  <span v-if="isChapterTrimmed(chapter)" class="tag-reply" @click.stop="startReplyTraining(chapter)">REPLY</span>
-                  <span v-else class="tag-trim" title="You have multiple choices defined. Trim the tree!">TRIM</span>
+                  <span
+                    v-if="isChapterTrimmed(chapter)"
+                    class="tag-reply"
+                    @click.stop="startReplyTraining(chapter)"
+                    >REPLY</span
+                  >
+                  <span
+                    v-else
+                    class="tag-trim"
+                    title="You have multiple choices defined. Trim the tree!"
+                    >TRIM</span
+                  >
                 </template>
                 <template v-else-if="chapter.chapter_type === 'speedrun'">
                   <span
@@ -345,7 +383,7 @@ async function handlePush(chapter: StudyChapter, e: Event) {
                     :class="{
                       'tag-win-white': chapter.tags.Result === '1-0',
                       'tag-win-black': chapter.tags.Result === '0-1',
-                      'tag-draw': chapter.tags.Result === '1/2-1/2'
+                      'tag-draw': chapter.tags.Result === '1/2-1/2',
                     }"
                   >
                     {{ chapter.tags.Result }}
@@ -354,49 +392,74 @@ async function handlePush(chapter: StudyChapter, e: Event) {
                 </template>
                 <!-- Publish to Lichess -->
                 <NButton
-                  v-if="studyStore.activeStudy?.lichessId && !chapter.lichessChapterId && !isCommunity"
+                  v-if="
+                    studyStore.activeStudy?.lichessId && !chapter.lichessChapterId && !isCommunity
+                  "
                   size="tiny"
                   quaternary
                   circle
                   type="primary"
                   :disabled="(chapterCooldowns[chapter.id]?.pub || 0) > 0"
-                  :title="(chapterCooldowns[chapter.id]?.pub || 0) > 0 ? t('features.study.sidebar.cooldownWait', { seconds: chapterCooldowns[chapter.id]?.pub }) : t('features.study.sidebar.publishChapterTooltip')"
+                  :title="
+                    (chapterCooldowns[chapter.id]?.pub || 0) > 0
+                      ? t('features.study.sidebar.cooldownWait', {
+                          seconds: chapterCooldowns[chapter.id]?.pub,
+                        })
+                      : t('features.study.sidebar.publishChapterTooltip')
+                  "
                   @click="(e) => handlePublish(chapter, e)"
                 >
-                  <template #icon><NIcon><ArrowUpOutline /></NIcon></template>
+                  <template #icon
+                    ><NIcon><ArrowUpOutline /></NIcon
+                  ></template>
                 </NButton>
 
                 <!-- Push Update to Lichess -->
                 <NButton
-                  v-if="studyStore.activeStudy?.lichessId && chapter.lichessChapterId && !isCommunity"
+                  v-if="
+                    studyStore.activeStudy?.lichessId && chapter.lichessChapterId && !isCommunity
+                  "
                   size="tiny"
                   quaternary
                   circle
                   :disabled="(chapterCooldowns[chapter.id]?.push || 0) > 0"
-                  :title="(chapterCooldowns[chapter.id]?.push || 0) > 0 ? t('features.study.sidebar.cooldownWait', { seconds: chapterCooldowns[chapter.id]?.push }) : t('features.study.sidebar.pushChapterTooltip')"
+                  :title="
+                    (chapterCooldowns[chapter.id]?.push || 0) > 0
+                      ? t('features.study.sidebar.cooldownWait', {
+                          seconds: chapterCooldowns[chapter.id]?.push,
+                        })
+                      : t('features.study.sidebar.pushChapterTooltip')
+                  "
                   @click="(e) => handlePush(chapter, e)"
                 >
-                  <template #icon><NIcon class="sync-icon"><CloudUploadOutline /></NIcon></template>
+                  <template #icon
+                    ><NIcon class="sync-icon"><CloudUploadOutline /></NIcon
+                  ></template>
                 </NButton>
 
                 <NButton
                   v-if="!isCommunity"
-                  size="tiny" quaternary circle @click="(e) => openSettings(chapter, e)"
+                  size="tiny"
+                  quaternary
+                  circle
+                  @click="(e) => openSettings(chapter, e)"
                 >
-                  <template #icon><NIcon class="settings-icon"><SettingsOutline /></NIcon></template>
+                  <template #icon
+                    ><NIcon class="settings-icon"><SettingsOutline /></NIcon
+                  ></template>
                 </NButton>
               </NSpace>
             </template>
             <!-- Progress Bar -->
             <div class="chapter-progress-container">
-               <div
-                 class="chapter-progress-bar"
-                 :style="{ 
-                    width: `${getChapterProgress(chapter) * 100}%`,
-                    background: getProgressBarColor(getChapterProgress(chapter)),
-                    boxShadow: `0 0 5px ${getProgressBarColor(getChapterProgress(chapter))}`
-                 }"
-               ></div>
+              <div
+                class="chapter-progress-bar"
+                :style="{
+                  width: `${getChapterProgress(chapter) * 100}%`,
+                  background: getProgressBarColor(getChapterProgress(chapter)),
+                  boxShadow: `0 0 5px ${getProgressBarColor(getChapterProgress(chapter))}`,
+                }"
+              ></div>
             </div>
           </NThing>
         </NListItem>
@@ -505,15 +568,21 @@ async function handlePush(chapter: StudyChapter, e: Event) {
 
 @keyframes pulse-speedrun {
   0% {
-    box-shadow: 0 0 10px rgba(217, 0, 76, 0.6), 0 0 5px rgba(0, 242, 255, 0.3);
+    box-shadow:
+      0 0 10px rgba(217, 0, 76, 0.6),
+      0 0 5px rgba(0, 242, 255, 0.3);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 25px rgba(217, 0, 76, 0.9), 0 0 15px rgba(247, 213, 71, 0.6);
+    box-shadow:
+      0 0 25px rgba(217, 0, 76, 0.9),
+      0 0 15px rgba(247, 213, 71, 0.6);
     transform: scale(1.05);
   }
   100% {
-    box-shadow: 0 0 10px rgba(217, 0, 76, 0.6), 0 0 5px rgba(0, 242, 255, 0.3);
+    box-shadow:
+      0 0 10px rgba(217, 0, 76, 0.6),
+      0 0 5px rgba(0, 242, 255, 0.3);
     transform: scale(1);
   }
 }
@@ -622,7 +691,6 @@ async function handlePush(chapter: StudyChapter, e: Event) {
   flex-shrink: 0;
 }
 
-
 .active {
   background-color: rgba(var(--color-primary-rgb), 0.15) !important;
   border-left: 3px solid var(--color-accent-primary);
@@ -664,6 +732,8 @@ async function handlePush(chapter: StudyChapter, e: Event) {
 .chapter-progress-bar {
   height: 100%;
   border-radius: 2px;
-  transition: width 0.3s ease, background 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
 }
 </style>

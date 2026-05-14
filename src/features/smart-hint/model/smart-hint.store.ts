@@ -8,7 +8,7 @@ export const useSmartHintStore = defineStore('smartHint', () => {
   const hintsLeft = ref(0)
   const isLoading = ref(false)
   const boardStore = useBoardStore()
-  
+
   // Track the FEN for which the hint was requested to avoid race conditions
   const lastRequestedFen = ref<string | null>(null)
 
@@ -27,7 +27,7 @@ export const useSmartHintStore = defineStore('smartHint', () => {
 
     try {
       const lines = await analysisService.calculateFixedDepth(fen, 12, 3)
-      
+
       // Check for race condition: did the user move while we were calculating?
       if (boardStore.fen !== fen || lastRequestedFen.value !== fen) {
         return
@@ -35,7 +35,7 @@ export const useSmartHintStore = defineStore('smartHint', () => {
 
       if (lines && lines.length > 0) {
         hintsLeft.value -= 1
-        
+
         const shapes = lines
           .map((line) => {
             const moveUci = line.pvUci[0]
@@ -43,7 +43,7 @@ export const useSmartHintStore = defineStore('smartHint', () => {
             return {
               orig: moveUci.substring(0, 2) as Key,
               dest: moveUci.substring(2, 4) as Key,
-              brush: 'blue' // a neutral color
+              brush: 'blue', // a neutral color
             }
           })
           .filter((shape): shape is NonNullable<typeof shape> => shape !== null)
@@ -67,21 +67,24 @@ export const useSmartHintStore = defineStore('smartHint', () => {
   }
 
   // Watch for board FEN changes to clear hints and cancel active requests
-  watch(() => boardStore.fen, (newFen, oldFen) => {
-    if (newFen !== oldFen) {
-      if (lastRequestedFen.value !== null) {
-        if (lastRequestedFen.value === oldFen) {
-          lastRequestedFen.value = null // Cancel active request logically
+  watch(
+    () => boardStore.fen,
+    (newFen, oldFen) => {
+      if (newFen !== oldFen) {
+        if (lastRequestedFen.value !== null) {
+          if (lastRequestedFen.value === oldFen) {
+            lastRequestedFen.value = null // Cancel active request logically
+          }
+          boardStore.setDrawableShapes([]) // Clear any visible hint shapes
         }
-        boardStore.setDrawableShapes([]) // Clear any visible hint shapes
       }
-    }
-  })
+    },
+  )
 
   return {
     hintsLeft,
     isLoading,
     resetHints,
-    requestHint
+    requestHint,
   }
 })

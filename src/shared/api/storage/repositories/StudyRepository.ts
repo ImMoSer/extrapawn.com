@@ -72,16 +72,20 @@ export class StudyRepository {
     return metaMap
   }
 
-  private injectMetadata(node: PgnNode, metaMap: Map<string, Record<string, unknown>>, currentPath: string = ''): void {
+  private injectMetadata(
+    node: PgnNode,
+    metaMap: Map<string, Record<string, unknown>>,
+    currentPath: string = '',
+  ): void {
     const nodePath = node.id === '__ROOT__' ? '' : currentPath + node.id
     const meta = metaMap.get(nodePath)
-    
+
     if (meta) {
       node.metadata = { ...node.metadata, ...meta }
     }
 
     if (node.children) {
-      node.children.forEach(child => {
+      node.children.forEach((child) => {
         const nextPath = node.id === '__ROOT__' ? '' : nodePath
         this.injectMetadata(child, metaMap, nextPath)
       })
@@ -90,7 +94,8 @@ export class StudyRepository {
 
   async getAllStudies(): Promise<Study[]> {
     try {
-      const rows = await databaseClient.query<RawStudyRow>('user',
+      const rows = await databaseClient.query<RawStudyRow>(
+        'user',
         'SELECT * FROM studies ORDER BY order_index ASC',
       )
       return rows.map((r) => ({
@@ -108,8 +113,9 @@ export class StudyRepository {
   async saveStudy(study: Study): Promise<boolean> {
     try {
       const raw = toRaw(study)
-      await databaseClient.batch('user', [{
-        sql: `
+      await databaseClient.batch('user', [
+        {
+          sql: `
           INSERT INTO studies (id, title, chapterIds, lichessId, type, order_index)
           VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET
@@ -119,15 +125,16 @@ export class StudyRepository {
             type        = excluded.type,
             order_index = excluded.order_index
         `,
-        params: [
-          raw.id,
-          raw.title,
-          JSON.stringify(raw.chapterIds),
-          raw.lichessId ?? null,
-          raw.type ?? null,
-          raw.order_index ?? 0
-        ]
-      }])
+          params: [
+            raw.id,
+            raw.title,
+            JSON.stringify(raw.chapterIds),
+            raw.lichessId ?? null,
+            raw.type ?? null,
+            raw.order_index ?? 0,
+          ],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {
@@ -139,10 +146,8 @@ export class StudyRepository {
 
   async getAllChapters(): Promise<StudyChapter[]> {
     try {
-      const rows = await databaseClient.query<RawChapterRow>('user',
-        'SELECT * FROM chapters',
-      )
-      
+      const rows = await databaseClient.query<RawChapterRow>('user', 'SELECT * FROM chapters')
+
       const chapters: StudyChapter[] = []
       for (const r of rows) {
         const importResult = pgnParserService.parse(r.pgn_text)
@@ -150,23 +155,28 @@ export class StudyRepository {
 
         let metaRows: RawMetadataRow[] = []
         try {
-          metaRows = await databaseClient.query<RawMetadataRow>('user',
+          metaRows = await databaseClient.query<RawMetadataRow>(
+            'user',
             'SELECT node_path, metadata FROM node_metadata WHERE chapter_id = ?',
-            [r.id]
+            [r.id],
           )
         } catch (err) {
           if (!(err instanceof DbNotOpenError)) {
             logger.error(`[StudyRepository] Failed to get node_metadata for chapter ${r.id}`, err)
           }
         }
-        
+
         const metaMap = new Map<string, Record<string, unknown>>()
-        metaRows.forEach(row => {
-          try { metaMap.set(row.node_path, JSON.parse(row.metadata) as Record<string, unknown>) } catch { /* ignore corrupted meta */ }
+        metaRows.forEach((row) => {
+          try {
+            metaMap.set(row.node_path, JSON.parse(row.metadata) as Record<string, unknown>)
+          } catch {
+            /* ignore corrupted meta */
+          }
         })
 
         this.injectMetadata(importResult.root, metaMap)
-        
+
         const config = JSON.parse(r.config ?? '{}') as Partial<StudyChapter>
 
         chapters.push({
@@ -193,11 +203,12 @@ export class StudyRepository {
 
   async getChapterById(id: string): Promise<StudyChapter | null> {
     try {
-      const rows = await databaseClient.query<RawChapterRow>('user',
+      const rows = await databaseClient.query<RawChapterRow>(
+        'user',
         'SELECT * FROM chapters WHERE id = ?',
-        [id]
+        [id],
       )
-      
+
       if (rows.length === 0) return null
       const r = rows[0]!
 
@@ -206,19 +217,24 @@ export class StudyRepository {
 
       let metaRows: RawMetadataRow[] = []
       try {
-        metaRows = await databaseClient.query<RawMetadataRow>('user',
+        metaRows = await databaseClient.query<RawMetadataRow>(
+          'user',
           'SELECT node_path, metadata FROM node_metadata WHERE chapter_id = ?',
-          [r.id]
+          [r.id],
         )
       } catch (err) {
         if (!(err instanceof DbNotOpenError)) {
           logger.error(`[StudyRepository] Failed to get node_metadata for chapter ${r.id}`, err)
         }
       }
-      
+
       const metaMap = new Map<string, Record<string, unknown>>()
-      metaRows.forEach(row => {
-        try { metaMap.set(row.node_path, JSON.parse(row.metadata) as Record<string, unknown>) } catch { /* ignore */ }
+      metaRows.forEach((row) => {
+        try {
+          metaMap.set(row.node_path, JSON.parse(row.metadata) as Record<string, unknown>)
+        } catch {
+          /* ignore */
+        }
       })
 
       this.injectMetadata(importResult.root, metaMap)
@@ -279,22 +295,22 @@ export class StudyRepository {
           JSON.stringify(raw.tags),
           raw.savedPath,
           config,
-          pgnText
-        ]
+          pgnText,
+        ],
       })
 
       statements.push({
         sql: 'DELETE FROM node_metadata WHERE chapter_id = ?',
-        params: [raw.id]
+        params: [raw.id],
       })
-      
+
       for (const [nodePath, metadata] of metaMap.entries()) {
         statements.push({
           sql: `
             INSERT INTO node_metadata (chapter_id, node_path, metadata)
             VALUES (?, ?, ?)
           `,
-          params: [raw.id, nodePath, metadata]
+          params: [raw.id, nodePath, metadata],
         })
       }
 
@@ -308,13 +324,17 @@ export class StudyRepository {
     }
   }
 
-  async updateNodeMetadata(chapterId: string, nodePath: string, metadata: Record<string, unknown> | null): Promise<boolean> {
+  async updateNodeMetadata(
+    chapterId: string,
+    nodePath: string,
+    metadata: Record<string, unknown> | null,
+  ): Promise<boolean> {
     try {
       const statements: Statement[] = []
       if (!metadata || Object.keys(metadata).length === 0) {
         statements.push({
           sql: 'DELETE FROM node_metadata WHERE chapter_id = ? AND node_path = ?',
-          params: [chapterId, nodePath]
+          params: [chapterId, nodePath],
         })
       } else {
         statements.push({
@@ -324,11 +344,7 @@ export class StudyRepository {
             ON CONFLICT(chapter_id, node_path) DO UPDATE SET
               metadata = excluded.metadata
           `,
-          params: [
-            chapterId,
-            nodePath,
-            JSON.stringify(metadata)
-          ]
+          params: [chapterId, nodePath, JSON.stringify(metadata)],
         })
       }
       await databaseClient.batch('user', statements)
@@ -344,7 +360,7 @@ export class StudyRepository {
   async deleteChapter(id: string): Promise<boolean> {
     try {
       await databaseClient.batch('user', [
-        { sql: 'DELETE FROM chapters WHERE id = ?', params: [id] }
+        { sql: 'DELETE FROM chapters WHERE id = ?', params: [id] },
       ])
       return true
     } catch (err) {
@@ -358,7 +374,7 @@ export class StudyRepository {
   async deleteStudy(id: string): Promise<boolean> {
     try {
       await databaseClient.batch('user', [
-        { sql: 'DELETE FROM studies WHERE id = ?', params: [id] }
+        { sql: 'DELETE FROM studies WHERE id = ?', params: [id] },
       ])
       return true
     } catch (err) {

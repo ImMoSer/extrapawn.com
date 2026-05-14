@@ -51,7 +51,9 @@ class TablebaseServiceController {
     const now = Date.now()
     if (now < this.cooldownUntil) {
       const waitSec = Math.ceil((this.cooldownUntil - now) / 1000)
-      logger.warn(`[TablebaseService] Request ignored: API Cooldown active (${waitSec}s remaining).`)
+      logger.warn(
+        `[TablebaseService] Request ignored: API Cooldown active (${waitSec}s remaining).`,
+      )
       return null
     }
 
@@ -63,7 +65,9 @@ class TablebaseServiceController {
       const response = await fetch(url)
 
       if (response.status === 429) {
-        logger.error('[TablebaseService] HTTP 429: Too many requests. Activating 1-minute cooldown.')
+        logger.error(
+          '[TablebaseService] HTTP 429: Too many requests. Activating 1-minute cooldown.',
+        )
         this.cooldownUntil = Date.now() + 60000
         return null
       }
@@ -73,7 +77,7 @@ class TablebaseServiceController {
       }
 
       const data = await response.json()
-      
+
       // 2. Save to Cache
       if (this.cache.size >= this.MAX_CACHE_SIZE) {
         const oldestKey = this.cache.keys().next().value

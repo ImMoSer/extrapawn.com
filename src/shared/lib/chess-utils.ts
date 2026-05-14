@@ -8,11 +8,11 @@ export function normalizeUciMove(uci: string): string {
 
   const CASTLING_MAP: Record<string, string> = {
     // White
-    'e1h1': 'e1g1', // O-O
-    'e1a1': 'e1c1', // O-O-O
+    e1h1: 'e1g1', // O-O
+    e1a1: 'e1c1', // O-O-O
     // Black
-    'e8h8': 'e8g8', // o-o
-    'e8a8': 'e8c8', // o-o-o
+    e8h8: 'e8g8', // o-o
+    e8a8: 'e8c8', // o-o-o
   }
 
   return CASTLING_MAP[uci] || uci

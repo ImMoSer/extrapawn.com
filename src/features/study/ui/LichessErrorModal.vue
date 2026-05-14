@@ -36,7 +36,7 @@ const displayMessage = computed(() => {
       <NIcon size="48" color="#ff4757">
         <AlertCircleOutline />
       </NIcon>
-      
+
       <div style="text-align: center">
         <NText depth="3" style="font-size: 0.9em; display: block; margin-bottom: 8px">
           {{ t('common.status.label') }}: {{ status || t('common.status.unknown') }}

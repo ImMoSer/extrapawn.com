@@ -3,11 +3,7 @@ import logger from '@/shared/lib/logger'
 import { pgnService, pgnTreeVersion, type PgnNode, NAG_MAPPING } from '@/shared/lib/pgn/PgnService'
 import { soundService } from '@/shared/lib/sound.service'
 import type { DrawShape } from '@lichess-org/chessground/draw'
-import type {
-  Color as ChessgroundColor,
-  Dests,
-  Key
-} from '@lichess-org/chessground/types'
+import type { Color as ChessgroundColor, Dests, Key } from '@lichess-org/chessground/types'
 import { Chess } from 'chessops/chess'
 import { chessgroundDests } from 'chessops/compat'
 import { makeFen, parseFen } from 'chessops/fen'
@@ -50,7 +46,9 @@ export const useBoardStore = defineStore('board', () => {
   const chessPosition = shallowRef(Chess.fromSetup(parseFen(fen.value).unwrap()).unwrap())
 
   const turn = computed(() => chessPosition.value.turn)
-  const dests = computed<Dests>(() => chessgroundDests(toRaw(chessPosition.value) as unknown as Position))
+  const dests = computed<Dests>(() =>
+    chessgroundDests(toRaw(chessPosition.value) as unknown as Position),
+  )
   const lastMove = ref<[Key, Key] | undefined>(undefined)
   const isCheck = computed(() => chessPosition.value.isCheck())
   const orientation = ref<ChessgroundColor>('white')
@@ -129,11 +127,17 @@ export const useBoardStore = defineStore('board', () => {
       return
     }
 
-    if (san.includes('=') || san.includes('Q') || san.includes('R') || san.includes('B') || san.includes('N')) {
-       // Simple check for promotion in SAN if it follows standard notation
-       if (san.includes('=')) {
-         soundService.playSound('board_promote')
-       }
+    if (
+      san.includes('=') ||
+      san.includes('Q') ||
+      san.includes('R') ||
+      san.includes('B') ||
+      san.includes('N')
+    ) {
+      // Simple check for promotion in SAN if it follows standard notation
+      if (san.includes('=')) {
+        soundService.playSound('board_promote')
+      }
     }
 
     if (san.includes('O-O')) {
@@ -167,10 +171,7 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
-  function _playSoundsForMove(
-    move: ChessopsMove,
-    san: string,
-  ): void {
+  function _playSoundsForMove(move: ChessopsMove, san: string): void {
     // Enable sounds for Study Mode (Analysis Mode)
     // if (isAnalysisModeActive.value) return
 
@@ -223,7 +224,7 @@ export const useBoardStore = defineStore('board', () => {
 
   function _applyUciMove(uci: string): boolean {
     logger.info(`[_applyUciMove] Attempting to apply UCI: ${uci}`)
-    
+
     // Clear last NAG when a new move is applied
     lastNag.value = null
 
@@ -432,11 +433,14 @@ export const useBoardStore = defineStore('board', () => {
 
   function setDrawableShapes(shapes: DrawShape[]) {
     drawableShapes.value = shapes
-    
+
     // Sync to PGN comment
     const currentNode = pgnService.getCurrentNode()
     if (currentNode) {
-      pgnService.updateCommentShapes(currentNode, shapes as Parameters<typeof pgnService.updateCommentShapes>[1])
+      pgnService.updateCommentShapes(
+        currentNode,
+        shapes as Parameters<typeof pgnService.updateCommentShapes>[1],
+      )
     }
   }
 
@@ -482,7 +486,7 @@ export const useBoardStore = defineStore('board', () => {
         else pgnService.navigateForward()
 
         const skipResult = syncBoardWithPgn()
-        
+
         // Play sound again for the skipped move if board changed
         if (skipResult.isChanged) {
           _playNavigationSound(skipResult.lastPgnMove?.san)

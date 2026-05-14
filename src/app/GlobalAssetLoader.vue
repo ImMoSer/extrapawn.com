@@ -37,7 +37,7 @@ async function preloadAssets() {
   logger.info('[LoaderProfiler] Starting background asset loading sequence...')
   hasError.value = false
   errorMessage.value = ''
-  
+
   // Show minimal overlay if loading takes more than 300ms
   const uiTimer = setTimeout(() => {
     if (!isReady.value && !hasError.value) showLoaderUI.value = true
@@ -59,7 +59,9 @@ async function preloadAssets() {
     isReady.value = true
     clearTimeout(uiTimer)
     emit('ready')
-    logger.info(`[LoaderProfiler] Cabinet partially ready after ${(performance.now() - tTotalStart).toFixed(2)}ms.`)
+    logger.info(
+      `[LoaderProfiler] Cabinet partially ready after ${(performance.now() - tTotalStart).toFixed(2)}ms.`,
+    )
 
     // 3. Multi-Thread Engine (Secondary)
     logger.info('[LoaderProfiler] Step 3/4: Loading Multi-Thread Engine...')
@@ -69,13 +71,14 @@ async function preloadAssets() {
     // 4. Background Audio Assets (Final Step)
     logger.info('[LoaderProfiler] Step 4/4: Triggering background Audio Cache...')
     // We only put them in the Cache API. We do NOT preload all HTMLAudioElements in memory anymore.
-    loadAssetGroup(SOUND_ASSETS).catch(e => logger.warn('Audio cache failed:', e))
-    
+    loadAssetGroup(SOUND_ASSETS).catch((e) => logger.warn('Audio cache failed:', e))
+
     progress.value = 100
 
     // Background warming
-    useAnalysisEngineStore().initialize().catch(e => logger.warn('Engine warming failed:', e))
-
+    useAnalysisEngineStore()
+      .initialize()
+      .catch((e) => logger.warn('Engine warming failed:', e))
   } catch (error) {
     logger.error(`[LoaderProfiler] FATAL ERROR during background boot:`, error)
     hasError.value = true
@@ -92,7 +95,7 @@ async function loadAssetGroup(urls: string[]) {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Failed to load ${url}: ${response.status}`)
     await cache.put(url, response.clone())
-    
+
     const reader = response.body?.getReader()
     if (reader) {
       while (true) {
@@ -134,13 +137,13 @@ onMounted(() => {
   <!-- Global Error Overlay -->
   <Teleport to="body">
     <div v-if="hasError" class="error-overlay">
-       <div class="loader-content webview-blocker">
+      <div class="loader-content webview-blocker">
         <img src="/png/extra_pawn_black.png" alt="Logo" class="loader-logo static" />
         <h2 class="loader-title error-text">{{ t('common.actions.error') }}</h2>
         <p class="loader-text">
           {{ t('app.globalLoader.error') }}
         </p>
-        <p v-if="errorMessage" class="loader-hint" style="margin-bottom: 20px; color: #ff4d4f;">
+        <p v-if="errorMessage" class="loader-hint" style="margin-bottom: 20px; color: #ff4d4f">
           {{ errorMessage }}
         </p>
         <button @click="preloadAssets" class="copy-button">
@@ -233,10 +236,20 @@ onMounted(() => {
   z-index: 11000;
 }
 
-@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
 .loader-content {
   display: flex;

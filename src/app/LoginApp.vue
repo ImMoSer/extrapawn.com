@@ -35,11 +35,29 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
       </button>
 
       <div class="lang-switcher">
-        <button class="lang-btn" :class="{ active: locale === 'en' }" @click="handleChangeLang('en')">EN</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'en' }"
+          @click="handleChangeLang('en')"
+        >
+          EN
+        </button>
         <span class="lang-divider">|</span>
-        <button class="lang-btn" :class="{ active: locale === 'ru' }" @click="handleChangeLang('ru')">RU</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'ru' }"
+          @click="handleChangeLang('ru')"
+        >
+          RU
+        </button>
         <span class="lang-divider">|</span>
-        <button class="lang-btn" :class="{ active: locale === 'de' }" @click="handleChangeLang('de')">DE</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'de' }"
+          @click="handleChangeLang('de')"
+        >
+          DE
+        </button>
       </div>
     </div>
   </div>

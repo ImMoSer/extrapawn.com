@@ -1,6 +1,9 @@
-
 import { globalCacheRepository } from '@/shared/api/storage/repositories/GlobalCacheRepository'
-import { lichessApiService, type LichessOpeningResponse, type LichessParams } from './LichessApiService'
+import {
+  lichessApiService,
+  type LichessOpeningResponse,
+  type LichessParams,
+} from './LichessApiService'
 import { mozerBookService, type MozerBookResponse } from './MozerBookService'
 
 export interface TheoryStats {
@@ -26,9 +29,9 @@ class TheoryRepository {
     source: CacheSource = 'lichess',
   ): Promise<T | null> {
     try {
-      const record = await globalCacheRepository.getTheoryStat(fen, source);
+      const record = await globalCacheRepository.getTheoryStat(fen, source)
       if (record) {
-          return record.data as T;
+        return record.data as T
       }
     } catch (error) {
       console.error(`[TheoryRepository] Error reading from cache (${source}):`, error)
@@ -44,19 +47,19 @@ class TheoryRepository {
   ): Promise<void> {
     try {
       await globalCacheRepository.saveTheoryStat({
-          fen_key: fen,
-          source: source,
-          data: data,
-          expires: Date.now() + this.CACHE_TTL
-      });
+        fen_key: fen,
+        source: source,
+        data: data,
+        expires: Date.now() + this.CACHE_TTL,
+      })
     } catch (error) {
       console.error(`[TheoryRepository] Error writing to cache (${source}):`, error)
     }
   }
 
   async clearCache(): Promise<void> {
-      // Not implemented in repository yet, but could be added if needed
-      // For now we don't clear global cache often
+    // Not implemented in repository yet, but could be added if needed
+    // For now we don't clear global cache often
   }
 
   private toCleanFen(fen: string): string {
@@ -64,7 +67,10 @@ class TheoryRepository {
   }
 
   // --- Mozer Book ---
-  async getMozerBookStats(fen: string, options: { skipDebounce?: boolean } = {}): Promise<MozerBookResponse | null> {
+  async getMozerBookStats(
+    fen: string,
+    options: { skipDebounce?: boolean } = {},
+  ): Promise<MozerBookResponse | null> {
     const cleanFen = this.toCleanFen(fen)
     const cacheSource = 'mozerBook'
 
@@ -84,7 +90,7 @@ class TheoryRepository {
 
         if (!options.skipDebounce) {
           // Debounce network requests by 350ms
-          await new Promise(resolve => setTimeout(resolve, 350))
+          await new Promise((resolve) => setTimeout(resolve, 350))
           if (this.latestMozerFenRequest !== cleanFen) {
             this.activeMozerRequests.delete(cleanFen)
             return null
@@ -146,7 +152,7 @@ class TheoryRepository {
 
         if (!options.skipDebounce) {
           // Debounce network requests by 350ms
-          await new Promise(resolve => setTimeout(resolve, 350))
+          await new Promise((resolve) => setTimeout(resolve, 350))
           if (this.latestLichessCacheKeyRequest !== cacheKey) {
             this.activeLichessRequests.delete(cacheKey)
             return null

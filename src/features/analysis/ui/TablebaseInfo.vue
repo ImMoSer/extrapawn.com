@@ -14,10 +14,10 @@ const { t } = useI18n()
 const winner = computed(() => {
   if (!result.value || boardStore.fen !== tablebaseStore.lastFetchedFen) return null
   if (result.value.winner) return result.value.winner
-  
+
   const category = result.value.category
   const turn = boardStore.turn // 'white' | 'black'
-  
+
   // Normal wins/losses
   if (category === 'win' || category === 'maybe_win') {
     return turn === 'white' ? 'w' : 'b'
@@ -25,34 +25,34 @@ const winner = computed(() => {
   if (category === 'loss' || category === 'maybe_loss') {
     return turn === 'white' ? 'b' : 'w'
   }
-  
+
   // Cursed wins and blessed losses are draws under the 50-move rule
   if (category === 'draw' || category === 'cursed_win' || category === 'blessed_loss') {
     return 'd'
   }
-  
+
   return null
 })
 
 const outcomeText = computed(() => {
   if (!result.value || !winner.value) return ''
-  
+
   const dtm = result.value.dtm
-  
+
   // 1. Check for Mate path (DTM)
   if (dtm !== undefined && dtm !== null) {
     const moves = Math.ceil(Math.abs(dtm) / 2)
     if (winner.value === 'w') return t('features.analysis.tablebase.whiteMatesIn', { moves })
     if (winner.value === 'b') return t('features.analysis.tablebase.blackMatesIn', { moves })
   }
-  
+
   // 2. Fallback to Winner (if win/loss known but no DTM)
   if (winner.value === 'w') return t('features.analysis.tablebase.whiteWins')
   if (winner.value === 'b') return t('features.analysis.tablebase.blackWins')
-  
+
   // 3. Draw or unknown
   if (winner.value === 'd') return t('features.analysis.tablebase.draw')
-  
+
   return ''
 })
 
@@ -64,7 +64,7 @@ const bestMove = computed(() => {
 const outcomeType = computed(() => {
   if (!winner.value) return 'info'
   if (winner.value === 'w') return 'success' // Green
-  if (winner.value === 'b') return 'error'   // Red
+  if (winner.value === 'b') return 'error' // Red
   if (winner.value === 'd') return 'warning' // Gold/Yellow
   return 'info'
 })
@@ -78,27 +78,25 @@ const handleMoveClick = (uci: string) => {
 
 <template>
   <transition name="fade-slide">
-    <div v-if="isTablebaseAvailable && result && boardStore.fen === lastFetchedFen" class="tablebase-container">
+    <div
+      v-if="isTablebaseAvailable && result && boardStore.fen === lastFetchedFen"
+      class="tablebase-container"
+    >
       <div class="tablebase-card">
         <div class="tb-header">
           <div class="outcome-badge" :class="outcomeType">
             <span class="dot"></span>
             <span class="text">{{ outcomeText }}</span>
           </div>
-          
+
           <div v-if="isLoading" class="loading-mini">
-             <div class="pulse"></div>
+            <div class="pulse"></div>
           </div>
         </div>
 
         <div v-if="bestMove" class="tb-best-move">
           <n-text depth="3" class="label">{{ t('features.analysis.tablebase.bestMove') }}:</n-text>
-          <n-button
-            quaternary
-            size="tiny"
-            class="move-btn"
-            @click="handleMoveClick(bestMove.uci)"
-          >
+          <n-button quaternary size="tiny" class="move-btn" @click="handleMoveClick(bestMove.uci)">
             {{ bestMove.san }}
           </n-button>
         </div>
@@ -138,7 +136,7 @@ const handleMoveClick = (uci: string) => {
   gap: 8px;
   font-weight: 700;
   font-size: 0.9rem;
-  
+
   .dot {
     width: 8px;
     height: 8px;
@@ -148,17 +146,23 @@ const handleMoveClick = (uci: string) => {
 
   &.success {
     color: #4caf50; // White wins -> Green
-    .dot { background-color: #4caf50; }
+    .dot {
+      background-color: #4caf50;
+    }
   }
   &.error {
     color: #f44336; // Black wins -> Red
-    .dot { background-color: #f44336; }
+    .dot {
+      background-color: #f44336;
+    }
   }
   &.warning {
     color: #ffc107; // Draw -> Gold
-    .dot { background-color: #ffc107; }
+    .dot {
+      background-color: #ffc107;
+    }
   }
-  
+
   .dtm {
     font-size: 0.8rem;
     opacity: 0.8;
@@ -186,7 +190,7 @@ const handleMoveClick = (uci: string) => {
   font-family: monospace;
   font-weight: 600;
   --n-text-color: rgba(255, 255, 255, 0.8);
-  
+
   &:hover {
     --n-text-color: var(--neon-cyan) !important;
     background: rgba(0, 163, 255, 0.1) !important;
@@ -204,9 +208,18 @@ const handleMoveClick = (uci: string) => {
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.8); opacity: 0.5; }
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
 }
 
 .fade-slide-enter-active,

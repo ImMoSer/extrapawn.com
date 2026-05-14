@@ -48,14 +48,15 @@ const handleSaveStudy = async () => {
 const handleRevertStudy = () => {
   dialog.warning({
     title: 'Änderungen verwerfen',
-    content: 'Möchtest du wirklich alle ungespeicherten Änderungen verwerfen und zum letzten Speicherstand zurückkehren?',
+    content:
+      'Möchtest du wirklich alle ungespeicherten Änderungen verwerfen und zum letzten Speicherstand zurückkehren?',
     positiveText: 'Ja, verwerfen',
     negativeText: 'Abbrechen',
     onPositiveClick: () => {
       studyStore.revertActiveChapter()
       boardStore.syncBoardWithPgn()
       message.info('Änderungen verworfen.')
-    }
+    },
   })
 }
 
@@ -69,13 +70,16 @@ const pgnText = computed(() => {
   return pgnService.getFullPgn(tags)
 })
 
-watch(() => currentNode.value, (node) => {
-  if (node && node.comment) {
-    commentText.value = node.comment
-  } else {
-    commentText.value = ''
-  }
-})
+watch(
+  () => currentNode.value,
+  (node) => {
+    if (node && node.comment) {
+      commentText.value = node.comment
+    } else {
+      commentText.value = ''
+    }
+  },
+)
 
 const toggleTab = (tab: 'nag' | 'comment' | 'pgn') => {
   if (activeTab.value === tab) {
@@ -129,7 +133,7 @@ const currentNag = computed(() => currentNode.value?.nag || null)
 
 const toggleNag = (nagValue: number | null) => {
   if (!currentNode.value || currentNode.value.id === '__ROOT__') return
-  const newValue = (currentNag.value === nagValue || nagValue === null) ? undefined : nagValue
+  const newValue = currentNag.value === nagValue || nagValue === null ? undefined : nagValue
   pgnService.updateNode(currentNode.value, { nag: newValue })
 }
 
@@ -217,7 +221,7 @@ const handleCutBefore = () => {
   } else {
     pgnService.navigateToNode(newRoot)
   }
-  
+
   if (studyStore.activeChapter) {
     studyStore.activeChapter.root = newRoot
     studyStore.activeChapter.tags['FEN'] = newRootFen
@@ -234,28 +238,27 @@ const handleCutBefore = () => {
 
 <template>
   <div class="pgn-instruments-container" v-if="currentNode">
-    
     <!-- MAIN ROW -->
     <div class="instruments-main-row">
       <!-- Cut Before -->
-      <n-button 
-        size="small" 
-        @click="handleCutBefore" 
-        class="cut-before-btn" 
-        :disabled="!canEdit || !isMainline || currentNode.id === '__ROOT__'" 
+      <n-button
+        size="small"
+        @click="handleCutBefore"
+        class="cut-before-btn"
+        :disabled="!canEdit || !isMainline || currentNode.id === '__ROOT__'"
         title="Davor abschneiden"
       >
         <template #icon>
-          <n-icon style="transform: rotate(180deg);"><CutIcon /></n-icon>
+          <n-icon style="transform: rotate(180deg)"><CutIcon /></n-icon>
         </template>
       </n-button>
-      
+
       <!-- Cut After -->
-      <n-button 
-        size="small" 
-        @click="handleCutAfter" 
-        class="cut-after-btn" 
-        :disabled="!canEdit || currentNode.id === '__ROOT__'" 
+      <n-button
+        size="small"
+        @click="handleCutAfter"
+        class="cut-after-btn"
+        :disabled="!canEdit || currentNode.id === '__ROOT__'"
         title="Ab hier schneiden"
       >
         <template #icon>
@@ -268,7 +271,7 @@ const handleCutBefore = () => {
       <!-- NAG Tab Button -->
       <n-button
         size="small"
-        :type="activeTab === 'nag' ? 'primary' : (currentNag ? 'info' : 'default')"
+        :type="activeTab === 'nag' ? 'primary' : currentNag ? 'info' : 'default'"
         @click="toggleTab('nag')"
         :disabled="currentNode.id === '__ROOT__'"
         title="NAGs anzeigen"
@@ -280,12 +283,14 @@ const handleCutBefore = () => {
       <!-- Comment Tab Button -->
       <n-button
         size="small"
-        :type="activeTab === 'comment' ? 'primary' : (currentNode.comment ? 'info' : 'default')"
+        :type="activeTab === 'comment' ? 'primary' : currentNode.comment ? 'info' : 'default'"
         @click="toggleTab('comment')"
         title="Kommentare anzeigen"
         class="tab-btn"
       >
-        <template #icon><n-icon><ChatboxEllipsesOutline /></n-icon></template>
+        <template #icon
+          ><n-icon><ChatboxEllipsesOutline /></n-icon
+        ></template>
       </n-button>
 
       <!-- PGN Tab Button -->
@@ -310,10 +315,12 @@ const handleCutBefore = () => {
         title="Alle Änderungen speichern"
         :class="{ 'save-btn': isDirty && canEdit }"
       >
-        <template #icon><n-icon><SaveIcon /></n-icon></template>
+        <template #icon
+          ><n-icon><SaveIcon /></n-icon
+        ></template>
         SAVE
       </n-button>
-      
+
       <!-- REVERT ACTION -->
       <n-button
         size="small"
@@ -322,15 +329,29 @@ const handleCutBefore = () => {
         title="Änderungen verwerfen (Reset)"
         class="revert-btn"
       >
-        <template #icon><n-icon><RevertIcon /></n-icon></template>
+        <template #icon
+          ><n-icon><RevertIcon /></n-icon
+        ></template>
       </n-button>
     </div>
 
     <!-- SECONDARY ROW -->
-    <div v-if="activeTab" class="instruments-sub-row" :class="{ 'flex-col': activeTab === 'comment' || activeTab === 'pgn' }">
+    <div
+      v-if="activeTab"
+      class="instruments-sub-row"
+      :class="{ 'flex-col': activeTab === 'comment' || activeTab === 'pgn' }"
+    >
       <!-- NAG Content -->
       <n-button-group v-if="activeTab === 'nag'" size="small">
-        <n-button size="small" @click="toggleNag(null)" ghost class="nag-btn" :disabled="!canEdit" title="NAG entfernen">X</n-button>
+        <n-button
+          size="small"
+          @click="toggleNag(null)"
+          ghost
+          class="nag-btn"
+          :disabled="!canEdit"
+          title="NAG entfernen"
+          >X</n-button
+        >
         <n-button
           v-for="nag in nagOptions"
           :key="nag.value"
@@ -359,14 +380,30 @@ const handleCutBefore = () => {
         <div class="comment-actions">
           <template v-if="canEdit">
             <n-button size="small" type="primary" @click="saveComment" title="Speichern">
-              <template #icon><n-icon><SaveIcon /></n-icon></template>
+              <template #icon
+                ><n-icon><SaveIcon /></n-icon
+              ></template>
             </n-button>
-            <n-button v-if="currentNode.comment || commentText" size="small" quaternary @click="removeComment" title="Kommentar löschen">
-              <template #icon><n-icon><TrashIcon /></n-icon></template>
+            <n-button
+              v-if="currentNode.comment || commentText"
+              size="small"
+              quaternary
+              @click="removeComment"
+              title="Kommentar löschen"
+            >
+              <template #icon
+                ><n-icon><TrashIcon /></n-icon
+              ></template>
             </n-button>
           </template>
-          <n-button size="small" @click="activeTab = null" :title="canEdit ? 'Zuklappen' : 'Schließen'">
-            <template #icon><n-icon><CollapseIcon v-if="canEdit" /><CloseIcon v-else /></n-icon></template>
+          <n-button
+            size="small"
+            @click="activeTab = null"
+            :title="canEdit ? 'Zuklappen' : 'Schließen'"
+          >
+            <template #icon
+              ><n-icon><CollapseIcon v-if="canEdit" /><CloseIcon v-else /></n-icon
+            ></template>
           </n-button>
         </div>
       </template>
@@ -383,13 +420,19 @@ const handleCutBefore = () => {
         />
         <div class="comment-actions">
           <n-button size="small" type="primary" @click="copyPgn" title="Kopieren">
-            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><CopyIcon /></n-icon
+            ></template>
           </n-button>
           <n-button size="small" @click="downloadPgn" title="Herunterladen">
-            <template #icon><n-icon><DownloadIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><DownloadIcon /></n-icon
+            ></template>
           </n-button>
           <n-button size="small" @click="activeTab = null" title="Schließen">
-            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><CloseIcon /></n-icon
+            ></template>
           </n-button>
         </div>
       </template>
@@ -510,8 +553,14 @@ const handleCutBefore = () => {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 5px var(--neon-cyan, #00f3ff); }
-  50% { box-shadow: 0 0 15px var(--neon-cyan, #00f3ff); }
-  100% { box-shadow: 0 0 5px var(--neon-cyan, #00f3ff); }
+  0% {
+    box-shadow: 0 0 5px var(--neon-cyan, #00f3ff);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--neon-cyan, #00f3ff);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--neon-cyan, #00f3ff);
+  }
 }
 </style>

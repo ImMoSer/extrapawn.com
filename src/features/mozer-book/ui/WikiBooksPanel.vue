@@ -83,7 +83,8 @@ const sanitizedContent = computed(() => {
           <div v-else class="state-container empty">
             <n-empty
               :description="
-                t('features.analysis.noTheoryFound') || 'No dedicated theory found for this position.'
+                t('features.analysis.noTheoryFound') ||
+                'No dedicated theory found for this position.'
               "
             >
               <template #extra>

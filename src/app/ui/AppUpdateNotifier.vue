@@ -8,5 +8,5 @@ useVersionUpdate()
 
 <template>
   <!-- No visual output, just background logic -->
-  <div style="display: none;" />
+  <div style="display: none" />
 </template>

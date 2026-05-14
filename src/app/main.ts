@@ -41,7 +41,10 @@ async function boot() {
   if (!authStore.isAuthenticated) {
     // Save the current path to redirect back after login
     if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-      localStorage.setItem('redirect_after_login', window.location.pathname + window.location.search)
+      localStorage.setItem(
+        'redirect_after_login',
+        window.location.pathname + window.location.search,
+      )
     }
 
     const LoginApp = (await import('./LoginApp.vue')).default
@@ -57,14 +60,14 @@ async function boot() {
   const App = (await import('./App.vue')).default
   const router = (await import('./router')).default
   const { setupErrorHandler } = await import('./lib/error-handler')
-  
+
   const app = createApp(App)
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
         retry: 1,
-        staleTime: 1000 * 60 * 5, 
+        staleTime: 1000 * 60 * 5,
       },
     },
   })

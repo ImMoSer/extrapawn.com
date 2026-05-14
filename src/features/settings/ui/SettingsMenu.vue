@@ -219,7 +219,9 @@ onUnmounted(() => {
           </div>
           <div class="animation-settings">
             <div class="setting-item">
-              <label for="animation-duration">{{ t('features.settings.animation.duration') }}</label>
+              <label for="animation-duration">{{
+                t('features.settings.animation.duration')
+              }}</label>
               <input
                 id="animation-duration"
                 type="range"

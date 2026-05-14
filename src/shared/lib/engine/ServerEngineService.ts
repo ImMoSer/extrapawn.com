@@ -4,8 +4,6 @@ import logger from '@/shared/lib/logger'
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL as string
 const SERVER_ENGINE_ENDPOINT = `${BACKEND_API_URL}/bestmove`
 
-
-
 export interface EvalLine {
   move_uci: string
   move_san?: string
@@ -59,9 +57,7 @@ export class ServerEngineServiceController {
     }
 
     this.isThinking = true
-    logger.info(
-      `[ServerEngineService] Requesting move for FEN: ${fen} using engine: ${engine}`,
-    )
+    logger.info(`[ServerEngineService] Requesting move for FEN: ${fen} using engine: ${engine}`)
     const startTime = performance.now()
 
     try {
@@ -75,9 +71,12 @@ export class ServerEngineServiceController {
       const url = `${SERVER_ENGINE_ENDPOINT}?${params.toString()}`
 
       // Combine signals if both exist
-      const combinedSignal = signal 
-        ? (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([internalController.signal, signal]) 
-        : internalController.signal;
+      const combinedSignal = signal
+        ? (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([
+            internalController.signal,
+            signal,
+          ])
+        : internalController.signal
 
       const response = await fetch(url, {
         method: 'GET',
@@ -102,7 +101,10 @@ export class ServerEngineServiceController {
       if (error instanceof Error && error.name === 'AbortError') {
         logger.warn(`[ServerEngineService] Request aborted after ${elapsed}ms.`)
       } else {
-        logger.error(`[ServerEngineService] Failed to fetch move from server after ${elapsed}ms:`, error)
+        logger.error(
+          `[ServerEngineService] Failed to fetch move from server after ${elapsed}ms:`,
+          error,
+        )
       }
       throw error
     } finally {
@@ -145,7 +147,6 @@ export class ServerEngineServiceController {
       throw error
     }
   }
-
 
   public terminate(): void {
     logger.info('[ServerEngineService] Terminate called (no-op for server implementation).')

@@ -1,7 +1,4 @@
-import {
-  type MozerBookMove,
-  type MozerBookTheoryItem,
-} from '@/entities/opening'
+import { type MozerBookMove, type MozerBookTheoryItem } from '@/entities/opening'
 
 export interface MozerBookMoveExtended extends MozerBookMove {
   children: MozerBookTheoryItem[]

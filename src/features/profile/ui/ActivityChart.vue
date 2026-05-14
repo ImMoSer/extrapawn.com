@@ -24,7 +24,11 @@ interface TooltipParam {
   }
 }
 
-import type { ActivityPeriodStats, PersonalActivityStatsResponse, ActivityHistoryEntry } from '@/shared/types/api.types'
+import type {
+  ActivityPeriodStats,
+  PersonalActivityStatsResponse,
+  ActivityHistoryEntry,
+} from '@/shared/types/api.types'
 
 const props = defineProps<{
   stats: PersonalActivityStatsResponse | null | undefined
@@ -46,7 +50,10 @@ onMounted(() => {
   canHover.value = window.matchMedia('(hover: hover)').matches
 })
 
-const aggregateActivity = (activities: ActivityHistoryEntry[], days: number): ActivityPeriodStats => {
+const aggregateActivity = (
+  activities: ActivityHistoryEntry[],
+  days: number,
+): ActivityPeriodStats => {
   const result: ActivityPeriodStats = {
     finish_him: { puzzles_requested: 0, puzzles_solved: 0 },
     tornado: { puzzles_requested: 0, puzzles_solved: 0 },
@@ -69,8 +76,8 @@ const aggregateActivity = (activities: ActivityHistoryEntry[], days: number): Ac
     if (activityDate >= cutoff) {
       const mode = activity.game_mode as keyof ActivityPeriodStats
       if (result[mode]) {
-        result[mode]!.puzzles_requested += (activity.costs_trigger || 0)
-        result[mode]!.puzzles_solved += (activity.puzzles_solved || 0)
+        result[mode]!.puzzles_requested += activity.costs_trigger || 0
+        result[mode]!.puzzles_solved += activity.puzzles_solved || 0
       }
     }
   }
@@ -97,10 +104,20 @@ const chartOption = computed(() => {
     { key: 'tornado', name: t('nav.tornado'), cost: 10, color: '#f39c12' },
     { key: 'finish_him', name: t('nav.finishHim'), cost: 10, color: '#42b883' },
     { key: 'practical-chess', name: t('nav.practicalChess'), cost: 5, color: '#3498db' },
-    { key: 'rep_generator', name: t('features.study.repertoireGenerator.title'), cost: 50, color: '#e74c3c' },
+    {
+      key: 'rep_generator',
+      name: t('features.study.repertoireGenerator.title'),
+      cost: 50,
+      color: '#e74c3c',
+    },
     { key: 'diamond-hunter', name: t('nav.diamondHunter'), cost: 25, color: '#1abc9c' },
     { key: 'opening-sparring', name: t('nav.openingExam'), cost: 25, color: '#e67e22' },
-    { key: 'study-reply', name: t('features.study.sidebar.replyTraining', 'Reply Training'), cost: 25, color: '#f1c40f' },
+    {
+      key: 'study-reply',
+      name: t('features.study.sidebar.replyTraining', 'Reply Training'),
+      cost: 25,
+      color: '#f1c40f',
+    },
     { key: 'speedrun', name: t('nav.speedrun'), cost: 25, color: '#8e44ad' },
   ] as const
 
@@ -171,15 +188,17 @@ const chartOption = computed(() => {
         type: 'bar',
         barWidth: 20,
         data: modes.map((m) => {
-          const requested = (periodData as ActivityPeriodStats)?.[m.key as keyof ActivityPeriodStats]?.puzzles_requested || 0
+          const requested =
+            (periodData as ActivityPeriodStats)?.[m.key as keyof ActivityPeriodStats]
+              ?.puzzles_requested || 0
           return {
             value: requested * m.cost,
             itemStyle: { color: m.color },
             requested: requested,
-            cost: m.cost
+            cost: m.cost,
           }
         }),
-      }
+      },
     ],
   }
 })

@@ -14,7 +14,7 @@ const modes = computed(() => [
   { label: t('features.tornado.modes.bullet'), value: 'bullet', icon: '⚡' },
   { label: t('features.tornado.modes.blitz'), value: 'blitz', icon: '🔥' },
   { label: t('features.tornado.modes.rapid'), value: 'rapid', icon: '🚶' },
-  { label: t('features.tornado.modes.classic'), value: 'classic', icon: '⏳' }
+  { label: t('features.tornado.modes.classic'), value: 'classic', icon: '⏳' },
 ])
 
 function handleStart() {
@@ -32,11 +32,7 @@ function handleStart() {
   >
     <template #sections>
       <div class="section">
-        <VisualRadioGroup
-          v-model:value="selectedCategory"
-          :options="modes"
-          :columns="2"
-        />
+        <VisualRadioGroup v-model:value="selectedCategory" :options="modes" :columns="2" />
       </div>
     </template>
   </BaseSelectionLayout>

@@ -85,11 +85,18 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
   const opponentRatingRange = ref<'1000-1499' | '1500-1799' | '1800-2200'>(
     savedRatingRange && validRanges.includes(savedRatingRange)
       ? (savedRatingRange as '1000-1499' | '1500-1799' | '1800-2200')
-      : '1000-1499'
+      : '1000-1499',
   )
 
-  const savedCharacter = localStorage.getItem('openingSparring.opponentCharacter') as 'none' | 'grossmaster' | 'hustler' | 'schuler' | null
-  const opponentCharacter = ref<'none' | 'grossmaster' | 'hustler' | 'schuler'>(savedCharacter || 'none')
+  const savedCharacter = localStorage.getItem('openingSparring.opponentCharacter') as
+    | 'none'
+    | 'grossmaster'
+    | 'hustler'
+    | 'schuler'
+    | null
+  const opponentCharacter = ref<'none' | 'grossmaster' | 'hustler' | 'schuler'>(
+    savedCharacter || 'none',
+  )
 
   const savedShowMozerBook = localStorage.getItem('openingSparring.showMozerBook')
   const showMozerBook = ref<boolean>(savedShowMozerBook !== 'false')
@@ -106,9 +113,6 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
     },
     { deep: true, immediate: true },
   )
-
-
-
 
   // Link UI state to the unified Theory Store
   const currentStats = computed(() => theoryStore.currentMozerStats)
@@ -148,7 +152,7 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
 
   async function startSparringMutation() {
     return apiClient<{ status: string }>('/opening/sparring/start', {
-      method: 'POST'
+      method: 'POST',
     })
   }
 
@@ -203,13 +207,12 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
         sessionStartFen,
         strategy,
         color,
-        true // keepPgn: true (we just built it)
+        true, // keepPgn: true (we just built it)
       )
 
       await theoryGraphService.loadBook()
-
     } catch (error) {
-       logger.error('[OpeningSparring] Initializing session failed', error)
+      logger.error('[OpeningSparring] Initializing session failed', error)
     } finally {
       isProcessingMove.value = false
       isInitializing.value = false
@@ -351,7 +354,7 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       const moveAccuracy = 100 * Math.exp(-0.025 * wpLoss)
 
       const chaos = m.chaos_index || 0
-      const moveWeight = 1.0 + (Math.min(chaos, 150) / 100)
+      const moveWeight = 1.0 + Math.min(chaos, 150) / 100
 
       totalWeightedAccuracy += moveAccuracy * moveWeight
       totalWeight += moveWeight
@@ -374,11 +377,7 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       opponent = gameStore.botEngineId || 'MAIA-2117'
     }
 
-    const badges = [
-      { text: 'SPARRING' },
-      { text: phase },
-      { text: opponent.toUpperCase() },
-    ]
+    const badges = [{ text: 'SPARRING' }, { text: phase }, { text: opponent.toUpperCase() }]
 
     const stats: TopInfoStat[] = []
     if (!isPlayoutMode.value) {
@@ -399,7 +398,8 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       }
       const evaluationValue =
         evalMove && evalMove.evaluation ? (evalMove.evaluation.score_cp / 100).toFixed(1) : '0.0'
-      const formattedEval = parseFloat(evaluationValue) >= 0 ? `+${evaluationValue}` : evaluationValue
+      const formattedEval =
+        parseFloat(evaluationValue) >= 0 ? `+${evaluationValue}` : evaluationValue
 
       stats.push(
         { value: `ACCURACY (${playerAccuracy.value}%)`, label: 'ACCURACY' },

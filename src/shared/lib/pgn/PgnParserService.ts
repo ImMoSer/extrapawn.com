@@ -26,7 +26,7 @@ export class PgnParserService {
     const tokens = this.tokenize(moveText)
 
     const startFen = tags['FEN'] || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    
+
     // Strict Variant check: allow Standard and From Position
     const variantTag = tags['Variant'] || tags['variant']
     const allowedVariants = ['standard', 'from position']
@@ -34,7 +34,7 @@ export class PgnParserService {
       console.warn(`[PgnParserService] Skipping chapter due to unsupported Variant: ${variantTag}`)
       return null
     }
-    
+
     // Strict FEN validation
     try {
       const setup = parseFen(startFen).unwrap()
@@ -68,17 +68,17 @@ export class PgnParserService {
     if ('from' in move && 'to' in move) {
       const piece = pos.board.get(move.from)
       const targetPiece = pos.board.get(move.to)
-      
+
       // Standard rule: if King captures a friendly piece (Rook in chessops), it is Castling
       if (piece?.role === 'king' && targetPiece && piece.color === targetPiece.color) {
         const fileFrom = move.from % 8
         const rankFrom = Math.floor(move.from / 8)
         const fileTo = move.to % 8
-        
+
         const isKingside = fileTo > fileFrom
         const targetFile = isKingside ? 6 : 2 // 'g' = 6, 'c' = 2
-        
-        const destSquare = (rankFrom * 8) + targetFile
+
+        const destSquare = rankFrom * 8 + targetFile
         return makeUci({ from: move.from, to: destSquare, promotion: move.promotion })
       }
     }
@@ -115,7 +115,10 @@ export class PgnParserService {
   public cleanComment(comment: string): string {
     // Remove [%cal ...] and [%csl ...] from the visible comment text
     // Handle multiple occurrences and potential case differences
-    return comment.replace(/\[%(cal|csl)\s+[^\]]*\]/gi, '').replace(/\s\s+/g, ' ').trim()
+    return comment
+      .replace(/\[%(cal|csl)\s+[^\]]*\]/gi, '')
+      .replace(/\s\s+/g, ' ')
+      .trim()
   }
 
   public parseShapes(comment: string): DrawShape[] | undefined {
@@ -136,14 +139,14 @@ export class PgnParserService {
       if (!type || content === undefined) continue
 
       const items = content.split(',')
-      
+
       for (const item of items) {
         const trimmed = item.trim()
         if (trimmed.length < 3) continue
-        
+
         const key = trimmed[0]?.toUpperCase()
         if (!key) continue
-        
+
         const brush = brushMap[key]
         if (!brush) continue
 
@@ -187,11 +190,11 @@ export class PgnParserService {
         // Variation start: push current node and clone the board state
         nodeStack.push(currentNode)
         posStack.push(currentPos.clone())
-        
+
         if (currentNode.parent) {
           currentNode = currentNode.parent
         }
-        
+
         const setup = parseFen(currentNode.fenAfter).unwrap()
         currentPos = Chess.fromSetup(setup).unwrap()
       } else if (token === ')') {
@@ -225,13 +228,13 @@ export class PgnParserService {
         if (move) {
           const uci = this.getStandardUci(move, currentPos)
           const fenBefore = currentNode.fenAfter
-          
+
           // Fast execute move
           currentPos.play(move)
           const fenAfter = makeFen(currentPos.toSetup())
 
           let nextNode = currentNode.children.find((c) => c.san === token)
-          
+
           if (!nextNode) {
             const moveData = parseUci(uci)
             const nodeId = moveData
@@ -250,7 +253,7 @@ export class PgnParserService {
             }
             currentNode.children.push(nextNode)
           }
-          
+
           currentNode = nextNode
         } else {
           throw new Error(`Invalid move: ${token}`)
@@ -258,8 +261,6 @@ export class PgnParserService {
       }
     }
   }
-
 }
 
 export const pgnParserService = new PgnParserService()
-

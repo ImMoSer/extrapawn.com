@@ -49,7 +49,9 @@ export class TrainingController {
 
     const matchingChild = children.find((c) => c.uci.startsWith(uciPrefix))
 
-    logger.info(`[TrainingController] User played ${orig}-${dest}. Normalized to ${uciPrefix}. Valid children: ${children.map(c => c.uci).join(', ')}`)
+    logger.info(
+      `[TrainingController] User played ${orig}-${dest}. Normalized to ${uciPrefix}. Valid children: ${children.map((c) => c.uci).join(', ')}`,
+    )
 
     if (matchingChild) {
       logger.info(`[TrainingController] Correct Move! Matched child node ID: ${matchingChild.id}`)
@@ -77,7 +79,9 @@ export class TrainingController {
 
       return true // Intercept entirely! Do not pass to boardStore.handleAnalysisMove
     } else {
-      logger.warn(`[TrainingController] Incorrect Move. Played ${uciPrefix}, but expected one of: ${children.map(c => c.uci).join(', ')}`)
+      logger.warn(
+        `[TrainingController] Incorrect Move. Played ${uciPrefix}, but expected one of: ${children.map((c) => c.uci).join(', ')}`,
+      )
       // Move not in repertoire
       this.trainingStore.variantStats.wrong++
       this.sessionMistakes++ // Unkraut wächst!
@@ -128,17 +132,19 @@ export class TrainingController {
 
     const training = currentNode.metadata.training
     if (training.mastery === undefined) {
-      training.mastery = training.attempts > 0 ? (training.successes / training.attempts) : 0
+      training.mastery = training.attempts > 0 ? training.successes / training.attempts : 0
     }
 
-    training.mastery = (alpha * (1.0 - errorRate)) + ((1.0 - alpha) * training.mastery)
+    training.mastery = alpha * (1.0 - errorRate) + (1.0 - alpha) * training.mastery
     training.lastTrained = Date.now()
     training.attempts = (training.attempts || 0) + 1
     if (this.sessionMistakes === 0) {
-        training.successes = (training.successes || 0) + 1
+      training.successes = (training.successes || 0) + 1
     }
 
-    logger.info(`[TrainingController] Variation ended. Line <${currentNode.id}> Jäten finished. Mistakes: ${this.sessionMistakes}/${N}. Mastery updated to: ${(training.mastery * 100).toFixed(1)}%`)
+    logger.info(
+      `[TrainingController] Variation ended. Line <${currentNode.id}> Jäten finished. Mistakes: ${this.sessionMistakes}/${N}. Mastery updated to: ${(training.mastery * 100).toFixed(1)}%`,
+    )
 
     pgnService.updateNode(currentNode, { metadata: { ...currentNode.metadata } })
 
@@ -151,7 +157,9 @@ export class TrainingController {
     this.sessionMistakes = 0
 
     logger.info(`[TrainingController] Variation ended. Resetting to start.`)
-    message.success(i18n.global.t('features.study.replyTraining.variationFinished'), { duration: 2500 })
+    message.success(i18n.global.t('features.study.replyTraining.variationFinished'), {
+      duration: 2500,
+    })
 
     // Wait briefly then reset to start
     setTimeout(() => {
@@ -177,7 +185,9 @@ export class TrainingController {
     const chapterColor = this.studyStore.activeChapter?.color || 'white'
     const turn = this.boardStore.turn // 'white' | 'black'
 
-    logger.info(`[TrainingController] Checking opponent reply. Turn: ${turn}, UserColor: ${chapterColor}`)
+    logger.info(
+      `[TrainingController] Checking opponent reply. Turn: ${turn}, UserColor: ${chapterColor}`,
+    )
 
     // Only move if it's not the user's turn
     if (turn !== chapterColor) {

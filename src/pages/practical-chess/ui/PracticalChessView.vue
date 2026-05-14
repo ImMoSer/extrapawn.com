@@ -13,13 +13,18 @@ import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { YouMoveSelection } from '@/features/practical-chess'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
 import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
 import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useAuthStore } from '@/entities/user'
-import type { GameLaunchOptions, PracticalChessDifficulty, PracticalChessCategory } from '@/shared/types/api.types'
+import type {
+  GameLaunchOptions,
+  PracticalChessDifficulty,
+  PracticalChessCategory,
+} from '@/shared/types/api.types'
 
 const { t } = useI18n()
 const practicalStore = usePracticalChessStore()
@@ -34,7 +39,7 @@ const route = useRoute()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'PRACTICAL_CHESS',
   subMode: 'win',
-  theme: practicalStore.activeCategory || ''
+  theme: practicalStore.activeCategory || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -46,7 +51,9 @@ const normalizedStats = computed(() => {
 
 const currentPracticalThemes = computed(() => {
   if (!normalizedStats.value?.practical?.modes?.win) return []
-  return normalizedStats.value.practical.modes.win[practicalStore.activeDifficulty || 'Novice'] || []
+  return (
+    normalizedStats.value.practical.modes.win[practicalStore.activeDifficulty || 'Novice'] || []
+  )
 })
 
 const handleImprove = (options: GameLaunchOptions) => {
@@ -75,7 +82,7 @@ watch(
     if (phase === 'LOADING') {
       smartHintStore.resetHints(3)
     }
-  }
+  },
 )
 
 watch(
@@ -107,8 +114,7 @@ watch(
 
     controlsStore.setControls({
       canRequestNew: isGameOver || isIdle,
-      canRestart:
-        gameStore.gamePhase === 'GAMEOVER' && !!practicalStore.activePuzzle,
+      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!practicalStore.activePuzzle,
       canResign: isPlaying,
       canShare: !!practicalStore.activePuzzle,
       canRequestHint: isPlaying,
@@ -143,7 +149,18 @@ watch(
 <template>
   <GameLayout :boardLocked="practicalStore.isWaitingForColorSelection">
     <template #left-panel>
-      <UserProfileWidget />
+      <div class="left-panel-content-wrapper">
+        <UserProfileWidget />
+        <ThemeRoseChart
+          v-if="normalizedStats && normalizedStats.practical"
+          :activeMode="practicalStore.activeDifficulty || 'Novice'"
+          mode="practical"
+          subMode="win"
+          :themes="currentPracticalThemes"
+          :title="t('features.userCabinet.stats.modes.practical')"
+          @improve="handleImprove"
+        />
+      </div>
     </template>
 
     <template #top-info>
@@ -164,15 +181,7 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.practical"
-            :activeMode="practicalStore.activeDifficulty || 'Novice'"
-            mode="practical"
-            subMode="win"
-            :themes="currentPracticalThemes"
-            :title="t('features.userCabinet.stats.modes.practical')"
-            @improve="handleImprove"
-          />
+          <CoachSidebar />
           <SidebarLeaderboard
             game-mode="practical"
             sub-mode="win"
@@ -186,6 +195,7 @@ watch(
 </template>
 
 <style scoped>
+.left-panel-content-wrapper,
 .right-panel-content-wrapper {
   display: flex;
   flex-direction: column;

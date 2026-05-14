@@ -10,27 +10,27 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useTopInfo() {
-    const route = useRoute()
+  const route = useRoute()
 
-    const displayInfo = computed<TopInfoDisplay>(() => {
-        const routeName = route.name?.toString() || ''
+  const displayInfo = computed<TopInfoDisplay>(() => {
+    const routeName = route.name?.toString() || ''
 
-        if (routeName === 'tornado') return useTornadoStore().topInfoDisplay
-        if (routeName === 'diamond-hunter') return useDiamondHunterStore().topInfoDisplay
-        if (routeName.startsWith('finish-him')) return useFinishHimStore().topInfoDisplay
-        if (routeName.startsWith('theory-endings')) return useTheoryEndingsStore().topInfoDisplay
-        if (routeName.startsWith('practical-chess')) return usePracticalChessStore().topInfoDisplay
-        if (routeName === 'opening-sparring') return useOpeningSparringStore().topInfoDisplay
+    if (routeName === 'tornado') return useTornadoStore().topInfoDisplay
+    if (routeName === 'diamond-hunter') return useDiamondHunterStore().topInfoDisplay
+    if (routeName.startsWith('finish-him')) return useFinishHimStore().topInfoDisplay
+    if (routeName.startsWith('theory-endings')) return useTheoryEndingsStore().topInfoDisplay
+    if (routeName.startsWith('practical-chess')) return usePracticalChessStore().topInfoDisplay
+    if (routeName === 'opening-sparring') return useOpeningSparringStore().topInfoDisplay
 
-        // Default fallback
-        return {
-            title: '',
-            badges: [],
-            stats: []
-        }
-    })
-
+    // Default fallback
     return {
-        displayInfo
+      title: '',
+      badges: [],
+      stats: [],
     }
+  })
+
+  return {
+    displayInfo,
+  }
 }

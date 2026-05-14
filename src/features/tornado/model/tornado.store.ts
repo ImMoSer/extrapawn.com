@@ -18,7 +18,6 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTornadoQueries } from '../api/tornado.queries'
 
-
 export type { TornadoMode } from '@/shared/types/api.types'
 
 const t = i18n.global.t
@@ -225,13 +224,17 @@ export const useTornadoStore = defineStore('tornado', () => {
 
     const hasMistakes = mistakenPuzzles.value.length > 0
 
-    const userResponse = await uiStore.showConfirmation(t('features.tornado.sessionEnd.title'), message, {
-      confirmText: t('features.tornado.sessionEnd.newSession'),
-      cancelText: t('features.tornado.sessionEnd.exit'),
-      extraText: t('features.tornado.sessionEnd.mistakes'),
-      showExtra: hasMistakes,
-      persistent: true,
-    })
+    const userResponse = await uiStore.showConfirmation(
+      t('features.tornado.sessionEnd.title'),
+      message,
+      {
+        confirmText: t('features.tornado.sessionEnd.newSession'),
+        cancelText: t('features.tornado.sessionEnd.exit'),
+        extraText: t('features.tornado.sessionEnd.mistakes'),
+        showExtra: hasMistakes,
+        persistent: true,
+      },
+    )
 
     switch (userResponse) {
       case 'extra':
@@ -454,13 +457,12 @@ export const useTornadoStore = defineStore('tornado', () => {
     topInfoDisplay: computed<TopInfoDisplay>(() => ({
       title: formattedTimer.value,
       mainValue: Math.round(sessionRating.value),
-      badges: [
-        { text: 'TORNADO' },
-        { text: (mode.value || '').toUpperCase() }
-      ],
+      badges: [{ text: 'TORNADO' }, { text: (mode.value || '').toUpperCase() }],
       stats: [
         {
-          value: sessionTheme.value ? t(`chess.tactics.${sessionTheme.value}`) : t('chess.tactics.auto'),
+          value: sessionTheme.value
+            ? t(`chess.tactics.${sessionTheme.value}`)
+            : t('chess.tactics.auto'),
           label: 'Theme',
         },
         {

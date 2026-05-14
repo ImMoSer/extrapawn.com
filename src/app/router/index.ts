@@ -251,10 +251,14 @@ router.beforeEach(async (to, from, next) => {
   const t = i18n.global.t
 
   if (studyStore.cloudLoading) {
-    await uiStore.showConfirmation(t('common.actions.error'), t('features.study.manager.messages.syncInProgress'), {
-      confirmText: t('common.actions.ok'),
-      showCancel: false,
-    })
+    await uiStore.showConfirmation(
+      t('common.actions.error'),
+      t('features.study.manager.messages.syncInProgress'),
+      {
+        confirmText: t('common.actions.ok'),
+        showCancel: false,
+      },
+    )
     return next(false)
   }
 
@@ -335,9 +339,15 @@ router.afterEach(async (to, from) => {
     useFinishHimStore().reset()
   } else if (fromBaseRoute === 'tornado' && toBaseRoute !== 'tornado' && !isTornadoToMistakes) {
     useTornadoStore().reset()
-  } else if (fromBaseRoute?.startsWith('theory-endings') && !toBaseRoute?.startsWith('theory-endings')) {
+  } else if (
+    fromBaseRoute?.startsWith('theory-endings') &&
+    !toBaseRoute?.startsWith('theory-endings')
+  ) {
     useTheoryEndingsStore().reset()
-  } else if (fromBaseRoute?.startsWith('practical-chess') && !toBaseRoute?.startsWith('practical-chess')) {
+  } else if (
+    fromBaseRoute?.startsWith('practical-chess') &&
+    !toBaseRoute?.startsWith('practical-chess')
+  ) {
     usePracticalChessStore().reset()
   } else if (fromBaseRoute === 'opening-sparring' && toBaseRoute !== 'opening-sparring') {
     useOpeningSparringStore().reset()

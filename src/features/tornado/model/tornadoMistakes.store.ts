@@ -21,14 +21,17 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
   const feedbackMessage = ref(t('features.tornado.mistakes.feedback.selectPuzzle'))
   const isAttemptMade = ref(false)
 
-  const selectedPuzzle = computed(() => 
-    mistakes.value.find((p) => (p.PuzzleId || p.puzzle_id) === selectedPuzzleId.value) || null
+  const selectedPuzzle = computed(
+    () =>
+      mistakes.value.find((p) => (p.PuzzleId || p.puzzle_id) === selectedPuzzleId.value) || null,
   )
-  const unsolvedMistakes = computed(() => 
-    mistakes.value.filter((p) => !solvedStatus.value[p.PuzzleId || p.puzzle_id || ''])
+  const unsolvedMistakes = computed(() =>
+    mistakes.value.filter((p) => !solvedStatus.value[p.PuzzleId || p.puzzle_id || '']),
   )
-  const allMistakesSolved = computed(() => 
-    mistakes.value.length > 0 && mistakes.value.every((p) => solvedStatus.value[p.PuzzleId || p.puzzle_id || ''])
+  const allMistakesSolved = computed(
+    () =>
+      mistakes.value.length > 0 &&
+      mistakes.value.every((p) => solvedStatus.value[p.PuzzleId || p.puzzle_id || '']),
   )
 
   const fenFinal = computed(() => {
@@ -61,7 +64,7 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
       try {
         const parsed = JSON.parse(stored) as GamePuzzle[]
         mistakes.value = parsed
-        parsed.forEach(p => {
+        parsed.forEach((p) => {
           const id = p.PuzzleId || p.puzzle_id
           if (id) solvedStatus.value[id] = false
         })
@@ -86,11 +89,11 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
     feedbackMessage.value = t('features.tornado.mistakes.feedback.yourTurn')
 
     const fen = puzzle.FEN_0 || puzzle.initial_fen || ''
-    
+
     // Determine human color as opposite of FEN turn (consistent with Tornado/FinishHim)
     const setup = parseFen(fen).unwrap()
     const humanColor = setup.turn === 'white' ? 'black' : 'white'
-    
+
     gameStore.startWithStrategy(fen, createStrategy(puzzle), humanColor)
   }
 
@@ -98,14 +101,16 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
     const currentIndex = mistakes.value.findIndex(
       (p) => (p.PuzzleId || p.puzzle_id) === selectedPuzzleId.value,
     )
-    
+
     // Search circular starting from next item
     const nextPuzzles = [
       ...mistakes.value.slice(currentIndex + 1),
       ...mistakes.value.slice(0, currentIndex + 1),
     ]
 
-    const nextUnsolved = nextPuzzles.find((p) => !solvedStatus.value[p.PuzzleId || p.puzzle_id || ''])
+    const nextUnsolved = nextPuzzles.find(
+      (p) => !solvedStatus.value[p.PuzzleId || p.puzzle_id || ''],
+    )
 
     if (nextUnsolved) {
       selectPuzzle(nextUnsolved)
@@ -161,7 +166,7 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
           return botUci || null
         }
         return null
-      }
+      },
     }
   }
 
@@ -178,6 +183,6 @@ export const useTornadoMistakesStore = defineStore('tornado-mistakes', () => {
     clearMistakes,
     selectPuzzle,
     selectNextUnsolvedPuzzle,
-    fenFinal
+    fenFinal,
   }
 })

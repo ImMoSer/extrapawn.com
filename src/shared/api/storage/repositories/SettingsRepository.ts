@@ -4,7 +4,8 @@ import { databaseClient, DbNotOpenError } from '../DatabaseClient'
 export class SettingsRepository {
   async getSetting<T>(key: string, defaultValue: T): Promise<T> {
     try {
-      const rows = await databaseClient.query<{ value: string }>('user',
+      const rows = await databaseClient.query<{ value: string }>(
+        'user',
         'SELECT value FROM settings WHERE key = ?',
         [key],
       )
@@ -24,14 +25,16 @@ export class SettingsRepository {
 
   async saveSetting(key: string, value: unknown): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: `
+      await databaseClient.batch('user', [
+        {
+          sql: `
           INSERT INTO settings (key, value)
           VALUES (?, ?)
           ON CONFLICT(key) DO UPDATE SET value = excluded.value
         `,
-        params: [key, JSON.stringify(value)]
-      }])
+          params: [key, JSON.stringify(value)],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {
@@ -43,10 +46,12 @@ export class SettingsRepository {
 
   async deleteSetting(key: string): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: 'DELETE FROM settings WHERE key = ?',
-        params: [key]
-      }])
+      await databaseClient.batch('user', [
+        {
+          sql: 'DELETE FROM settings WHERE key = ?',
+          params: [key],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {

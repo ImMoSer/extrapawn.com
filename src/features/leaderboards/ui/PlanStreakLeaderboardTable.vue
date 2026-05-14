@@ -109,7 +109,7 @@ const chartOption = computed(() => {
             <span style="color: ${STREAK_COLOR}; font-weight: bold;">Streak:</span>
             <span style="color: #FFF; margin-left: 12px;">${entry.current_streak} 🔥</span>
           </div>`
-        
+
         html += `</div>`
         return html
       },
@@ -139,17 +139,23 @@ const chartOption = computed(() => {
         fontSize: isMobile.value ? 9 : 12,
         fontWeight: 'bold',
         formatter: (value: string) => value,
-        rich: displayEntries.reduce((acc, entry, index) => {
-          const iconUrl = getTierIcon(entry.tier)
-          const iconSize = isMobile.value ? 20 : 32
-          acc[`icon${index}`] = {
-            backgroundColor: { image: iconUrl },
-            height: iconSize,
-            width: iconSize,
-            align: 'center',
-          }
-          return acc
-        }, {} as Record<string, { backgroundColor: { image: string }; height: number; width: number; align: string }>)
+        rich: displayEntries.reduce(
+          (acc, entry, index) => {
+            const iconUrl = getTierIcon(entry.tier)
+            const iconSize = isMobile.value ? 20 : 32
+            acc[`icon${index}`] = {
+              backgroundColor: { image: iconUrl },
+              height: iconSize,
+              width: iconSize,
+              align: 'center',
+            }
+            return acc
+          },
+          {} as Record<
+            string,
+            { backgroundColor: { image: string }; height: number; width: number; align: string }
+          >,
+        ),
       },
       axisLine: { show: false },
       axisTick: { show: false },

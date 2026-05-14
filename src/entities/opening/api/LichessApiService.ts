@@ -64,8 +64,6 @@ class LichessApiService {
       return null
     }
   }
-
-
 }
 
 export const lichessApiService = new LichessApiService()

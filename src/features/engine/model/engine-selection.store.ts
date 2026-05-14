@@ -8,7 +8,6 @@ import { AVAILABLE_ENGINES } from '../config/constants'
 const ENGINE_STORAGE_KEY = 'user_selected_engine'
 
 export const useEngineSelectionStore = defineStore('engine-selection', () => {
-
   const availableEngines = ref<EngineId[]>([...AVAILABLE_ENGINES])
 
   const loadSavedEngine = (): EngineId => {
@@ -43,7 +42,6 @@ export const useEngineSelectionStore = defineStore('engine-selection', () => {
     } catch (error) {
       logger.error('[EngineSelectionStore] Failed to save engine', error)
     }
-
   }
 
   return {

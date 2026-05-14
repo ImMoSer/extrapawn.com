@@ -82,7 +82,9 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
             </n-button>
             <n-tooltip trigger="hover">
               <template #trigger>
-                <n-text class="pv-text" @click="handleLineClick(line)">{{ line.formattedPv }}</n-text>
+                <n-text class="pv-text" @click="handleLineClick(line)">{{
+                  line.formattedPv
+                }}</n-text>
               </template>
               {{ line.formattedPv }}
             </n-tooltip>

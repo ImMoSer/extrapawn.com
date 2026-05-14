@@ -56,7 +56,9 @@ function handleCancel() {
 
         <NSpace justify="end">
           <NButton @click="handleCancel">{{ t('common.actions.cancel') }}</NButton>
-          <NButton type="primary" @click="handleConfirm">{{ t('features.speedrun.startBtn') }}</NButton>
+          <NButton type="primary" @click="handleConfirm">{{
+            t('features.speedrun.startBtn')
+          }}</NButton>
         </NSpace>
       </NSpace>
     </NCard>

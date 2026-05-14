@@ -1,23 +1,17 @@
 <script setup lang="ts">
-import { NTooltip } from 'naive-ui';
-import { useTopInfo } from '../model/useTopInfo';
+import { NTooltip } from 'naive-ui'
+import { useTopInfo } from '../model/useTopInfo'
 
 const { displayInfo } = useTopInfo()
 </script>
 
 <template>
-  <div
-    class="top-info-panel-container"
-    :class="[`mode-${displayInfo.customType || 'default'}`]"
-  >
+  <div class="top-info-panel-container" :class="[`mode-${displayInfo.customType || 'default'}`]">
     <div class="generic-info-layout">
       <!-- Left: Badges (Glued) -->
       <div class="info-left">
         <template v-for="(badge, index) in displayInfo.badges" :key="'b' + index">
-          <span
-            class="glued-item badge-text"
-            :style="badge.color ? { color: badge.color } : {}"
-          >
+          <span class="glued-item badge-text" :style="badge.color ? { color: badge.color } : {}">
             {{ badge.text.toUpperCase() }}
           </span>
           <span v-if="index < displayInfo.badges.length - 1" class="glue">/</span>
@@ -30,13 +24,25 @@ const { displayInfo } = useTopInfo()
           {{ displayInfo.title }}
         </span>
 
-        <span v-if="displayInfo.title && (displayInfo.mainValue !== undefined || displayInfo.secondaryText)" class="glue">/</span>
+        <span
+          v-if="
+            displayInfo.title && (displayInfo.mainValue !== undefined || displayInfo.secondaryText)
+          "
+          class="glue"
+          >/</span
+        >
 
-        <span v-if="displayInfo.mainValue !== undefined" class="glued-item main-value" :style="{ color: displayInfo.mainColor }">
+        <span
+          v-if="displayInfo.mainValue !== undefined"
+          class="glued-item main-value"
+          :style="{ color: displayInfo.mainColor }"
+        >
           {{ displayInfo.isValueHidden ? '??' : displayInfo.mainValue }}
         </span>
 
-        <span v-if="displayInfo.mainValue !== undefined && displayInfo.secondaryText" class="glue">/</span>
+        <span v-if="displayInfo.mainValue !== undefined && displayInfo.secondaryText" class="glue"
+          >/</span
+        >
 
         <span v-if="displayInfo.secondaryText" class="glued-item secondary-text">
           {{ displayInfo.secondaryText }}
@@ -54,7 +60,11 @@ const { displayInfo } = useTopInfo()
             </template>
             {{ stat.label || '' }}
           </n-tooltip>
-          <span v-if="index < displayInfo.stats.length - 1 && displayInfo.stats[index+1]?.value" class="glue">/</span>
+          <span
+            v-if="index < displayInfo.stats.length - 1 && displayInfo.stats[index + 1]?.value"
+            class="glue"
+            >/</span
+          >
         </template>
       </div>
     </div>
@@ -130,8 +140,6 @@ const { displayInfo } = useTopInfo()
   color: var(--color-primary);
 }
 
-
-
 .secondary-text {
   color: var(--color-text-secondary);
   /* The user wants FinishHim's secondaryText (Complex Endgame) to stay as is.
@@ -156,7 +164,8 @@ const { displayInfo } = useTopInfo()
     display: none;
   }
 
-  .info-center, .info-right {
+  .info-center,
+  .info-right {
     flex: none;
     width: 100%;
     justify-content: center;
@@ -173,7 +182,8 @@ const { displayInfo } = useTopInfo()
     display: none;
   }
 
-  .glued-item, .glue {
+  .glued-item,
+  .glue {
     font-size: 0.9rem;
   }
 

@@ -3,7 +3,7 @@
     :show="authStore.isLoginModalVisible"
     preset="card"
     :title="t('features.auth.loginModal.title')"
-    style="width: 500px; max-width: 90vw;"
+    style="width: 500px; max-width: 90vw"
     :mask-closable="true"
     @update:show="(val) => !val && authStore.cancelLogin()"
   >
@@ -18,15 +18,22 @@
           <n-checkbox :checked="true" disabled />
           <div>
             <div class="font-medium">{{ t('features.auth.loginModal.permissions.prefTitle') }}</div>
-            <div class="text-sm text-gray-500">{{ t('features.auth.loginModal.permissions.prefDesc') }}</div>
+            <div class="text-sm text-gray-500">
+              {{ t('features.auth.loginModal.permissions.prefDesc') }}
+            </div>
           </div>
         </div>
 
         <!-- Study Permission -->
-        <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer" @click="toggleStudyScope">
+        <div
+          class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer"
+          @click="toggleStudyScope"
+        >
           <n-checkbox v-model:checked="enableStudyScope" @click.stop />
           <div>
-            <div class="font-medium">{{ t('features.auth.loginModal.permissions.studyTitle') }}</div>
+            <div class="font-medium">
+              {{ t('features.auth.loginModal.permissions.studyTitle') }}
+            </div>
             <div class="text-sm text-gray-500">
               {{ t('features.auth.loginModal.permissions.studyDesc') }}
             </div>

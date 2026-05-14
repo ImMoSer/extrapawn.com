@@ -145,18 +145,20 @@ export class MultiThreadEngineManager {
     if (message === 'uciok') {
       this.sendCommand(`setoption name Hash value ${this.getOptimalHashSize()}`)
       this.sendCommand('setoption name UCI_ShowWDL value true')
-      
+
       // Initialize with preferred threads (defaults to 1 if not saved)
       this.sendCommand(`setoption name Threads value ${this.preferredAnalysisThreads}`)
       this.currentThreads = this.preferredAnalysisThreads
-      
+
       this.sendCommand('isready')
     } else if (message === 'readyok') {
       const waitTime = performance.now() - (this.lastIsReadyTime || 0)
       if (this.isInitializing) {
         this.isReady = true
         this.isInitializing = false
-        logger.info(`[MultiThreadEngineManager] Engine is ready (init) in ${waitTime.toFixed(1)}ms.`)
+        logger.info(
+          `[MultiThreadEngineManager] Engine is ready (init) in ${waitTime.toFixed(1)}ms.`,
+        )
         if (this.resolveInitPromise) this.resolveInitPromise()
         this.processCommandQueue()
       } else {
@@ -196,7 +198,7 @@ export class MultiThreadEngineManager {
       let pvUci: string[] = []
       const parts = line.split(' ')
       let i = 0
-      
+
       while (i < parts.length) {
         const token = parts[i]
         switch (token) {
@@ -243,7 +245,7 @@ export class MultiThreadEngineManager {
         }
         i++
       }
-      
+
       // Отправляем данные только если есть минимально полезный набор
       if (score && pvUci.length > 0 && !isNaN(depth) && depth > 0) {
         const parsedData: EvaluatedLine = { id: currentLineId, depth, score, wdl, pvUci }
@@ -325,7 +327,11 @@ export class MultiThreadEngineManager {
     await this.waitReady()
   }
 
-  public async calculateFixedDepth(fen: string, depth: number, multiPv: number = 3): Promise<EvaluatedLine[]> {
+  public async calculateFixedDepth(
+    fen: string,
+    depth: number,
+    multiPv: number = 3,
+  ): Promise<EvaluatedLine[]> {
     await this.ensureReady()
     if (!this.engine) return []
 
@@ -366,7 +372,7 @@ export class MultiThreadEngineManager {
     return new Promise((resolve) => {
       this.stopResolve = resolve
       this.sendCommand('stop')
-      // Removed the dangerous setTimeout. 
+      // Removed the dangerous setTimeout.
       // We now strictly rely on the 'bestmove' engine event to resolve this promise and reset the state.
     })
   }

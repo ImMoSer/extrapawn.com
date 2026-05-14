@@ -39,7 +39,7 @@ export const useTablebaseStore = defineStore('tablebase', () => {
     (newFen) => {
       // Reset result immediately when FEN changes to avoid stale data UI flicker
       result.value = null
-      
+
       if (debounceTimer) {
         clearTimeout(debounceTimer)
         debounceTimer = null
@@ -56,12 +56,15 @@ export const useTablebaseStore = defineStore('tablebase', () => {
 
         const now = Date.now()
         const timeSinceLast = now - lastFetchTimestamp
-        
+
         // If we haven't fetched for a while, we can be faster (Leading edge)
-        // We still use a short delay (250ms) to avoid fetching 
+        // We still use a short delay (250ms) to avoid fetching
         // if the user is just starting a fast sequence.
-        const delay = timeSinceLast >= MIN_FETCH_INTERVAL ? SHORT_DELAY : Math.max(0, MIN_FETCH_INTERVAL - timeSinceLast)
-        
+        const delay =
+          timeSinceLast >= MIN_FETCH_INTERVAL
+            ? SHORT_DELAY
+            : Math.max(0, MIN_FETCH_INTERVAL - timeSinceLast)
+
         pendingFen = newFen
         debounceTimer = setTimeout(() => {
           if (pendingFen === newFen) {
@@ -86,10 +89,10 @@ export const useTablebaseStore = defineStore('tablebase', () => {
 
   async function fetchTablebase(fen: string) {
     if (fen === lastFetchedFen.value) return
-    
+
     isLoading.value = true
     const data = await tablebaseService.fetchStandard(fen)
-    
+
     if (data) {
       result.value = data
       lastFetchedFen.value = fen

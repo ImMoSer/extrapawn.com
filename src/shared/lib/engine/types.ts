@@ -20,4 +20,3 @@ export interface EvaluatedLine {
 export type AnalysisUpdateCallback = (lines: EvaluatedLine[], bestMoveUci?: string | null) => void
 
 export const MAX_ANALYSIS_DEPTH = 35
-

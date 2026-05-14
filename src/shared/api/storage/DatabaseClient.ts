@@ -78,7 +78,9 @@ class DatabaseClient {
     // 1. Check for schema reset
     const savedVersion = localStorage.getItem('app_db_schema_version')
     if (!savedVersion || parseInt(savedVersion, 10) < DB_SCHEMA_VERSION) {
-      logger.warn(`[DatabaseClient] Schema version mismatch (saved: ${savedVersion}, current: ${DB_SCHEMA_VERSION}). Resetting OPFS...`)
+      logger.warn(
+        `[DatabaseClient] Schema version mismatch (saved: ${savedVersion}, current: ${DB_SCHEMA_VERSION}). Resetting OPFS...`,
+      )
       try {
         const root = await navigator.storage.getDirectory()
         // We use a for-await-of loop to clear ONLY specific OPFS files
@@ -120,27 +122,39 @@ class DatabaseClient {
 
     // Active Cleanup: Remove expired entries from theory_stats
     try {
-      await this._execRaw(this.globalDbId, 'DELETE FROM theory_stats WHERE expires < ?', [Date.now()])
+      await this._execRaw(this.globalDbId, 'DELETE FROM theory_stats WHERE expires < ?', [
+        Date.now(),
+      ])
       await this._execRaw(this.globalDbId, 'PRAGMA incremental_vacuum(100);') // Reclaim some space if needed
     } catch (err) {
       logger.warn('[DatabaseClient] Global DB cleanup failed:', err)
     }
 
-    logger.info('[DatabaseClient] Initialization successful with VFS: opfs and journal_mode: DELETE')
+    logger.info(
+      '[DatabaseClient] Initialization successful with VFS: opfs and journal_mode: DELETE',
+    )
   }
 
   private async _initGlobalSchema(): Promise<void> {
     if (!this.globalDbId) return
 
-    await this._execRaw(this.globalDbId, `
+    await this._execRaw(
+      this.globalDbId,
+      `
       CREATE TABLE IF NOT EXISTS meta (
         key   TEXT PRIMARY KEY,
         value TEXT
       )
-    `)
-    await this._execRaw(this.globalDbId, "INSERT OR IGNORE INTO meta (key, value) VALUES ('version', '1')")
+    `,
+    )
+    await this._execRaw(
+      this.globalDbId,
+      "INSERT OR IGNORE INTO meta (key, value) VALUES ('version', '1')",
+    )
 
-    await this._execRaw(this.globalDbId, `
+    await this._execRaw(
+      this.globalDbId,
+      `
       CREATE TABLE IF NOT EXISTS theory_stats (
         fen_key TEXT,
         source  TEXT,
@@ -148,14 +162,18 @@ class DatabaseClient {
         expires INTEGER,
         PRIMARY KEY (fen_key, source)
       )
-    `)
-    await this._execRaw(this.globalDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.globalDbId,
+      `
       CREATE TABLE IF NOT EXISTS wiki_content (
         slug      TEXT PRIMARY KEY,
         content   TEXT,
         timestamp INTEGER
       )
-    `)
+    `,
+    )
   }
 
   /**
@@ -217,15 +235,23 @@ class DatabaseClient {
   private async _initUserSchema(): Promise<void> {
     if (!this.userDbId) return
 
-    await this._execRaw(this.userDbId, `
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS meta (
         key   TEXT PRIMARY KEY,
         value TEXT
       )
-    `)
-    await this._execRaw(this.userDbId, "INSERT OR IGNORE INTO meta (key, value) VALUES ('version', '1')")
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      "INSERT OR IGNORE INTO meta (key, value) VALUES ('version', '1')",
+    )
 
-    await this._execRaw(this.userDbId, `
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS studies (
         id          TEXT PRIMARY KEY,
         title       TEXT NOT NULL,
@@ -234,8 +260,11 @@ class DatabaseClient {
         type        TEXT,
         order_index INTEGER DEFAULT 0
       )
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS chapters (
         id        TEXT PRIMARY KEY,
         studyId   TEXT,
@@ -245,8 +274,11 @@ class DatabaseClient {
         config    TEXT NOT NULL DEFAULT '{}',
         pgn_text  TEXT NOT NULL DEFAULT ''
       )
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS node_metadata (
         chapter_id TEXT,
         node_path  TEXT,
@@ -254,11 +286,17 @@ class DatabaseClient {
         PRIMARY KEY (chapter_id, node_path),
         FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
       )
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE INDEX IF NOT EXISTS idx_node_metadata_chapter_id ON node_metadata(chapter_id)
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS diamonds (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         hash         TEXT NOT NULL,
@@ -266,8 +304,11 @@ class DatabaseClient {
         pgn          TEXT NOT NULL,
         collected_at INTEGER NOT NULL
       )
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS brilliants (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         hash         TEXT NOT NULL,
@@ -275,13 +316,17 @@ class DatabaseClient {
         pgn          TEXT NOT NULL,
         collected_at INTEGER NOT NULL
       )
-    `)
-    await this._execRaw(this.userDbId, `
+    `,
+    )
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS settings (
         key   TEXT PRIMARY KEY,
         value TEXT
       )
-    `)
+    `,
+    )
   }
 
   /**
@@ -357,7 +402,11 @@ class DatabaseClient {
     return id
   }
 
-  private async _execRaw(dbId: DbId | null, sql: string, params: (string | number | null)[] = []): Promise<void> {
+  private async _execRaw(
+    dbId: DbId | null,
+    sql: string,
+    params: (string | number | null)[] = [],
+  ): Promise<void> {
     if (!this.promiser) throw new Error('[DatabaseClient] Not initialized.')
     try {
       await this.promiser({
@@ -371,7 +420,11 @@ class DatabaseClient {
     }
   }
 
-  private async _queryRaw<T>(dbId: DbId | null, sql: string, params: (string | number | null)[] = []): Promise<T[]> {
+  private async _queryRaw<T>(
+    dbId: DbId | null,
+    sql: string,
+    params: (string | number | null)[] = [],
+  ): Promise<T[]> {
     if (!this.promiser) throw new Error('[DatabaseClient] Not initialized.')
 
     const response = await this.promiser({
@@ -381,7 +434,7 @@ class DatabaseClient {
         sql,
         bind: params,
         columnNames: [],
-        returnValue: 'resultRows'
+        returnValue: 'resultRows',
       },
     })
 

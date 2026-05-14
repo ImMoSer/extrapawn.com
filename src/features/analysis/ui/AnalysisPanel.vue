@@ -2,17 +2,26 @@
 import { useBoardStore } from '@/entities/game'
 import type { PgnNode } from '@/shared/lib/pgn/PgnService'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
-import { ChevronBackOutline, ChevronForwardOutline, PlaySkipBackOutline, PlaySkipForwardOutline, TerminalOutline } from '@vicons/ionicons5'
+import {
+  ChevronBackOutline,
+  ChevronForwardOutline,
+  PlaySkipBackOutline,
+  PlaySkipForwardOutline,
+  TerminalOutline,
+} from '@vicons/ionicons5'
 import { NButton, NButtonGroup, NIcon, NScrollbar, NSelect, NText, NTooltip } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { computed, h, onUnmounted, type FunctionalComponent } from 'vue'
 import { EngineLines, TablebaseInfo, useAnalysisStore } from '../index'
 
-const props = withDefaults(defineProps<{
-  showPgn?: boolean
-}>(), {
-  showPgn: true
-})
+const props = withDefaults(
+  defineProps<{
+    showPgn?: boolean
+  }>(),
+  {
+    showPgn: true,
+  },
+)
 
 const analysisStore = useAnalysisStore()
 const boardStore = useBoardStore()

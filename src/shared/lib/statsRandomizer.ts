@@ -9,7 +9,7 @@ import {
   type UserSessionProfile,
   type UnifiedLeaderboardResponse,
   type UnifiedLeaderboardEntry,
-  type ActivityHistoryEntry
+  type ActivityHistoryEntry,
 } from '@/shared/types/api.types'
 
 /**
@@ -87,11 +87,11 @@ export function generateRandomActivityStats(): PersonalActivityStatsResponse {
     const modes = ['tornado', 'finish_him', 'theory', 'practical-chess']
     const subModes = ['win', 'draw', 'bullet', 'blitz']
     const themes = ['pawn', 'fork', 'pin', 'endgame']
-    
+
     for (let i = 0; i < count; i++) {
       const date = new Date(Date.now() - getRandomInt(0, daysBack) * 24 * 60 * 60 * 1000)
       const dateStr = date.toISOString().split('T')[0]!
-      
+
       activities.push({
         date: dateStr,
         game_mode: modes[getRandomInt(0, modes.length - 1)]!,
@@ -114,7 +114,7 @@ export function generateRandomActivityStats(): PersonalActivityStatsResponse {
     user: {
       id: 'example_user',
       username: 'ExtraPawnCOM',
-      tier: 'King'
+      tier: 'King',
     },
     activities: activities,
   }
@@ -158,19 +158,19 @@ export function generateRandomDetailedStats(baseRating: number = 1500): Frontend
     },
     finish_him: {
       modes: {
-        win: theoryModes(FINISH_HIM_THEMES)
+        win: theoryModes(FINISH_HIM_THEMES),
       },
     },
     theory: {
       modes: {
         win: theoryModes(THEORY_ENDING_CATEGORIES),
-        draw: theoryModes(THEORY_ENDING_CATEGORIES)
-      }
+        draw: theoryModes(THEORY_ENDING_CATEGORIES),
+      },
     },
-    practical: { 
+    practical: {
       modes: {
-        win: theoryModes(PRACTICAL_CHESS_CATEGORIES)
-      } 
+        win: theoryModes(PRACTICAL_CHESS_CATEGORIES),
+      },
     },
   }
 }
@@ -179,13 +179,26 @@ export function generateRandomDetailedStats(baseRating: number = 1500): Frontend
  * Generiert zufällige Hall of Fame Daten.
  */
 export function generateRandomHallOfFame(): LeaderboardApiResponse {
-  const usernames = ['ChessMaster', 'KnightRider', 'GambitPlayer', 'CheckmateKing', 'EnPassantExpert']
-  const tiers: UserSessionProfile['subscriptionTier'][] = ['King', 'Queen', 'Rook', 'Bishop', 'Knight', 'Pawn']
+  const usernames = [
+    'ChessMaster',
+    'KnightRider',
+    'GambitPlayer',
+    'CheckmateKing',
+    'EnPassantExpert',
+  ]
+  const tiers: UserSessionProfile['subscriptionTier'][] = [
+    'King',
+    'Queen',
+    'Rook',
+    'Bishop',
+    'Knight',
+    'Pawn',
+  ]
 
   const genThematic = (modes: string[]): UnifiedLeaderboardResponse => {
     const res: UnifiedLeaderboardResponse = {}
-    
-    modes.forEach(cat => {
+
+    modes.forEach((cat) => {
       const items: UnifiedLeaderboardEntry[] = Array.from({ length: 5 }, (_, i) => {
         const rating = getRandomInt(800, 2200)
         const solved = getRandomInt(10, 100)
@@ -206,12 +219,14 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
           failed,
           accuracy: Number(((solved / (solved + failed)) * 100).toFixed(2)),
           totalAttempts: solved + failed + getRandomInt(0, 10),
-          rank: (i + 1).toString()
+          rank: (i + 1).toString(),
         }
       })
 
       items.sort((a, b) => b.solved - a.solved)
-      items.forEach((item, index) => { item.rank = (index + 1).toString() })      
+      items.forEach((item, index) => {
+        item.rank = (index + 1).toString()
+      })
       res[cat] = items
     })
     return res
@@ -243,13 +258,13 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
         username: usernames[getRandomInt(0, usernames.length - 1)]! + '_' + i,
         training_status: 'N' as const,
         current_streak: getRandomInt(0, 20),
-        tier: (tiers[getRandomInt(0, tiers.length - 1)]! as string),
+        tier: tiers[getRandomInt(0, tiers.length - 1)]! as string,
         score,
         solved,
-        failed
+        failed,
       }
     })
-    
+
     return items.sort((a, b) => {
       const scoreA = Object.values(a.score).reduce((sum, val) => sum + val, 0)
       const scoreB = Object.values(b.score).reduce((sum, val) => sum + val, 0)
@@ -261,7 +276,7 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
     const items = Array.from({ length: 10 }, (_, i) => {
       const streak = getRandomInt(5, 50)
       const baseSolved = streak * 50 + getRandomInt(100, 500)
-      
+
       const modes = {
         finish_him: Math.floor(baseSolved * 0.2),
         tornado: Math.floor(baseSolved * 0.4),
@@ -269,14 +284,14 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
         'practical-chess': Math.floor(baseSolved * 0.2),
       }
       const total_solved = Object.values(modes).reduce((a, b) => a + b, 0)
-      
+
       return {
         lichess_id: `user_streak_${i}`,
         username: usernames[getRandomInt(0, usernames.length - 1)]! + '_S' + i,
         current_streak: streak,
-        subscriptionTier: (tiers[getRandomInt(0, tiers.length - 1)]! as string),
+        subscriptionTier: tiers[getRandomInt(0, tiers.length - 1)]! as string,
         total_solved,
-        solved_by_mode: modes
+        solved_by_mode: modes,
       }
     })
 
@@ -284,7 +299,12 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
   }
 
   return {
-    tornadoLeaderboard: genThematic(['tornado_bullet', 'tornado_blitz', 'tornado_rapid', 'tornado_classic']),
+    tornadoLeaderboard: genThematic([
+      'tornado_bullet',
+      'tornado_blitz',
+      'tornado_rapid',
+      'tornado_classic',
+    ]),
     strategicLeaderboard: genThematic(['theory', 'practical-chess', 'finish_him']),
     overallLeaderboard: genThematic(['overall']),
     finishHimLeaderboard: genThematic(['Novice', 'Pro', 'Master']),
@@ -292,13 +312,13 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
     practicalLeaderboard: genThematic(['Novice', 'Pro', 'Master']),
     overallSkillLeaderboard: {
       period: 30,
-      entries: genOverallOld()
+      entries: genOverallOld(),
     },
     skillStreakLeaderboard: genStreaks(),
     skillStreakMegaLeaderboard: genStreaks(),
     topTodayLeaderboard: {
       period: 'heute',
-      entries: genOverallOld()
+      entries: genOverallOld(),
     },
   }
 }

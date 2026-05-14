@@ -1,3 +1,2 @@
 // src/entities/puzzle/index.ts
-export * from './model/types.ts';
-
+export * from './model/types.ts'

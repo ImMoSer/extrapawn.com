@@ -39,7 +39,7 @@ watch(
 
     const shapes: DrawShape[] = []
     const usedUcis = new Set<string>()
-    
+
     // Priority: Grossmaster (Green) > Hustler (Blue) > Schuler (Red)
     if (styles.grossmaster?.uci) {
       shapes.push({
@@ -49,7 +49,7 @@ watch(
       })
       usedUcis.add(styles.grossmaster.uci)
     }
-    
+
     if (styles.hustler?.uci && !usedUcis.has(styles.hustler.uci)) {
       shapes.push({
         orig: styles.hustler.uci.slice(0, 2) as Key,
@@ -58,7 +58,7 @@ watch(
       })
       usedUcis.add(styles.hustler.uci)
     }
-    
+
     if (styles.schuler?.uci && !usedUcis.has(styles.schuler.uci)) {
       shapes.push({
         orig: styles.schuler.uci.slice(0, 2) as Key,
@@ -148,7 +148,8 @@ const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {
         </n-icon>
         <span class="book-title">MozerBook</span>
         <span class="header-n" v-if="stats?.summary">
-          (N={{ stats.summary.total.toLocaleString() }})</span>
+          (N={{ stats.summary.total.toLocaleString() }})</span
+        >
       </div>
       <div class="header-actions">
         <n-icon

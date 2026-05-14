@@ -101,4 +101,3 @@ export const useControlsStore = defineStore('controls', () => {
     resetControls,
   }
 })
-

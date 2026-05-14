@@ -81,10 +81,7 @@ const tableData = computed<StatsTableRow[]>(() => {
   }
 
   const moveRows: StatsTableRow[] = props.moves.map((m) => {
-    const score =
-      boardStore.turn === 'white'
-        ? m.win_p + m.draw_p * 0.5
-        : m.loss_p + m.draw_p * 0.5
+    const score = boardStore.turn === 'white' ? m.win_p + m.draw_p * 0.5 : m.loss_p + m.draw_p * 0.5
 
     return {
       key: m.uci,
@@ -102,7 +99,7 @@ const tableData = computed<StatsTableRow[]>(() => {
   })
 
   return [summaryRow, ...moveRows]
-} )
+})
 
 const rowProps = (row: StatsTableRow) => {
   if (row.isSummary) {

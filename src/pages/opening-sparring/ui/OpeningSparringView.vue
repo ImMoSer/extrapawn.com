@@ -10,7 +10,7 @@ import {
   OpeningSparringSummaryModal,
   SessionHistoryList,
   useOpeningSparringStore,
-  useSparringLoop
+  useSparringLoop,
 } from '@/features/opening-sparring'
 import { useSmartHintStore } from '@/features/smart-hint'
 import i18n from '@/shared/config/i18n'
@@ -36,7 +36,9 @@ const loop = useSparringLoop()
 const isSettingsModalOpen = ref(true)
 const showSummaryModal = ref(false)
 const isNavigatingToPlayout = ref(false)
-const lastSessionParams = ref<{ color: 'white' | 'black'; moves: string[]; slug?: string } | null>(null)
+const lastSessionParams = ref<{ color: 'white' | 'black'; moves: string[]; slug?: string } | null>(
+  null,
+)
 
 const isExamEnding = computed(() => openingStore.isTheoryOver || openingStore.isDeviation)
 
@@ -76,7 +78,12 @@ const showAnalysisPanel = computed(() => {
 watch(
   () => openingStore.showMozerBook,
   (show) => {
-    if (show && !openingStore.isPlayoutMode && !openingStore.isReviewMode && gameStore.gamePhase === 'PLAYING') {
+    if (
+      show &&
+      !openingStore.isPlayoutMode &&
+      !openingStore.isReviewMode &&
+      gameStore.gamePhase === 'PLAYING'
+    ) {
       loop.fetchStats()
     }
   },
@@ -177,7 +184,11 @@ async function handleRestart() {
     await gameStore.resetGame()
     showSummaryModal.value = false
     if (lastSessionParams.value) {
-      await startSession(lastSessionParams.value.color, lastSessionParams.value.moves, lastSessionParams.value.slug)
+      await startSession(
+        lastSessionParams.value.color,
+        lastSessionParams.value.moves,
+        lastSessionParams.value.slug,
+      )
     } else {
       isSettingsModalOpen.value = true
     }
@@ -200,7 +211,11 @@ async function handleSummaryRestart() {
   openingStore.reset()
   await gameStore.resetGame()
   if (lastSessionParams.value) {
-    await startSession(lastSessionParams.value.color, lastSessionParams.value.moves, lastSessionParams.value.slug)
+    await startSession(
+      lastSessionParams.value.color,
+      lastSessionParams.value.moves,
+      lastSessionParams.value.slug,
+    )
   } else {
     isSettingsModalOpen.value = true
   }
@@ -236,25 +251,25 @@ function goBack() {
     <template #left-panel>
       <div class="left-panel-content">
         <div class="mozer-book-header">
-           <n-tooltip trigger="hover">
-             <template #trigger>
-               <n-button
-                 quaternary
-                 circle
-                 size="small"
-                 class="toggle-book-btn"
-                 @click="openingStore.showMozerBook = !openingStore.showMozerBook"
-               >
-                 <template #icon>
-                   <n-icon>
-                     <EyeOutline v-if="openingStore.showMozerBook" />
-                     <EyeOffOutline v-else />
-                   </n-icon>
-                 </template>
-               </n-button>
-             </template>
-             {{ openingStore.showMozerBook ? 'Hide Book' : 'Show Book' }}
-           </n-tooltip>
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button
+                quaternary
+                circle
+                size="small"
+                class="toggle-book-btn"
+                @click="openingStore.showMozerBook = !openingStore.showMozerBook"
+              >
+                <template #icon>
+                  <n-icon>
+                    <EyeOutline v-if="openingStore.showMozerBook" />
+                    <EyeOffOutline v-else />
+                  </n-icon>
+                </template>
+              </n-button>
+            </template>
+            {{ openingStore.showMozerBook ? 'Hide Book' : 'Show Book' }}
+          </n-tooltip>
         </div>
 
         <div class="mozer-book-wrapper" v-if="openingStore.showMozerBook">
@@ -264,13 +279,13 @@ function goBack() {
           />
         </div>
         <div v-else class="book-placeholder">
-           <div class="placeholder-content">
-              <n-icon size="48" depth="3"><EyeOffOutline /></n-icon>
-              <n-text depth="3">MozerBook is hidden</n-text>
-              <n-button secondary size="small" @click="openingStore.showMozerBook = true">
-                Show Theory
-              </n-button>
-           </div>
+          <div class="placeholder-content">
+            <n-icon size="48" depth="3"><EyeOffOutline /></n-icon>
+            <n-text depth="3">MozerBook is hidden</n-text>
+            <n-button secondary size="small" @click="openingStore.showMozerBook = true">
+              Show Theory
+            </n-button>
+          </div>
         </div>
       </div>
 
@@ -305,7 +320,11 @@ function goBack() {
     </template>
 
     <template #right-panel>
-      <AnalysisPanel v-if="showAnalysisPanel" :show-pgn="false" style="margin-bottom: 12px; flex-shrink: 0" />
+      <AnalysisPanel
+        v-if="showAnalysisPanel"
+        :show-pgn="false"
+        style="margin-bottom: 12px; flex-shrink: 0"
+      />
 
       <SessionHistoryList />
 

@@ -1,4 +1,9 @@
-import type { PersonalActivityStatsResponse, UserProfileStatsDto, TrainingPlanCurrentResponse, TrainingPlanNextResponse } from '@/shared/types/api.types'
+import type {
+  PersonalActivityStatsResponse,
+  UserProfileStatsDto,
+  TrainingPlanCurrentResponse,
+  TrainingPlanNextResponse,
+} from '@/shared/types/api.types'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient } from '../client'
 
@@ -39,7 +44,8 @@ export const useCurrentTrainingPlanQuery = (enabled: boolean = true) => {
 export const useNextTrainingPlanMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (level: string) => apiClient<TrainingPlanNextResponse>(`/training-plan/next?level=${level}`),
+    mutationFn: (level: string) =>
+      apiClient<TrainingPlanNextResponse>(`/training-plan/next?level=${level}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USER_CABINET_KEYS.trainingPlan() })
     },

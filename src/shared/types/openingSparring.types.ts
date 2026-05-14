@@ -27,14 +27,14 @@ export interface SessionMove {
 
   // Client-side move assessment
   quality?:
-  | 'blunder'
-  | 'mistake'
-  | 'inaccuracy'
-  | 'good'
-  | 'great'
-  | 'best'
-  | 'brilliant'
-  | 'interesting'
+    | 'blunder'
+    | 'mistake'
+    | 'inaccuracy'
+    | 'good'
+    | 'great'
+    | 'best'
+    | 'brilliant'
+    | 'interesting'
   nag?: string
   tags?: string[]
 

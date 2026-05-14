@@ -24,7 +24,7 @@ const accentColorVar = computed(() => `var(--color-${props.accentType})`)
 <template>
   <div class="selection-container">
     <n-card class="glass selection-card" :bordered="false" content-style="padding: 12px">
-      <n-space vertical :size="24" style="width: 100%;">
+      <n-space vertical :size="24" style="width: 100%">
         <div class="header" :class="{ 'tornado-header': isTornado }">
           <n-h1
             class="title"
@@ -49,7 +49,15 @@ const accentColorVar = computed(() => `var(--color-${props.accentType})`)
             block
             class="start-btn"
             @click="emit('start')"
-            :style="accentType === 'warning' || accentType === 'error' ? { backgroundColor: accentColorVar, borderColor: accentColorVar, boxShadow: `0 0 10px ${accentColorVar}` } : {}"
+            :style="
+              accentType === 'warning' || accentType === 'error'
+                ? {
+                    backgroundColor: accentColorVar,
+                    borderColor: accentColorVar,
+                    boxShadow: `0 0 10px ${accentColorVar}`,
+                  }
+                : {}
+            "
           >
             <slot name="start-button-label">START SESSION</slot>
           </n-button>
@@ -90,7 +98,7 @@ const accentColorVar = computed(() => `var(--color-${props.accentType})`)
 }
 
 .subtitle {
-  font-size: 1.0rem;
+  font-size: 1rem;
   margin: 0;
   padding: 0;
 }
@@ -146,12 +154,11 @@ const accentColorVar = computed(() => `var(--color-${props.accentType})`)
     gap: 5px;
   }
   :deep(.section-label) {
-  font-weight: 600;
-  color: var(--text-secondary, #999);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
+    font-weight: 600;
+    color: var(--text-secondary, #999);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
   }
-
 }
 </style>

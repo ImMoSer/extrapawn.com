@@ -43,7 +43,7 @@ const blackWinsPct = computed(() => {
       <div class="legend-item">1-0: {{ whiteWinsPct.toFixed(0) }}%</div>
       <div class="legend-item">1/2: {{ drawsPct.toFixed(0) }}%</div>
       <div class="legend-item">0-1: {{ blackWinsPct.toFixed(0) }}%</div>
-      <div class="legend-item" style="margin-left: 10px; opacity: 0.5;">(N={{ summary.total }})</div>
+      <div class="legend-item" style="margin-left: 10px; opacity: 0.5">(N={{ summary.total }})</div>
     </div>
   </div>
 </template>

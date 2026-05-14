@@ -51,7 +51,9 @@ onMounted(() => {
 const fetchLeaderboard = async () => {
   loading.value = true
   try {
-    const response = await fetch('https://club.extrapawn.com/api/stats/xtrapawn/players?period=last_30_days')
+    const response = await fetch(
+      'https://club.extrapawn.com/api/stats/xtrapawn/players?period=last_30_days',
+    )
     const data = await response.json()
     leaderboard.value = (data || []).slice(0, 20) // Top 20
   } catch (error) {
@@ -76,21 +78,29 @@ const renderUsername = (row: ClubPlayer) => {
   // Title
   if (row.title) {
     elements.push(
-      h(NTag, {
-        size: 'small',
-        bordered: false,
-        style: { fontWeight: 'bold', padding: '0 2px', color: '#ff5500', marginRight: '4px' }
-      }, { default: () => row.title })
+      h(
+        NTag,
+        {
+          size: 'small',
+          bordered: false,
+          style: { fontWeight: 'bold', padding: '0 2px', color: '#ff5500', marginRight: '4px' },
+        },
+        { default: () => row.title },
+      ),
     )
   }
 
   // Username Link
   elements.push(
-    h('a', {
-      href: `https://lichess.org/@/${row.lichess_id}`,
-      target: '_blank',
-      style: { color: 'var(--neon-cyan)', textDecoration: 'none', fontWeight: '800' },
-    }, row.username)
+    h(
+      'a',
+      {
+        href: `https://lichess.org/@/${row.lichess_id}`,
+        target: '_blank',
+        style: { color: 'var(--neon-cyan)', textDecoration: 'none', fontWeight: '800' },
+      },
+      row.username,
+    ),
   )
 
   // Flair
@@ -98,9 +108,13 @@ const renderUsername = (row: ClubPlayer) => {
     elements.push(
       h('img', {
         src: `https://lichess1.org/assets/flair/img/${row.flair}.webp`,
-        style: { height: isMobile.value ? '11px' : '14px', marginLeft: '4px', verticalAlign: 'middle' },
+        style: {
+          height: isMobile.value ? '11px' : '14px',
+          marginLeft: '4px',
+          verticalAlign: 'middle',
+        },
         alt: 'Flair',
-      })
+      }),
     )
   }
 
@@ -115,20 +129,22 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       title: '#',
       key: 'rank',
       width: isMobile.value ? 25 : 50,
-      render: (_: ClubPlayer, index: number) => h('span', { style: { color: 'var(--text-color-3)', fontWeight: 'bold' } }, index + 1)
+      render: (_: ClubPlayer, index: number) =>
+        h('span', { style: { color: 'var(--text-color-3)', fontWeight: 'bold' } }, index + 1),
     },
     {
       title: t('clubPage.table.player'),
       key: 'username',
       minWidth: isMobile.value ? 100 : 150,
-      render: (row: ClubPlayer) => renderUsername(row)
+      render: (row: ClubPlayer) => renderUsername(row),
     },
     {
       title: t('clubPage.table.vector'),
       key: 'vector',
       align: 'right' as const,
       width: numericWidth,
-      render: (row: ClubPlayer) => h('span', { style: { fontWeight: '900', color: 'var(--neon-purple)' } }, row.vector)
+      render: (row: ClubPlayer) =>
+        h('span', { style: { fontWeight: '900', color: 'var(--neon-purple)' } }, row.vector),
     },
     {
       title: 'Bonus',
@@ -137,13 +153,18 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       width: isMobile.value ? 70 : 100,
       render: (row: ClubPlayer, index: number) => {
         const tier = getTierInfo(index, row.vector)
-        if (tier.label === 'Pawn') return h('span', { style: { color: 'var(--text-color-3)' } }, '-')
-        return h(NTag, {
-          size: 'small',
-          ghost: true,
-          color: { textColor: tier.color, borderColor: tier.color }
-        }, { default: () => tier.label })
-      }
+        if (tier.label === 'Pawn')
+          return h('span', { style: { color: 'var(--text-color-3)' } }, '-')
+        return h(
+          NTag,
+          {
+            size: 'small',
+            ghost: true,
+            color: { textColor: tier.color, borderColor: tier.color },
+          },
+          { default: () => tier.label },
+        )
+      },
     },
     {
       title: t('clubPage.table.performance'),
@@ -162,19 +183,21 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       key: 'win_rate',
       align: 'right' as const,
       width: numericWidth,
-      render: (row: ClubPlayer) => `${row.win_rate}%`
+      render: (row: ClubPlayer) => `${row.win_rate}%`,
     },
     {
       title: t('clubPage.table.streak'),
       key: 'max_streak',
       align: 'right' as const,
       width: numericWidth,
-    }
+    },
   ]
 
   if (isMobile.value) {
     // Hidden on mobile to save space, keeping only essential
-    return allCols.filter(col => !['performance', 'win_rate', 'max_streak', 'total_games_played'].includes(col.key)) as DataTableColumns<ClubPlayer>
+    return allCols.filter(
+      (col) => !['performance', 'win_rate', 'max_streak', 'total_games_played'].includes(col.key),
+    ) as DataTableColumns<ClubPlayer>
   }
 
   return allCols as DataTableColumns<ClubPlayer>
@@ -189,18 +212,22 @@ onMounted(() => {
   <n-layout class="bonus-page-layout">
     <n-layout-content
       class="bonus-content"
-      :content-style="isMobile ? 'padding: 10px;' : 'padding: 20px; max-width: 1200px; margin: 0 auto;'"
+      :content-style="
+        isMobile ? 'padding: 10px;' : 'padding: 20px; max-width: 1200px; margin: 0 auto;'
+      "
     >
       <n-space vertical :size="isMobile ? 'medium' : 'large'">
         <n-h1 align-text class="page-title">
-          <n-text style="color: var(--neon-cyan)">{{ t('features.pricing.bonusInfo.title') }}</n-text>
+          <n-text style="color: var(--neon-cyan)">{{
+            t('features.pricing.bonusInfo.title')
+          }}</n-text>
         </n-h1>
 
         <n-card class="info-card" :content-style="isMobile ? { padding: '12px' } : {}">
           <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
             {{ t('features.pricing.bonusInfo.howItWorks') }}
           </n-h2>
-          
+
           <n-space vertical size="medium">
             <n-text depth="1" strong :style="{ fontSize: isMobile ? '0.95rem' : '1.1rem' }">
               {{ t('features.pricing.bonusInfo.p1') }}
@@ -208,23 +235,59 @@ onMounted(() => {
             <n-text depth="2" :style="{ fontSize: isMobile ? '0.85rem' : '1rem' }">
               {{ t('features.pricing.bonusInfo.p2') }}
             </n-text>
-            
+
             <n-space vertical :size="isMobile ? 'small' : 'medium'" style="margin-top: 8px">
               <div class="condition-item">
-                <n-tag :bordered="false" size="small" strong style="min-width: 100px; justify-content: center; background: rgba(255, 7, 58, 0.15); color: var(--neon-red)">TOP 1-3</n-tag>
+                <n-tag
+                  :bordered="false"
+                  size="small"
+                  strong
+                  style="
+                    min-width: 100px;
+                    justify-content: center;
+                    background: rgba(255, 7, 58, 0.15);
+                    color: var(--neon-red);
+                  "
+                  >TOP 1-3</n-tag
+                >
                 <n-text>{{ t('features.pricing.bonusInfo.p3') }}</n-text>
               </div>
               <div class="condition-item">
-                <n-tag :bordered="false" size="small" strong style="min-width: 100px; justify-content: center; background: rgba(255, 85, 0, 0.15); color: var(--neon-orange)">VECTOR 500</n-tag>
+                <n-tag
+                  :bordered="false"
+                  size="small"
+                  strong
+                  style="
+                    min-width: 100px;
+                    justify-content: center;
+                    background: rgba(255, 85, 0, 0.15);
+                    color: var(--neon-orange);
+                  "
+                  >VECTOR 500</n-tag
+                >
                 <n-text>{{ t('features.pricing.bonusInfo.p4a') }}</n-text>
               </div>
               <div class="condition-item">
-                <n-tag :bordered="false" size="small" strong style="min-width: 100px; justify-content: center; background: rgba(255, 230, 0, 0.15); color: var(--neon-yellow)">VECTOR 250</n-tag>
+                <n-tag
+                  :bordered="false"
+                  size="small"
+                  strong
+                  style="
+                    min-width: 100px;
+                    justify-content: center;
+                    background: rgba(255, 230, 0, 0.15);
+                    color: var(--neon-yellow);
+                  "
+                  >VECTOR 250</n-tag
+                >
                 <n-text>{{ t('features.pricing.bonusInfo.p4b') }}</n-text>
               </div>
             </n-space>
 
-            <n-text depth="3" style="font-style: italic; font-size: 0.85rem; margin-top: 8px; display: block;">
+            <n-text
+              depth="3"
+              style="font-style: italic; font-size: 0.85rem; margin-top: 8px; display: block"
+            >
               {{ t('features.pricing.bonusInfo.p5') }}
             </n-text>
           </n-space>
@@ -243,7 +306,7 @@ onMounted(() => {
             :single-line="false"
             size="small"
             class="bonus-table"
-           />
+          />
         </div>
 
         <div class="footer-actions">
@@ -266,7 +329,6 @@ onMounted(() => {
     </n-layout-content>
   </n-layout>
 </template>
-
 
 <style scoped>
 .bonus-page-layout,

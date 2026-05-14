@@ -46,7 +46,9 @@ const handleCopyPgn = () => {
       <n-tooltip trigger="hover">
         <template #trigger>
           <n-button circle quaternary size="large" @click="handlePrev">
-            <template #icon><n-icon><PrevIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><PrevIcon /></n-icon
+            ></template>
           </n-button>
         </template>
         {{ t('common.navigation.prev', 'Previous') }}
@@ -56,7 +58,9 @@ const handleCopyPgn = () => {
       <n-tooltip trigger="hover">
         <template #trigger>
           <n-button circle quaternary size="large" @click="handleFlip">
-            <template #icon><n-icon><FlipIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><FlipIcon /></n-icon
+            ></template>
           </n-button>
         </template>
         {{ t('features.board.flip', 'Flip Board') }}
@@ -107,7 +111,9 @@ const handleCopyPgn = () => {
       <n-tooltip trigger="hover">
         <template #trigger>
           <n-button circle quaternary size="large" @click="handleNext">
-            <template #icon><n-icon><NextIcon /></n-icon></template>
+            <template #icon
+              ><n-icon><NextIcon /></n-icon
+            ></template>
           </n-button>
         </template>
         {{ t('common.navigation.next', 'Next') }}

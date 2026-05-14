@@ -622,7 +622,10 @@ class PgnServiceController {
   }
 
   public getCleanComment(comment: string): string {
-    return comment.replace(/\[%(cal|csl)\s+[^\]]*\]/gi, '').replace(/\s\s+/g, ' ').trim()
+    return comment
+      .replace(/\[%(cal|csl)\s+[^\]]*\]/gi, '')
+      .replace(/\s\s+/g, ' ')
+      .trim()
   }
 
   private formatShapesToTags(shapes: DrawShape[]): string {
@@ -673,14 +676,18 @@ class PgnServiceController {
     treeVersion.value++
   }
 
-  public addVariation(startNode: PgnNode, moves: { san: string; uci: string; fenBefore: string; fenAfter: string }[], metadata?: Record<string, unknown>): void {
+  public addVariation(
+    startNode: PgnNode,
+    moves: { san: string; uci: string; fenBefore: string; fenAfter: string }[],
+    metadata?: Record<string, unknown>,
+  ): void {
     let current = startNode
     for (const move of moves) {
       const chessopsMove = parseUci(move.uci)
       if (!chessopsMove) continue
       const nodeId = scalachessCharPair(chessopsMove)
 
-      let next = current.children.find(child => child.id === nodeId)
+      let next = current.children.find((child) => child.id === nodeId)
       if (!next) {
         next = {
           id: nodeId,
@@ -691,7 +698,7 @@ class PgnServiceController {
           uci: move.uci,
           parent: current,
           children: [],
-          metadata: metadata ? { ...metadata } : undefined
+          metadata: metadata ? { ...metadata } : undefined,
         }
         current.children.push(next)
       } else if (metadata) {

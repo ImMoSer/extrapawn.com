@@ -4,7 +4,16 @@ import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import { MozerBook } from '@/features/mozer-book'
 import { LichessOpeningExplorer } from '@/features/opening-explorer'
 import { useAuthStore } from '@/entities/user'
-import { LichessApiError, LichessErrorModal, LichessStudyAuthModal, StudyControls, StudyHeader, StudySidebar, StudyTree, useStudyStore } from '@/features/study'
+import {
+  LichessApiError,
+  LichessErrorModal,
+  LichessStudyAuthModal,
+  StudyControls,
+  StudyHeader,
+  StudySidebar,
+  StudyTree,
+  useStudyStore,
+} from '@/features/study'
 import { useReplyTrainingStore, ReplySessionWindow } from '@/features/study-reply-training'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { GameLayout } from '@/widgets/game-layout'
@@ -30,7 +39,7 @@ watch(
   ([id, username]) => {
     studyStore.setOwner(id || null, username || null)
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const explorerMode = ref<'lichess' | 'mozer' | 'study'>('study')
@@ -67,14 +76,14 @@ onMounted(async () => {
   if (!routeStudyId || routeStudyId === 'local') {
     const hasAccess = await studyStore.requireLichessAccess()
     if (!hasAccess) {
-       return // Wait for user to authorize or cancel
+      return // Wait for user to authorize or cancel
     }
   }
   await studyStore.initialize()
 
   if (routeStudyId && routeStudyId !== 'local') {
     // 1. Check if study exists locally
-    const localStudy = studyStore.studies.find(s => s.id === routeStudyId)
+    const localStudy = studyStore.studies.find((s) => s.id === routeStudyId)
 
     if (!localStudy) {
       // Study is missing! Show import dialog
@@ -84,7 +93,9 @@ onMounted(async () => {
         positiveText: t('features.study.manager.buttons.import'),
         negativeText: t('common.actions.cancel'),
         onPositiveClick: async () => {
-          const loadingMsg = message.loading(t('features.study.deepLink.importing'), { duration: 0 })
+          const loadingMsg = message.loading(t('features.study.deepLink.importing'), {
+            duration: 0,
+          })
           try {
             await studyStore.importFromLichess(routeStudyId, 'community')
             loadingMsg.destroy()
@@ -92,29 +103,33 @@ onMounted(async () => {
 
             // Try to activate the specific chapter if provided
             if (routeChapterId) {
-              const chapterExists = studyStore.chapters.some(c => c.lichessChapterId === routeChapterId || c.id === routeChapterId)
+              const chapterExists = studyStore.chapters.some(
+                (c) => c.lichessChapterId === routeChapterId || c.id === routeChapterId,
+              )
               if (chapterExists) {
                 studyStore.setActiveChapter(routeChapterId)
               } else {
                 message.warning(t('features.study.deepLink.chapterNotFound'))
-                const newStudy = studyStore.studies.find(s => s.id === routeStudyId)
-                if (newStudy && newStudy.chapterIds.length > 0) studyStore.setActiveChapter(newStudy.chapterIds[0]!)
+                const newStudy = studyStore.studies.find((s) => s.id === routeStudyId)
+                if (newStudy && newStudy.chapterIds.length > 0)
+                  studyStore.setActiveChapter(newStudy.chapterIds[0]!)
               }
             } else {
-               const newStudy = studyStore.studies.find(s => s.id === routeStudyId)
-               if (newStudy && newStudy.chapterIds.length > 0) studyStore.setActiveChapter(newStudy.chapterIds[0]!)
+              const newStudy = studyStore.studies.find((s) => s.id === routeStudyId)
+              if (newStudy && newStudy.chapterIds.length > 0)
+                studyStore.setActiveChapter(newStudy.chapterIds[0]!)
             }
           } catch (error: unknown) {
-             console.error('Failed to auto-import community study:', error)
-             loadingMsg.destroy()
-             if (error instanceof LichessApiError) {
-               errorStatus.value = error.status
-               errorMessage.value = error.message
-               showErrorModal.value = true
-             } else {
-               message.error(t('features.study.deepLink.error'))
-             }
-             if (studyStore.activeChapterId) updateUrl(studyStore.activeChapterId)
+            console.error('Failed to auto-import community study:', error)
+            loadingMsg.destroy()
+            if (error instanceof LichessApiError) {
+              errorStatus.value = error.status
+              errorMessage.value = error.message
+              showErrorModal.value = true
+            } else {
+              message.error(t('features.study.deepLink.error'))
+            }
+            if (studyStore.activeChapterId) updateUrl(studyStore.activeChapterId)
           }
         },
         onNegativeClick: () => {
@@ -123,18 +138,21 @@ onMounted(async () => {
           } else {
             router.push('/')
           }
-        }
+        },
       })
       return // Wait for user decision
     } else {
       // Study exists locally
       if (routeChapterId) {
-        const chapterExists = studyStore.chapters.some(c => c.lichessChapterId === routeChapterId || c.id === routeChapterId)
+        const chapterExists = studyStore.chapters.some(
+          (c) => c.lichessChapterId === routeChapterId || c.id === routeChapterId,
+        )
         if (chapterExists) {
           studyStore.setActiveChapter(routeChapterId)
         } else {
           message.warning(t('features.study.deepLink.chapterNotFoundInStudy'))
-          if (localStudy.chapterIds.length > 0) studyStore.setActiveChapter(localStudy.chapterIds[0]!)
+          if (localStudy.chapterIds.length > 0)
+            studyStore.setActiveChapter(localStudy.chapterIds[0]!)
         }
       } else {
         if (localStudy.chapterIds.length > 0) studyStore.setActiveChapter(localStudy.chapterIds[0]!)
@@ -165,7 +183,7 @@ function updateUrl(id: string) {
 
   router.replace({
     name: 'study-view',
-    params: { studyId, chapterId: displayChapterId }
+    params: { studyId, chapterId: displayChapterId },
   })
 }
 
@@ -253,16 +271,9 @@ watch(
     </template>
   </GameLayout>
 
-  <LichessStudyAuthModal
-    :show="studyStore.isAuthModalVisible"
-    @cancel="handleCancelAuth"
-  />
+  <LichessStudyAuthModal :show="studyStore.isAuthModalVisible" @cancel="handleCancelAuth" />
 
-  <LichessErrorModal
-    v-model:show="showErrorModal"
-    :status="errorStatus"
-    :message="errorMessage"
-  />
+  <LichessErrorModal v-model:show="showErrorModal" :status="errorStatus" :message="errorMessage" />
 </template>
 
 <style scoped>

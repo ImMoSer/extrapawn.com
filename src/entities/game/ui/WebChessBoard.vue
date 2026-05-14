@@ -69,12 +69,18 @@ const nagMarkerStyle = computed(() => {
 
 const getNagColor = (quality: string) => {
   switch (quality) {
-    case 'blunder': return 'var(--color-nag-blunder)'
-    case 'mistake': return 'var(--color-nag-mistake)'
-    case 'inaccuracy': return 'var(--color-nag-inaccuracy)'
-    case 'best': return 'var(--color-nag-best)'
-    case 'brilliant': return 'var(--color-nag-brilliant)'
-    case 'interesting': return 'var(--color-nag-interesting)'
+    case 'blunder':
+      return 'var(--color-nag-blunder)'
+    case 'mistake':
+      return 'var(--color-nag-mistake)'
+    case 'inaccuracy':
+      return 'var(--color-nag-inaccuracy)'
+    case 'best':
+      return 'var(--color-nag-best)'
+    case 'brilliant':
+      return 'var(--color-nag-brilliant)'
+    case 'interesting':
+      return 'var(--color-nag-interesting)'
     case 'better-white':
     case 'advantage-white':
     case 'winning-white':
@@ -85,13 +91,16 @@ const getNagColor = (quality: string) => {
     case 'winning-black':
     case 'decisive-black':
       return 'var(--color-error)'
-    case 'equal': return 'var(--color-text-secondary)'
-    case 'novelty': return 'var(--color-accent-primary)'
+    case 'equal':
+      return 'var(--color-text-secondary)'
+    case 'novelty':
+      return 'var(--color-accent-primary)'
     case 'initiative':
     case 'attack':
     case 'counterplay':
       return 'var(--color-warning)'
-    default: return 'var(--color-accent-primary)'
+    default:
+      return 'var(--color-accent-primary)'
   }
 }
 
@@ -145,7 +154,7 @@ onMounted(() => {
         onChange: (shapes) => {
           const autoKey = (s: DrawShape) => `${s.orig}-${s.dest}-${s.brush}`
           const autoKeys = new Set(boardStore.autoShapes.map(autoKey))
-          const userShapes = (shapes as DrawShape[]).filter(s => !autoKeys.has(autoKey(s)))
+          const userShapes = (shapes as DrawShape[]).filter((s) => !autoKeys.has(autoKey(s)))
           emit('shapes-change', userShapes)
         },
       },
@@ -170,7 +179,7 @@ watch(
     ground.value.set({
       fen: newFen,
       turnColor: props.turnColor, // Ensure turn color is synced with FEN
-      drawable: { shapes: combinedShapes.value as DrawShape[] }
+      drawable: { shapes: combinedShapes.value as DrawShape[] },
     })
   },
 )
@@ -309,12 +318,12 @@ watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, 
   color: #ffffff; /* White text */
   font-weight: 800; /* Bold */
   font-size: 1.5rem;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.7);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7);
   border: 1.8px solid #ffffff; /* White border */
   /* Remove outgoing transform to keep inside the square */
   user-select: none;
   z-index: 6;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Boost contrast for symbols */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Boost contrast for symbols */
 }
 
 @media (max-width: 768px) {

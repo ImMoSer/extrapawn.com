@@ -1,4 +1,10 @@
-import { gameplayService, useBoardStore, useGameStore, type GameStatusInfo, type IGameplayStrategy } from '@/entities/game'
+import {
+  gameplayService,
+  useBoardStore,
+  useGameStore,
+  type GameStatusInfo,
+  type IGameplayStrategy,
+} from '@/entities/game'
 import type { Key } from '@lichess-org/chessground/types'
 import { useTheoryStore } from '@/entities/opening'
 import type { MozerBookResponse, MozerBookMove } from '@/entities/opening'
@@ -69,9 +75,8 @@ export function useSparringLoop() {
       return
     }
 
-    const maxGamesForAnyMove = stats.moves.length > 0
-      ? Math.max(...stats.moves.map((m: MozerBookMove) => m.total))
-      : 1
+    const maxGamesForAnyMove =
+      stats.moves.length > 0 ? Math.max(...stats.moves.map((m: MozerBookMove) => m.total)) : 1
 
     const popularity = (moveData.total / maxGamesForAnyMove) * 100
     const wins = store.playerColor === 'white' ? moveData.win_p : moveData.loss_p
@@ -116,17 +121,19 @@ export function useSparringLoop() {
 
     // 1. Character Style override (Master DB only)
     if (!isLichess && store.opponentCharacter !== 'none') {
-       const mozerStats = stats as MozerBookResponse
-       if (mozerStats.styles) {
-         const charStyle = mozerStats.styles[store.opponentCharacter as keyof typeof mozerStats.styles]
-         if (charStyle && charStyle.uci) {
-             return normalizeUciMove(charStyle.uci)
-         }
-       }
+      const mozerStats = stats as MozerBookResponse
+      if (mozerStats.styles) {
+        const charStyle =
+          mozerStats.styles[store.opponentCharacter as keyof typeof mozerStats.styles]
+        if (charStyle && charStyle.uci) {
+          return normalizeUciMove(charStyle.uci)
+        }
+      }
     }
 
     // Determine candidate moves
-    const candidates = stats.moves.slice(0, store.variability)
+    const candidates = stats.moves
+      .slice(0, store.variability)
       .map((m: { uci: string; total: number }) => ({ uci: m.uci, total: m.total }))
 
     if (candidates.length === 0) {
@@ -145,7 +152,6 @@ export function useSparringLoop() {
     return normalizeUciMove(candidates[0]!.uci)
   }
 
-
   async function enrichBotMove(selectedUci: string) {
     const isLichess = store.opponentSource === 'lichess'
     const node = pgnService.getLastMove()
@@ -155,7 +161,14 @@ export function useSparringLoop() {
       ? await theoryStore.awaitLichessStatsForFen(fenBefore, undefined, true)
       : await theoryStore.awaitMozerStatsForFen(fenBefore, true)
 
-    type UnifiedMove = { uci: string; san: string; total: number; win_p: number; draw_p: number; loss_p: number }
+    type UnifiedMove = {
+      uci: string
+      san: string
+      total: number
+      win_p: number
+      draw_p: number
+      loss_p: number
+    }
     type UnifiedStats = { summary?: { total: number }; total?: number; moves: UnifiedMove[] }
 
     const moveData = (stats as UnifiedStats | null)?.moves.find((m) =>
@@ -169,9 +182,10 @@ export function useSparringLoop() {
     if (moveData) {
       const castedStats = stats as UnifiedStats
 
-      const maxGamesForAnyMove = castedStats.moves.length > 0
-        ? Math.max(...castedStats.moves.map((m: UnifiedMove) => m.total))
-        : 1
+      const maxGamesForAnyMove =
+        castedStats.moves.length > 0
+          ? Math.max(...castedStats.moves.map((m: UnifiedMove) => m.total))
+          : 1
 
       popularity = (moveData.total / maxGamesForAnyMove) * 100
 
@@ -249,36 +263,36 @@ export function useSparringLoop() {
           const bestLineBefore = response.eval_before?.[0]
           const bestLineAfter = response.eval_after?.[0]
 
-            pgnService.updateNode(currentNode, {
-              metadata: {
-                phase: 'playout',
-                loading: false,
-                nag: response.quality.nag,
-                quality: classifyMoveFromNag(response.quality.nag),
-                chaos_index: response.quality.chaos_index,
-                is_sacrifice: response.quality.is_sacrifice,
-                evaluation: {
-                  score_cp: bestLineAfter?.cp || 0,
-                  win_prob: bestLineAfter?.win_prob || 0,
-                  depth: bestLineAfter?.depth || 0,
-                  best_move: bestLineBefore?.move_uci || '',
-                  delta_wp: response.quality.delta_wp,
-                  delta_cp: response.quality.delta_cp,
-                },
+          pgnService.updateNode(currentNode, {
+            metadata: {
+              phase: 'playout',
+              loading: false,
+              nag: response.quality.nag,
+              quality: classifyMoveFromNag(response.quality.nag),
+              chaos_index: response.quality.chaos_index,
+              is_sacrifice: response.quality.is_sacrifice,
+              evaluation: {
+                score_cp: bestLineAfter?.cp || 0,
+                win_prob: bestLineAfter?.win_prob || 0,
+                depth: bestLineAfter?.depth || 0,
+                best_move: bestLineBefore?.move_uci || '',
+                delta_wp: response.quality.delta_wp,
+                delta_cp: response.quality.delta_cp,
               },
-            })
+            },
+          })
 
-            // Set the marker on the board
-            const targetSquare = uci.slice(2, 4) as Key
-            if (response.quality.nag && response.quality.nag !== 'OK') {
-              boardStore.setLastNag({
-                square: targetSquare,
-                nag: response.quality.nag,
-                quality: classifyMoveFromNag(response.quality.nag),
-              })
-            } else {
-               boardStore.setLastNag(null)
-            }
+          // Set the marker on the board
+          const targetSquare = uci.slice(2, 4) as Key
+          if (response.quality.nag && response.quality.nag !== 'OK') {
+            boardStore.setLastNag({
+              square: targetSquare,
+              nag: response.quality.nag,
+              quality: classifyMoveFromNag(response.quality.nag),
+            })
+          } else {
+            boardStore.setLastNag(null)
+          }
         }
       } catch (e) {
         console.error('[OpeningSparring] Error in playout recording:', e)
@@ -339,8 +353,7 @@ export function useSparringLoop() {
     recordQueue = Promise.resolve()
 
     return {
-      config: {
-      },
+      config: {},
       async validateUserMove() {
         return true
       },
@@ -351,7 +364,7 @@ export function useSparringLoop() {
           const lastNode = pgnService.getLastMove()
           const nag = lastNode?.metadata?.nag
           const delay = getNagDelay(nag)
-          
+
           if (delay > 0) {
             await new Promise((resolve) => setTimeout(resolve, delay))
           }

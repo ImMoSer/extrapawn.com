@@ -1,4 +1,3 @@
-
 // src/services/WikiBooksService.ts
 import logger from '@/shared/lib/logger'
 import type { WikiApiResponse, WikiPageExtract } from '@/shared/types/wikibooks.types'
@@ -49,7 +48,7 @@ class WikiBooksApiService {
   public async fetchTheory(slug: string): Promise<WikiPageExtract | null> {
     // 1. Check Cache
     try {
-      const cached = await globalCacheRepository.getWikiContent(slug);
+      const cached = await globalCacheRepository.getWikiContent(slug)
       if (
         cached &&
         Date.now() - cached.timestamp < this.CACHE_TTL &&
@@ -57,12 +56,12 @@ class WikiBooksApiService {
         cached.content.trim() !== ''
       ) {
         return {
-            pageid: 0, // Not stored in SQLite, but we don't really use it
-            ns: 0,
-            title: slug,
-            extract: cached.content,
-            timestamp: cached.timestamp
-        };
+          pageid: 0, // Not stored in SQLite, but we don't really use it
+          ns: 0,
+          title: slug,
+          extract: cached.content,
+          timestamp: cached.timestamp,
+        }
       }
     } catch (err) {
       logger.error('[WikiBooksApiService] Cache read error:', err)
@@ -112,10 +111,10 @@ class WikiBooksApiService {
 
       // 3. Update Cache
       await globalCacheRepository.saveWikiContent({
-          slug,
-          content: result.extract,
-          timestamp: result.timestamp
-      });
+        slug,
+        content: result.extract,
+        timestamp: result.timestamp,
+      })
 
       return result
     } catch (err) {

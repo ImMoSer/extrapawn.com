@@ -59,12 +59,18 @@ const { t } = useI18n()
       <div class="stats-section">
         <n-grid :cols="2" :x-gap="12">
           <n-grid-item>
-            <n-statistic :label="t('openingTrainer.header.popularity') || 'Popularity'" :value="averagePopularity">
+            <n-statistic
+              :label="t('openingTrainer.header.popularity') || 'Popularity'"
+              :value="averagePopularity"
+            >
               <template #suffix>%</template>
             </n-statistic>
           </n-grid-item>
           <n-grid-item>
-            <n-statistic :label="t('features.diamondHunter.header.winRate')" :value="averageWinRate">
+            <n-statistic
+              :label="t('features.diamondHunter.header.winRate')"
+              :value="averageWinRate"
+            >
               <template #suffix>%</template>
             </n-statistic>
           </n-grid-item>

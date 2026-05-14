@@ -42,9 +42,20 @@ const handleSelection = (color: 'white' | 'black') => {
 }
 
 @keyframes pulse-text {
-  0% { transform: scale(1); text-shadow: 0 0 10px rgba(0, 242, 255, 0.4); }
-  50% { transform: scale(1.05); text-shadow: 0 0 20px rgba(0, 242, 255, 0.8), 0 0 30px rgba(0, 242, 255, 0.4); }
-  100% { transform: scale(1); text-shadow: 0 0 10px rgba(0, 242, 255, 0.4); }
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    text-shadow:
+      0 0 20px rgba(0, 242, 255, 0.8),
+      0 0 30px rgba(0, 242, 255, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+  }
 }
 
 .side-btn {
@@ -90,15 +101,27 @@ const handleSelection = (color: 'white' | 'black') => {
 }
 
 @keyframes pulse-shadow-black {
-  0% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
-  100% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+  0% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+  }
 }
 
 @keyframes pulse-shadow-white {
-  0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
-  100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
 }
 
 @media (max-width: 600px) {

@@ -5,4 +5,3 @@ export { default as OpeningSparringSettingsModal } from './ui/OpeningSparringSet
 export { default as OpeningSparringSummaryModal } from './ui/OpeningSparringSummaryModal.vue'
 export { default as PlayoutAnalysisTable } from './ui/PlayoutAnalysisTable.vue'
 export { default as SessionHistoryList } from './ui/SessionHistoryList.vue'
-

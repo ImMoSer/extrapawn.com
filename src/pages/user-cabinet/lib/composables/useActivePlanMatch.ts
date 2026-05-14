@@ -26,7 +26,7 @@ export function useActivePlanMatch(options: () => ActivePlanMatchOptions) {
       for (const t of task.themes) {
         const taskThemeName = t.name === 'rook' ? 'rookPawn' : t.name
         const currentThemeName = theme === 'rook' ? 'rookPawn' : theme
-        
+
         if (taskThemeName === currentThemeName) {
           return `${task.mode}-${task.sub_mode}-${t.name}`
         }

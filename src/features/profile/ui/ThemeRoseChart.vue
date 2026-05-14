@@ -156,10 +156,8 @@ const option = computed(() => {
             const theme = p.name
             let themeName = theme
             if (te(`chess.tactics.${theme}`)) themeName = t(`chess.tactics.${theme}`)
-            else if (te(`chess.themes.${theme}`))
-              themeName = t(`chess.themes.${theme}`)
-            else if (te(`chess.subThemes.${theme}`))
-              themeName = t(`chess.subThemes.${theme}`)
+            else if (te(`chess.themes.${theme}`)) themeName = t(`chess.themes.${theme}`)
+            else if (te(`chess.subThemes.${theme}`)) themeName = t(`chess.subThemes.${theme}`)
 
             return themeName.length > 100 ? themeName.slice(0, 100) + '..' : themeName
           },
@@ -184,10 +182,8 @@ const onChartClick = (params: unknown) => {
 
   let themeName = theme
   if (te(`chess.tactics.${theme}`)) themeName = t(`chess.tactics.${theme}`)
-  else if (te(`chess.themes.${theme}`))
-    themeName = t(`chess.themes.${theme}`)
-  else if (te(`chess.subThemes.${theme}`))
-    themeName = t(`chess.subThemes.${theme}`)
+  else if (te(`chess.themes.${theme}`)) themeName = t(`chess.themes.${theme}`)
+  else if (te(`chess.subThemes.${theme}`)) themeName = t(`chess.subThemes.${theme}`)
 
   const ev = p.event.event as Event
   let x = window.innerWidth / 2
@@ -219,8 +215,7 @@ const onChartClick = (params: unknown) => {
 
   const modeName = props.title
   const screenModeRaw = props.activeMode || props.mode
-  const subModeName =
-    screenModeRaw.charAt(0).toUpperCase() + screenModeRaw.slice(1)
+  const subModeName = screenModeRaw.charAt(0).toUpperCase() + screenModeRaw.slice(1)
 
   activePopup.value = {
     visible: true,
@@ -296,7 +291,9 @@ const onImproveClick = () => {
         </n-button>
       </div>
       <n-radio-group v-model:value="viewMode" size="small">
-        <n-radio-button value="rating">{{ t('features.userCabinet.analyticsTable.rating') }}</n-radio-button>
+        <n-radio-button value="rating">{{
+          t('features.userCabinet.analyticsTable.rating')
+        }}</n-radio-button>
         <n-radio-button value="accuracy">{{
           t('features.userCabinet.analyticsTable.accuracy')
         }}</n-radio-button>
@@ -370,7 +367,14 @@ const onImproveClick = () => {
           <span class="popup-title">
             {{ activePopup.data.modeName }} {{ activePopup.data.subModeName }}
           </span>
-          <n-button circle size="tiny" type="error" ghost @click="activePopup.visible = false" class="close-btn">
+          <n-button
+            circle
+            size="tiny"
+            type="error"
+            ghost
+            @click="activePopup.visible = false"
+            class="close-btn"
+          >
             <template #icon>
               <n-icon :component="CloseOutline" />
             </template>
@@ -430,9 +434,10 @@ const onImproveClick = () => {
   border: 1px solid color-mix(in srgb, var(--neon-cyan) 50%, transparent);
   border-radius: 12px;
   padding: 10px;
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--neon-cyan) 25%, transparent),
-              0 0 16px color-mix(in srgb, var(--neon-cyan) 15%, transparent),
-              inset 0 0 16px color-mix(in srgb, var(--neon-cyan) 5%, transparent);
+  box-shadow:
+    0 8px 32px color-mix(in srgb, var(--neon-cyan) 25%, transparent),
+    0 0 16px color-mix(in srgb, var(--neon-cyan) 15%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--neon-cyan) 5%, transparent);
   min-width: 180px;
   pointer-events: auto;
   transform: translate(0, 0);

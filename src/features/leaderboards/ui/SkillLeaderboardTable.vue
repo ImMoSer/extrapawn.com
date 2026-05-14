@@ -1,9 +1,6 @@
 <!-- src/components/recordsPage/SkillLeaderboardTable.vue -->
 <script setup lang="ts">
-import type {
-  LeaderboardEntry,
-  SolveStreakLeaderboardEntry,
-} from '@/shared/types/api.types'
+import type { LeaderboardEntry, SolveStreakLeaderboardEntry } from '@/shared/types/api.types'
 import { BarChart } from 'echarts/charts'
 import {
   GridComponent,
@@ -139,7 +136,12 @@ const chartOption = computed(() => {
         const entry = displayEntries[p[0].dataIndex]
         if (!entry) return ''
 
-        const tierStr = 'tier' in entry ? entry.tier : ('subscriptionTier' in entry ? entry.subscriptionTier : 'Pawn')
+        const tierStr =
+          'tier' in entry
+            ? entry.tier
+            : 'subscriptionTier' in entry
+              ? entry.subscriptionTier
+              : 'Pawn'
         const iconPath = getTierIcon(tierStr)
 
         let html = `<div style="padding: 8px; min-width: 150px; background: rgba(10, 11, 20, 0.95); border: 1px solid var(--glass-border); border-radius: 8px;">
@@ -157,7 +159,7 @@ const chartOption = computed(() => {
               </div>`
           }
         })
-        
+
         html += `<div style="margin-top: 8px; border-top: 1px solid #5A5A5A; padding-top: 4px; text-align: right;">
                    <b>Total: ${getTotal(entry)}</b>
                  </div></div>`
@@ -190,18 +192,29 @@ const chartOption = computed(() => {
         fontSize: isMobile.value ? 9 : 12,
         fontWeight: 'bold',
         formatter: (value: string) => value,
-        rich: displayEntries.reduce((acc, entry, index) => {
-          const tierStr = 'tier' in entry ? entry.tier : ('subscriptionTier' in entry ? entry.subscriptionTier : 'Pawn')
-          const iconUrl = getTierIcon(tierStr)
-          const iconSize = getTierIconSize()
-          acc[`icon${index}`] = {
-            backgroundColor: { image: iconUrl },
-            height: iconSize,
-            width: iconSize,
-            align: 'center',
-          }
-          return acc
-        }, {} as Record<string, { backgroundColor: { image: string }; height: number; width: number; align: string }>)
+        rich: displayEntries.reduce(
+          (acc, entry, index) => {
+            const tierStr =
+              'tier' in entry
+                ? entry.tier
+                : 'subscriptionTier' in entry
+                  ? entry.subscriptionTier
+                  : 'Pawn'
+            const iconUrl = getTierIcon(tierStr)
+            const iconSize = getTierIconSize()
+            acc[`icon${index}`] = {
+              backgroundColor: { image: iconUrl },
+              height: iconSize,
+              width: iconSize,
+              align: 'center',
+            }
+            return acc
+          },
+          {} as Record<
+            string,
+            { backgroundColor: { image: string }; height: number; width: number; align: string }
+          >,
+        ),
       },
       axisLine: { show: false },
       axisTick: { show: false },

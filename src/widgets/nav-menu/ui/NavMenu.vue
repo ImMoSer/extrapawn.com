@@ -39,7 +39,8 @@ function renderIcon(icon: Component) {
 }
 
 // Custom Icon for Legal (§)
-const ParagraphIcon = () => h('span', { style: 'font-weight: bold; font-size: 1.2rem; font-family: serif;' }, '§')
+const ParagraphIcon = () =>
+  h('span', { style: 'font-weight: bold; font-size: 1.2rem; font-family: serif;' }, '§')
 
 const menuOptions: MenuOption[] = [
   {

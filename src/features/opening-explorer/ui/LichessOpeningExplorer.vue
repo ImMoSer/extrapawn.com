@@ -6,18 +6,8 @@ import {
   type LichessParams,
 } from '@/entities/opening'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
-import {
-  SettingsOutline,
-  TrophyOutline,
-} from '@vicons/ionicons5'
-import {
-  NButton,
-  NCollapseTransition,
-  NIcon,
-  NRadioButton,
-  NRadioGroup,
-  NText,
-} from 'naive-ui'
+import { SettingsOutline, TrophyOutline } from '@vicons/ionicons5'
+import { NButton, NCollapseTransition, NIcon, NRadioButton, NRadioGroup, NText } from 'naive-ui'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OpeningStatsTable from './OpeningStatsTable.vue'
@@ -60,8 +50,6 @@ watch(showSettings, (val) => {
 function applySettings() {
   updateParams(pendingLichessParams.value)
 }
-
-
 
 function handleSelectMove(uci: string) {
   boardStore.applyUciMove(uci)
@@ -172,8 +160,6 @@ onMounted(() => {
         :avg-elo="stats.summary?.avgElo || 0"
         @select-move="handleSelectMove"
       />
-
-
 
       <div v-if="!loading && !stats" class="empty-state">
         <n-text depth="3">No statistics available for this position.</n-text>

@@ -45,10 +45,10 @@
   --color-nag-blunder: var(--neon-red);
 
   /* === BACKGROUNDS === */
-  --bg-0: #050508;   /* deep void */
-  --bg-1: #0a0b14;   /* panels */
-  --bg-2: #12141f;   /* elevated */
-  --bg-3: #1a1d2e;   /* hover */
+  --bg-0: #050508; /* deep void */
+  --bg-1: #0a0b14; /* panels */
+  --bg-2: #12141f; /* elevated */
+  --bg-3: #1a1d2e; /* hover */
 
   /* glass */
   --glass-bg: rgba(10, 11, 20, 0.55);
@@ -104,12 +104,14 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(-2px 2px 4px rgba(255, 0, 122, 0.4)) drop-shadow(2px -2px 4px rgba(0, 229, 255, 0.4));
+  filter: drop-shadow(-2px 2px 4px rgba(255, 0, 122, 0.4))
+    drop-shadow(2px -2px 4px rgba(0, 229, 255, 0.4));
   user-select: none;
 }
 
 /* === GLOBAL RESETS === */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   font-family: var(--font-family-primary);
@@ -137,23 +139,28 @@ html, body {
 }
 
 /* === GLASS 2.0 (MODALS / PANELS) === */
-.glass, .glass-panel-modal {
+.glass,
+.glass-panel-modal {
   background: var(--glass-bg) !important;
   backdrop-filter: var(--glass-blur) !important;
   border-radius: 14px;
   border: 1px solid var(--glass-border) !important;
-  box-shadow: inset 0 0 20px rgba(255,255,255,0.02), 0 10px 40px rgba(0,0,0,0.6) !important;
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.02),
+    0 10px 40px rgba(0, 0, 0, 0.6) !important;
   transition: border-color 0.3s ease;
 }
-.glass:hover, .glass-panel-modal:hover {
+.glass:hover,
+.glass-panel-modal:hover {
   border-color: var(--glass-highlight) !important;
 }
 
 /* === BUTTON PRIMARY === */
-.btn-primary, .start-btn {
+.btn-primary,
+.start-btn {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)) !important;
   color: var(--white) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 12px !important;
   box-shadow: var(--glow-primary) !important;
   transition: all 0.25s ease !important;
@@ -167,11 +174,13 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-.btn-primary:hover, .start-btn:hover {
+.btn-primary:hover,
+.start-btn:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: var(--glow-primary-strong) !important;
 }
-.btn-primary:active, .start-btn:active {
+.btn-primary:active,
+.start-btn:active {
   transform: scale(0.98);
 }
 .start-btn.exam-btn {
@@ -184,7 +193,8 @@ html, body {
 }
 
 /* --- Common Modal Layout Utilities --- */
-.modal-body-layout, .summary-content {
+.modal-body-layout,
+.summary-content {
   padding: 8px 0;
 }
 .setting-section {
@@ -201,7 +211,8 @@ html, body {
   font-size: 1.2rem;
   color: var(--color-warning);
 }
-.hint-text, .selection-hint {
+.hint-text,
+.selection-hint {
   font-size: 0.8rem;
   line-height: 1.4;
   margin-top: 4px;
@@ -223,9 +234,15 @@ html, body {
   margin-right: 4px;
   font-size: 1.1rem;
 }
-.stat-box .stat-icon.acc { color: var(--color-warning); }
-.stat-box .stat-icon.win { color: var(--color-success); }
-.stat-box .stat-icon.rat { color: var(--color-primary); }
+.stat-box .stat-icon.acc {
+  color: var(--color-warning);
+}
+.stat-box .stat-icon.win {
+  color: var(--color-success);
+}
+.stat-box .stat-icon.rat {
+  color: var(--color-primary);
+}
 
 .engine-eval-section {
   background: var(--bg-1);
@@ -275,11 +292,26 @@ html, body {
   padding: 10px;
   border-radius: 8px;
 }
-.eval-result.success { color: var(--color-success); background: rgba(0, 255, 85, 0.1); }
-.eval-result.info { color: var(--color-primary); background: rgba(0, 229, 255, 0.1); }
-.eval-result.warning { color: var(--color-warning); background: rgba(255, 184, 0, 0.1); }
-.eval-result.error { color: var(--color-error); background: rgba(255, 7, 58, 0.1); }
-.eval-result .result-msg { font-weight: 500; font-size: 0.95rem; }
+.eval-result.success {
+  color: var(--color-success);
+  background: rgba(0, 255, 85, 0.1);
+}
+.eval-result.info {
+  color: var(--color-primary);
+  background: rgba(0, 229, 255, 0.1);
+}
+.eval-result.warning {
+  color: var(--color-warning);
+  background: rgba(255, 184, 0, 0.1);
+}
+.eval-result.error {
+  color: var(--color-error);
+  background: rgba(255, 7, 58, 0.1);
+}
+.eval-result .result-msg {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
 
 /* --- Colors & Swatches --- */
 .color-btn-white {
@@ -296,8 +328,12 @@ html, body {
   border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
-.swatch.white { background: var(--white); }
-.swatch.black { background: var(--bg-0); }
+.swatch.white {
+  background: var(--white);
+}
+.swatch.black {
+  background: var(--bg-0);
+}
 
 /* Overrides for naive-ui elements inside Modals */
 .engine-selector-wrapper {
@@ -335,12 +371,14 @@ html, body {
   .hint-text {
     font-size: 0.65rem;
   }
-  .start-btn, .btn-primary {
+  .start-btn,
+  .btn-primary {
     height: 40px;
     font-size: 0.85rem;
     border-radius: 8px !important;
   }
-  .n-radio-group, .n-radio-button {
+  .n-radio-group,
+  .n-radio-button {
     --n-height: 34px !important;
     font-size: 0.85rem !important;
   }

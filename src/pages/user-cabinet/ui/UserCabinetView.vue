@@ -142,7 +142,7 @@ const currentPracticalThemes = computed(() => {
 })
 
 const handleRedeem = async () => {
-  if (!giftCode.value || giftCode.value.length !== 8) return;
+  if (!giftCode.value || giftCode.value.length !== 8) return
 
   isRedeeming.value = true
   try {
@@ -151,7 +151,7 @@ const handleRedeem = async () => {
       {
         method: 'POST',
         body: JSON.stringify({ code: giftCode.value }),
-      }
+      },
     )
     if (res.success) {
       successTier.value = res.tier
@@ -215,7 +215,6 @@ const handleManageSubscription = async () => {
           :profile-override="displayProfile"
           @reactivate="handleManageSubscription"
         />
-
 
         <div class="charts-grid">
           <ThemeRoseChart
@@ -291,15 +290,15 @@ const handleManageSubscription = async () => {
         <!-- Gift Code Redeem Area -->
         <n-card :bordered="false" class="gift-redeem-card" embedded>
           <n-space vertical>
-            <n-h3 style="margin-bottom: 0;">🎁 {{ t('features.userCabinet.gift.title') }}</n-h3>
+            <n-h3 style="margin-bottom: 0">🎁 {{ t('features.userCabinet.gift.title') }}</n-h3>
             <n-text depth="3">{{ t('features.userCabinet.gift.description') }}</n-text>
-            <n-input-group style="margin-top: 8px;">
+            <n-input-group style="margin-top: 8px">
               <n-input
                 v-model:value="giftCode"
                 :placeholder="t('features.userCabinet.gift.placeholder')"
                 :maxlength="8"
                 size="large"
-                style="max-width: 250px;"
+                style="max-width: 250px"
                 @keyup.enter="handleRedeem"
               />
               <n-button
@@ -316,16 +315,23 @@ const handleManageSubscription = async () => {
         </n-card>
 
         <!-- Manage Subscription Area -->
-        <n-card v-if="userProfile?.isPolarCustomer" :bordered="false" class="gift-redeem-card" embedded>
+        <n-card
+          v-if="userProfile?.isPolarCustomer"
+          :bordered="false"
+          class="gift-redeem-card"
+          embedded
+        >
           <n-space vertical>
-            <n-h3 style="margin-bottom: 0;">⚙️ {{ t('features.userCabinet.subscription.title') }}</n-h3>
+            <n-h3 style="margin-bottom: 0"
+              >⚙️ {{ t('features.userCabinet.subscription.title') }}</n-h3
+            >
             <n-text depth="3">{{ t('features.userCabinet.subscription.description') }}</n-text>
             <n-button
               type="primary"
               size="large"
               :loading="isManagingSubscription"
               @click="handleManageSubscription"
-              style="margin-top: 8px; width: fit-content;"
+              style="margin-top: 8px; width: fit-content"
             >
               {{ t('features.userCabinet.subscription.openPortal') }}
             </n-button>
@@ -338,14 +344,16 @@ const handleManageSubscription = async () => {
     <n-modal
       v-model:show="showSuccessModal"
       preset="card"
-      style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95);"
+      style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95)"
       :title="t('features.userCabinet.gift.successTitle')"
       :mask-closable="false"
       @close="handleSuccessOk"
     >
       <n-space vertical :size="24">
-        <n-text style="font-size: 1.1em; line-height: 1.5;">
-          {{ t('features.userCabinet.gift.successMessage', { tier: successTier, date: successDate }) }}
+        <n-text style="font-size: 1.1em; line-height: 1.5">
+          {{
+            t('features.userCabinet.gift.successMessage', { tier: successTier, date: successDate })
+          }}
         </n-text>
         <n-button type="primary" size="large" block @click="handleSuccessOk">
           {{ t('features.userCabinet.gift.ok') }}
@@ -357,12 +365,12 @@ const handleManageSubscription = async () => {
     <n-modal
       v-model:show="showPolarSuccessModal"
       preset="card"
-      style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95);"
+      style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95)"
       :title="t('features.userCabinet.polar.successTitle')"
       :mask-closable="false"
     >
       <n-space vertical :size="24">
-        <n-text style="font-size: 1.1em; line-height: 1.5;">
+        <n-text style="font-size: 1.1em; line-height: 1.5">
           {{ t('features.userCabinet.polar.successMessage') }}
         </n-text>
         <n-button type="primary" size="large" block @click="showPolarSuccessModal = false">

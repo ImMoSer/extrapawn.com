@@ -45,7 +45,12 @@ const menuItems = [
     labelKey: 'welcome.buttons.finishHim',
     color: 'var(--neon-pink)',
   },
-  { path: '/tornado', icon: ThunderstormOutline, labelKey: 'welcome.buttons.tornado', color: 'var(--neon-cyan)' },
+  {
+    path: '/tornado',
+    icon: ThunderstormOutline,
+    labelKey: 'welcome.buttons.tornado',
+    color: 'var(--neon-cyan)',
+  },
   {
     path: '/theory-endings',
     icon: BookOutline,
@@ -70,8 +75,18 @@ const menuItems = [
     labelKey: 'welcome.buttons.openingSparring',
     color: 'var(--neon-pink)',
   },
-  { path: '/study', icon: SchoolOutline, labelKey: 'welcome.buttons.repertoire', color: 'var(--neon-lime)' },
-  { path: '/user-cabinet', icon: PersonOutline, labelKey: 'nav.userCabinet', color: 'var(--neon-orange)' },
+  {
+    path: '/study',
+    icon: SchoolOutline,
+    labelKey: 'welcome.buttons.repertoire',
+    color: 'var(--neon-lime)',
+  },
+  {
+    path: '/user-cabinet',
+    icon: PersonOutline,
+    labelKey: 'nav.userCabinet',
+    color: 'var(--neon-orange)',
+  },
   {
     path: '/records',
     icon: TrophyOutline,
@@ -142,10 +157,10 @@ const filteredMenuItems = computed(() => {
       <n-grid x-gap="20" y-gap="20" cols="2 s:3 m:3 l:3" responsive="screen" class="menu-grid">
         <n-grid-item v-for="item in filteredMenuItems" :key="item.path">
           <router-link :to="item.path" custom v-slot="{ navigate }">
-            <n-card 
-              hoverable 
-              class="menu-card glass-card" 
-              @click="navigate" 
+            <n-card
+              hoverable
+              class="menu-card glass-card"
+              @click="navigate"
               :bordered="false"
               :style="{ '--card-glow-color': item.color }"
             >
@@ -309,7 +324,10 @@ const filteredMenuItems = computed(() => {
 .glass-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: radial-gradient(circle at center, var(--card-glow-color) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.5s ease;
@@ -321,7 +339,9 @@ const filteredMenuItems = computed(() => {
   transform: translateY(-5px) scale(1.02);
   border-color: var(--card-glow-color);
   background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px var(--card-glow-color);
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.7),
+    0 0 25px -5px var(--card-glow-color);
   z-index: 2;
 }
 

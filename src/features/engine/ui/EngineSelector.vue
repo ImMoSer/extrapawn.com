@@ -18,8 +18,6 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const availableEngines = computed(() => engineStore.availableEngines)
 const selectedEngine = computed(() => engineStore.selectedEngine)
 
-
-
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 

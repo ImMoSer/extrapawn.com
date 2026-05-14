@@ -22,19 +22,19 @@ const route = useRoute()
 const isExample = computed(() => route.params.id === 'example')
 
 // Vue Query fetching
-const { data: dashboardData, isFetching: isDashboardLoading } = useUnifiedDashboardQuery(!isExample.value)
+const { data: dashboardData, isFetching: isDashboardLoading } = useUnifiedDashboardQuery(
+  !isExample.value,
+)
 
 // Top Today Query
-const {
-  data: topTodayResponse,
-  isFetching: isTopTodayLoading,
-} = useTopTodayLeaderboardQuery(!isExample.value)
+const { data: topTodayResponse, isFetching: isTopTodayLoading } = useTopTodayLeaderboardQuery(
+  !isExample.value,
+)
 
 // Plan Streak Query
-const {
-  data: planStreakResponse,
-  isFetching: isPlanStreakLoading,
-} = usePlanStreakLeaderboardQuery(!isExample.value)
+const { data: planStreakResponse, isFetching: isPlanStreakLoading } = usePlanStreakLeaderboardQuery(
+  !isExample.value,
+)
 
 const strategicTabs = computed(() => [
   { id: 'theory', name: t('features.leaderboards.titles.theoryLeaderboard'), icon: '' },
@@ -50,15 +50,11 @@ const tornadoTabs = computed(() => [
 ])
 
 // Merged Data logic for Hall of Fame (stays as is, but we'll use example data if needed)
-const exampleData = computed(() => isExample.value ? generateRandomHallOfFame() : null)
+const exampleData = computed(() => (isExample.value ? generateRandomHallOfFame() : null))
 
 const isLoading = computed(() => {
   if (isExample.value) return false
-  return (
-    isTopTodayLoading.value ||
-    isDashboardLoading.value ||
-    isPlanStreakLoading.value
-  )
+  return isTopTodayLoading.value || isDashboardLoading.value || isPlanStreakLoading.value
 })
 </script>
 
@@ -83,7 +79,10 @@ const isLoading = computed(() => {
 
           <SkillLeaderboardTable
             :title="t('features.leaderboards.titles.topToday')"
-            :entries="(isExample ? exampleData?.topTodayLeaderboard.entries : topTodayResponse?.entries) || []"
+            :entries="
+              (isExample ? exampleData?.topTodayLeaderboard.entries : topTodayResponse?.entries) ||
+              []
+            "
             color-class="topToday"
             :is-loading="isTopTodayLoading"
           />

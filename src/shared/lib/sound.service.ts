@@ -159,7 +159,7 @@ class SoundServiceController {
     if (this.audioCache.has(path)) {
       return this.audioCache.get(path)!
     }
-    
+
     const audio = new Audio(path)
     audio.preload = 'auto' // Instructs browser to load data if possible
     this.audioCache.set(path, audio)
@@ -201,12 +201,17 @@ class SoundServiceController {
 
       audio.play().catch((error) => {
         const message = (error as Error).message
-        if (message.includes('user didn\'t interact') || (error as Error).name === 'NotAllowedError') {
-          logger.info(`[SoundService] Autoplay blocked for sound '${path}'. User interaction required.`)
+        if (
+          message.includes("user didn't interact") ||
+          (error as Error).name === 'NotAllowedError'
+        ) {
+          logger.info(
+            `[SoundService] Autoplay blocked for sound '${path}'. User interaction required.`,
+          )
         } else {
           logger.warn(`[SoundService] Error playing sound '${path}':`, message)
         }
-        
+
         if (isBackground) {
           this.activeBackgroundSounds.delete(audio)
         }

@@ -9,7 +9,9 @@ export const useReplyTrainingStore = defineStore('reply-training', () => {
   const isReadyToReply = computed(() => {
     const studyStore = useStudyStore()
     if (!studyStore.activeStudy) return false
-    const studyChapters = studyStore.chapters.filter((c) => c.studyId === studyStore.activeStudy?.id)
+    const studyChapters = studyStore.chapters.filter(
+      (c) => c.studyId === studyStore.activeStudy?.id,
+    )
     return studyChapters.some((c) => c.chapter_type === 'repertoire' && isChapterTrimmed(c))
   })
 
@@ -17,7 +19,7 @@ export const useReplyTrainingStore = defineStore('reply-training', () => {
   const sessionStats = ref({
     variantsPlayed: 0,
     variantsSolved: 0, // Only error-free attempts
-    startTime: 0
+    startTime: 0,
   })
 
   // Aktueller Durchlauf einer Variante
@@ -36,7 +38,7 @@ export const useReplyTrainingStore = defineStore('reply-training', () => {
     sessionStats.value = {
       variantsPlayed: 0,
       variantsSolved: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     }
     resetVariant()
   }
@@ -44,7 +46,7 @@ export const useReplyTrainingStore = defineStore('reply-training', () => {
   function resetVariant() {
     variantStats.value = {
       correct: 0,
-      wrong: 0
+      wrong: 0,
     }
   }
 
@@ -56,6 +58,6 @@ export const useReplyTrainingStore = defineStore('reply-training', () => {
     variantStats,
     variantAccuracy,
     resetSession,
-    resetVariant
+    resetVariant,
   }
 })

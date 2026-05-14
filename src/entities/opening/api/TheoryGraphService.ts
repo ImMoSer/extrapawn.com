@@ -87,7 +87,10 @@ class TheoryGraphService {
   /**
    * Looks up opening name and ECO for a specific move in a position.
    */
-  getOpeningByMove(parentFen: string, uci: string): { name: string | null; eco: string | null } | null {
+  getOpeningByMove(
+    parentFen: string,
+    uci: string,
+  ): { name: string | null; eco: string | null } | null {
     if (!this.data || !this.data.graph) return null
 
     const cleanFen = this.toCleanFen(parentFen)

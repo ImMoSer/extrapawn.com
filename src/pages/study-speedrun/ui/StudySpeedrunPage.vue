@@ -23,7 +23,9 @@ const pendingChapters = ref<StudyChapter[]>([])
 onMounted(() => {
   const studyId = route.query.studyId as string
   if (studyId) {
-    const chapters = studyStore.chapters.filter(c => c.studyId === studyId && c.chapter_type === 'speedrun')
+    const chapters = studyStore.chapters.filter(
+      (c) => c.studyId === studyId && c.chapter_type === 'speedrun',
+    )
     if (chapters.length > 0) {
       pendingChapters.value = chapters
       showSetupModal.value = true
@@ -75,7 +77,10 @@ function handleRestart() {
 function handleJump(index: number) {
   // Only allow jumping to chapters that haven't been completed yet
   // OR the current one (which is effectively a restart)
-  if (speedrunStore.chapterTimes[index] === undefined || speedrunStore.currentChapterIndex === index) {
+  if (
+    speedrunStore.chapterTimes[index] === undefined ||
+    speedrunStore.currentChapterIndex === index
+  ) {
     speedrunStore.jumpToChapter(index)
   }
 }
@@ -98,12 +103,14 @@ onUnmounted(() => {
     <template #left-panel>
       <div class="speedrun-sidebar">
         <h2 class="speedrun-title">{{ t('features.speedrun.title') }}</h2>
-        
+
         <div v-if="speedrunStore.isFinished" class="speedrun-finished">
           <NText type="success" strong>{{ t('features.speedrun.completed') }}</NText>
-          <div class="total-time-label" style="margin-top: 16px; font-size: 0.9rem; opacity: 0.8;">{{ t('features.speedrun.totalTime') }}</div>
+          <div class="total-time-label" style="margin-top: 16px; font-size: 0.9rem; opacity: 0.8">
+            {{ t('features.speedrun.totalTime') }}
+          </div>
           <div class="final-timer">{{ speedrunStore.formatMs(speedrunStore.totalTimeMs) }}</div>
-          <NButton type="primary" @click="handleQuit" style="margin-top: 1rem;">
+          <NButton type="primary" @click="handleQuit" style="margin-top: 1rem">
             {{ t('features.speedrun.returnToStudy') }}
           </NButton>
         </div>
@@ -111,17 +118,21 @@ onUnmounted(() => {
         <div v-else-if="speedrunStore.currentChapter" class="speedrun-info">
           <div class="chapter-info">
             <NText depth="3" class="chapter-label">
-              {{ t('features.speedrun.chapter') }} {{ speedrunStore.currentChapterIndex + 1 }} {{ t('features.speedrun.of') }} {{ speedrunStore.totalChapters }}
+              {{ t('features.speedrun.chapter') }} {{ speedrunStore.currentChapterIndex + 1 }}
+              {{ t('features.speedrun.of') }} {{ speedrunStore.totalChapters }}
             </NText>
-            <NProgress 
-              type="line" 
-              :percentage="progressPercentage" 
+            <NProgress
+              type="line"
+              :percentage="progressPercentage"
               :show-indicator="false"
               status="success"
               class="progress-bar"
             />
             <h3 class="chapter-name">{{ speedrunStore.currentChapter.name }}</h3>
-            <NText depth="2" class="target-result">{{ t('features.speedrun.target') }}: {{ speedrunStore.currentChapter.tags.Result || '1-0' }}</NText>
+            <NText depth="2" class="target-result"
+              >{{ t('features.speedrun.target') }}:
+              {{ speedrunStore.currentChapter.tags.Result || '1-0' }}</NText
+            >
           </div>
 
           <div class="timer-display">
@@ -130,7 +141,7 @@ onUnmounted(() => {
         </div>
 
         <div class="quit-section" v-if="!speedrunStore.isFinished">
-          <NButton block type="warning" @click="handleRestart" style="margin-bottom: 12px;">
+          <NButton block type="warning" @click="handleRestart" style="margin-bottom: 12px">
             <template #icon>
               <NIcon><RestartIcon /></NIcon>
             </template>
@@ -150,7 +161,7 @@ onUnmounted(() => {
     <template #top-info>
       <div class="top-info-banner" v-if="speedrunStore.currentChapter && !speedrunStore.isFinished">
         <div class="target-badge" :class="targetClass">
-           {{ targetText.toUpperCase() }}
+          {{ targetText.toUpperCase() }}
         </div>
 
         <span class="top-timer">{{ formattedTime }}</span>
@@ -166,31 +177,40 @@ onUnmounted(() => {
         <div class="chapter-list-header">
           <NText strong>{{ t('features.speedrun.listTitle') }}</NText>
         </div>
-        
+
         <NScrollbar class="speedrun-list-scroll">
           <NList hoverable clickable>
             <NListItem
               v-for="(chapter, index) in speedrunStore.chaptersToPlay"
               :key="chapter.id"
-              :class="{ 
+              :class="{
                 active: speedrunStore.currentChapterIndex === index,
-                'is-clickable': speedrunStore.chapterTimes[index] === undefined
+                'is-clickable': speedrunStore.chapterTimes[index] === undefined,
               }"
               @click="handleJump(index)"
             >
               <NThing>
                 <template #avatar>
-                  <div class="chapter-index" :class="{ completed: speedrunStore.chapterTimes[index] !== undefined }">
+                  <div
+                    class="chapter-index"
+                    :class="{ completed: speedrunStore.chapterTimes[index] !== undefined }"
+                  >
                     {{ index + 1 }}
                   </div>
                 </template>
                 <template #header>
-                  <span class="chapter-name-list" :class="{ active: speedrunStore.currentChapterIndex === index }">
+                  <span
+                    class="chapter-name-list"
+                    :class="{ active: speedrunStore.currentChapterIndex === index }"
+                  >
                     {{ chapter.name }}
                   </span>
                 </template>
                 <template #header-extra>
-                  <span class="chapter-time" :class="{ completed: speedrunStore.chapterTimes[index] !== undefined }">
+                  <span
+                    class="chapter-time"
+                    :class="{ completed: speedrunStore.chapterTimes[index] !== undefined }"
+                  >
                     {{ speedrunStore.formatMs(speedrunStore.chapterTimes[index]) }}
                   </span>
                 </template>
@@ -206,7 +226,7 @@ onUnmounted(() => {
     </template>
   </GameLayout>
 
-  <SpeedrunSetupModal 
+  <SpeedrunSetupModal
     v-model:show="showSetupModal"
     @confirm="handleConfirmStart"
     @cancel="handleCancelStart"
@@ -223,7 +243,7 @@ onUnmounted(() => {
 }
 
 .speedrun-title {
-  color: var(--neon-bordeaux, #D9004C);
+  color: var(--neon-bordeaux, #d9004c);
   font-weight: 900;
   letter-spacing: 2px;
   text-align: center;
@@ -280,7 +300,7 @@ onUnmounted(() => {
   background: #111;
   padding: 12px;
   border-radius: 8px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
   border: 1px solid rgba(247, 213, 71, 0.3);
 }
 

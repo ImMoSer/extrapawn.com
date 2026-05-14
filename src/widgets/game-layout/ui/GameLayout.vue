@@ -23,11 +23,14 @@ const route = useRoute()
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
 
-const activeDests = computed(() => props.boardLocked ? new Map() : boardStore.dests)
+const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
 // Force analysis mode if we are in study views, to prevent race conditions or store resets
 const effectiveAnalysisMode = computed(() => {
-  return boardStore.isAnalysisModeActive || (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
+  return (
+    boardStore.isAnalysisModeActive ||
+    (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
+  )
 })
 
 const canUserEdit = computed(() => true)
@@ -42,7 +45,7 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
     }
 
     uci = await boardStore.handleAnalysisMove({ orig, dest })
-    
+
     if (uci && trainingStore.isReplyTrainingActive) {
       // Move was correct and mapped directly to PGN. Let trainingController process variation sequence.
       trainingController.onMoveSuccessfullyApplied()

@@ -140,13 +140,13 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
           </n-space>
 
           <div class="funcoins-stat">
-            <n-statistic
-              :label="t('features.userCabinet.stats.pawncoinsLabel')"
-            >
+            <n-statistic :label="t('features.userCabinet.stats.pawncoinsLabel')">
               <template #prefix>🪙</template>
               <template #default>
                 <span v-if="isLimitless" class="rainbow-text limitless-symbol">∞</span>
-                <span v-else>{{ (userProfile.dailyLimit || 0) - (userProfile.spentToday || 0) }}</span>
+                <span v-else>{{
+                  (userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)
+                }}</span>
               </template>
               <template #suffix v-if="!isLimitless"> / {{ userProfile.dailyLimit || 0 }}</template>
             </n-statistic>
@@ -279,7 +279,6 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
 }
 
 @media (max-width: 768px) {
-
   .header-card :deep(.n-card-content) {
     padding-left: 12px !important;
     padding-right: 12px !important;

@@ -49,7 +49,7 @@ const confirmExit = (onConfirm: () => void) => {
       trainingStore.isReplyTrainingActive = false
       trainingStore.trainingChapterId = null
       onConfirm()
-    }
+    },
   })
 }
 
@@ -73,7 +73,6 @@ onBeforeRouteLeave((to, from, next) => {
     next()
   }
 })
-
 </script>
 
 <template>
@@ -85,7 +84,9 @@ onBeforeRouteLeave((to, from, next) => {
 
     <div class="stats-section">
       <div class="stat-card">
-        <NText depth="3" class="stat-label">{{ t('features.study.replyTraining.session.gardenCleanliness') }}</NText>
+        <NText depth="3" class="stat-label">{{
+          t('features.study.replyTraining.session.gardenCleanliness')
+        }}</NText>
         <div class="progress-wrapper">
           <NProgress
             type="line"
@@ -97,7 +98,9 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
 
       <div class="stat-card">
-        <NText depth="3" class="stat-label">{{ t('features.study.replyTraining.session.sessionTotal') }}</NText>
+        <NText depth="3" class="stat-label">{{
+          t('features.study.replyTraining.session.sessionTotal')
+        }}</NText>
         <div class="stat-row">
           <span>{{ t('features.study.replyTraining.session.variantsPlayed') }}</span>
           <span class="stat-value">{{ trainingStore.sessionStats.variantsPlayed }}</span>
@@ -109,7 +112,9 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
 
       <div class="stat-card">
-        <NText depth="3" class="stat-label">{{ t('features.study.replyTraining.session.currentVariant') }}</NText>
+        <NText depth="3" class="stat-label">{{
+          t('features.study.replyTraining.session.currentVariant')
+        }}</NText>
         <div class="stat-row">
           <span>{{ t('features.study.replyTraining.session.errors') }}</span>
           <span class="stat-value error-val">{{ trainingStore.variantStats.wrong }}</span>

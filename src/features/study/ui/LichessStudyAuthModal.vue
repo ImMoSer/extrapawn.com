@@ -3,7 +3,7 @@
     :show="show"
     preset="card"
     :title="t('features.study.authModal.title')"
-    style="width: 500px; max-width: 90vw;"
+    style="width: 500px; max-width: 90vw"
     :mask-closable="false"
     :closable="false"
   >
@@ -13,7 +13,14 @@
       </p>
 
       <n-alert :title="t('features.study.authModal.whyTitle')" type="info" :show-icon="false">
-        <span v-html="t('features.study.authModal.whyText', { read: '<code>study:read</code>', write: '<code>study:write</code>' })"></span>
+        <span
+          v-html="
+            t('features.study.authModal.whyText', {
+              read: '<code>study:read</code>',
+              write: '<code>study:write</code>',
+            })
+          "
+        ></span>
         <ul class="list-disc pl-5 mt-2 space-y-1">
           <li v-for="(item, index) in tm('features.study.authModal.whyList')" :key="index">
             {{ rt(item) }}
@@ -21,7 +28,11 @@
         </ul>
       </n-alert>
 
-      <n-alert :title="t('features.study.authModal.securityTitle')" type="warning" :show-icon="false">
+      <n-alert
+        :title="t('features.study.authModal.securityTitle')"
+        type="warning"
+        :show-icon="false"
+      >
         {{ t('features.study.authModal.securityText') }}
       </n-alert>
 

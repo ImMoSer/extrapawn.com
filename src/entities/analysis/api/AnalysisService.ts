@@ -2,7 +2,6 @@ import {
   type AnalysisUpdateCallback,
   type EvaluatedLine,
   multiThreadEngineManager,
-  singleThreadEngineManager,
   type WdlStats,
 } from '@/shared/lib/engine'
 import logger from '@/shared/lib/logger'
@@ -11,6 +10,7 @@ import { parseFen } from 'chessops/fen'
 import { makeSan } from 'chessops/san'
 import type { Color as ChessopsColor } from 'chessops/types'
 import { parseUci } from 'chessops/util'
+import { useCoachStore } from '@/features/coach'
 
 export interface EvaluatedLineWithSan extends EvaluatedLine {
   pvSan: string[]
@@ -21,7 +21,7 @@ export interface EvaluatedLineWithSan extends EvaluatedLine {
 }
 
 class AnalysisServiceController {
-  private activeEngineManager: typeof multiThreadEngineManager | typeof singleThreadEngineManager | null = null
+  private activeEngineManager: typeof multiThreadEngineManager | null = null
   private sanCache = new Map<
     string,
     { pvSan: string[]; initialFullMoveNumber: number; initialTurn: ChessopsColor }
@@ -37,19 +37,16 @@ class AnalysisServiceController {
     if (!this.initPromise) {
       this.initPromise = (async () => {
         logger.info('[AnalysisService] Initializing engines...')
-        
+
         // 1. Versuch: Multi-Thread laden
         await multiThreadEngineManager.ensureReady()
-        
+
         // 2. Prüfen, ob der Multi-Thread Manager wirklich eine Engine geladen hat
         if (multiThreadEngineManager.isMultiThreadingSupported()) {
           this.activeEngineManager = multiThreadEngineManager
           logger.info(`[AnalysisService] Initialized successfully with Multi-Threaded Engine.`)
         } else {
-          // 3. FALLBACK: Single-Thread laden, wenn CORS fehlt
-          logger.warn(`[AnalysisService] Multi-threading not supported. Falling back to Single-Thread Engine for analysis.`)
-          await singleThreadEngineManager.ensureReady()
-          this.activeEngineManager = singleThreadEngineManager
+          logger.error(`[AnalysisService] Multi-threading not supported. Analysis cannot run.`)
         }
       })()
     }
@@ -69,6 +66,16 @@ class AnalysisServiceController {
     callback: (lines: EvaluatedLineWithSan[]) => void,
     multiPV = 3,
   ) {
+    try {
+      const coachStore = useCoachStore()
+      if (coachStore.isCoachEnabled) {
+        logger.info('[AnalysisService] Toggling off Coach to start deep analysis.')
+        coachStore.setCoachEnabled(false)
+      }
+    } catch (e) {
+      // Ignore if called outside of pinia context
+    }
+
     if (!this.activeEngineManager) {
       logger.info('[AnalysisService] Engine manager not active. Waiting for initialization...')
       await this.initialize()
@@ -102,12 +109,14 @@ class AnalysisServiceController {
     }
 
     if (!this.activeEngineManager) {
-      logger.error('[AnalysisService] Cannot start fixed depth calculation, no engine manager is active.')
+      logger.error(
+        '[AnalysisService] Cannot start fixed depth calculation, no engine manager is active.',
+      )
       return []
     }
 
     const lines = await this.activeEngineManager.calculateFixedDepth(fen, depth, multiPV)
-    
+
     // Restore default MultiPV just in case (optional, but good practice)
     await this.activeEngineManager.setOption('MultiPV', 1)
 
@@ -140,7 +149,9 @@ class AnalysisServiceController {
         await this.activeEngineManager.setThreads(count)
         logger.info(`[AnalysisService] Threads set to ${count}`)
       } else {
-        logger.warn(`[AnalysisService] activeEngineManager does not support setThreads. Ignoring request for ${count} threads.`)
+        logger.warn(
+          `[AnalysisService] activeEngineManager does not support setThreads. Ignoring request for ${count} threads.`,
+        )
       }
     }
   }

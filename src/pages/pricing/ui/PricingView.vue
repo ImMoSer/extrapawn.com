@@ -58,7 +58,7 @@ const tierRanks: Record<string, number> = {
   bishop: 2,
   rook: 3,
   queen: 4,
-  king: 5
+  king: 5,
 }
 
 const currentUserTier = computed(() => {
@@ -148,10 +148,10 @@ const subscriptionTiers = computed(() => {
     },
   ]
 
-  return baseTiers.map(tier => {
+  return baseTiers.map((tier) => {
     const rank = tierRanks[tier.id] ?? 0
     const isCurrent = currentUserTier.value === tier.id
-    
+
     let canBuy = false
     let isUpgrade = false
 
@@ -173,7 +173,7 @@ const subscriptionTiers = computed(() => {
       isCurrent,
       canBuy: canBuy && !isSubscriptionCanceled.value,
       isUpgrade,
-      isBlockedByCancel: canBuy && isSubscriptionCanceled.value
+      isBlockedByCancel: canBuy && isSubscriptionCanceled.value,
     }
   })
 })
@@ -230,7 +230,7 @@ const initiateCheckout = (tier: SubscriptionTier) => {
 
 const confirmUpgrade = async () => {
   if (!upgradeTarget.value) return
-  
+
   if (!agbAccepted.value) {
     message.warning(t('common.terms.acceptRequired', 'Bitte akzeptiere die AGB.'))
     return
@@ -240,15 +240,15 @@ const confirmUpgrade = async () => {
   try {
     const response = await apiClient<{ success: boolean }>('/billing/upgrade', {
       method: 'POST',
-      body: JSON.stringify({ tier: upgradeTarget.value.id })
+      body: JSON.stringify({ tier: upgradeTarget.value.id }),
     })
-    
+
     if (response.success) {
       // Refresh the session to get the new tier locally
       await authStore.checkSession()
       // Wait a short moment to ensure the state has settled
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       upgradeSuccess.value = true
     }
   } catch (error: unknown) {
@@ -280,7 +280,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
 
     const response = await apiClient<{ success: boolean; url: string }>('/billing/checkout', {
       method: 'POST',
-      body: JSON.stringify({ tier: tier.id, interval: 'monthly' })
+      body: JSON.stringify({ tier: tier.id, interval: 'monthly' }),
     })
 
     if (response.success && response.url) {
@@ -306,15 +306,13 @@ const handleCheckout = async (tier: SubscriptionTier) => {
           <n-text style="color: var(--neon-cyan)">{{ t('features.pricing.title') }}</n-text>
         </n-h1>
 
-
-
         <n-divider title-placement="left">
           <n-h2 prefix="bar" align-text type="success">
             {{ t('features.pricing.tiers.title') }}
           </n-h2>
         </n-divider>
 
-        <n-alert type="info" :show-icon="false" style="margin-bottom: 8px;">
+        <n-alert type="info" :show-icon="false" style="margin-bottom: 8px">
           <n-space justify="space-between" align="center">
             <n-text>{{ t('features.pricing.bonusInfo.alertText') }}</n-text>
             <n-button type="primary" secondary size="small" @click="$router.push('/bonus')">
@@ -325,11 +323,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
 
         <n-grid cols="1 600:2 900:3 1400:6" x-gap="16" y-gap="16">
           <n-gi v-for="tier in subscriptionTiers" :key="tier.name">
-            <n-card
-              hoverable
-              class="tier-card"
-              @click="handleTierClick(tier)"
-            >
+            <n-card hoverable class="tier-card" @click="handleTierClick(tier)">
               <template #header>
                 <n-space vertical :size="0">
                   <n-text strong>{{ tier.name }}</n-text>
@@ -346,9 +340,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                 <template #description>
                   <n-tooltip v-if="tier.isLimitless" trigger="hover">
                     <template #trigger>
-                      <n-text class="rainbow-text limitless-symbol">
-                        ∞
-                      </n-text>
+                      <n-text class="rainbow-text limitless-symbol"> ∞ </n-text>
                     </template>
                     {{ t('common.actions.limitless') }}
                   </n-tooltip>
@@ -362,7 +354,14 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                 </template>
                 <n-divider dashed style="margin: 5px 0" />
 
-                <div style="min-height: 48px; display: flex; align-items: center; justify-content: center;">
+                <div
+                  style="
+                    min-height: 48px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
                   <n-button
                     v-if="tier.canBuy"
                     block
@@ -371,7 +370,11 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                     :loading="loadingTier === tier.id"
                     :disabled="loadingTier !== null"
                   >
-                    {{ tier.isUpgrade ? t('features.pricing.upgrade.title') + ' - ' + tier.price : tier.price }}
+                    {{
+                      tier.isUpgrade
+                        ? t('features.pricing.upgrade.title') + ' - ' + tier.price
+                        : tier.price
+                    }}
                   </n-button>
                   <n-tooltip v-else-if="tier.isBlockedByCancel" trigger="hover">
                     <template #trigger>
@@ -379,16 +382,30 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                         {{ t('features.pricing.upgrade.title') }}
                       </n-button>
                     </template>
-                    {{ t('features.userCabinet.subscription.reactivateTooltip', 'Bitte reaktiviere dein Abo zuerst.') }}
+                    {{
+                      t(
+                        'features.userCabinet.subscription.reactivateTooltip',
+                        'Bitte reaktiviere dein Abo zuerst.',
+                      )
+                    }}
                   </n-tooltip>
-                  <n-text v-else-if="tier.isCurrent" strong type="success" style="font-size: 1.1em; text-align: center;">
+                  <n-text
+                    v-else-if="tier.isCurrent"
+                    strong
+                    type="success"
+                    style="font-size: 1.1em; text-align: center"
+                  >
                     Current Tier
                   </n-text>
-                  <n-text v-else-if="!tier.isPurchasable" strong type="success" style="font-size: 1.1em; text-align: center;">
+                  <n-text
+                    v-else-if="!tier.isPurchasable"
+                    strong
+                    type="success"
+                    style="font-size: 1.1em; text-align: center"
+                  >
                     {{ tier.price }}
                   </n-text>
                 </div>
-
               </n-thing>
             </n-card>
           </n-gi>
@@ -453,7 +470,13 @@ const handleCheckout = async (tier: SubscriptionTier) => {
           <n-tag type="warning">{{ t('features.pricing.bonusInfo.bishop') }}</n-tag>
           <router-link
             to="/bonus"
-            style="color: var(--neon-cyan); text-decoration: none; font-weight: bold; margin-top: 4px; display: inline-block;"
+            style="
+              color: var(--neon-cyan);
+              text-decoration: none;
+              font-weight: bold;
+              margin-top: 4px;
+              display: inline-block;
+            "
           >
             ➔ {{ t('features.pricing.bonusInfo.moreInfo') }}
           </router-link>
@@ -483,23 +506,38 @@ const handleCheckout = async (tier: SubscriptionTier) => {
       <n-space vertical size="large">
         <template v-if="!upgradeSuccess">
           <n-alert type="success" :show-icon="false">
-            <n-text strong style="font-size: 1.1em; color: var(--neon-cyan);">
+            <n-text strong style="font-size: 1.1em; color: var(--neon-cyan)">
               {{ t('features.pricing.upgrade.intro', { targetTier: upgradeTarget?.name }) }}
             </n-text>
           </n-alert>
 
           <n-text depth="2">
-            {{ t('features.pricing.upgrade.details', { currentTier: currentUserTier, targetTier: upgradeTarget?.name }).split(upgradeTarget?.name ?? '')[0] }}
-            <n-text strong :style="{ color: upgradeTarget?.color }">{{ upgradeTarget?.name }}</n-text>
-            {{ t('features.pricing.upgrade.details', { currentTier: currentUserTier, targetTier: upgradeTarget?.name }).split(upgradeTarget?.name ?? '')[1] }}
+            {{
+              t('features.pricing.upgrade.details', {
+                currentTier: currentUserTier,
+                targetTier: upgradeTarget?.name,
+              }).split(upgradeTarget?.name ?? '')[0]
+            }}
+            <n-text strong :style="{ color: upgradeTarget?.color }">{{
+              upgradeTarget?.name
+            }}</n-text>
+            {{
+              t('features.pricing.upgrade.details', {
+                currentTier: currentUserTier,
+                targetTier: upgradeTarget?.name,
+              }).split(upgradeTarget?.name ?? '')[1]
+            }}
           </n-text>
 
-          <n-card size="small" style="background-color: var(--glass-bg); border-color: var(--glass-border);">
+          <n-card
+            size="small"
+            style="background-color: var(--glass-bg); border-color: var(--glass-border)"
+          >
             <ul style="margin: 0; padding-left: 20px; color: var(--text-color-3)">
-              <li style="margin-bottom: 8px;">
+              <li style="margin-bottom: 8px">
                 <n-text>{{ t('features.pricing.upgrade.bullet1') }}</n-text>
               </li>
-              <li style="margin-bottom: 8px;">
+              <li style="margin-bottom: 8px">
                 <n-text>{{ t('features.pricing.upgrade.bullet2') }}</n-text>
               </li>
               <li>
@@ -514,13 +552,18 @@ const handleCheckout = async (tier: SubscriptionTier) => {
 
           <n-checkbox v-model:checked="agbAccepted" :disabled="isUpgrading">
             {{ t('features.pricing.upgrade.agbLabel') }}
-            <a href="https://extrapawn.com/legal#terms" target="_blank" style="color: var(--neon-cyan)">{{ t('features.pricing.upgrade.agbLinkText') }}</a>
+            <a
+              href="https://extrapawn.com/legal#terms"
+              target="_blank"
+              style="color: var(--neon-cyan)"
+              >{{ t('features.pricing.upgrade.agbLinkText') }}</a
+            >
             {{ t('features.pricing.upgrade.agbSuffix') }}
           </n-checkbox>
 
-          <n-button 
-            type="primary" 
-            block 
+          <n-button
+            type="primary"
+            block
             size="large"
             :disabled="!agbAccepted"
             :loading="isUpgrading"
@@ -529,30 +572,34 @@ const handleCheckout = async (tier: SubscriptionTier) => {
             {{ t('features.pricing.upgrade.button') }}
           </n-button>
         </template>
-        
+
         <template v-else>
-          <div style="text-align: center; padding: 20px 0;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🎉</div>
-            <n-h2 style="color: var(--neon-cyan); margin-bottom: 10px;">{{ t('features.pricing.upgrade.successTitle') }}</n-h2>
+          <div style="text-align: center; padding: 20px 0">
+            <div style="font-size: 4rem; margin-bottom: 10px">🎉</div>
+            <n-h2 style="color: var(--neon-cyan); margin-bottom: 10px">{{
+              t('features.pricing.upgrade.successTitle')
+            }}</n-h2>
             <n-text depth="2">
-              {{ t('features.pricing.upgrade.successMessage', { targetTier: upgradeTarget?.name }).split(upgradeTarget?.name ?? '')[0] }}
+              {{
+                t('features.pricing.upgrade.successMessage', {
+                  targetTier: upgradeTarget?.name,
+                }).split(upgradeTarget?.name ?? '')[0]
+              }}
               <strong :style="{ color: upgradeTarget?.color }">{{ upgradeTarget?.name }}</strong>
-              {{ t('features.pricing.upgrade.successMessage', { targetTier: upgradeTarget?.name }).split(upgradeTarget?.name ?? '')[1] }}
+              {{
+                t('features.pricing.upgrade.successMessage', {
+                  targetTier: upgradeTarget?.name,
+                }).split(upgradeTarget?.name ?? '')[1]
+              }}
             </n-text>
           </div>
-          
-          <n-button 
-            type="primary" 
-            block 
-            size="large"
-            @click="goToCabinet"
-          >
+
+          <n-button type="primary" block size="large" @click="goToCabinet">
             {{ t('features.pricing.upgrade.toCabinet') }}
           </n-button>
         </template>
       </n-space>
     </n-modal>
-
   </n-layout>
 </template>
 
@@ -568,8 +615,6 @@ const handleCheckout = async (tier: SubscriptionTier) => {
   letter-spacing: 2px;
   text-transform: uppercase;
 }
-
-
 
 .tier-card {
   height: 100%;

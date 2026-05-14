@@ -48,7 +48,7 @@ export const useGameStore = defineStore('game', () => {
     const gameStatus = boardStore.getGameStatus()
     if (gameStatus.isGameOver) {
       isGameActive.value = false
-      
+
       // Centralized Sound Handling
       _playOutcomeSound(gameStatus)
 
@@ -132,7 +132,9 @@ export const useGameStore = defineStore('game', () => {
       const setup = parseFen(fen).unwrap()
 
       if (!userColor) {
-        throw new Error('[GameStore] userColor is required for startWithStrategy. The director (feature) must explicitly define the side.')
+        throw new Error(
+          '[GameStore] userColor is required for startWithStrategy. The director (feature) must explicitly define the side.',
+        )
       }
 
       playerColor.value = userColor
@@ -168,7 +170,6 @@ export const useGameStore = defineStore('game', () => {
       gamePhase.value = 'IDLE'
     }
   }
-
 
   async function handleUserMove(orig: Key, dest: Key) {
     if (gamePhase.value !== 'PLAYING') return
@@ -206,7 +207,7 @@ export const useGameStore = defineStore('game', () => {
     }
     userMovesCount.value++
 
-    const strategyAtStart = currentStrategy.value;
+    const strategyAtStart = currentStrategy.value
 
     const isGameOver = _checkAndHandleGameOver()
 
@@ -256,4 +257,3 @@ export const useGameStore = defineStore('game', () => {
     setBotEngineId,
   }
 })
-

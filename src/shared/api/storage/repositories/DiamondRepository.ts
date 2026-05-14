@@ -24,13 +24,15 @@ interface CountRow {
 export class DiamondRepository {
   async addDiamond(diamond: Diamond): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: `
+      await databaseClient.batch('user', [
+        {
+          sql: `
           INSERT INTO diamonds (hash, fen, pgn, collected_at)
           VALUES (?, ?, ?, ?)
         `,
-        params: [diamond.hash, diamond.fen, diamond.pgn, diamond.collected_at]
-      }])
+          params: [diamond.hash, diamond.fen, diamond.pgn, diamond.collected_at],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {
@@ -45,10 +47,14 @@ export class DiamondRepository {
       const startOfDay = new Date()
       startOfDay.setHours(0, 0, 0, 0)
 
-      const rows = await databaseClient.query<CountRow>('user', `
+      const rows = await databaseClient.query<CountRow>(
+        'user',
+        `
         SELECT COUNT(*) as count FROM diamonds
         WHERE hash = ? AND collected_at > ?
-      `, [hash, startOfDay.getTime()])
+      `,
+        [hash, startOfDay.getTime()],
+      )
 
       return rows[0]?.count ?? 0
     } catch (err) {
@@ -61,7 +67,8 @@ export class DiamondRepository {
 
   async getAllDiamonds(): Promise<Diamond[]> {
     try {
-      return await databaseClient.query<Diamond>('user',
+      return await databaseClient.query<Diamond>(
+        'user',
         'SELECT * FROM diamonds ORDER BY collected_at DESC',
       )
     } catch (err) {
@@ -74,7 +81,8 @@ export class DiamondRepository {
 
   async getDiamondCount(): Promise<number> {
     try {
-      const rows = await databaseClient.query<CountRow>('user',
+      const rows = await databaseClient.query<CountRow>(
+        'user',
         'SELECT COUNT(*) as count FROM diamonds',
       )
       return rows[0]?.count ?? 0
@@ -88,7 +96,8 @@ export class DiamondRepository {
 
   async getBrilliantCount(): Promise<number> {
     try {
-      const rows = await databaseClient.query<CountRow>('user',
+      const rows = await databaseClient.query<CountRow>(
+        'user',
         'SELECT COUNT(*) as count FROM brilliants',
       )
       return rows[0]?.count ?? 0
@@ -102,10 +111,12 @@ export class DiamondRepository {
 
   async deleteDiamond(id: number): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: 'DELETE FROM diamonds WHERE id = ?',
-        params: [id]
-      }])
+      await databaseClient.batch('user', [
+        {
+          sql: 'DELETE FROM diamonds WHERE id = ?',
+          params: [id],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {
@@ -117,13 +128,15 @@ export class DiamondRepository {
 
   async addBrilliant(brilliant: Brilliant): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: `
+      await databaseClient.batch('user', [
+        {
+          sql: `
           INSERT INTO brilliants (hash, fen, pgn, collected_at)
           VALUES (?, ?, ?, ?)
         `,
-        params: [brilliant.hash, brilliant.fen, brilliant.pgn, brilliant.collected_at]
-      }])
+          params: [brilliant.hash, brilliant.fen, brilliant.pgn, brilliant.collected_at],
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {
@@ -135,12 +148,14 @@ export class DiamondRepository {
 
   async removeLastBrilliant(): Promise<boolean> {
     try {
-      await databaseClient.batch('user', [{
-        sql: `
+      await databaseClient.batch('user', [
+        {
+          sql: `
           DELETE FROM brilliants
           WHERE id = (SELECT id FROM brilliants ORDER BY collected_at DESC LIMIT 1)
-        `
-      }])
+        `,
+        },
+      ])
       return true
     } catch (err) {
       if (!(err instanceof DbNotOpenError)) {

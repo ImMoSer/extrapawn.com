@@ -83,12 +83,7 @@ const showPrecedenceNotice = computed(() => {
       <n-h1 align-text class="legal-title">{{ t('legal.title') }}</n-h1>
 
       <!-- Language Precedence Notice -->
-      <n-alert
-        v-if="showPrecedenceNotice"
-        type="info"
-        class="precedence-alert"
-        :bordered="false"
-      >
+      <n-alert v-if="showPrecedenceNotice" type="info" class="precedence-alert" :bordered="false">
         {{ t('legal.precedence') }}
       </n-alert>
 
@@ -106,8 +101,12 @@ const showPrecedenceNotice = computed(() => {
             <n-text depth="3">{{ t('legal.imprint.subtitle') }}</n-text>
 
             <n-p class="address-block">
-              <strong>{{ t('legal.imprint.name') }}</strong><br />
-              <template v-for="(line, index) in formatAddress(t('legal.imprint.address'))" :key="index">
+              <strong>{{ t('legal.imprint.name') }}</strong
+              ><br />
+              <template
+                v-for="(line, index) in formatAddress(t('legal.imprint.address'))"
+                :key="index"
+              >
                 {{ line }}<br v-if="index < formatAddress(t('legal.imprint.address')).length - 1" />
               </template>
             </n-p>
@@ -118,15 +117,22 @@ const showPrecedenceNotice = computed(() => {
               {{ t('legal.imprint.phone') }}
             </n-p>
 
-            <n-p><strong>{{ t('legal.imprint.vatId') }}</strong></n-p>
+            <n-p
+              ><strong>{{ t('legal.imprint.vatId') }}</strong></n-p
+            >
 
             <n-divider />
 
             <n-h2>{{ t('legal.imprint.dispute') }}</n-h2>
             <n-p>
               {{ t('legal.imprint.disputeText') }}
-              <a :href="t('legal.imprint.disputeLink')" target="_blank" rel="noopener noreferrer" class="legal-link">
-                 {{ t('legal.imprint.disputeLink') }}
+              <a
+                :href="t('legal.imprint.disputeLink')"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="legal-link"
+              >
+                {{ t('legal.imprint.disputeLink') }}
               </a>
             </n-p>
             <n-p>{{ t('legal.imprint.disputeRefusal') }}</n-p>
@@ -134,10 +140,14 @@ const showPrecedenceNotice = computed(() => {
             <n-divider />
 
             <n-h2>{{ t('legal.imprint.legalNotice') }}</n-h2>
-            <n-p><strong>{{ t('legal.imprint.liabilityTitle') }}</strong></n-p>
+            <n-p
+              ><strong>{{ t('legal.imprint.liabilityTitle') }}</strong></n-p
+            >
             <n-p>{{ t('legal.imprint.liabilityContent') }}</n-p>
 
-            <n-p><strong>{{ t('legal.imprint.copyrightTitle') }}</strong></n-p>
+            <n-p
+              ><strong>{{ t('legal.imprint.copyrightTitle') }}</strong></n-p
+            >
             <n-p>{{ t('legal.imprint.copyrightContent') }}</n-p>
           </div>
         </n-tab-pane>
@@ -145,18 +155,28 @@ const showPrecedenceNotice = computed(() => {
         <!-- PRIVACY -->
         <n-tab-pane name="privacy" :tab="t('legal.tabs.privacy')">
           <div class="legal-content">
-            <n-h1 style="font-size: 1.8rem; margin-bottom: 20px">{{ t('legal.privacy.title') }}</n-h1>
+            <n-h1 style="font-size: 1.8rem; margin-bottom: 20px">{{
+              t('legal.privacy.title')
+            }}</n-h1>
 
             <div v-for="key in orderedPrivacyKeys" :key="key" class="legal-section">
               <n-h2>{{ t(`legal.privacy.sections.${key}Title`) }}</n-h2>
-              <n-p v-for="(para, index) in tm(`legal.privacy.sections.${key}Paragraphs`)" :key="index">
+              <n-p
+                v-for="(para, index) in tm(`legal.privacy.sections.${key}Paragraphs`)"
+                :key="index"
+              >
                 <span style="white-space: pre-wrap">{{ para }}</span>
               </n-p>
               <!-- Dynamic link for payment section -->
               <n-p v-if="key === 'payment' && te('legal.privacy.sections.paymentLink')">
-                 <a :href="t('legal.privacy.sections.paymentLink')" target="_blank" rel="noopener noreferrer" class="legal-link">
-                    {{ t('legal.privacy.sections.paymentLink') }}
-                 </a>
+                <a
+                  :href="t('legal.privacy.sections.paymentLink')"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="legal-link"
+                >
+                  {{ t('legal.privacy.sections.paymentLink') }}
+                </a>
               </n-p>
             </div>
           </div>
@@ -169,8 +189,11 @@ const showPrecedenceNotice = computed(() => {
 
             <div v-for="key in orderedTermsKeys" :key="key" class="legal-section">
               <n-h2>{{ t(`legal.terms.sections.${key}Title`) }}</n-h2>
-              <n-p v-for="(para, index) in tm(`legal.terms.sections.${key}Paragraphs`)" :key="index">
-                 <span style="white-space: pre-wrap">{{ para }}</span>
+              <n-p
+                v-for="(para, index) in tm(`legal.terms.sections.${key}Paragraphs`)"
+                :key="index"
+              >
+                <span style="white-space: pre-wrap">{{ para }}</span>
               </n-p>
             </div>
           </div>

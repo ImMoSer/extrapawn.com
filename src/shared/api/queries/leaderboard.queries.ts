@@ -21,7 +21,8 @@ const LEADERBOARD_KEYS = {
   theory: () => [...LEADERBOARD_KEYS.all, 'theory'] as const,
   dashboard: () => [...LEADERBOARD_KEYS.all, 'dashboard'] as const,
   planStreak: () => [...LEADERBOARD_KEYS.all, 'plan-streak'] as const,
-  sidebar: (params: Record<string, string>) => [...LEADERBOARD_KEYS.all, 'sidebar', params] as const,
+  sidebar: (params: Record<string, string>) =>
+    [...LEADERBOARD_KEYS.all, 'sidebar', params] as const,
 }
 
 /**
@@ -135,18 +136,22 @@ export const useTheoryLeaderboardQuery = (enabled: boolean = true) => {
 /**
  * Fetch Contextual Sidebar Leaderboard
  */
-export const useSidebarLeaderboardQuery = (paramsRef: MaybeRefOrGetter<{
-  gameMode: string
-  subMode: string
-  theme: string
-  difficulty: string
-}>) => {
+export const useSidebarLeaderboardQuery = (
+  paramsRef: MaybeRefOrGetter<{
+    gameMode: string
+    subMode: string
+    theme: string
+    difficulty: string
+  }>,
+) => {
   return useQuery<SidebarLeaderboardResponse, Error>({
     queryKey: computed(() => LEADERBOARD_KEYS.sidebar(toValue(paramsRef))),
     queryFn: () => {
       const params = toValue(paramsRef)
       const searchParams = new URLSearchParams(params)
-      return apiClient<SidebarLeaderboardResponse>(`/leaderboards/sidebar?${searchParams.toString()}`)
+      return apiClient<SidebarLeaderboardResponse>(
+        `/leaderboards/sidebar?${searchParams.toString()}`,
+      )
     },
     staleTime: 60 * 1000,
     enabled: computed(() => {

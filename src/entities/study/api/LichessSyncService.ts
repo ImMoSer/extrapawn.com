@@ -3,7 +3,10 @@ import logger from '@/shared/lib/logger'
 import { apiClient } from '@/shared/api/client'
 
 export class LichessApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message)
     this.name = 'LichessApiError'
   }
@@ -29,7 +32,7 @@ class RequestQueue {
           const now = Date.now()
           const timeSinceLast = now - this.lastRequestTime
           if (timeSinceLast < this.minDelayMs) {
-            await new Promise(r => setTimeout(r, this.minDelayMs - timeSinceLast))
+            await new Promise((r) => setTimeout(r, this.minDelayMs - timeSinceLast))
           }
           const result = await task()
           this.lastRequestTime = Date.now()
@@ -93,7 +96,9 @@ class LichessSyncService {
     }
 
     try {
-      const data = await apiClient<{ token: string | null; study_ready: boolean }>('/auth/lichess/study-token')
+      const data = await apiClient<{ token: string | null; study_ready: boolean }>(
+        '/auth/lichess/study-token',
+      )
       if (!data || !data.token) {
         sessionStorage.removeItem(this.READY_KEY)
         throw new Error('No encoded token received.')
@@ -107,8 +112,8 @@ class LichessSyncService {
       const tokenStr = data.token
       const keyStr = keyData.key
 
-      const encBytes = Uint8Array.from(atob(tokenStr!), c => c.charCodeAt(0))
-      const keyBytes = Uint8Array.from(atob(keyStr!), c => c.charCodeAt(0))
+      const encBytes = Uint8Array.from(atob(tokenStr!), (c) => c.charCodeAt(0))
+      const keyBytes = Uint8Array.from(atob(keyStr!), (c) => c.charCodeAt(0))
       const result = new Uint8Array(encBytes.length)
 
       for (let i = 0; i < encBytes.length; i++) {
@@ -123,10 +128,10 @@ class LichessSyncService {
   }
 
   private async getHeaders(tokenOverride?: string): Promise<Record<string, string>> {
-    const token = tokenOverride || await this.getDecodedToken()
+    const token = tokenOverride || (await this.getDecodedToken())
     return {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
     }
   }
 
@@ -134,7 +139,10 @@ class LichessSyncService {
     return await apiClient<{ token: string; lichessId: string }>('/auth/lichess/community-study-r')
   }
 
-  async fetchUserStudies(username: string, tokenOverride?: string): Promise<{ id: string; name: string; updatedAt: number }[]> {
+  async fetchUserStudies(
+    username: string,
+    tokenOverride?: string,
+  ): Promise<{ id: string; name: string; updatedAt: number }[]> {
     return this.queue.enqueue(async () => {
       try {
         const headers = await this.getHeaders(tokenOverride)
@@ -142,7 +150,7 @@ class LichessSyncService {
           method: 'GET',
           headers: {
             ...headers,
-            'Accept': 'application/x-ndjson',
+            Accept: 'application/x-ndjson',
           },
         })
 
@@ -151,8 +159,8 @@ class LichessSyncService {
         }
 
         const text = await response.text()
-        const lines = text.split('\n').filter(line => line.trim().length > 0)
-        
+        const lines = text.split('\n').filter((line) => line.trim().length > 0)
+
         const studies: { id: string; name: string; updatedAt: number }[] = []
         for (const line of lines) {
           try {
@@ -260,7 +268,10 @@ class LichessSyncService {
           )
         }
       } catch (error) {
-        logger.error(`[LichessSyncService] Error updating tags for study ${studyId} chapter ${chapterId}:`, error)
+        logger.error(
+          `[LichessSyncService] Error updating tags for study ${studyId} chapter ${chapterId}:`,
+          error,
+        )
         throw error
       }
     })
@@ -290,7 +301,10 @@ class LichessSyncService {
           )
         }
       } catch (error) {
-        logger.error(`[LichessSyncService] Error updating moves for study ${studyId} chapter ${chapterId}:`, error)
+        logger.error(
+          `[LichessSyncService] Error updating moves for study ${studyId} chapter ${chapterId}:`,
+          error,
+        )
         throw error
       }
     })
@@ -303,15 +317,18 @@ class LichessSyncService {
       }
       try {
         // Now using token to fetch PGN since we enforce ownership
-        const token = tokenOverride || await this.getDecodedToken()
+        const token = tokenOverride || (await this.getDecodedToken())
         const headers: Record<string, string> = {
-          'Accept': 'application/x-chess-pgn',
-          'Authorization': `Bearer ${token}`,
+          Accept: 'application/x-chess-pgn',
+          Authorization: `Bearer ${token}`,
         }
-        
-        const response = await fetch(`${this.BASE_URL}/study/${studyId}.pgn?orientation=true&clocks=false&t=${Date.now()}`, {
-          headers,
-        })
+
+        const response = await fetch(
+          `${this.BASE_URL}/study/${studyId}.pgn?orientation=true&clocks=false&t=${Date.now()}`,
+          {
+            headers,
+          },
+        )
 
         if (!response.ok) {
           // Attempt to parse JSON error even if content-type isn't explicitly JSON

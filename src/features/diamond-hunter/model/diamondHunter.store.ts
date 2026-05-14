@@ -9,10 +9,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import {
-    diamondApiService,
-    type GravityMove,
-} from '../api/DiamondApiService'
+import { diamondApiService, type GravityMove } from '../api/DiamondApiService'
 import { useDiamondHunterQueries } from '../api/diamondHunter.queries'
 
 export type HunterState = 'IDLE' | 'HUNTING' | 'SOLVING' | 'REWARD' | 'FAILED' | 'SAVING'
@@ -194,7 +191,6 @@ export const useDiamondHunterStore = defineStore('diamondHunter', () => {
       hints.value = [{ orig, dest, type: 'correct' }]
       puzzleFen.value = boardStore.fen
       message.value = 'Brilliant! Keep punishing!'
-
     } else if (moveStats?.nag === 255) {
       logger.info('DiamondHunter: Punishment successful (Diamond Found)')
       const orig = uci.substring(0, 2)
@@ -255,7 +251,10 @@ export const useDiamondHunterStore = defineStore('diamondHunter', () => {
           if (!expectedMove) return false
 
           if (uci !== expectedMove) {
-            logger.warn('DiamondHunter: Memory error during saving.', { uci, expected: expectedMove })
+            logger.warn('DiamondHunter: Memory error during saving.', {
+              uci,
+              expected: expectedMove,
+            })
             soundTrigger.value = 'game_tacktics_error'
             message.value = 'Memory error! Observe the path.'
             const orig = expectedMove.substring(0, 2)
@@ -369,7 +368,7 @@ export const useDiamondHunterStore = defineStore('diamondHunter', () => {
       pgnService.updateNode(blunderNode, { nag: 4 })
     }
     puzzleFen.value = boardStore.fen
-    
+
     // Pre-fetch gravity moves to make the first user move validation instant
     fetchGravityForFen(boardStore.fen)
 

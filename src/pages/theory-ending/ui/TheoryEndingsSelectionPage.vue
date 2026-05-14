@@ -61,13 +61,15 @@ function handleStart() {
     <template #sections>
       <!-- Type Selection -->
       <div class="section">
-        <n-text class="section-label">{{ t('features.theoryEndgames.selection.typeLabel') }}</n-text>
+        <n-text class="section-label">{{
+          t('features.theoryEndgames.selection.typeLabel')
+        }}</n-text>
         <n-radio-group v-model:value="selectedType" size="large" expand>
           <n-radio-button
-            v-for="type in (['win', 'draw'] as const)"
+            v-for="type in ['win', 'draw'] as const"
             :key="type"
             :value="type"
-            style="text-align: center;"
+            style="text-align: center"
           >
             {{ t(`chess.types.${type}`) }}
           </n-radio-button>
@@ -76,13 +78,15 @@ function handleStart() {
 
       <!-- Difficulty Selection -->
       <div class="section">
-        <n-text class="section-label">{{ t('features.theoryEndgames.selection.difficultyLabel') }}</n-text>
+        <n-text class="section-label">{{
+          t('features.theoryEndgames.selection.difficultyLabel')
+        }}</n-text>
         <n-radio-group v-model:value="selectedDifficulty" size="large" expand>
           <n-radio-button
             v-for="diff in difficultyLevels"
             :key="diff"
             :value="diff"
-            style="text-align: center;"
+            style="text-align: center"
           >
             {{ t(`common.difficulties.level_${diff.toLowerCase()}`) }}
           </n-radio-button>
@@ -91,14 +95,13 @@ function handleStart() {
 
       <!-- Categories / Themes Selection -->
       <div class="section">
-        <n-text class="section-label">{{ t('features.theoryEndgames.selection.categoryLabel') }}</n-text>
-        <VisualRadioGroup
-          v-model:value="selectedCategory"
-          :options="themeOptions"
-        />
+        <n-text class="section-label">{{
+          t('features.theoryEndgames.selection.categoryLabel')
+        }}</n-text>
+        <VisualRadioGroup v-model:value="selectedCategory" :options="themeOptions" />
       </div>
     </template>
-    
+
     <template #start-button-label>
       {{ t('features.theoryEndgames.selection.start') }}
     </template>

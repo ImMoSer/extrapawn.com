@@ -144,12 +144,18 @@ async function handleExit() {
                 orientation="white"
                 class="mini-board"
               />
-              <div 
-                class="status-badge" 
-                :class="mistakesStore.solvedStatus[puzzle.PuzzleId || puzzle.puzzle_id || ''] ? 'solved' : 'unsolved'"
+              <div
+                class="status-badge"
+                :class="
+                  mistakesStore.solvedStatus[puzzle.PuzzleId || puzzle.puzzle_id || '']
+                    ? 'solved'
+                    : 'unsolved'
+                "
               >
                 <n-icon size="18">
-                  <CheckmarkDoneOutline v-if="mistakesStore.solvedStatus[puzzle.PuzzleId || puzzle.puzzle_id || '']" />
+                  <CheckmarkDoneOutline
+                    v-if="mistakesStore.solvedStatus[puzzle.PuzzleId || puzzle.puzzle_id || '']"
+                  />
                   <ConstructOutline v-else />
                 </n-icon>
               </div>
@@ -250,7 +256,12 @@ async function handleExit() {
                       <InformationCircleOutline />
                     </n-icon>
                   </template>
-                  <span class="stat-value">#{{ mistakesStore.selectedPuzzle.PuzzleId || mistakesStore.selectedPuzzle.puzzle_id }}</span>
+                  <span class="stat-value"
+                    >#{{
+                      mistakesStore.selectedPuzzle.PuzzleId ||
+                      mistakesStore.selectedPuzzle.puzzle_id
+                    }}</span
+                  >
                 </n-statistic>
               </n-grid-item>
               <n-grid-item>
@@ -260,7 +271,11 @@ async function handleExit() {
                       <RibbonOutline />
                     </n-icon>
                   </template>
-                  <span class="stat-value">{{ mistakesStore.selectedPuzzle.Rating || mistakesStore.selectedPuzzle.tactical_rating || mistakesStore.selectedPuzzle.rating }}</span>
+                  <span class="stat-value">{{
+                    mistakesStore.selectedPuzzle.Rating ||
+                    mistakesStore.selectedPuzzle.tactical_rating ||
+                    mistakesStore.selectedPuzzle.rating
+                  }}</span>
                 </n-statistic>
               </n-grid-item>
             </n-grid>
@@ -389,7 +404,8 @@ async function handleExit() {
   }
 }
 
-.glass-header, .controls-glass-panel {
+.glass-header,
+.controls-glass-panel {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);

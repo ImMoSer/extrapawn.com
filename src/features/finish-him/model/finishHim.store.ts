@@ -1,9 +1,9 @@
 // src/stores/finishHim.store.ts
 import {
-    gameplayService,
-    useGameStore,
-    type GameStatusInfo,
-    type IGameplayStrategy,
+  gameplayService,
+  useGameStore,
+  type GameStatusInfo,
+  type IGameplayStrategy,
 } from '@/entities/game'
 import { type TopInfoDisplay } from '@/entities/puzzle'
 import { useAuthStore } from '@/entities/user'
@@ -12,9 +12,9 @@ import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { soundService } from '@/shared/lib/sound.service'
 import type {
-    FinishHimDifficulty,
-    FinishHimPuzzle,
-    FinishHimResultDto,
+  FinishHimDifficulty,
+  FinishHimPuzzle,
+  FinishHimResultDto,
 } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { makeFen, parseFen } from 'chessops/fen'
@@ -93,10 +93,7 @@ export const useFinishHimStore = defineStore('finishHim', () => {
         const outcome = currentState.outcome
         if (!outcome || outcome.reason === 'resign') return false
 
-        return (
-          outcome.reason === 'checkmate' &&
-          outcome.winner === humanColor
-        )
+        return outcome.reason === 'checkmate' && outcome.winner === humanColor
       },
       onUserMoveExecuted(uciMove: string) {
         if (isPlayoutMode) return
@@ -185,7 +182,7 @@ export const useFinishHimStore = defineStore('finishHim', () => {
           const delta = response.ratingDelta
           const sign = delta >= 0 ? '+' : ''
           const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
-          
+
           if (delta >= 0) {
             window.$message?.success(msg)
           } else {
@@ -196,7 +193,7 @@ export const useFinishHimStore = defineStore('finishHim', () => {
         if (response.userStatsUpdate) {
           logger.info('[FinishHimStore] Stats sent and userStatsUpdate received.')
           authStore.updateUserStats(response.userStatsUpdate)
-          
+
           if (response.userStatsUpdate?.finish_him) {
             queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'detailed-stats'] })
           }
@@ -236,7 +233,12 @@ export const useFinishHimStore = defineStore('finishHim', () => {
       const setup = parseFen(puzzle.initial_fen).unwrap()
       const humanColor = setup.turn === 'white' ? 'black' : 'white'
 
-      gameStore.startWithStrategy(puzzle.initial_fen, _createStrategy(puzzle, humanColor), humanColor, false)
+      gameStore.startWithStrategy(
+        puzzle.initial_fen,
+        _createStrategy(puzzle, humanColor),
+        humanColor,
+        false,
+      )
 
       feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
     } catch (error) {
@@ -252,7 +254,8 @@ export const useFinishHimStore = defineStore('finishHim', () => {
 
         await uiStore.showConfirmation(
           t('common.actions.error'),
-          t('features.gameplay.feedback.loadFailed') || 'Failed to load puzzle. It might not exist.',
+          t('features.gameplay.feedback.loadFailed') ||
+            'Failed to load puzzle. It might not exist.',
           {
             showCancel: false,
             confirmText: t('common.actions.ok'),
@@ -316,7 +319,6 @@ export const useFinishHimStore = defineStore('finishHim', () => {
     router.push('/finish-him') // Go back to selection
   }
 
-
   return {
     gamePhase: computed(() => gameStore.gamePhase),
     activePuzzle,
@@ -326,7 +328,9 @@ export const useFinishHimStore = defineStore('finishHim', () => {
 
       return {
         title: t(`chess.themes.${puzzle.category}`).toUpperCase(),
-        secondaryText: puzzle.sub_category ? t(`chess.subThemes.${puzzle.sub_category}`) : undefined,
+        secondaryText: puzzle.sub_category
+          ? t(`chess.subThemes.${puzzle.sub_category}`)
+          : undefined,
         badges: [
           { text: 'FINISH-HIM' },
           { text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`) },

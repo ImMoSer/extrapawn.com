@@ -17,7 +17,9 @@ const isChapterModalOpen = ref(false)
 const isGeneratorModalOpen = ref(false)
 
 const studyTitle = computed(() => {
-  return studyStore.activeStudy ? studyStore.activeStudy.title : t('features.study.myLibrary', 'My Library')
+  return studyStore.activeStudy
+    ? studyStore.activeStudy.title
+    : t('features.study.myLibrary', 'My Library')
 })
 
 const studyIndexInfo = computed(() => {
@@ -47,12 +49,7 @@ const studyIndexInfo = computed(() => {
       <div class="header-actions">
         <n-tooltip trigger="hover">
           <template #trigger>
-            <n-button
-              circle
-              quaternary
-              size="medium"
-              @click="isGeneratorModalOpen = true"
-            >
+            <n-button circle quaternary size="medium" @click="isGeneratorModalOpen = true">
               <template #icon>
                 <n-icon><GeneratorIcon /></n-icon>
               </template>
@@ -171,8 +168,12 @@ const studyIndexInfo = computed(() => {
 }
 
 @keyframes rotation {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 600px) {

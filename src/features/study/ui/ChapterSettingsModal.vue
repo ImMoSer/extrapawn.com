@@ -9,11 +9,7 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStudyStore, type StudyChapter } from '@/entities/study'
 import { openingChaptersService, type OpeningChapterTemplate } from '@/entities/opening'
-import {
-  LinkOutline,
-  ShareOutline,
-  TrashOutline
-} from '@vicons/ionicons5'
+import { LinkOutline, ShareOutline, TrashOutline } from '@vicons/ionicons5'
 import {
   NModal,
   NForm,
@@ -62,19 +58,19 @@ let cooldownTimer: number | null = null
 function updateCooldowns() {
   if (!props.chapter) return
   const now = Date.now()
-  
+
   const delLast = parseInt(localStorage.getItem(`del_${props.chapter.id}`) || '0', 10)
   deleteCooldown.value = Math.max(0, Math.ceil((DELETE_COOLDOWN_MS - (now - delLast)) / 1000))
-  
+
   if (deleteCooldown.value === 0 && cooldownTimer) {
-     clearInterval(cooldownTimer)
-     cooldownTimer = null
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
   }
 }
 
 function startCooldownTimer() {
   updateCooldowns()
-  if (!cooldownTimer && (deleteCooldown.value > 0)) {
+  if (!cooldownTimer && deleteCooldown.value > 0) {
     cooldownTimer = window.setInterval(updateCooldowns, 1000)
   }
 }
@@ -100,10 +96,10 @@ const lichessChapterUrl = computed(() => {
 const localAppUrl = computed(() => {
   const chapter = props.chapter || studyStore.activeChapter
   if (!chapter) return null
-  
+
   const studyId = chapter.studyId || 'local'
   const chapterId = chapter.lichessChapterId || chapter.id
-  
+
   return `${window.location.origin}/study/${studyId}/${chapterId}`
 })
 
@@ -124,14 +120,14 @@ const filteredTemplates = computed(() => {
   if (!query) return templates.value
 
   return templates.value.filter(
-    (t) => t.name.toLowerCase().includes(query) || t.eco.toLowerCase().includes(query)
+    (t) => t.name.toLowerCase().includes(query) || t.eco.toLowerCase().includes(query),
   )
 })
 
 const chaptersInStudyCount = computed(() => {
   const chapter = props.chapter
   if (!chapter?.studyId) return 0
-  return studyStore.chapters.filter(c => c.studyId === chapter.studyId).length
+  return studyStore.chapters.filter((c) => c.studyId === chapter.studyId).length
 })
 
 watch(
@@ -168,7 +164,7 @@ watch(
         }
       }
     }
-  }
+  },
 )
 
 async function handleImportPgn() {
@@ -176,12 +172,15 @@ async function handleImportPgn() {
 
   try {
     if (!studyStore.activeStudy) return
-    
+
     await studyStore.createChapterFromPgn(
-      pgnInput.value, 
-      formModel.value.name !== `${t('features.study.sidebar.addChapter')} ${studyStore.activeStudy.chapterIds.length + 1}` ? formModel.value.name : undefined, 
+      pgnInput.value,
+      formModel.value.name !==
+        `${t('features.study.sidebar.addChapter')} ${studyStore.activeStudy.chapterIds.length + 1}`
+        ? formModel.value.name
+        : undefined,
       formModel.value.color,
-      studyStore.activeStudy.id
+      studyStore.activeStudy.id,
     )
     pgnInput.value = ''
     message.success(t('features.study.chapterSettings.pgn.success'))
@@ -202,14 +201,14 @@ async function handleSave() {
     const chapterId = await studyStore.createChapter(
       formModel.value.name,
       undefined,
-      formModel.value.color
+      formModel.value.color,
     )
     if (!chapterId) {
       message.error(t('features.study.chapterSettings.errors.failedToCreate'))
       return
     }
     // Update newly created chapter's tags
-    const chapter = studyStore.chapters.find(c => c.id === chapterId)
+    const chapter = studyStore.chapters.find((c) => c.id === chapterId)
     if (chapter) {
       const updatedTags = {
         ...chapter.tags,
@@ -223,7 +222,7 @@ async function handleSave() {
     message.success(t('features.study.chapterSettings.messages.created'))
   } else if (props.chapter) {
     const resultChanged = isResultChanged.value
-    
+
     const updatedTags = {
       ...props.chapter.tags,
       Result: formModel.value.result,
@@ -241,7 +240,7 @@ async function handleSave() {
         message.error('Failed to sync changes to Lichess.')
       }
     } else {
-       message.success(t('features.study.chapterSettings.messages.updated'))
+      message.success(t('features.study.chapterSettings.messages.updated'))
     }
   }
 
@@ -251,14 +250,16 @@ async function handleSave() {
 async function selectTemplate(template: OpeningChapterTemplate) {
   try {
     if (!studyStore.activeStudy) return
-    
+
     await studyStore.createChapterFromPgn(
-      template.pgn, 
-      template.name, 
+      template.pgn,
+      template.name,
       formModel.value.color,
-      studyStore.activeStudy.id
+      studyStore.activeStudy.id,
     )
-    message.success(t('features.study.chapterSettings.templates.createdFrom', { name: template.name }))
+    message.success(
+      t('features.study.chapterSettings.templates.createdFrom', { name: template.name }),
+    )
     emit('update:show', false)
   } catch (e) {
     message.error(t('features.study.chapterSettings.templates.noTemplates'))
@@ -282,7 +283,7 @@ async function handleShare() {
     try {
       await navigator.share({
         title: props.chapter?.name || 'Chess Study',
-        url: localAppUrl.value
+        url: localAppUrl.value,
       })
     } catch (e: unknown) {
       if ((e as Error).name !== 'AbortError') {
@@ -301,7 +302,7 @@ function openUrl(url: string | null) {
 // Actions from Sidebar
 async function handleDelete() {
   if (!props.chapter) return
-  
+
   if (deleteCooldown.value > 0) {
     message.warning(`Please wait ${deleteCooldown.value}s before deleting again.`)
     return
@@ -327,7 +328,7 @@ async function handleDelete() {
       content: t('features.study.sidebar.deleteChapterContent'),
       positiveText: t('features.study.sidebar.deleteChapterConfirm'),
       negativeText: t('features.study.sidebar.deleteChapterCancel'),
-      onPositiveClick: deleteAction
+      onPositiveClick: deleteAction,
     })
   } else {
     await deleteAction()
@@ -340,7 +341,11 @@ async function handleDelete() {
     :show="show"
     @update:show="(v) => emit('update:show', v)"
     preset="card"
-    :title="isCreating ? t('features.study.chapterSettings.addChapter') : t('features.study.chapterSettings.settings')"
+    :title="
+      isCreating
+        ? t('features.study.chapterSettings.addChapter')
+        : t('features.study.chapterSettings.settings')
+    "
     style="width: 500px; max-width: 95vw"
     :auto-focus="false"
     :trap-focus="false"
@@ -355,10 +360,16 @@ async function handleDelete() {
           circle
           type="error"
           :disabled="deleteCooldown > 0"
-          :title="deleteCooldown > 0 ? t('features.study.sidebar.cooldownWait', { seconds: deleteCooldown }) : t('features.study.sidebar.deleteChapterTooltip')"
+          :title="
+            deleteCooldown > 0
+              ? t('features.study.sidebar.cooldownWait', { seconds: deleteCooldown })
+              : t('features.study.sidebar.deleteChapterTooltip')
+          "
           @click="handleDelete"
         >
-          <template #icon><NIcon><TrashOutline /></NIcon></template>
+          <template #icon
+            ><NIcon><TrashOutline /></NIcon
+          ></template>
         </NButton>
       </NSpace>
     </template>
@@ -367,26 +378,38 @@ async function handleDelete() {
         <div style="padding-top: 15px">
           <NForm :model="formModel" label-placement="left" label-width="100">
             <NFormItem :label="t('features.study.chapterSettings.form.name')" path="name">
-              <NInput v-model:value="formModel.name" :disabled="!isCreating" :placeholder="t('features.study.chapterSettings.form.namePlaceholder')" />
+              <NInput
+                v-model:value="formModel.name"
+                :disabled="!isCreating"
+                :placeholder="t('features.study.chapterSettings.form.namePlaceholder')"
+              />
             </NFormItem>
-            
+
             <NFormItem :label="t('features.study.chapterSettings.form.color')" path="color">
               <NSelect
                 v-model:value="formModel.color"
                 :disabled="!isCreating"
                 :options="[
                   { label: t('features.study.chapterSettings.form.white'), value: 'white' },
-                  { label: t('features.study.chapterSettings.form.black'), value: 'black' }
+                  { label: t('features.study.chapterSettings.form.black'), value: 'black' },
                 ]"
               />
             </NFormItem>
 
             <NFormItem :label="t('features.study.chapterSettings.form.eco')" path="eco">
-              <NInput v-model:value="formModel.eco" :disabled="!isCreating" :placeholder="t('features.study.chapterSettings.form.ecoPlaceholder')" />
+              <NInput
+                v-model:value="formModel.eco"
+                :disabled="!isCreating"
+                :placeholder="t('features.study.chapterSettings.form.ecoPlaceholder')"
+              />
             </NFormItem>
 
             <NFormItem :label="t('features.study.chapterSettings.form.opening')" path="opening">
-              <NInput v-model:value="formModel.opening" :disabled="!isCreating" :placeholder="t('features.study.chapterSettings.form.openingPlaceholder')" />
+              <NInput
+                v-model:value="formModel.opening"
+                :disabled="!isCreating"
+                :placeholder="t('features.study.chapterSettings.form.openingPlaceholder')"
+              />
             </NFormItem>
 
             <NFormItem :label="t('features.study.chapterSettings.form.result')" path="result">
@@ -399,31 +422,67 @@ async function handleDelete() {
                   <NText depth="3">{{ t('features.study.chapterSettings.links.localApp') }}</NText>
                   <NSpace size="small" style="margin-top: 4px">
                     <NButton size="small" tertiary class="action-btn" @click="handleCopyLink">
-                      <template #icon><NIcon class="neon-icon"><LinkOutline/></NIcon></template>
+                      <template #icon
+                        ><NIcon class="neon-icon"><LinkOutline /></NIcon
+                      ></template>
                       {{ t('common.actions.copyLink') }}
                     </NButton>
                     <NButton size="small" tertiary class="action-btn" @click="handleShare">
-                      <template #icon><NIcon class="neon-icon"><ShareOutline/></NIcon></template>
+                      <template #icon
+                        ><NIcon class="neon-icon"><ShareOutline /></NIcon
+                      ></template>
                       {{ t('common.controls.share') }}
                     </NButton>
                   </NSpace>
                 </div>
 
-                <div v-if="lichessStudyUrl || lichessChapterUrl" class="lichess-link-item" style="margin-top: 12px">
+                <div
+                  v-if="lichessStudyUrl || lichessChapterUrl"
+                  class="lichess-link-item"
+                  style="margin-top: 12px"
+                >
                   <NText depth="3">Lichess Links:</NText>
-                  <NSpace size="small" style="margin-top: 4px; width: 100%;">
-                    <NButton v-if="lichessStudyUrl" size="small" tertiary class="action-btn" @click="openUrl(lichessStudyUrl)">
+                  <NSpace size="small" style="margin-top: 4px; width: 100%">
+                    <NButton
+                      v-if="lichessStudyUrl"
+                      size="small"
+                      tertiary
+                      class="action-btn"
+                      @click="openUrl(lichessStudyUrl)"
+                    >
                       <template #icon>
                         <NIcon class="lichess-orange-icon">
-                          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="m21.91 13.43-4.73-8.59.61-2.59c.01-.06 0-.13-.05-.18-.04-.05-.11-.07-.17-.07-1.42.17-2.6.36-3.75 1.19-4.04-.27-7.27.75-9.35 2.95-2.18 2.31-2.67 5.46-2.39 7.63.64 4.71 4.33 7.19 7.57 7.94.83.19 1.64.28 2.44.28 2.79 0 5.25-1.15 6.62-3.21.06-.09.04-.2-.04-.27a.19.19 0 0 0-.27.02c-2.84 2.94-7.5 3.44-11.08 1.2-3.74-2.34-5.17-7.01-3.26-10.62 1.9-3.6 5.29-5.15 9.53-4.36.05 0 .1 0 .14-.02l.28-.16c.77-.46 1.63-.96 2.39-1.07l-.58 1.66c-.02.06-.01.12.02.17l5.07 8.49c-.16 1.69-1.42 2.09-1.85 2.18-.24-.54-.68-1.14-1.92-2.34-.35-.34-1.01-.78-1.77-1.3-1.97-1.33-4.95-3.35-4.49-4.99a.2.2 0 0 0-.14-.25.2.2 0 0 0-.25.14c-.67 2.32 2.35 4.65 4.35 6.19.54.42 1.01.78 1.33 1.08 1.45 1.37 2.14 2.38 2.28 2.65.04.08.14.13.23.1.04-.01 3.94-1.08 3.28-3.81 0-.02-.01-.03-.02-.05Z" /></svg>
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="m21.91 13.43-4.73-8.59.61-2.59c.01-.06 0-.13-.05-.18-.04-.05-.11-.07-.17-.07-1.42.17-2.6.36-3.75 1.19-4.04-.27-7.27.75-9.35 2.95-2.18 2.31-2.67 5.46-2.39 7.63.64 4.71 4.33 7.19 7.57 7.94.83.19 1.64.28 2.44.28 2.79 0 5.25-1.15 6.62-3.21.06-.09.04-.2-.04-.27a.19.19 0 0 0-.27.02c-2.84 2.94-7.5 3.44-11.08 1.2-3.74-2.34-5.17-7.01-3.26-10.62 1.9-3.6 5.29-5.15 9.53-4.36.05 0 .1 0 .14-.02l.28-.16c.77-.46 1.63-.96 2.39-1.07l-.58 1.66c-.02.06-.01.12.02.17l5.07 8.49c-.16 1.69-1.42 2.09-1.85 2.18-.24-.54-.68-1.14-1.92-2.34-.35-.34-1.01-.78-1.77-1.3-1.97-1.33-4.95-3.35-4.49-4.99a.2.2 0 0 0-.14-.25.2.2 0 0 0-.25.14c-.67 2.32 2.35 4.65 4.35 6.19.54.42 1.01.78 1.33 1.08 1.45 1.37 2.14 2.38 2.28 2.65.04.08.14.13.23.1.04-.01 3.94-1.08 3.28-3.81 0-.02-.01-.03-.02-.05Z"
+                            />
+                          </svg>
                         </NIcon>
                       </template>
                       Open Study
                     </NButton>
-                    <NButton v-if="lichessChapterUrl" size="small" tertiary class="action-btn" @click="openUrl(lichessChapterUrl)">
+                    <NButton
+                      v-if="lichessChapterUrl"
+                      size="small"
+                      tertiary
+                      class="action-btn"
+                      @click="openUrl(lichessChapterUrl)"
+                    >
                       <template #icon>
                         <NIcon class="lichess-orange-icon">
-                          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="m21.91 13.43-4.73-8.59.61-2.59c.01-.06 0-.13-.05-.18-.04-.05-.11-.07-.17-.07-1.42.17-2.6.36-3.75 1.19-4.04-.27-7.27.75-9.35 2.95-2.18 2.31-2.67 5.46-2.39 7.63.64 4.71 4.33 7.19 7.57 7.94.83.19 1.64.28 2.44.28 2.79 0 5.25-1.15 6.62-3.21.06-.09.04-.2-.04-.27a.19.19 0 0 0-.27.02c-2.84 2.94-7.5 3.44-11.08 1.2-3.74-2.34-5.17-7.01-3.26-10.62 1.9-3.6 5.29-5.15 9.53-4.36.05 0 .1 0 .14-.02l.28-.16c.77-.46 1.63-.96 2.39-1.07l-.58 1.66c-.02.06-.01.12.02.17l5.07 8.49c-.16 1.69-1.42 2.09-1.85 2.18-.24-.54-.68-1.14-1.92-2.34-.35-.34-1.01-.78-1.77-1.3-1.97-1.33-4.95-3.35-4.49-4.99a.2.2 0 0 0-.14-.25.2.2 0 0 0-.25.14c-.67 2.32 2.35 4.65 4.35 6.19.54.42 1.01.78 1.33 1.08 1.45 1.37 2.14 2.38 2.28 2.65.04.08.14.13.23.1.04-.01 3.94-1.08 3.28-3.81 0-.02-.01-.03-.02-.05Z" /></svg>
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="m21.91 13.43-4.73-8.59.61-2.59c.01-.06 0-.13-.05-.18-.04-.05-.11-.07-.17-.07-1.42.17-2.6.36-3.75 1.19-4.04-.27-7.27.75-9.35 2.95-2.18 2.31-2.67 5.46-2.39 7.63.64 4.71 4.33 7.19 7.57 7.94.83.19 1.64.28 2.44.28 2.79 0 5.25-1.15 6.62-3.21.06-.09.04-.2-.04-.27a.19.19 0 0 0-.27.02c-2.84 2.94-7.5 3.44-11.08 1.2-3.74-2.34-5.17-7.01-3.26-10.62 1.9-3.6 5.29-5.15 9.53-4.36.05 0 .1 0 .14-.02l.28-.16c.77-.46 1.63-.96 2.39-1.07l-.58 1.66c-.02.06-.01.12.02.17l5.07 8.49c-.16 1.69-1.42 2.09-1.85 2.18-.24-.54-.68-1.14-1.92-2.34-.35-.34-1.01-.78-1.77-1.3-1.97-1.33-4.95-3.35-4.49-4.99a.2.2 0 0 0-.14-.25.2.2 0 0 0-.25.14c-.67 2.32 2.35 4.65 4.35 6.19.54.42 1.01.78 1.33 1.08 1.45 1.37 2.14 2.38 2.28 2.65.04.08.14.13.23.1.04-.01 3.94-1.08 3.28-3.81 0-.02-.01-.03-.02-.05Z"
+                            />
+                          </svg>
                         </NIcon>
                       </template>
                       Open Chapter
@@ -434,20 +493,36 @@ async function handleDelete() {
             </div>
 
             <NSpace justify="end" style="margin-top: 20px">
-              <NButton @click="emit('update:show', false)">{{ t('features.study.chapterSettings.actions.cancel') }}</NButton>
-              <NButton type="primary" :disabled="!isCreating && !isResultChanged" @click="handleSave">
-                {{ isCreating ? t('features.study.chapterSettings.actions.create') : t('features.study.chapterSettings.actions.save') }}
+              <NButton @click="emit('update:show', false)">{{
+                t('features.study.chapterSettings.actions.cancel')
+              }}</NButton>
+              <NButton
+                type="primary"
+                :disabled="!isCreating && !isResultChanged"
+                @click="handleSave"
+              >
+                {{
+                  isCreating
+                    ? t('features.study.chapterSettings.actions.create')
+                    : t('features.study.chapterSettings.actions.save')
+                }}
               </NButton>
             </NSpace>
           </NForm>
         </div>
       </NTabPane>
 
-      <NTabPane v-if="isCreating" name="templates" :tab="t('features.study.chapterSettings.tabs.fromTemplate')">
+      <NTabPane
+        v-if="isCreating"
+        name="templates"
+        :tab="t('features.study.chapterSettings.tabs.fromTemplate')"
+      >
         <div style="padding-top: 15px">
           <NSpace vertical>
             <div class="color-hint">
-              <NText depth="3">{{ t('features.study.chapterSettings.templates.colorHint', { color: formModel.color }) }}</NText>
+              <NText depth="3">{{
+                t('features.study.chapterSettings.templates.colorHint', { color: formModel.color })
+              }}</NText>
             </div>
             <NInput
               v-model:value="searchQuery"
@@ -476,11 +551,17 @@ async function handleDelete() {
         </div>
       </NTabPane>
 
-      <NTabPane v-if="isCreating" name="raw_pgn" :tab="t('features.study.chapterSettings.tabs.rawPgn')">
+      <NTabPane
+        v-if="isCreating"
+        name="raw_pgn"
+        :tab="t('features.study.chapterSettings.tabs.rawPgn')"
+      >
         <div style="padding-top: 15px">
           <NSpace vertical>
             <div class="color-hint">
-              <NText depth="3">{{ t('features.study.chapterSettings.pgn.colorHint', { color: formModel.color }) }}</NText>
+              <NText depth="3">{{
+                t('features.study.chapterSettings.pgn.colorHint', { color: formModel.color })
+              }}</NText>
             </div>
             <NInput
               v-model:value="pgnInput"
@@ -489,7 +570,9 @@ async function handleDelete() {
               :rows="8"
             />
             <NSpace justify="end" style="margin-top: 10px">
-              <NButton @click="emit('update:show', false)">{{ t('features.study.chapterSettings.actions.cancel') }}</NButton>
+              <NButton @click="emit('update:show', false)">{{
+                t('features.study.chapterSettings.actions.cancel')
+              }}</NButton>
               <NButton type="primary" :disabled="!pgnInput.trim()" @click="handleImportPgn">
                 {{ t('features.study.chapterSettings.actions.import') }}
               </NButton>
@@ -576,4 +659,3 @@ async function handleDelete() {
   color: var(--color-primary-hover);
 }
 </style>
-

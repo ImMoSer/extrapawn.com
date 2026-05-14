@@ -9,11 +9,17 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import type { TheoryEndingType, GameLaunchOptions, TheoryEndingDifficulty, TheoryEndingCategory } from '@/shared/types/api.types'
+import type {
+  TheoryEndingType,
+  GameLaunchOptions,
+  TheoryEndingDifficulty,
+  TheoryEndingCategory,
+} from '@/shared/types/api.types'
 
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
@@ -34,7 +40,7 @@ const route = useRoute()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'THEORY_ENDING',
   subMode: theoryStore.activeType || 'win',
-  theme: theoryStore.activeCategory || ''
+  theme: theoryStore.activeCategory || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -64,7 +70,10 @@ const currentTheorySubMode = computed(() => {
 })
 
 const currentTheoryTitle = computed(() => {
-  return t('features.userCabinet.stats.modes.theory') + (theoryStore.activeType === 'win' ? ' (Win)' : ' (Draw)')
+  return (
+    t('features.userCabinet.stats.modes.theory') +
+    (theoryStore.activeType === 'win' ? ' (Win)' : ' (Draw)')
+  )
 })
 
 const handleImprove = (options: GameLaunchOptions) => {
@@ -103,7 +112,7 @@ watch(
     if (phase === 'LOADING') {
       smartHintStore.resetHints(3)
     }
-  }
+  },
 )
 
 watch(
@@ -176,7 +185,18 @@ watch(
 <template>
   <GameLayout>
     <template #left-panel>
-      <UserProfileWidget />
+      <div class="left-panel-content-wrapper">
+        <UserProfileWidget />
+        <ThemeRoseChart
+          v-if="normalizedStats && normalizedStats.theory"
+          :activeMode="theoryStore.activeDifficulty || 'Novice'"
+          :mode="currentTheoryMode"
+          :subMode="currentTheorySubMode"
+          :themes="currentTheoryThemes"
+          :title="currentTheoryTitle"
+          @improve="handleImprove"
+        />
+      </div>
     </template>
 
     <template #top-info>
@@ -198,15 +218,7 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.theory"
-            :activeMode="theoryStore.activeDifficulty || 'Novice'"
-            :mode="currentTheoryMode"
-            :subMode="currentTheorySubMode"
-            :themes="currentTheoryThemes"
-            :title="currentTheoryTitle"
-            @improve="handleImprove"
-          />
+          <CoachSidebar />
           <SidebarLeaderboard
             game-mode="theory"
             :sub-mode="theoryStore.activeType || 'win'"
@@ -220,6 +232,7 @@ watch(
 </template>
 
 <style scoped>
+.left-panel-content-wrapper,
 .right-panel-content-wrapper {
   display: flex;
   flex-direction: column;

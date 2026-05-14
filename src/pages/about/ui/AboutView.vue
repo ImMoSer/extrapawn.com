@@ -1,15 +1,6 @@
 <!-- src/pages/AboutView.vue -->
 <script setup lang="ts">
-import {
-    NButton,
-    NCard,
-    NDivider,
-    NGi,
-    NGrid,
-    NSpace,
-    NTag,
-    NText
-} from 'naive-ui'
+import { NButton, NCard, NDivider, NGi, NGrid, NSpace, NTag, NText } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -23,7 +14,7 @@ const modules = [
   'finishHim',
   'practicalChess',
   'theoreticalEndings',
-  'userCabinet'
+  'userCabinet',
 ]
 
 const conceptKeys = ['what', 'forWho', 'uniqueness']
@@ -35,7 +26,9 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
     <header class="hero-section">
       <div class="hero-content">
         <h1 class="glow-text">{{ t('about.hero.title') }}</h1>
-        <p class="hero-subtitle">{{ t('about.hero.subtitle') }} <span class="version-badge">v{{ appVersion }}</span></p>
+        <p class="hero-subtitle">
+          {{ t('about.hero.subtitle') }} <span class="version-badge">v{{ appVersion }}</span>
+        </p>
       </div>
       <div class="bg-animation">
         <div class="blob"></div>
@@ -51,7 +44,11 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
           <n-gi v-for="key in conceptKeys" :key="key">
             <n-card class="concept-card glass-card" :title="t(`about.concept.${key}.title`)">
               <n-text class="concept-text">
-                <span v-html="t(`about.concept.${key}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')"></span>
+                <span
+                  v-html="
+                    t(`about.concept.${key}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  "
+                ></span>
               </n-text>
             </n-card>
           </n-gi>
@@ -70,7 +67,11 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
                 <div class="module-icon-placeholder">{{ mod.charAt(0).toUpperCase() }}</div>
               </template>
               <n-text depth="3" class="module-description">
-                <span v-html="t(`about.modules.${mod}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')"></span>
+                <span
+                  v-html="
+                    t(`about.modules.${mod}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  "
+                ></span>
               </n-text>
             </n-card>
           </n-gi>
@@ -135,11 +136,17 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
                 <n-text strong>{{ t('about.licenseAndAcknowledgements.stockfish.title') }}</n-text>
               </template>
               <n-text depth="3">
-                {{ t('about.licenseAndAcknowledgements.stockfish.text1') }} <strong>Stockfish</strong> {{ t('about.licenseAndAcknowledgements.stockfish.text2') }}
+                {{ t('about.licenseAndAcknowledgements.stockfish.text1') }}
+                <strong>Stockfish</strong>
+                {{ t('about.licenseAndAcknowledgements.stockfish.text2') }}
               </n-text>
               <div class="mt-2">
-                <n-tag type="warning" size="small" :bordered="false">{{ t('about.licenseAndAcknowledgements.stockfish.gplNoteTitle') }}</n-tag>
-                <n-text depth="3" class="text-xs block mt-1">{{ t('about.licenseAndAcknowledgements.stockfish.gplNote') }}</n-text>
+                <n-tag type="warning" size="small" :bordered="false">{{
+                  t('about.licenseAndAcknowledgements.stockfish.gplNoteTitle')
+                }}</n-tag>
+                <n-text depth="3" class="text-xs block mt-1">{{
+                  t('about.licenseAndAcknowledgements.stockfish.gplNote')
+                }}</n-text>
               </div>
             </n-card>
           </n-gi>
@@ -151,7 +158,14 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
                 <n-text strong>{{ t('about.licenseAndAcknowledgements.maia.title') }}</n-text>
               </template>
               <n-text depth="3">
-                <span v-html="t('about.licenseAndAcknowledgements.maia.text').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')"></span>
+                <span
+                  v-html="
+                    t('about.licenseAndAcknowledgements.maia.text').replace(
+                      /\*\*(.*?)\*\*/g,
+                      '<strong>$1</strong>',
+                    )
+                  "
+                ></span>
               </n-text>
             </n-card>
           </n-gi>
@@ -163,7 +177,14 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
                 <n-text strong>{{ t('about.licenseAndAcknowledgements.lcZero.title') }}</n-text>
               </template>
               <n-text depth="3">
-                <span v-html="t('about.licenseAndAcknowledgements.lcZero.text').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')"></span>
+                <span
+                  v-html="
+                    t('about.licenseAndAcknowledgements.lcZero.text').replace(
+                      /\*\*(.*?)\*\*/g,
+                      '<strong>$1</strong>',
+                    )
+                  "
+                ></span>
               </n-text>
             </n-card>
           </n-gi>
@@ -175,7 +196,9 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
                 <n-text strong>Chessground & Chessops</n-text>
               </template>
               <n-text depth="3">
-                {{ t('about.licenseAndAcknowledgements.chessground.text1') }} <strong>Chessground</strong> & <strong>Chessops</strong>. {{ t('about.licenseAndAcknowledgements.chessground.gratitude') }}
+                {{ t('about.licenseAndAcknowledgements.chessground.text1') }}
+                <strong>Chessground</strong> & <strong>Chessops</strong>.
+                {{ t('about.licenseAndAcknowledgements.chessground.gratitude') }}
               </n-text>
             </n-card>
           </n-gi>
@@ -211,7 +234,12 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
 
               <n-space class="social-links">
                 <a href="https://t.me/extrapawn_chat" target="_blank" class="social-icon">TG</a>
-                <a href="https://github.com/ImMoSer/extrapawn.com" target="_blank" class="social-icon">GH</a>
+                <a
+                  href="https://github.com/ImMoSer/extrapawn.com"
+                  target="_blank"
+                  class="social-icon"
+                  >GH</a
+                >
                 <a href="mailto:immozerai@gmail.com" class="social-icon">@</a>
               </n-space>
             </div>
@@ -316,12 +344,18 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
 }
 
 @keyframes move {
-  from { transform: translate(-20%, -20%) rotate(0deg); }
-  to { transform: translate(20%, 20%) rotate(360deg); }
+  from {
+    transform: translate(-20%, -20%) rotate(0deg);
+  }
+  to {
+    transform: translate(20%, 20%) rotate(360deg);
+  }
 }
 
 @keyframes shine {
-  to { background-position: 200% center; }
+  to {
+    background-position: 200% center;
+  }
 }
 
 /* Content Container */
@@ -340,7 +374,9 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 16px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .glass-card:hover {
@@ -533,9 +569,19 @@ const conceptKeys = ['what', 'forWho', 'uniqueness']
   }
 }
 
-.mt-2 { margin-top: 8px; }
-.mt-1 { margin-top: 4px; }
-.text-xs { font-size: 0.75rem; }
-.block { display: block; }
-.h-full { height: 100%; }
+.mt-2 {
+  margin-top: 8px;
+}
+.mt-1 {
+  margin-top: 4px;
+}
+.text-xs {
+  font-size: 0.75rem;
+}
+.block {
+  display: block;
+}
+.h-full {
+  height: 100%;
+}
 </style>

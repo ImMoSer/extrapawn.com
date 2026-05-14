@@ -38,7 +38,7 @@ watch(
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const isLandscape = ref(false)
@@ -77,8 +77,8 @@ const themeOverrides: GlobalThemeOverrides = {
       InternalSelectMenu: {
         color: '#0a0b14',
         borderRadius: '12px',
-      }
-    }
+      },
+    },
   },
   DataTable: {
     tdColor: 'transparent',
@@ -126,96 +126,114 @@ onUnmounted(() => {
       <n-message-provider :duration="6000">
         <MessageBridge />
         <n-dialog-provider>
-        <n-layout has-sider position="absolute" class="root-layout">
-          <!-- Desktop Sidebar (Landscape) -->
-          <n-layout-sider
-            v-if="isLandscape"
-            bordered
-            collapse-mode="width"
-            :collapsed-width="64"
-            :width="260"
-            :collapsed="isSidebarCollapsed"
-            show-trigger
-            class="app-sider"
-            @collapse="isSidebarCollapsed = true"
-            @expand="isSidebarCollapsed = false"
-          >
-            <!-- Top Action Bar (Settings) -->
-            <div class="sider-top-bar">
-              <SettingsMenu />
-            </div>
+          <n-layout has-sider position="absolute" class="root-layout">
+            <!-- Desktop Sidebar (Landscape) -->
+            <n-layout-sider
+              v-if="isLandscape"
+              bordered
+              collapse-mode="width"
+              :collapsed-width="64"
+              :width="260"
+              :collapsed="isSidebarCollapsed"
+              show-trigger
+              class="app-sider"
+              @collapse="isSidebarCollapsed = true"
+              @expand="isSidebarCollapsed = false"
+            >
+              <!-- Top Action Bar (Settings) -->
+              <div class="sider-top-bar">
+                <SettingsMenu />
+              </div>
 
-            <div class="sider-header">
-              <RouterLink to="/" class="logo-link">
-                <img
-                  v-if="isSidebarCollapsed"
-                  src="/png/extra_pawn_black.png"
-                  alt="Logo"
-                  class="logo-collapsed"
-                />
-                <div v-else class="brand-wrapper-sidebar">
-                  <img src="/png/extra_pawn_black.png" alt="EXTRAPAWN" class="sidebar-logo-icon" />
-                  <span class="brand-text sidebar-brand-name">EXTRAPAWN</span>
-                </div>
-              </RouterLink>
-            </div>
-
-            <NavMenu :collapsed="isSidebarCollapsed" />
-          </n-layout-sider>
-
-          <n-layout class="main-layout-container">
-            <!-- Mobile Header (Portrait) -->
-            <n-layout-header v-if="!isLandscape" bordered class="mobile-header">
-              <n-button quaternary circle @click="openDrawer">
-                <template #icon>
-                  <n-icon>
-                    <MenuOutline />
-                  </n-icon>
-                </template>
-              </n-button>
-
-              <RouterLink to="/" class="mobile-logo">
-                <img src="/png/extra_pawn_black.png" alt="Logo" height="32" />
-              </RouterLink>
-
-              <SettingsMenu />
-            </n-layout-header>
-
-            <!-- Page Content -->
-            <n-layout-content :content-style="{ height: '100%' }" class="page-content">
-              <RouterView />
-            </n-layout-content>
-          </n-layout>
-
-          <!-- Mobile Menu Drawer (Swipe-out) -->
-          <n-drawer 
-            v-model:show="isDrawerOpen" 
-            placement="left" 
-            :width="280"
-            class="app-drawer"
-            style="backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-right: 1px solid var(--glass-border);"
-          >
-            <n-drawer-content closable class="mobile-drawer-content">
-              <template #header>
-                <RouterLink to="/" class="logo-link" style="text-decoration: none;" @click="isDrawerOpen = false">
-                  <n-space align="center" :wrap="false">
-                    <img src="/png/extra_pawn_black.png" alt="Logo" class="sidebar-logo-icon" />
-                    <n-text strong class="brand-text sidebar-brand-name" style="font-size: 1.2rem !important;">EXTRAPAWN</n-text>
-                  </n-space>
+              <div class="sider-header">
+                <RouterLink to="/" class="logo-link">
+                  <img
+                    v-if="isSidebarCollapsed"
+                    src="/png/extra_pawn_black.png"
+                    alt="Logo"
+                    class="logo-collapsed"
+                  />
+                  <div v-else class="brand-wrapper-sidebar">
+                    <img
+                      src="/png/extra_pawn_black.png"
+                      alt="EXTRAPAWN"
+                      class="sidebar-logo-icon"
+                    />
+                    <span class="brand-text sidebar-brand-name">EXTRAPAWN</span>
+                  </div>
                 </RouterLink>
-              </template>
-              <NavMenu @select="isDrawerOpen = false" />
-            </n-drawer-content>
-          </n-drawer>
+              </div>
 
-          <ConfirmationModal />
-          <LoginScopeModal />
-          <AppUpdateNotifier />
-        </n-layout>
-        <GalaxyBackground />
-      </n-dialog-provider>
-    </n-message-provider>
-  </n-config-provider>
+              <NavMenu :collapsed="isSidebarCollapsed" />
+            </n-layout-sider>
+
+            <n-layout class="main-layout-container">
+              <!-- Mobile Header (Portrait) -->
+              <n-layout-header v-if="!isLandscape" bordered class="mobile-header">
+                <n-button quaternary circle @click="openDrawer">
+                  <template #icon>
+                    <n-icon>
+                      <MenuOutline />
+                    </n-icon>
+                  </template>
+                </n-button>
+
+                <RouterLink to="/" class="mobile-logo">
+                  <img src="/png/extra_pawn_black.png" alt="Logo" height="32" />
+                </RouterLink>
+
+                <SettingsMenu />
+              </n-layout-header>
+
+              <!-- Page Content -->
+              <n-layout-content :content-style="{ height: '100%' }" class="page-content">
+                <RouterView />
+              </n-layout-content>
+            </n-layout>
+
+            <!-- Mobile Menu Drawer (Swipe-out) -->
+            <n-drawer
+              v-model:show="isDrawerOpen"
+              placement="left"
+              :width="280"
+              class="app-drawer"
+              style="
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-right: 1px solid var(--glass-border);
+              "
+            >
+              <n-drawer-content closable class="mobile-drawer-content">
+                <template #header>
+                  <RouterLink
+                    to="/"
+                    class="logo-link"
+                    style="text-decoration: none"
+                    @click="isDrawerOpen = false"
+                  >
+                    <n-space align="center" :wrap="false">
+                      <img src="/png/extra_pawn_black.png" alt="Logo" class="sidebar-logo-icon" />
+                      <n-text
+                        strong
+                        class="brand-text sidebar-brand-name"
+                        style="font-size: 1.2rem !important"
+                        >EXTRAPAWN</n-text
+                      >
+                    </n-space>
+                  </RouterLink>
+                </template>
+                <NavMenu @select="isDrawerOpen = false" />
+              </n-drawer-content>
+            </n-drawer>
+
+            <ConfirmationModal />
+            <LoginScopeModal />
+            <AppUpdateNotifier />
+          </n-layout>
+          <GalaxyBackground />
+        </n-dialog-provider>
+      </n-message-provider>
+    </n-config-provider>
   </GlobalAssetLoader>
 </template>
 
@@ -230,7 +248,8 @@ onUnmounted(() => {
   background-color: transparent !important;
 }
 
-.app-sider, .app-drawer {
+.app-sider,
+.app-drawer {
   background-color: var(--glass-bg) !important;
   backdrop-filter: var(--glass-blur);
   z-index: 1000;

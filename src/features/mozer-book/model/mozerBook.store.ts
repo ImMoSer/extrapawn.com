@@ -9,8 +9,8 @@ export const useMozerBookStore = defineStore('mozerBook', () => {
   const currentStats = computed(() => theoryStore.currentMozerStats)
   const isLoading = computed(() => theoryStore.isMozerLoading)
   // error removed or map from theoryStore if we add it there, but null is fine for UI usually
-  const error = computed<string | null>(() => null) 
-  
+  const error = computed<string | null>(() => null)
+
   const currentFen = computed(() => theoryStore.currentFen)
 
   // fetchStats now just delegates to the Theory Store

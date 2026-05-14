@@ -1,6 +1,9 @@
 import type { StudyChapter, Study } from '../model/study.store'
 import { studyRepository } from '@/shared/api/storage/repositories/StudyRepository'
-import type { StudyChapter as RepoChapter, Study as RepoStudy } from '@/shared/api/storage/repositories/StudyRepository'
+import type {
+  StudyChapter as RepoChapter,
+  Study as RepoStudy,
+} from '@/shared/api/storage/repositories/StudyRepository'
 
 /**
  * StudyPersistenceService
@@ -26,7 +29,11 @@ class StudyPersistenceService {
     this.saveTimeouts.set(chapter.id, timeout)
   }
 
-  async updateNodeMetadata(chapterId: string, nodePath: string, metadata: Record<string, unknown> | null): Promise<void> {
+  async updateNodeMetadata(
+    chapterId: string,
+    nodePath: string,
+    metadata: Record<string, unknown> | null,
+  ): Promise<void> {
     await studyRepository.updateNodeMetadata(chapterId, nodePath, metadata).catch((err) => {
       console.error('[StudyPersistenceService] Error updating node metadata:', err)
     })
@@ -48,7 +55,7 @@ class StudyPersistenceService {
 
   async getAllChapters(): Promise<StudyChapter[]> {
     try {
-      return await studyRepository.getAllChapters() as unknown as StudyChapter[]
+      return (await studyRepository.getAllChapters()) as unknown as StudyChapter[]
     } catch (err) {
       console.error('[StudyPersistenceService] Error loading chapters:', err)
       return []
@@ -57,7 +64,7 @@ class StudyPersistenceService {
 
   async getChapterById(id: string): Promise<StudyChapter | null> {
     try {
-      return await studyRepository.getChapterById(id) as unknown as StudyChapter | null
+      return (await studyRepository.getChapterById(id)) as unknown as StudyChapter | null
     } catch (err) {
       console.error('[StudyPersistenceService] Error loading single chapter:', err)
       return null
@@ -66,7 +73,7 @@ class StudyPersistenceService {
 
   async getAllStudies(): Promise<Study[]> {
     try {
-      return await studyRepository.getAllStudies() as unknown as Study[]
+      return (await studyRepository.getAllStudies()) as unknown as Study[]
     } catch (err) {
       console.error('[StudyPersistenceService] Error loading studies:', err)
       return []

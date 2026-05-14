@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { theoryGraphService } from '@/entities/opening'
-import {
-  CloseOutline,
-} from '@vicons/ionicons5'
+import { CloseOutline } from '@vicons/ionicons5'
 import type { SelectOption } from 'naive-ui'
 import {
   NButton,
@@ -16,7 +14,7 @@ import {
   NSlider,
   NSpace,
   NTag,
-  NText
+  NText,
 } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -58,17 +56,16 @@ function startSession() {
 </script>
 
 <template>
-  <n-modal
-    :show="true"
-    @close="$emit('close')"
-  >
+  <n-modal :show="true" @close="$emit('close')">
     <n-card class="glass selection-card" :bordered="false" content-style="padding: 20px">
       <!-- Close Button Top Right -->
       <n-button quaternary circle class="close-btn" @click="$emit('close')">
-        <template #icon><n-icon><CloseOutline /></n-icon></template>
+        <template #icon
+          ><n-icon><CloseOutline /></n-icon
+        ></template>
       </n-button>
 
-      <n-space vertical :size="24" style="width: 100%;">
+      <n-space vertical :size="24" style="width: 100%">
         <div class="header">
           <n-h1 class="title">
             {{ t('nav.openingSparring') }}
@@ -83,10 +80,10 @@ function startSession() {
           <div class="section">
             <n-text class="section-label">{{ t('features.diamondHunter.settings.color') }}</n-text>
             <n-radio-group v-model:value="selectedColor" size="large" expand>
-              <n-radio-button value="white" style="text-align: center;">
+              <n-radio-button value="white" style="text-align: center">
                 {{ t('features.diamondHunter.settings.white') }}
               </n-radio-button>
-              <n-radio-button value="black" style="text-align: center;">
+              <n-radio-button value="black" style="text-align: center">
                 {{ t('features.diamondHunter.settings.black') }}
               </n-radio-button>
             </n-radio-group>
@@ -94,75 +91,114 @@ function startSession() {
 
           <!-- 2. Opening Selection -->
           <div class="section">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.selectOpening') }}</n-text>
-            <n-select
-              v-model:value="selectedOpening"
-              :options="openingOptions"
-              size="large"
-            />
+            <n-text class="section-label">{{
+              t('features.diamondHunter.settings.selectOpening')
+            }}</n-text>
+            <n-select v-model:value="selectedOpening" :options="openingOptions" size="large" />
           </div>
 
           <!-- 3. Opponent Source -->
           <div class="section">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.opponentSource', 'Opponent Base') }}</n-text>
+            <n-text class="section-label">{{
+              t('features.diamondHunter.settings.opponentSource', 'Opponent Base')
+            }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentSource" size="large" expand>
-              <n-radio-button value="master" style="text-align: center;">
+              <n-radio-button value="master" style="text-align: center">
                 {{ t('features.diamondHunter.settings.masters') }} (2200+)
               </n-radio-button>
-              <n-radio-button value="lichess" style="text-align: center;">
+              <n-radio-button value="lichess" style="text-align: center">
                 {{ t('features.diamondHunter.settings.lichessPlayers') }}
               </n-radio-button>
             </n-radio-group>
 
             <n-text depth="3" class="hint-text">
-              {{ openingStore.opponentSource === 'master'
-                ? t('features.diamondHunter.settings.masterHint', 'Bot plays optimal moves from Master games.')
-                : t('features.diamondHunter.settings.lichessHint', 'Bot simulates human play styles based on selected ratings.')
+              {{
+                openingStore.opponentSource === 'master'
+                  ? t(
+                      'features.diamondHunter.settings.masterHint',
+                      'Bot plays optimal moves from Master games.',
+                    )
+                  : t(
+                      'features.diamondHunter.settings.lichessHint',
+                      'Bot simulates human play styles based on selected ratings.',
+                    )
               }}
             </n-text>
           </div>
 
           <!-- 3.5 Opponent Character (Only shown if Master Database is selected) -->
           <div v-if="openingStore.opponentSource === 'master'" class="section fade-in">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.selectCharacter', 'Master Character Style') }}</n-text>
+            <n-text class="section-label">{{
+              t('features.diamondHunter.settings.selectCharacter', 'Master Character Style')
+            }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentCharacter" size="large" expand>
-              <n-radio-button value="none" style="text-align: center;">{{ t('features.diamondHunter.settings.random', 'Random') }}</n-radio-button>
-              <n-radio-button value="grossmaster" style="text-align: center; color: #4caf50;">
+              <n-radio-button value="none" style="text-align: center">{{
+                t('features.diamondHunter.settings.random', 'Random')
+              }}</n-radio-button>
+              <n-radio-button value="grossmaster" style="text-align: center; color: #4caf50">
                 {{ t('features.study.repertoireGenerator.styles.grossmaster.name') }}
               </n-radio-button>
-              <n-radio-button value="hustler" style="text-align: center; color: #2196f3;">
+              <n-radio-button value="hustler" style="text-align: center; color: #2196f3">
                 {{ t('features.study.repertoireGenerator.styles.hustler.name') }}
               </n-radio-button>
-              <n-radio-button value="schuler" style="text-align: center; color: #f44336;">
+              <n-radio-button value="schuler" style="text-align: center; color: #f44336">
                 {{ t('features.study.repertoireGenerator.styles.schuler.name') }}
               </n-radio-button>
             </n-radio-group>
 
             <n-text depth="3" class="hint-text">
               <template v-if="openingStore.opponentCharacter === 'none'">
-                {{ t('features.diamondHunter.settings.characterDefaultHint', 'Bot plays random top moves based on variability.') }}
+                {{
+                  t(
+                    'features.diamondHunter.settings.characterDefaultHint',
+                    'Bot plays random top moves based on variability.',
+                  )
+                }}
               </template>
               <template v-else>
-                {{ t(`features.study.repertoireGenerator.styles.${openingStore.opponentCharacter}.description`) }}
+                {{
+                  t(
+                    `features.study.repertoireGenerator.styles.${openingStore.opponentCharacter}.description`,
+                  )
+                }}
               </template>
             </n-text>
           </div>
 
           <!-- 4. Opponent Rating (Only shown if Lichess is selected) -->
           <div v-if="openingStore.opponentSource === 'lichess'" class="section fade-in">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.selectRatings', 'Lichess Rating Level') }}</n-text>
+            <n-text class="section-label">{{
+              t('features.diamondHunter.settings.selectRatings', 'Lichess Rating Level')
+            }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentRatingRange" size="large" expand>
-              <n-radio-button value="1000-1499" style="text-align: center;">1000-1499</n-radio-button>
-              <n-radio-button value="1500-1799" style="text-align: center;">1500-1799</n-radio-button>
-              <n-radio-button value="1800-2200" style="text-align: center;">1800-2200</n-radio-button>
+              <n-radio-button value="1000-1499" style="text-align: center"
+                >1000-1499</n-radio-button
+              >
+              <n-radio-button value="1500-1799" style="text-align: center"
+                >1500-1799</n-radio-button
+              >
+              <n-radio-button value="1800-2200" style="text-align: center"
+                >1800-2200</n-radio-button
+              >
             </n-radio-group>
           </div>
 
           <!-- 5. Variability -->
-          <div class="section fade-in" v-if="openingStore.opponentSource === 'lichess' || openingStore.opponentCharacter === 'none'">
+          <div
+            class="section fade-in"
+            v-if="
+              openingStore.opponentSource === 'lichess' || openingStore.opponentCharacter === 'none'
+            "
+          >
             <n-space align="center" justify="space-between">
-              <n-text class="section-label">{{ t('features.diamondHunter.settings.variability', { value: openingStore.variability }) }}</n-text>
-              <n-tag :bordered="false" type="info" size="small">{{ openingStore.variability }} / 7</n-tag>
+              <n-text class="section-label">{{
+                t('features.diamondHunter.settings.variability', {
+                  value: openingStore.variability,
+                })
+              }}</n-text>
+              <n-tag :bordered="false" type="info" size="small"
+                >{{ openingStore.variability }} / 7</n-tag
+              >
             </n-space>
             <n-slider v-model:value="openingStore.variability" :min="3" :max="7" :step="1" />
             <n-text depth="3" class="hint-text">
@@ -172,13 +208,7 @@ function startSession() {
         </div>
 
         <div class="actions">
-          <n-button
-            type="primary"
-            size="large"
-            block
-            class="start-btn"
-            @click="startSession"
-          >
+          <n-button type="primary" size="large" block class="start-btn" @click="startSession">
             {{ t('features.diamondHunter.settings.startSession') }}
           </n-button>
         </div>
@@ -296,7 +326,13 @@ function startSession() {
   animation: fadeIn 0.3s ease-out;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

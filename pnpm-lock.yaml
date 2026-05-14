@@ -20,6 +20,9 @@ importers:
       '@vicons/ionicons5':
         specifier: ^0.13.0
         version: 0.13.0
+      chess.js:
+        specifier: 1.4.0
+        version: 1.4.0
       chessops:
         specifier: ^0.15.0
         version: 0.15.0
@@ -1417,6 +1420,9 @@ packages:
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
+
+  chess.js@1.4.0:
+    resolution: {integrity: sha512-BBJgrrtKQOzFLonR0l+k64A98NLemPwNsCskwb+29bRwobUa4iTm51E1kwGPbWXAcfdDa18nad6vpPPKPWarqw==}
 
   chessops@0.15.0:
     resolution: {integrity: sha512-4Ps0O8/UO09tDGbze1mMilUSMZjVYMFtQvrhlCQV385cO0BgdUPUZsq/r1Qrf6UQ4J0i7XcMbRRvFRKu+Ith1w==}
@@ -4418,6 +4424,8 @@ snapshots:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
+
+  chess.js@1.4.0: {}
 
   chessops@0.15.0:
     dependencies:

@@ -47,7 +47,11 @@ const localResetTimeMessage = computed(() => {
 const activityModes = [
   { key: 'finish_him' as const, label: t('nav.finishHim'), icon: '🎯' },
   { key: 'tornado' as const, label: t('nav.tornado'), icon: '🌪️' },
-  { key: 'practical-chess' as const, label: t('features.practicalChess.selection.title'), icon: '♙♖' },
+  {
+    key: 'practical-chess' as const,
+    label: t('features.practicalChess.selection.title'),
+    icon: '♙♖',
+  },
   { key: 'theory' as const, label: t('nav.theoryEndgames'), icon: '♔♙' },
 ]
 
@@ -114,7 +118,10 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
               </n-space>
             </n-space>
 
-            <n-statistic :label="t('features.userCabinet.stats.pawncoinsLabel')" class="header-pawncoins">
+            <n-statistic
+              :label="t('features.userCabinet.stats.pawncoinsLabel')"
+              class="header-pawncoins"
+            >
               <template #prefix>
                 <n-icon color="#f0a020">
                   <WalletOutline />
@@ -122,7 +129,11 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
               </template>
               <template #default>
                 <span v-if="isLimitless" class="rainbow-text limitless-symbol">∞</span>
-                <n-number-animation v-else :from="0" :to="(userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)" />
+                <n-number-animation
+                  v-else
+                  :from="0"
+                  :to="(userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)"
+                />
               </template>
               <template #suffix v-if="!isLimitless">
                 <span class="limit-text"> / {{ userProfile.dailyLimit || 0 }}</span>
@@ -158,7 +169,11 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
                     <n-icon size="18" depth="2" color="var(--color-accent)">
                       <GolfOutline />
                     </n-icon>
-                    <n-text strong>{{ t('features.userCabinet.stats.puzzlesSolved', { count: userProfile.today_activity.puzzles_solved_today.total }) }}</n-text>
+                    <n-text strong>{{
+                      t('features.userCabinet.stats.puzzlesSolved', {
+                        count: userProfile.today_activity.puzzles_solved_today.total,
+                      })
+                    }}</n-text>
                   </n-space>
                   <n-text type="primary" strong class="total-value">
                     {{ userProfile.today_activity.puzzles_solved_today.total }}

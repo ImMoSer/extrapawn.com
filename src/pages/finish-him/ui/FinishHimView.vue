@@ -14,6 +14,7 @@ import { useAuthStore } from '@/entities/user'
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
@@ -35,7 +36,7 @@ const { t } = useI18n()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'FINISH_HIM',
   subMode: 'win',
-  theme: finishHimStore.selectedTheme || ''
+  theme: finishHimStore.selectedTheme || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -102,7 +103,7 @@ watch(
     if (phase === 'LOADING') {
       smartHintStore.resetHints(3)
     }
-  }
+  },
 )
 
 watch(
@@ -123,8 +124,7 @@ watch(
 
     controlsStore.setControls({
       canRequestNew: isGameOver || isIdle,
-      canRestart:
-        gameStore.gamePhase === 'GAMEOVER' && !!finishHimStore.activePuzzle,
+      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!finishHimStore.activePuzzle,
       canResign: isPlaying,
       canShare: !!finishHimStore.activePuzzle,
       canRequestHint: isPlaying,
@@ -146,6 +146,16 @@ watch(
     <template #left-panel>
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
+        <ThemeRoseChart
+          v-if="normalizedStats && normalizedStats.finish_him"
+          v-model:activeMode="finishHimStore.selectedDifficulty"
+          mode="finish_him"
+          subMode="win"
+          :modes="['Novice', 'Pro', 'Master']"
+          :themes="currentFinishHimThemes"
+          :title="t('features.userCabinet.stats.modes.finishHim')"
+          @improve="handleImprove"
+        />
         <ChessboardPreview
           v-if="finishHimStore.fenFinal"
           :fen="finishHimStore.fenFinal"
@@ -172,16 +182,7 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.finish_him"
-            v-model:activeMode="finishHimStore.selectedDifficulty"
-            mode="finish_him"
-            subMode="win"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentFinishHimThemes"
-            :title="t('features.userCabinet.stats.modes.finishHim')"
-            @improve="handleImprove"
-          />
+          <CoachSidebar />
           <SidebarLeaderboard
             game-mode="finish_him"
             sub-mode="win"

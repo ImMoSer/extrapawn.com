@@ -43,24 +43,42 @@ onMounted(() => {
       <p class="loader-text">
         {{ t('app.globalLoader.webviewWarning') }}
       </p>
-      
+
       <div class="copy-section">
         <input type="text" readonly :value="appUrl" class="copy-input" />
         <button @click="copyLink" class="copy-button" :class="{ 'is-copied': copied }">
           {{ copied ? t('common.actions.copied') : t('common.actions.copyLink') }}
         </button>
       </div>
-      
-      <p class="loader-hint" style="margin-top: 20px;">
+
+      <p class="loader-hint" style="margin-top: 20px">
         {{ t('app.globalLoader.webviewAction') }}
       </p>
 
       <div class="loader-lang-switcher">
-        <button class="lang-btn" :class="{ active: locale === 'en' }" @click="handleChangeLang('en')">EN</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'en' }"
+          @click="handleChangeLang('en')"
+        >
+          EN
+        </button>
         <span class="lang-divider">|</span>
-        <button class="lang-btn" :class="{ active: locale === 'ru' }" @click="handleChangeLang('ru')">RU</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'ru' }"
+          @click="handleChangeLang('ru')"
+        >
+          RU
+        </button>
         <span class="lang-divider">|</span>
-        <button class="lang-btn" :class="{ active: locale === 'de' }" @click="handleChangeLang('de')">DE</button>
+        <button
+          class="lang-btn"
+          :class="{ active: locale === 'de' }"
+          @click="handleChangeLang('de')"
+        >
+          DE
+        </button>
       </div>
     </div>
 
@@ -69,20 +87,21 @@ onMounted(() => {
       <div v-if="showTutorial" class="tutorial-overlay" @click.self="showTutorial = false">
         <div class="tutorial-modal">
           <button class="close-tutorial" @click="showTutorial = false">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            >
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
           <div class="video-container">
-            <video 
-              autoplay 
-              loop 
-              muted 
-              playsinline 
-              class="tutorial-video"
-            >
-              <source src="/mp4/howto_FallbackApp.mp4" type="video/mp4">
+            <video autoplay loop muted playsinline class="tutorial-video">
+              <source src="/mp4/howto_FallbackApp.mp4" type="video/mp4" />
             </video>
           </div>
           <p class="tutorial-caption">{{ t('app.globalLoader.webviewAction') }}</p>

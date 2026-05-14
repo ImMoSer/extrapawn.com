@@ -27,10 +27,8 @@ const { t } = useI18n()
 
 const showEngineDropdown = ref(false)
 
-
-
 const engineOptions = computed(() => {
-  return engineStore.availableEngines.map(e => ({
+  return engineStore.availableEngines.map((e) => ({
     label: ENGINE_NAMES[e as EngineId] || e,
     key: e,
   }))
@@ -121,7 +119,7 @@ const toggleAnalysis = () => {
         @select="selectEngine"
         @clickoutside="showEngineDropdown = false"
       >
-        <span style="display: inline-flex;">
+        <span style="display: inline-flex">
           <n-tooltip trigger="hover" placement="bottom">
             <template #trigger>
               <n-button
@@ -133,7 +131,9 @@ const toggleAnalysis = () => {
                 @click="handleBotClick"
               >
                 <template #icon>
-                  <n-icon :class="{ 'icon-bot-active': showEngineDropdown || engineStore.selectedEngine }">
+                  <n-icon
+                    :class="{ 'icon-bot-active': showEngineDropdown || engineStore.selectedEngine }"
+                  >
                     <BotIcon />
                   </n-icon>
                 </template>
@@ -173,7 +173,9 @@ const toggleAnalysis = () => {
             </template>
           </n-switch>
         </template>
-        {{ controlsStore.canResign ? $t('features.controls.resign') : $t('features.analysis.engine') }}
+        {{
+          controlsStore.canResign ? $t('features.controls.resign') : $t('features.analysis.engine')
+        }}
       </n-tooltip>
 
       <!-- Share -->
@@ -214,7 +216,6 @@ const toggleAnalysis = () => {
   align-items: center;
   min-height: 40px;
   max-width: 95vw;
-
 }
 
 .icon-restart {

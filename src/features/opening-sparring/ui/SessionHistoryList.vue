@@ -62,7 +62,7 @@ const renderMove = (row: MovePair, color: 'white' | 'black') => {
 
   const index = openingStore.sessionHistory.indexOf(move)
   const isReview = openingStore.isReviewMode
-  
+
   const currentNode = pgnService.getCurrentNode()
   const isCurrentNode = move.ply === activeMainlinePly.value
   const isDeviationPoint = isCurrentNode && currentNode?.ply !== move.ply
@@ -100,7 +100,11 @@ const renderMove = (row: MovePair, color: 'white' | 'black') => {
     {
       style,
       onClick: isReview ? () => openingStore.setReviewMove(index) : undefined,
-      class: { 'review-move': isReview, 'current-move': isCurrentNode, 'deviation-point': isDeviationPoint },
+      class: {
+        'review-move': isReview,
+        'current-move': isCurrentNode,
+        'deviation-point': isDeviationPoint,
+      },
     },
     [
       h(

@@ -4,4 +4,3 @@ export type { GameEndOutcome } from './model/board.store'
 export * from './model/game.store'
 export * from './model/strategy.types'
 export { default as WebChessBoard } from './ui/WebChessBoard.vue'
-

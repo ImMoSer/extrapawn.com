@@ -1,4 +1,3 @@
-
 import { settingsRepository } from '@/shared/api/storage/repositories/SettingsRepository'
 import { pgnParserService } from '@/shared/lib/pgn/PgnParserService'
 import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
@@ -32,8 +31,6 @@ export interface StudyChapter {
 }
 
 export const useStudyStore = defineStore('study', () => {
-
-
   const studies = ref<Study[]>([])
   const chapters = ref<StudyChapter[]>([])
   const activeChapterId = ref<string | null>(null)
@@ -110,7 +107,10 @@ export const useStudyStore = defineStore('study', () => {
     }
 
     if (chapters.value.length > 0) {
-      const lastId = await settingsRepository.getSetting<string | null>(`lastActiveChapterId_${ownerId}`, null)
+      const lastId = await settingsRepository.getSetting<string | null>(
+        `lastActiveChapterId_${ownerId}`,
+        null,
+      )
       if (lastId && chapters.value.some((c) => c.id === lastId)) {
         await setActiveChapter(lastId)
       } else {
@@ -148,7 +148,7 @@ export const useStudyStore = defineStore('study', () => {
       throw new Error('You must import a Lichess Study first to create chapters.')
     }
 
-    const study = studies.value.find(s => s.id === studyId)
+    const study = studies.value.find((s) => s.id === studyId)
     if (!study) throw new Error('Study not found')
 
     if (study.chapterIds.length >= 64) {
@@ -248,7 +248,7 @@ export const useStudyStore = defineStore('study', () => {
         name = `${tags['White']} - ${tags['Black']}`
       }
 
-      const study = studies.value.find(s => s.id === studyId)
+      const study = studies.value.find((s) => s.id === studyId)
       if (!study) throw new Error('Study not found')
 
       const id = generateId()
@@ -257,7 +257,8 @@ export const useStudyStore = defineStore('study', () => {
       const utcDate = now.toISOString().split('T')[0]?.replace(/-/g, '.') || ''
       const utcTime = now.toISOString().split('T')[1]?.split('.')[0] || ''
 
-      const start_position = !tags['FEN'] || tags['FEN'] === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      const start_position =
+        !tags['FEN'] || tags['FEN'] === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
       const newChapter: StudyChapter = {
         id,
@@ -306,11 +307,14 @@ export const useStudyStore = defineStore('study', () => {
       if (!chapterToDelete) return
 
       if (removeFromLichess && chapterToDelete.lichessChapterId) {
-        const study = studies.value.find(s => s.id === chapterToDelete.studyId)
+        const study = studies.value.find((s) => s.id === chapterToDelete.studyId)
         if (study && study.lichessId) {
           cloudLoading.value = true
           try {
-            await lichessSyncService.deleteChapter(study.lichessId, chapterToDelete.lichessChapterId)
+            await lichessSyncService.deleteChapter(
+              study.lichessId,
+              chapterToDelete.lichessChapterId,
+            )
           } catch (error) {
             console.error('Failed to delete chapter on Lichess', error)
             throw error
@@ -323,9 +327,9 @@ export const useStudyStore = defineStore('study', () => {
       // Remove from study if it belongs to one
       let parentStudy: Study | undefined
       if (chapterToDelete?.studyId) {
-        parentStudy = studies.value.find(s => s.id === chapterToDelete.studyId)
+        parentStudy = studies.value.find((s) => s.id === chapterToDelete.studyId)
         if (parentStudy) {
-          parentStudy.chapterIds = parentStudy.chapterIds.filter(cid => cid !== id)
+          parentStudy.chapterIds = parentStudy.chapterIds.filter((cid) => cid !== id)
           await studyPersistenceService.saveStudy(parentStudy)
         }
       }
@@ -368,13 +372,13 @@ export const useStudyStore = defineStore('study', () => {
     if (index !== -1) {
       studies.value.splice(index, 1)
       // Delete associated chapters from both memory and DB
-      chapters.value = chapters.value.filter(c => c.studyId !== id)
+      chapters.value = chapters.value.filter((c) => c.studyId !== id)
       await studyPersistenceService.deleteChaptersByStudyId(id)
 
       await studyPersistenceService.deleteStudy(id)
 
-      if (activeChapterId.value && !chapters.value.some(c => c.id === activeChapterId.value)) {
-         await setActiveChapter(chapters.value.length > 0 ? chapters.value[0]!.id : null)
+      if (activeChapterId.value && !chapters.value.some((c) => c.id === activeChapterId.value)) {
+        await setActiveChapter(chapters.value.length > 0 ? chapters.value[0]!.id : null)
       }
     }
   }
@@ -397,16 +401,16 @@ export const useStudyStore = defineStore('study', () => {
       const prev = chapters.value.find((c) => c.id === activeChapterId.value)
       if (prev) {
         prev.savedPath = pgnService.getCurrentPath()
-        // We only auto-save the chapter record itself (meta/path) if not dirty? 
+        // We only auto-save the chapter record itself (meta/path) if not dirty?
         // No, let's keep it simple: switching chapters saves NOTHING automatically anymore.
         // If the user wants to save their path, they click SAVE.
       }
     }
 
     if (!id) {
-       activeChapterId.value = null
-       await settingsRepository.deleteSetting(`lastActiveChapterId_${ownerId}`)
-       return
+      activeChapterId.value = null
+      await settingsRepository.deleteSetting(`lastActiveChapterId_${ownerId}`)
+      return
     }
 
     // 2. Switch
@@ -443,10 +447,10 @@ export const useStudyStore = defineStore('study', () => {
 
     // Update savedPath to current before saving
     activeChapter.value.savedPath = pgnService.getCurrentPath()
-    
+
     // Save to DB
     await studyPersistenceService.saveChapter(activeChapter.value)
-    
+
     // Update baseline
     lastSavedPgn.value = pgnService.getFullPgn(activeChapter.value.tags, activeChapter.value.root)
   }
@@ -459,17 +463,17 @@ export const useStudyStore = defineStore('study', () => {
 
   async function revertActiveChapter() {
     if (!activeChapterId.value) return
-    
+
     // Reload all chapters from DB to get the original state
     const allChapters = await studyPersistenceService.getAllChapters()
-    const original = allChapters.find(c => c.id === activeChapterId.value)
-    
+    const original = allChapters.find((c) => c.id === activeChapterId.value)
+
     if (original) {
       // Update local state in the array
-      const idx = chapters.value.findIndex(c => c.id === original.id)
+      const idx = chapters.value.findIndex((c) => c.id === original.id)
       if (idx !== -1) {
         chapters.value[idx] = original
-        
+
         // Update PGN service to show original tree
         pgnService.setRoot(original.root, original.savedPath)
         lastSavedPgn.value = pgnService.getFullPgn(original.tags, original.root)
@@ -495,7 +499,11 @@ export const useStudyStore = defineStore('study', () => {
   }
 
   // --- LICHESS IMPORT ---
-  async function importFromLichess(studyId: string, type: 'owned' | 'community' = 'owned', tokenOverride?: string): Promise<string | null> {
+  async function importFromLichess(
+    studyId: string,
+    type: 'owned' | 'community' = 'owned',
+    tokenOverride?: string,
+  ): Promise<string | null> {
     const ownerId = currentOwnerId.value
     const username = currentUsername.value
     if (!ownerId || !username) return null
@@ -544,11 +552,11 @@ export const useStudyStore = defineStore('study', () => {
         lichessId: studyId,
         chapterIds: [],
         ownerId,
-        type
+        type,
       }
 
       // Check if study already exists to avoid duplicate chapters
-      const existingStudyIndex = studies.value.findIndex(s => s.id === studyId)
+      const existingStudyIndex = studies.value.findIndex((s) => s.id === studyId)
 
       // Before importing, we must purge old chapters linked to this study ID from DB for THIS user
       await studyPersistenceService.deleteChaptersByStudyId(studyId)
@@ -557,7 +565,7 @@ export const useStudyStore = defineStore('study', () => {
         // Study exists - we update state
         studies.value[existingStudyIndex] = study
         // State cleanup: remove from chapters array
-        chapters.value = chapters.value.filter(c => c.studyId !== studyId)
+        chapters.value = chapters.value.filter((c) => c.studyId !== studyId)
       } else {
         studies.value.push(study)
       }
@@ -597,7 +605,8 @@ export const useStudyStore = defineStore('study', () => {
         // Map Orientation to color
         const color = tags['Orientation'] === 'black' ? 'black' : 'white'
 
-        const start_position = !tags['FEN'] || tags['FEN'] === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        const start_position =
+          !tags['FEN'] || tags['FEN'] === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
         const newChapter: StudyChapter = {
           id: chapterId,
@@ -647,7 +656,7 @@ export const useStudyStore = defineStore('study', () => {
       throw new Error('This study is not linked to Lichess.')
     }
 
-    const chapter = chapters.value.find(c => c.id === chapterId)
+    const chapter = chapters.value.find((c) => c.id === chapterId)
     if (!chapter) {
       throw new Error('Chapter not found.')
     }
@@ -665,8 +674,8 @@ export const useStudyStore = defineStore('study', () => {
           pgn,
           name: chapter.name,
           orientation: chapter.color,
-          variant: 'standard'
-        }
+          variant: 'standard',
+        },
       )
 
       chapter.lichessChapterId = newLichessChapterId
@@ -681,7 +690,7 @@ export const useStudyStore = defineStore('study', () => {
   }
 
   async function syncLichessToApp(studyId: string) {
-    const study = studies.value.find(s => s.id === studyId)
+    const study = studies.value.find((s) => s.id === studyId)
     const type = study?.type || 'owned'
     // Just re-import, it will overwrite the study and its chapters
     return await importFromLichess(studyId, type)
@@ -697,7 +706,7 @@ export const useStudyStore = defineStore('study', () => {
       throw new Error('This study is not linked to Lichess.')
     }
 
-    const chapter = chapters.value.find(c => c.id === chapterId)
+    const chapter = chapters.value.find((c) => c.id === chapterId)
     if (!chapter) {
       throw new Error('Chapter not found.')
     }
@@ -711,9 +720,9 @@ export const useStudyStore = defineStore('study', () => {
       // Use new Lichess moves endpoint which preserves the chapter ID
       const pgn = pgnService.getFullPgn(chapter.tags, chapter.root)
       await lichessSyncService.updateChapterMoves(
-        activeStudy.value.lichessId, 
-        chapter.lichessChapterId, 
-        pgn
+        activeStudy.value.lichessId,
+        chapter.lichessChapterId,
+        pgn,
       )
     } catch (e) {
       console.error('Failed to push chapter to Lichess', e)
@@ -742,8 +751,8 @@ export const useStudyStore = defineStore('study', () => {
     deleteChapter,
     deleteStudy,
     saveStudy: (study: Study) => {
-       const ownerId = currentOwnerId.value
-       if (ownerId) return studyPersistenceService.saveStudy(study)
+      const ownerId = currentOwnerId.value
+      if (ownerId) return studyPersistenceService.saveStudy(study)
     },
     setActiveChapter,
     persistActiveChapter,
@@ -760,7 +769,7 @@ export const useStudyStore = defineStore('study', () => {
 
       if (!(await requireLichessAccess())) return
 
-      const chapter = chapters.value.find(c => c.id === chapterId)
+      const chapter = chapters.value.find((c) => c.id === chapterId)
       if (!chapter || !chapter.lichessChapterId || !activeStudy.value?.lichessId) {
         return
       }
@@ -769,7 +778,11 @@ export const useStudyStore = defineStore('study', () => {
       try {
         const result = chapter.tags['Result'] || '*'
         const pgn = `[Result "${result}"]\n\n*`
-        await lichessSyncService.updateChapterTags(activeStudy.value.lichessId, chapter.lichessChapterId, pgn)
+        await lichessSyncService.updateChapterTags(
+          activeStudy.value.lichessId,
+          chapter.lichessChapterId,
+          pgn,
+        )
       } catch (e) {
         console.error('Failed to sync chapter tags to Lichess', e)
         throw e
@@ -777,16 +790,19 @@ export const useStudyStore = defineStore('study', () => {
         cloudLoading.value = false
       }
     },
-    addSpeedrunHistory: (chapterId: string, moves: { san: string; uci: string; fenBefore: string; fenAfter: string }[]) => {
+    addSpeedrunHistory: (
+      chapterId: string,
+      moves: { san: string; uci: string; fenBefore: string; fenAfter: string }[],
+    ) => {
       const ownerId = currentOwnerId.value
       if (!ownerId) return
 
-      const chapter = chapters.value.find(c => c.id === chapterId)
+      const chapter = chapters.value.find((c) => c.id === chapterId)
       if (!chapter) return
 
       // 1. Remove previous speedrun variation if it exists
       const removeSpeedrunNodes = (node: PgnNode) => {
-        node.children = node.children.filter(child => child.metadata?.isSpeedrun !== true)
+        node.children = node.children.filter((child) => child.metadata?.isSpeedrun !== true)
         node.children.forEach(removeSpeedrunNodes)
       }
       removeSpeedrunNodes(chapter.root)

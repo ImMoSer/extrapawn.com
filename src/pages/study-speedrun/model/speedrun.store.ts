@@ -1,4 +1,9 @@
-import { useGameStore, gameplayService, type GameStatusInfo, type IGameplayStrategy } from '@/entities/game'
+import {
+  useGameStore,
+  gameplayService,
+  type GameStatusInfo,
+  type IGameplayStrategy,
+} from '@/entities/game'
 import { type StudyChapter, useStudyStore } from '@/features/study'
 import { soundService } from '@/shared/lib/sound.service'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -17,14 +22,16 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
   const authStore = useAuthStore()
   const uiStore = useUiStore()
   const router = useRouter()
-  
+
   const chaptersToPlay = ref<StudyChapter[]>([])
   const currentChapterIndex = ref(0)
   const isPlaying = ref(false)
   const isFinished = ref(false)
-  
+
   // Track moves for the current chapter attempt
-  const currentAttemptMoves = ref<{ san: string; uci: string; fenBefore: string; fenAfter: string }[]>([])
+  const currentAttemptMoves = ref<
+    { san: string; uci: string; fenBefore: string; fenAfter: string }[]
+  >([])
 
   // Track times for each chapter index
   const chapterTimes = ref<Record<number, number>>({})
@@ -61,7 +68,10 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     currentTimeMs.value = 0
   }
 
-  function _createSpeedrunStrategy(targetResult: string, userColor: ChessgroundColor): IGameplayStrategy {
+  function _createSpeedrunStrategy(
+    targetResult: string,
+    userColor: ChessgroundColor,
+  ): IGameplayStrategy {
     return {
       requestBotMove: async (fen: string) => {
         try {
@@ -81,7 +91,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
             san: lastMove.san,
             uci: lastMove.uci,
             fenBefore: lastMove.fenBefore,
-            fenAfter: lastMove.fenAfter
+            fenAfter: lastMove.fenAfter,
           })
         }
       },
@@ -92,7 +102,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
             san: lastMove.san,
             uci: lastMove.uci,
             fenBefore: lastMove.fenBefore,
-            fenAfter: lastMove.fenAfter
+            fenAfter: lastMove.fenAfter,
           })
         }
       },
@@ -104,7 +114,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
           // Success if Draw OR if user manages to win anyway
           return isDraw || isUserWin
         }
-        
+
         // For 1-0 or 0-1, we assume the chapter orientation matches the result side
         // so we just check if the user won.
         return isUserWin
@@ -125,7 +135,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
         } else {
           handleChapterFailure()
         }
-      }
+      },
     }
   }
 
@@ -137,24 +147,25 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     currentAttemptMoves.value = []
 
     // Default to white if color is undefined or not standard
-    const userColor: ChessgroundColor = (chapter.color === 'black') ? 'black' : 'white'
+    const userColor: ChessgroundColor = chapter.color === 'black' ? 'black' : 'white'
     const targetResult = chapter.tags.Result || '1-0'
 
     resetTimer()
     startTimer()
 
     gameStore.setGamePhase('LOADING')
-    
-    const initialFen = chapter.tags?.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+    const initialFen =
+      chapter.tags?.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     gameStore.startWithStrategy(
-      initialFen, 
-      _createSpeedrunStrategy(targetResult, userColor), 
-      userColor
+      initialFen,
+      _createSpeedrunStrategy(targetResult, userColor),
+      userColor,
     )
   }
 
   function handleChapterFailure() {
-    console.log("[Speedrun] Failed! Retrying chapter...")
+    console.log('[Speedrun] Failed! Retrying chapter...')
     // Restart the same chapter
     playCurrentChapter()
   }
@@ -162,10 +173,12 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
   function handleChapterSuccess(timeNeededMs: number) {
     console.log(`[Speedrun] Success! Time needed: ${timeNeededMs}ms`)
     chapterTimes.value[currentChapterIndex.value] = timeNeededMs
-    
+
     // Check if there are any uncompleted chapters left
-    const nextIndex = chaptersToPlay.value.findIndex((_, idx) => chapterTimes.value[idx] === undefined)
-    
+    const nextIndex = chaptersToPlay.value.findIndex(
+      (_, idx) => chapterTimes.value[idx] === undefined,
+    )
+
     if (nextIndex === -1) {
       // Speedrun finished! All chapters solved.
       stopTimer()
@@ -198,7 +211,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
       // 1. Charge PawnCoins on Server
       const response = await apiClient<{ userStatsUpdate: UserStatsUpdate }>('/speedrun/start', {
         method: 'POST',
-        body: JSON.stringify({ subMode: 'study' })
+        body: JSON.stringify({ subMode: 'study' }),
       })
 
       // 2. Update user stats in global store
@@ -240,7 +253,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`
   }
 
-  return { 
+  return {
     chaptersToPlay,
     currentChapterIndex,
     currentChapter,
@@ -254,6 +267,6 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
     startSpeedrun,
     quitSpeedrun,
     restartCurrentChapter,
-    jumpToChapter
+    jumpToChapter,
   }
 })

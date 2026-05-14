@@ -118,7 +118,7 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
           const delta = response.ratingDelta
           const sign = delta >= 0 ? '+' : ''
           const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
-          
+
           if (delta >= 0) {
             window.$message?.success(msg)
           } else {
@@ -128,7 +128,7 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
 
         if (response.userStatsUpdate) {
           authStore.updateUserStats(response.userStatsUpdate)
-          
+
           queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'detailed-stats'] })
         } else {
           await authStore.checkSession()
@@ -226,7 +226,8 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
 
         await uiStore.showConfirmation(
           t('common.actions.error'),
-          t('features.gameplay.feedback.loadFailed') || 'Failed to load puzzle. It might not exist.',
+          t('features.gameplay.feedback.loadFailed') ||
+            'Failed to load puzzle. It might not exist.',
           {
             showCancel: false,
             confirmText: t('common.actions.ok'),
@@ -291,9 +292,7 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
           { text: 'THEORY' },
           { text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() },
         ],
-        stats: [
-          { value: puzzle.rating || '?', label: 'Rating' },
-        ],
+        stats: [{ value: puzzle.rating || '?', label: 'Rating' }],
       }
     }),
     activeType,

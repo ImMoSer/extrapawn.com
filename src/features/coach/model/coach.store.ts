@@ -1,0 +1,183 @@
+import { defineStore } from 'pinia'
+import { ref, watch } from 'vue'
+import { useBoardStore } from '@/entities/game'
+import { useAnalysisEngineStore } from '@/entities/analysis/model/analysis-engine.store'
+import { coachEngineManager } from '../lib/engine/CoachEngineManager'
+import { getTopMoves, explainMoveAt } from '@/features/coach/lib/engine/analysis'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
+import logger from '@/shared/lib/logger'
+import type { Key } from '@lichess-org/chessground/types'
+
+export const useCoachStore = defineStore('coach', () => {
+  const boardStore = useBoardStore()
+
+  const isCoachEnabled = ref(false)
+  const isAnalyzing = ref(false)
+
+  // State for "About Position"
+  const currentExplanation = ref<any>(null)
+
+  // State for "Top Moves"
+  const topMoves = ref<any[]>([])
+  const topMovesLoading = ref(false)
+
+  // State for "Last Move"
+  const lastMoveAnalysis = ref<any>(null)
+
+  function toggleCoach() {
+    const analysisEngineStore = useAnalysisEngineStore()
+    isCoachEnabled.value = !isCoachEnabled.value
+    if (!isCoachEnabled.value) {
+      coachEngineManager.stop()
+      currentExplanation.value = null
+      topMoves.value = []
+      lastMoveAnalysis.value = null
+      boardStore.setAutoShapes([])
+    } else {
+      if (analysisEngineStore.isAnalysisActive) {
+        logger.info('[CoachStore] Stopping deep analysis to start coach.')
+        analysisEngineStore.stopAnalysis()
+      }
+      triggerAnalysis(boardStore.fen)
+    }
+  }
+
+  function setCoachEnabled(enabled: boolean) {
+    if (isCoachEnabled.value === enabled) return
+
+    const analysisEngineStore = useAnalysisEngineStore()
+    isCoachEnabled.value = enabled
+    if (!enabled) {
+      coachEngineManager.stop()
+      currentExplanation.value = null
+      topMoves.value = []
+      lastMoveAnalysis.value = null
+      boardStore.setAutoShapes([])
+    } else {
+      if (analysisEngineStore.isAnalysisActive) {
+        logger.info('[CoachStore] Stopping deep analysis to start coach.')
+        analysisEngineStore.stopAnalysis()
+      }
+      triggerAnalysis(boardStore.fen)
+    }
+  }
+
+  async function triggerAnalysis(fen: string) {
+    if (!fen) return
+    isAnalyzing.value = true
+
+    // We launch Top Moves and the Full Explanation concurrently.
+    fetchTopMoves(fen)
+    fetchLastMoveAnalysis()
+
+    try {
+      const explanation = await coachEngineManager.getExplanation(fen)
+      currentExplanation.value = explanation
+
+      if (
+        explanation &&
+        explanation.principal_plan &&
+        explanation.principal_plan.moves?.length > 0
+      ) {
+        const bestMove = explanation.principal_plan.moves[0]
+        if (bestMove.from && bestMove.to) {
+          boardStore.setAutoShapes([
+            {
+              orig: bestMove.from as Key,
+              dest: bestMove.to as Key,
+              brush: 'green',
+              modifiers: { lineWidth: 10 },
+            },
+          ])
+        }
+      } else {
+        boardStore.setAutoShapes([])
+      }
+    } catch (e) {
+      logger.error('[CoachStore] Error generating explanation:', e)
+    } finally {
+      isAnalyzing.value = false
+    }
+  }
+
+  async function fetchTopMoves(fen: string) {
+    topMovesLoading.value = true
+    try {
+      const result = await getTopMoves(fen, 10)
+      topMoves.value = result.moves || []
+    } catch (error) {
+      logger.error('[CoachStore] Top moves failed', error)
+    } finally {
+      topMovesLoading.value = false
+    }
+  }
+
+  async function fetchLastMoveAnalysis() {
+    const lastNode = pgnService.getCurrentNode()
+
+    if (!lastNode || !lastNode.parent || !lastNode.uci) {
+      lastMoveAnalysis.value = null
+      return
+    }
+
+    // We need the FEN *before* the move was played.
+    const prevFen = lastNode.parent.fenAfter
+
+    lastMoveAnalysis.value = { loading: true, san: lastNode.san }
+    try {
+      const r = await explainMoveAt(prevFen, lastNode.uci)
+      lastMoveAnalysis.value = { ...r, loading: false }
+    } catch (e) {
+      lastMoveAnalysis.value = null
+    }
+  }
+
+  // Handle click on a top move in the UI to explain it
+  const selectedMoveIndex = ref<number | null>(null)
+  const selectedMoveExplanation = ref<any>(null)
+  const selectedMoveExplanationLoading = ref(false)
+
+  async function explainTopMove(move: any, index: number) {
+    if (selectedMoveIndex.value === index) {
+      selectedMoveIndex.value = null
+      selectedMoveExplanation.value = null
+      return
+    }
+    selectedMoveIndex.value = index
+    selectedMoveExplanationLoading.value = true
+    try {
+      const result = await explainMoveAt(boardStore.fen, move.move)
+      selectedMoveExplanation.value = result
+    } catch (error) {
+      logger.error('[CoachStore] Top Move Explanation failed', error)
+    } finally {
+      selectedMoveExplanationLoading.value = false
+    }
+  }
+
+  // Watch the board's FEN and automatically ask the coach for insights if enabled.
+  watch(
+    () => boardStore.fen,
+    (newFen) => {
+      if (!isCoachEnabled.value) return
+      selectedMoveIndex.value = null
+      selectedMoveExplanation.value = null
+      triggerAnalysis(newFen)
+    },
+  )
+
+  return {
+    isCoachEnabled,
+    isAnalyzing,
+    currentExplanation,
+    topMoves,
+    topMovesLoading,
+    lastMoveAnalysis,
+    selectedMoveIndex,
+    selectedMoveExplanation,
+    selectedMoveExplanationLoading,
+    toggleCoach,
+    setCoachEnabled,
+    explainTopMove,
+  }
+})

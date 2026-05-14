@@ -25,7 +25,8 @@ const studyStore = useStudyStore()
 const needsTrim = computed(() => {
   const v = pgnTreeVersion.value // react to changes
   const activeChapter = studyStore.activeChapter
-  if (!activeChapter || activeChapter.chapter_type !== 'repertoire' || !activeChapter.color) return false
+  if (!activeChapter || activeChapter.chapter_type !== 'repertoire' || !activeChapter.color)
+    return false
   return isNodeNeedingTrim(props.node, activeChapter.color)
 })
 
@@ -218,11 +219,13 @@ const saveComment = () => {
   const currentComment = props.node.comment || ''
   const tagMatch = currentComment.match(/\[%(cal|csl)\s+[^\]]*\]/gi)
   const tags = tagMatch ? tagMatch.join(' ') : ''
-  
-  const finalComment = tags 
-    ? (commentText.value ? `${commentText.value} ${tags}` : tags)
+
+  const finalComment = tags
+    ? commentText.value
+      ? `${commentText.value} ${tags}`
+      : tags
     : commentText.value
-    
+
   pgnService.updateNode(props.node, { comment: finalComment })
 }
 
@@ -299,7 +302,7 @@ export default {
             active: isActive,
             'has-comment': !!node.comment,
             'speedrun-node': node.metadata?.isSpeedrun,
-            'needs-trim': needsTrim
+            'needs-trim': needsTrim,
           },
         ]"
         @click.stop="activateNode"

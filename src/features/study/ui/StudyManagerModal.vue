@@ -19,11 +19,7 @@ import {
   useMessage,
 } from 'naive-ui'
 import { computed, nextTick, ref, watch } from 'vue'
-import {
-  PencilOutline,
-  TrashOutline,
-  CloudDownloadOutline
-} from '@vicons/ionicons5'
+import { PencilOutline, TrashOutline, CloudDownloadOutline } from '@vicons/ionicons5'
 
 import { useI18n } from 'vue-i18n'
 
@@ -72,15 +68,18 @@ const myStudies = computed(() => studyStore.studies)
 const communityId = ref('')
 
 // --- WATCHERS ---
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    if (activeTab.value === 'import_external') {
-      fetchLichessStudies()
-    } else if (activeTab.value === 'community') {
-      fetchCommunityStudies()
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow) {
+      if (activeTab.value === 'import_external') {
+        fetchLichessStudies()
+      } else if (activeTab.value === 'community') {
+        fetchCommunityStudies()
+      }
     }
-  }
-})
+  },
+)
 
 watch(activeTab, (newTab) => {
   if (newTab === 'import_external') {
@@ -117,9 +116,12 @@ async function fetchCommunityStudies() {
     const info = await lichessSyncService.fetchCommunityStudyInfo()
     communityToken.value = info.token
     communityId.value = info.lichessId
-    
+
     if (communityId.value) {
-      const studies = await lichessSyncService.fetchUserStudies(communityId.value, communityToken.value)
+      const studies = await lichessSyncService.fetchUserStudies(
+        communityId.value,
+        communityToken.value,
+      )
       communityStudies.value = studies.sort((a, b) => b.updatedAt - a.updatedAt)
     }
   } catch (error) {
@@ -145,7 +147,9 @@ function selectStudy(study: Study) {
 
 // Lichess Import
 async function handleLichessImport(id: string) {
-  const loadingMsg = message.loading(t('features.study.manager.messages.importing'), { duration: 0 })
+  const loadingMsg = message.loading(t('features.study.manager.messages.importing'), {
+    duration: 0,
+  })
   try {
     await studyStore.importFromLichess(id, 'owned')
     loadingMsg.destroy()
@@ -158,7 +162,8 @@ async function handleLichessImport(id: string) {
       errorMessage.value = e.message
       showErrorModal.value = true
     } else {
-      const error = e instanceof Error ? e.message : t('features.study.manager.messages.importFailed')
+      const error =
+        e instanceof Error ? e.message : t('features.study.manager.messages.importFailed')
       message.error(error)
     }
   }
@@ -166,7 +171,9 @@ async function handleLichessImport(id: string) {
 
 async function handleCommunityImport(id: string) {
   isImportingCommunity.value = true
-  const loadingMsg = message.loading(t('features.study.manager.messages.importingCommunity'), { duration: 0 })
+  const loadingMsg = message.loading(t('features.study.manager.messages.importingCommunity'), {
+    duration: 0,
+  })
   try {
     await studyStore.importFromLichess(id, 'community', communityToken.value)
     loadingMsg.destroy()
@@ -179,7 +186,8 @@ async function handleCommunityImport(id: string) {
       errorMessage.value = e.message
       showErrorModal.value = true
     } else {
-      const error = e instanceof Error ? e.message : t('features.study.manager.messages.communityFailed')
+      const error =
+        e instanceof Error ? e.message : t('features.study.manager.messages.communityFailed')
       message.error(error)
     }
   } finally {
@@ -211,7 +219,7 @@ async function startEditStudy(study: Study, e: Event) {
 
 function finishEditStudy() {
   if (editingId.value && editName.value.trim()) {
-    const study = studyStore.studies.find(s => s.id === editingId.value)
+    const study = studyStore.studies.find((s) => s.id === editingId.value)
     if (study) {
       study.title = editName.value.trim()
       studyStore.saveStudy(study)
@@ -230,12 +238,19 @@ function handleModalUpdate(value: boolean) {
 </script>
 
 <template>
-    <NModal
+  <NModal
     :show="show"
     @update:show="handleModalUpdate"
     preset="card"
     :title="t('features.study.manager.title')"
-    style="width: 600px; max-width: 95vw; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;"
+    style="
+      width: 600px;
+      max-width: 95vw;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    "
     :bordered="false"
     size="huge"
     :auto-focus="false"
@@ -246,8 +261,7 @@ function handleModalUpdate(value: boolean) {
   >
     <NTabs v-model:value="activeTab" type="segment" animated>
       <NTabPane name="my" :tab="t('features.study.manager.tabs.imported')">
-        <NSpace vertical style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
-
+        <NSpace vertical style="max-height: 60vh; overflow-y: auto; padding-right: 10px">
           <!-- Studies List -->
           <div v-if="myStudies.length > 0">
             <h3 class="section-title">{{ t('features.study.manager.stats.local') }}</h3>
@@ -270,13 +284,17 @@ function handleModalUpdate(value: boolean) {
                         class="native-edit-input"
                       />
                     </div>
-                      <span v-else>
-                        {{ study.title }}
-                        <span v-if="study.type === 'community'" class="community-badge">{{ t('features.study.manager.badges.community') }}</span>
-                      </span>
-                    </template>
-                    <template #description>
-                    <span style="color: #888">{{ t('features.study.manager.stats.chapters', { count: study.chapterIds.length }) }}</span>
+                    <span v-else>
+                      {{ study.title }}
+                      <span v-if="study.type === 'community'" class="community-badge">{{
+                        t('features.study.manager.badges.community')
+                      }}</span>
+                    </span>
+                  </template>
+                  <template #description>
+                    <span style="color: #888">{{
+                      t('features.study.manager.stats.chapters', { count: study.chapterIds.length })
+                    }}</span>
                   </template>
                   <template #header-extra>
                     <NSpace size="small">
@@ -287,7 +305,9 @@ function handleModalUpdate(value: boolean) {
                         circle
                         @click="(e) => startEditStudy(study, e)"
                       >
-                        <template #icon><NIcon><PencilOutline /></NIcon></template>
+                        <template #icon
+                          ><NIcon><PencilOutline /></NIcon
+                        ></template>
                       </NButton>
                       <NButton
                         size="tiny"
@@ -296,7 +316,9 @@ function handleModalUpdate(value: boolean) {
                         type="error"
                         @click="(e) => confirmDeleteStudy(study, e)"
                       >
-                        <template #icon><NIcon><TrashOutline /></NIcon></template>
+                        <template #icon
+                          ><NIcon><TrashOutline /></NIcon
+                        ></template>
                       </NButton>
                     </NSpace>
                   </template>
@@ -312,24 +334,31 @@ function handleModalUpdate(value: boolean) {
       </NTabPane>
 
       <NTabPane name="import_external" :tab="t('features.study.manager.tabs.myStudies')">
-        <NSpace vertical size="large" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
-          
+        <NSpace
+          vertical
+          size="large"
+          style="max-height: 60vh; overflow-y: auto; padding-right: 10px"
+        >
           <div class="create-form">
             <h3>{{ t('features.study.manager.stats.lichess') }}</h3>
-            
-            <NAlert type="info" :show-icon="false" style="margin-bottom: 15px;">
+
+            <NAlert type="info" :show-icon="false" style="margin-bottom: 15px">
               {{ t('features.study.manager.alerts.selectLichess') }}
             </NAlert>
 
             <div v-if="isLoadingLichessStudies" class="loading-state">
               <NSpin size="medium" />
-              <div style="margin-top: 10px; color: #888;">{{ t('common.actions.loading') }}</div>
+              <div style="margin-top: 10px; color: #888">{{ t('common.actions.loading') }}</div>
             </div>
 
             <div v-else-if="lichessStudies.length === 0" class="empty-state">
               {{ t('features.study.manager.messages.noLichessStudies') }}
-              <br><br>
-              <a href="https://lichess.org/study" target="_blank" style="color: var(--color-accent-primary);">
+              <br /><br />
+              <a
+                href="https://lichess.org/study"
+                target="_blank"
+                style="color: var(--color-accent-primary)"
+              >
                 {{ t('features.study.manager.messages.createOne') }}
               </a>
             </div>
@@ -341,44 +370,61 @@ function handleModalUpdate(value: boolean) {
                     {{ study.name }}
                   </template>
                   <template #description>
-                    <span style="color: #888">{{ t('features.study.manager.stats.updated') }}: {{ formatDate(study.updatedAt) }}</span>
+                    <span style="color: #888"
+                      >{{ t('features.study.manager.stats.updated') }}:
+                      {{ formatDate(study.updatedAt) }}</span
+                    >
                   </template>
                   <template #header-extra>
-                    <NButton 
-                      size="small" 
-                      type="primary" 
+                    <NButton
+                      size="small"
+                      type="primary"
                       secondary
-                      :disabled="myStudies.some(s => s.lichessId === study.id)"
-                      :loading="studyStore.cloudLoading" 
+                      :disabled="myStudies.some((s) => s.lichessId === study.id)"
+                      :loading="studyStore.cloudLoading"
                       @click="handleLichessImport(study.id)"
                     >
-                      <template #icon><NIcon><CloudDownloadOutline /></NIcon></template>
-                      {{ myStudies.some(s => s.lichessId === study.id) ? t('features.study.manager.buttons.imported') : t('features.study.manager.buttons.import') }}
+                      <template #icon
+                        ><NIcon><CloudDownloadOutline /></NIcon
+                      ></template>
+                      {{
+                        myStudies.some((s) => s.lichessId === study.id)
+                          ? t('features.study.manager.buttons.imported')
+                          : t('features.study.manager.buttons.import')
+                      }}
                     </NButton>
                   </template>
                 </NThing>
               </NListItem>
             </NList>
           </div>
-
         </NSpace>
       </NTabPane>
 
       <NTabPane name="community" :tab="t('features.study.manager.tabs.community')">
-        <NSpace vertical size="large" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+        <NSpace
+          vertical
+          size="large"
+          style="max-height: 60vh; overflow-y: auto; padding-right: 10px"
+        >
           <div class="create-form">
             <h3>{{ t('features.study.manager.stats.importCommunity') }}</h3>
-            <NAlert type="info" :show-icon="false" style="margin-bottom: 15px;">
+            <NAlert type="info" :show-icon="false" style="margin-bottom: 15px">
               <i18n-t keypath="features.study.manager.alerts.communityInfo">
                 <template #link>
-                  <a href="https://lichess.org/@/ExtraPawnCOM" target="_blank" style="color: var(--color-accent-primary); font-weight: bold;">https://lichess.org/@/ExtraPawnCOM</a>
+                  <a
+                    href="https://lichess.org/@/ExtraPawnCOM"
+                    target="_blank"
+                    style="color: var(--color-accent-primary); font-weight: bold"
+                    >https://lichess.org/@/ExtraPawnCOM</a
+                  >
                 </template>
               </i18n-t>
             </NAlert>
 
             <div v-if="isLoadingCommunityStudies" class="loading-state">
               <NSpin size="medium" />
-              <div style="margin-top: 10px; color: #888;">{{ t('common.actions.loading') }}</div>
+              <div style="margin-top: 10px; color: #888">{{ t('common.actions.loading') }}</div>
             </div>
 
             <div v-else-if="communityStudies.length === 0" class="empty-state">
@@ -392,19 +438,28 @@ function handleModalUpdate(value: boolean) {
                     {{ study.name }}
                   </template>
                   <template #description>
-                    <span style="color: #888">{{ t('features.study.manager.stats.updated') }}: {{ formatDate(study.updatedAt) }}</span>
+                    <span style="color: #888"
+                      >{{ t('features.study.manager.stats.updated') }}:
+                      {{ formatDate(study.updatedAt) }}</span
+                    >
                   </template>
                   <template #header-extra>
-                    <NButton 
-                      size="small" 
-                      type="primary" 
+                    <NButton
+                      size="small"
+                      type="primary"
                       secondary
-                      :disabled="myStudies.some(s => s.lichessId === study.id)"
-                      :loading="isImportingCommunity" 
+                      :disabled="myStudies.some((s) => s.lichessId === study.id)"
+                      :loading="isImportingCommunity"
                       @click="handleCommunityImport(study.id)"
                     >
-                      <template #icon><NIcon><CloudDownloadOutline /></NIcon></template>
-                      {{ myStudies.some(s => s.lichessId === study.id) ? t('features.study.manager.buttons.imported') : t('features.study.manager.buttons.importReadonly') }}
+                      <template #icon
+                        ><NIcon><CloudDownloadOutline /></NIcon
+                      ></template>
+                      {{
+                        myStudies.some((s) => s.lichessId === study.id)
+                          ? t('features.study.manager.buttons.imported')
+                          : t('features.study.manager.buttons.importReadonly')
+                      }}
                     </NButton>
                   </template>
                 </NThing>
