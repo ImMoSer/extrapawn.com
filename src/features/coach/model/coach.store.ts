@@ -21,6 +21,21 @@ export const useCoachStore = defineStore('coach', () => {
   const currentExplanation = ref<Record<string, unknown> | null>(null)
   const previousExplanation = ref<Record<string, unknown> | null>(null)
 
+  // State for Visuals
+  const showVisuals = ref(true)
+
+  function toggleVisuals() {
+    showVisuals.value = !showVisuals.value
+    if (showVisuals.value && currentExplanation.value?.visual_commands) {
+      const commands = Object.values(currentExplanation.value.visual_commands).join(';')
+      if (commands) {
+        executeMentorAction(commands)
+      }
+    } else {
+      boardStore.setAutoShapes([])
+    }
+  }
+
   // State for "Top Moves"
   const topMoves = ref<Record<string, unknown>[]>([])
   const topMovesLoading = ref(false)
@@ -99,7 +114,7 @@ export const useCoachStore = defineStore('coach', () => {
       currentExplanation.value = explanation
 
       // Render pre-calculated visual commands immediately
-      if (explanation?.visual_commands) {
+      if (showVisuals.value && explanation?.visual_commands) {
         // Combine all tags (e.g. "[mark:f4:blue]", "[route:e5->g5:green]") into one string separated by ';'
         const commands = Object.values(explanation.visual_commands).join(';')
         if (commands) {
@@ -439,5 +454,7 @@ export const useCoachStore = defineStore('coach', () => {
     setPreferredLanguage,
     stopMentor,
     hasCachedMentorResponse,
+    showVisuals,
+    toggleVisuals,
   }
 })

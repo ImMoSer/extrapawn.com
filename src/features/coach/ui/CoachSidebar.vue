@@ -28,6 +28,17 @@
         <CoachSettings @change="onSettingsChange" />
         <button
           class="toggle-btn"
+          :class="{ active: coachStore.showVisuals }"
+          @click="coachStore.toggleVisuals"
+          title="Toggle visual highlights"
+        >
+          <n-icon size="16">
+            <EyeOutline v-if="coachStore.showVisuals" />
+            <EyeOffOutline v-else />
+          </n-icon>
+        </button>
+        <button
+          class="toggle-btn"
           :class="{ active: coachStore.isCoachEnabled }"
           @click="coachStore.toggleCoach"
         >
@@ -54,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { PowerOutline, SparklesOutline, StopOutline, PlayOutline } from '@vicons/ionicons5'
+import { PowerOutline, SparklesOutline, StopOutline, PlayOutline, EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachSettings from './CoachSettings.vue'
