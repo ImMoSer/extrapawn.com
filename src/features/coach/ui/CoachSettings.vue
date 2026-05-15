@@ -95,6 +95,28 @@
         <div class="setting-desc">How many candidate moves the engine evaluates per position.</div>
       </div>
 
+      <!-- Threads -->
+      <div class="setting-group">
+        <div class="setting-header">
+          <label for="setting-threads">CPU Threads</label>
+          <span class="setting-value">{{ threads }}</span>
+        </div>
+        <input
+          id="setting-threads"
+          type="range"
+          min="1"
+          :max="maxThreads"
+          step="1"
+          v-model.number="threads"
+          class="setting-slider"
+        />
+        <div class="setting-labels">
+          <span>1</span>
+          <span>{{ maxThreads }}</span>
+        </div>
+        <div class="setting-desc">More threads → faster analysis, but higher CPU usage.</div>
+      </div>
+
       <!-- Actions -->
       <div class="settings-actions">
         <button class="btn-cancel" @click="open = false">Cancel</button>
@@ -118,6 +140,8 @@ const open = ref(false)
 const defaults = getEngineDefaults()
 const depth = ref(defaults.depth)
 const multipv = ref(defaults.multipv)
+const threads = ref(defaults.threads)
+const maxThreads = computed(() => Math.max(1, navigator.hardwareConcurrency || 4))
 const wrapRef = ref<HTMLElement | null>(null)
 const coachStore = useCoachStore()
 const availableVoices = ref<SpeechSynthesisVoice[]>([])
@@ -180,9 +204,13 @@ onUnmounted(() => {
 })
 
 const apply = () => {
-  coachEngineManager.setDefaults({ depth: depth.value, multipv: multipv.value })
+  coachEngineManager.setDefaults({
+    depth: depth.value,
+    multipv: multipv.value,
+    threads: threads.value,
+  })
   open.value = false
-  emit('change', { depth: depth.value, multipv: multipv.value })
+  emit('change', { depth: depth.value, multipv: multipv.value, threads: threads.value })
 }
 </script>
 

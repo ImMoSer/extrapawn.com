@@ -1,8 +1,8 @@
 // Browser-side Stockfish (WASM) wrapper.
-// Runs Stockfish 18-lite-single in a Web Worker, talks UCI over postMessage.
+// Runs Stockfish 18-lite (multi-threaded) in a Web Worker, talks UCI over postMessage.
 // Same public API as the (now-deprecated) server engine: evaluate / analyzeMultiPV / getBestMove.
 
-const WORKER_URL = '/npm_stockfish/sf_1807_single_lite/stockfish-18-lite-single.js'
+const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
 
 // Configurable defaults backed by localStorage. The UI's settings
 // panel writes to these so the engine layer reflects user preference
@@ -20,8 +20,9 @@ function readPref(key, fallback, min, max) {
 }
 let DEFAULT_DEPTH = readPref('depth', 12, 6, 22)
 let DEFAULT_MULTIPV = readPref('multipv', 5, 1, 10)
+let DEFAULT_THREADS = readPref('threads', 1, 1, 32)
 
-export function setEngineDefaults({ depth, multipv } = {}) {
+export function setEngineDefaults({ depth, multipv, threads } = {}) {
   if (Number.isFinite(depth)) {
     DEFAULT_DEPTH = Math.max(6, Math.min(22, depth))
     try {
@@ -38,9 +39,17 @@ export function setEngineDefaults({ depth, multipv } = {}) {
       /* ignore */
     }
   }
+  if (Number.isFinite(threads)) {
+    DEFAULT_THREADS = Math.max(1, Math.min(32, threads))
+    try {
+      localStorage.setItem('positional_chess.threads', String(DEFAULT_THREADS))
+    } catch {
+      /* ignore */
+    }
+  }
 }
 export function getEngineDefaults() {
-  return { depth: DEFAULT_DEPTH, multipv: DEFAULT_MULTIPV }
+  return { depth: DEFAULT_DEPTH, multipv: DEFAULT_MULTIPV, threads: DEFAULT_THREADS }
 }
 
 const DEFAULT_JOB_TIMEOUT_MS = 30_000
@@ -109,6 +118,7 @@ class StockfishEngine {
     this.currentJob = null
     this.working = false
     this.lastMultiPV = 1
+    this.lastThreads = 1
 
     this._initResolve = null
     this._initReject = null
@@ -253,6 +263,10 @@ class StockfishEngine {
     job.lines = {}
 
     if (job.type === 'multipv') {
+      if (this.lastThreads !== DEFAULT_THREADS) {
+        this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
+        this.lastThreads = DEFAULT_THREADS
+      }
       this._send(`setoption name MultiPV value ${job.numLines}`)
       this.lastMultiPV = job.numLines
 
@@ -275,6 +289,10 @@ class StockfishEngine {
         }
       }
     } else {
+      if (this.lastThreads !== DEFAULT_THREADS) {
+        this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
+        this.lastThreads = DEFAULT_THREADS
+      }
       if (this.lastMultiPV !== 1) {
         this._send('setoption name MultiPV value 1')
         this.lastMultiPV = 1

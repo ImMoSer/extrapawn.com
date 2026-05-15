@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useAnalysisEngineStore } from '@/entities/analysis'
-import logger from '@/shared/lib/logger'
+import { useAnalysisEngineStore } from '@/entities/analysis';
+import logger from '@/shared/lib/logger';
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const emit = defineEmits<{
   (e: 'ready'): void
@@ -17,10 +17,7 @@ const progress = ref(0)
 const { t } = useI18n({ useScope: 'global' })
 
 // Assets split by priority to follow strict sequential loading
-const PRIORITY_ASSETS = [
-  '/npm_stockfish/sf_1807_single_lite/stockfish-18-lite-single.js',
-  '/npm_stockfish/sf_1807_single_lite/stockfish-18-lite-single.wasm',
-]
+
 const SECONDARY_ASSETS = [
   '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js',
   '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.wasm',
@@ -44,32 +41,27 @@ async function preloadAssets() {
   }, 300)
 
   try {
-    // 1. Single Engine (Priority) - Needed for fallback and immediate playability
-    logger.info('[LoaderProfiler] Step 1/4: Loading Single-Thread Engine...')
-    await loadAssetGroup(PRIORITY_ASSETS)
-    progress.value = 25
+    // 1. Multi-Thread Engine (Essential)
+    logger.info('[LoaderProfiler] Step 1/3: Loading Multi-Thread Engine...')
+    await loadAssetGroup(SECONDARY_ASSETS)
+    progress.value = 33
 
     // 2. Global Database Initialization
-    logger.info('[LoaderProfiler] Step 2/4: Initializing Global Database...')
+    logger.info('[LoaderProfiler] Step 2/3: Initializing Global Database...')
     const { databaseClient } = await import('@/shared/api/storage/DatabaseClient')
     await databaseClient.init()
-    progress.value = 50
+    progress.value = 66
 
     // CRITICAL: We are now "Ready" for basic interaction
     isReady.value = true
     clearTimeout(uiTimer)
     emit('ready')
     logger.info(
-      `[LoaderProfiler] Cabinet partially ready after ${(performance.now() - tTotalStart).toFixed(2)}ms.`,
+      `[LoaderProfiler] Cabinet ready after ${(performance.now() - tTotalStart).toFixed(2)}ms.`,
     )
 
-    // 3. Multi-Thread Engine (Secondary)
-    logger.info('[LoaderProfiler] Step 3/4: Loading Multi-Thread Engine...')
-    await loadAssetGroup(SECONDARY_ASSETS)
-    progress.value = 75
-
-    // 4. Background Audio Assets (Final Step)
-    logger.info('[LoaderProfiler] Step 4/4: Triggering background Audio Cache...')
+    // 3. Background Audio Assets (Final Step)
+    logger.info('[LoaderProfiler] Step 3/3: Triggering background Audio Cache...')
     // We only put them in the Cache API. We do NOT preload all HTMLAudioElements in memory anymore.
     loadAssetGroup(SOUND_ASSETS).catch((e) => logger.warn('Audio cache failed:', e))
 

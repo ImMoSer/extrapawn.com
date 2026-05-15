@@ -48,16 +48,6 @@
 
     <!-- Expanded Content -->
     <div v-if="expanded" class="expanded-content">
-      <ul v-if="remainingFacts > 0" class="facts-list">
-        <li
-          v-for="(fact, i) in allFacts.slice(visibleFacts.length)"
-          :key="i"
-          class="fact-item muted"
-        >
-          <span class="fact-cue" :style="{ backgroundColor: getCueColor(fact.side) }"></span>
-          <span class="fact-text">{{ fact.text }}</span>
-        </li>
-      </ul>
 
       <div v-if="plan?.moves?.length > 0" class="expanded-section">
         <div class="section-title">
@@ -91,9 +81,7 @@
             </button>
           </div>
         </div>
-        <div class="narrative-text thin-scroll">
-          {{ explanation.summary_text }}
-        </div>
+        <div class="narrative-text thin-scroll">{{ explanation.summary_text }}</div>
       </div>
     </div>
   </div>

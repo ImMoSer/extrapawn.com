@@ -631,7 +631,7 @@ function composeNarrative(blob) {
     lines.push(txt)
   }
 
-  return lines.join('\n\n')
+  return lines.filter((l) => l.trim().length > 0).join('\n').trim()
 }
 
 // ───────────────────────────────────────────────────────────────────────────

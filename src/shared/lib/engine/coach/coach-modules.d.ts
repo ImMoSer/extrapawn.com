@@ -8,8 +8,8 @@ declare module '@/shared/lib/engine/coach/analysis' {
 declare module '@/shared/lib/engine/coach/engine' {
   const engine: any
   export default engine
-  export function setEngineDefaults(options: { depth?: number; multipv?: number }): void
-  export function getEngineDefaults(): { depth: number; multipv: number }
+  export function setEngineDefaults(options: { depth?: number; multipv?: number; threads?: number }): void
+  export function getEngineDefaults(): { depth: number; multipv: number; threads: number }
 }
 
 declare module '@/shared/lib/engine/coach/analyzer-rs' {
@@ -19,7 +19,7 @@ declare module '@/shared/lib/engine/coach/analyzer-rs' {
 }
 
 declare module '@/shared/lib/engine/coach/full-explanation' {
-  export function buildFullExplanation(fen: string, options?: { depth?: number; multipv?: number }): Promise<Record<string, unknown>>
+  export function buildFullExplanation(fen: string, options?: { depth?: number; multipv?: number; threads?: number }): Promise<Record<string, unknown>>
 }
 
 declare module '@/shared/lib/engine/coach/connectors' {

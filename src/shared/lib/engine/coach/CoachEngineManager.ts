@@ -69,7 +69,7 @@ export class CoachEngineManager {
   /**
    * Update engine settings
    */
-  public setDefaults(options: { depth?: number; multipv?: number }) {
+  public setDefaults(options: { depth?: number; multipv?: number; threads?: number }) {
     setEngineDefaults(options)
   }
 
