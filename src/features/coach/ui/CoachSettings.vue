@@ -14,6 +14,41 @@
     <div v-if="open" class="settings-dropdown">
       <div class="settings-title">Engine settings</div>
 
+      <!-- Language -->
+      <div class="setting-group">
+        <div class="setting-header">
+          <label for="setting-lang">Mentor Language</label>
+        </div>
+        <select
+          id="setting-lang"
+          class="setting-select"
+          :value="coachStore.preferredLanguage"
+          @change="handleLanguageChange"
+        >
+          <option value="EN">English</option>
+          <option value="DE">Deutsch</option>
+          <option value="RU">Русский</option>
+        </select>
+      </div>
+
+      <!-- Voice -->
+      <div class="setting-group" v-if="hasSpeechSynthesis">
+        <div class="setting-header">
+          <label for="setting-voice">Mentor Voice (TTS)</label>
+        </div>
+        <select
+          id="setting-voice"
+          class="setting-select"
+          :value="coachStore.preferredVoiceURI"
+          @change="handleVoiceChange"
+        >
+          <option value="">Default (Auto-detect)</option>
+          <option v-for="voice in filteredVoices" :key="voice.voiceURI" :value="voice.voiceURI">
+            {{ voice.name }}
+          </option>
+        </select>
+      </div>
+
       <!-- Depth -->
       <div class="setting-group">
         <div class="setting-header">
@@ -70,7 +105,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useCoachStore } from '@/features/coach/model/coach.store'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
@@ -83,6 +119,34 @@ const defaults = getEngineDefaults()
 const depth = ref(defaults.depth)
 const multipv = ref(defaults.multipv)
 const wrapRef = ref<HTMLElement | null>(null)
+const coachStore = useCoachStore()
+const availableVoices = ref<SpeechSynthesisVoice[]>([])
+const hasSpeechSynthesis = typeof window !== 'undefined' && 'speechSynthesis' in window
+
+const loadVoices = () => {
+  if ('speechSynthesis' in window) {
+    availableVoices.value = window.speechSynthesis.getVoices()
+  }
+}
+
+const filteredVoices = computed(() => {
+  const langPrefix = coachStore.preferredLanguage.toLowerCase()
+  return availableVoices.value.filter(v => v.lang.startsWith(langPrefix))
+})
+
+watch(() => coachStore.preferredLanguage, () => {
+  coachStore.setPreferredVoiceURI('')
+})
+
+const handleLanguageChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  coachStore.setPreferredLanguage(target.value)
+}
+
+const handleVoiceChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  coachStore.setPreferredVoiceURI(target.value)
+}
 
 const toggleOpen = () => {
   open.value = !open.value
@@ -103,6 +167,11 @@ const handleKeyDown = (e: KeyboardEvent) => {
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
   document.addEventListener('keydown', handleKeyDown)
+  
+  loadVoices()
+  if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = loadVoices
+  }
 })
 
 onUnmounted(() => {
@@ -232,5 +301,20 @@ const apply = () => {
   border: 1px solid rgba(74, 222, 128, 0.4);
   border-radius: 6px;
   cursor: pointer;
+}
+
+.setting-select {
+  width: 100%;
+  padding: 6px;
+  background-color: #1f1f23;
+  color: #a1a1aa;
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  font-size: 11px;
+  outline: none;
+  margin-top: 4px;
+}
+.setting-select:focus {
+  border-color: #86efac;
 }
 </style>

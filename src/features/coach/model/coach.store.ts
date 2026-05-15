@@ -25,6 +25,18 @@ export const useCoachStore = defineStore('coach', () => {
 
   // State for Mentor
   const isMentorLoading = ref(false)
+  const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
+  const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
+
+  function setPreferredVoiceURI(uri: string) {
+    preferredVoiceURI.value = uri
+    localStorage.setItem('coachVoiceURI', uri)
+  }
+
+  function setPreferredLanguage(lang: string) {
+    preferredLanguage.value = lang
+    localStorage.setItem('coachLanguage', lang)
+  }
 
   // State for "Last Move"
   const lastMoveAnalysis = ref<Record<string, unknown> | null>(null)
@@ -214,13 +226,19 @@ export const useCoachStore = defineStore('coach', () => {
 
     try {
       isMentorLoading.value = true
-      logger.info('[CoachStore] Sending payload to Mentor via n8n...', currentExplanation.value.llm_payload)
+      
+      const payload = {
+        ...currentExplanation.value.llm_payload,
+        language: preferredLanguage.value,
+      }
+      
+      logger.info('[CoachStore] Sending payload to Mentor via n8n...', payload)
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentExplanation.value.llm_payload),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
@@ -247,7 +265,16 @@ export const useCoachStore = defineStore('coach', () => {
 
           // Optionally pick a specific Google voice if available
           const voices = window.speechSynthesis.getVoices()
-          const preferredVoice = voices.find(v => v.lang === utterance.lang && v.name.includes('Google'))
+          
+          let preferredVoice = null
+          if (preferredVoiceURI.value) {
+            preferredVoice = voices.find(v => v.voiceURI === preferredVoiceURI.value)
+          }
+          
+          if (!preferredVoice) {
+            preferredVoice = voices.find(v => v.lang === utterance.lang && v.name.includes('Google'))
+          }
+
           if (preferredVoice) {
             utterance.voice = preferredVoice
           }
@@ -283,5 +310,9 @@ export const useCoachStore = defineStore('coach', () => {
     setCoachEnabled,
     explainTopMove,
     askMentor,
+    preferredVoiceURI,
+    preferredLanguage,
+    setPreferredVoiceURI,
+    setPreferredLanguage,
   }
 })
