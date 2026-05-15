@@ -7,6 +7,8 @@ import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import type { Key } from '@lichess-org/chessground/types'
+import type { DrawShape } from '@lichess-org/chessground/draw'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
@@ -25,6 +27,9 @@ export const useCoachStore = defineStore('coach', () => {
 
   // State for Mentor
   const isMentorLoading = ref(false)
+  const isMentorSpeaking = ref(false)
+  let mentorSessionId = 0
+
   const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
   const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
 
@@ -248,38 +253,52 @@ export const useCoachStore = defineStore('coach', () => {
       const data = await response.json()
       
       if (data && data.output) {
+        stopMentor() // Cancel any ongoing mentor session
+        
+        const currentId = ++mentorSessionId
+        isMentorSpeaking.value = true
+
         if ('speechSynthesis' in window) {
-          // Cancel any ongoing speech
-          window.speechSynthesis.cancel()
+          const parts = parseMentorActions(data.output)
           
-          const utterance = new SpeechSynthesisUtterance(data.output)
-          
-          // Basic language detection for TTS
-          if (/[А-Яа-яЁё]/.test(data.output)) {
-            utterance.lang = 'ru-RU'
-          } else if (/[ÄäÖöÜüß]/.test(data.output)) {
-            utterance.lang = 'de-DE'
-          } else {
-            utterance.lang = 'en-US'
-          }
+          // Determine language and voice
+          const firstText = parts.find(p => p.type === 'text')?.content || data.output
+          let lang = 'en-US'
+          if (/[А-Яа-яЁё]/.test(firstText)) lang = 'ru-RU'
+          else if (/[ÄäÖöÜüß]/.test(firstText)) lang = 'de-DE'
 
-          // Optionally pick a specific Google voice if available
           const voices = window.speechSynthesis.getVoices()
-          
-          let preferredVoice = null
-          if (preferredVoiceURI.value) {
-            preferredVoice = voices.find(v => v.voiceURI === preferredVoiceURI.value)
-          }
-          
-          if (!preferredVoice) {
-            preferredVoice = voices.find(v => v.lang === utterance.lang && v.name.includes('Google'))
+          let voice = preferredVoiceURI.value ? voices.find(v => v.voiceURI === preferredVoiceURI.value) : null
+          if (!voice) {
+            voice = voices.find(v => v.lang === lang && v.name.includes('Google')) || voices.find(v => v.lang === lang)
           }
 
-          if (preferredVoice) {
-            utterance.voice = preferredVoice
-          }
+          // Play sequence
+          for (const part of parts) {
+            if (currentId !== mentorSessionId) break
 
-          window.speechSynthesis.speak(utterance)
+            if (part.type === 'text') {
+              const text = part.content.trim()
+              if (!text) continue
+
+              await new Promise<void>((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(text)
+                utterance.lang = lang
+                if (voice) utterance.voice = voice
+                
+                utterance.onend = () => resolve()
+                utterance.onerror = () => resolve()
+                
+                window.speechSynthesis.speak(utterance)
+              })
+            } else {
+              executeMentorAction(part.content)
+            }
+          }
+          
+          if (currentId === mentorSessionId) {
+            isMentorSpeaking.value = false
+          }
         } else {
           logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
         }
@@ -293,10 +312,91 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
+  function stopMentor() {
+    mentorSessionId++
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+    boardStore.setAutoShapes([])
+    isMentorSpeaking.value = false
+  }
+
+  function parseMentorActions(text: string) {
+    const parts: { type: 'text' | 'action'; content: string }[] = []
+    const regex = /\[([^\]]+)\]/g
+    let lastIndex = 0
+    let match
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ type: 'text', content: text.substring(lastIndex, match.index) })
+      }
+      if (match[1]) {
+        parts.push({ type: 'action', content: match[1] })
+      }
+      lastIndex = regex.lastIndex
+    }
+
+    if (lastIndex < text.length) {
+      parts.push({ type: 'text', content: text.substring(lastIndex) })
+    }
+
+    return parts
+  }
+
+  function executeMentorAction(actionStr: string) {
+    const subActions = actionStr.split(';')
+    const allShapes: DrawShape[] = []
+    
+    for (const sub of subActions) {
+      const parts = sub.trim().split(':')
+      const cmd = parts[0]
+      const data = parts[1]
+      const color = parts[2]
+
+      if (cmd === 'clear') {
+        boardStore.setAutoShapes([])
+        return
+      }
+
+      if (!data) continue
+
+      if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
+        const path = data
+        const squares = path.split('->')
+        for (let i = 0; i < squares.length - 1; i++) {
+          const orig = squares[i]
+          const dest = squares[i + 1]
+          if (orig && dest) {
+            allShapes.push({
+              orig: orig.trim() as Key,
+              dest: dest.trim() as Key,
+              brush: color?.trim() || 'green',
+              modifiers: { lineWidth: 8 }
+            })
+          }
+        }
+      } else if (cmd === 'mark') {
+        const squares = data.split(',')
+        squares.forEach(sq => {
+          allShapes.push({
+            orig: sq.trim() as Key,
+            brush: color?.trim() || 'green'
+          })
+        })
+      }
+    }
+    
+    if (allShapes.length > 0) {
+      boardStore.setAutoShapes(allShapes)
+    }
+  }
+
   return {
     isCoachEnabled,
     isAnalyzing,
     isMentorLoading,
+    isMentorSpeaking,
     currentExplanation,
     previousExplanation,
     topMoves,
@@ -314,5 +414,6 @@ export const useCoachStore = defineStore('coach', () => {
     preferredLanguage,
     setPreferredVoiceURI,
     setPreferredLanguage,
+    stopMentor,
   }
 })
