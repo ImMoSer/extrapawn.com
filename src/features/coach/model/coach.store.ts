@@ -5,6 +5,7 @@ import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { Key } from '@lichess-org/chessground/types'
@@ -233,8 +234,8 @@ export const useCoachStore = defineStore('coach', () => {
       return
     }
 
-    const payload = currentExplanation.value.llm_payload as Record<string, any>
-    const currentFen = payload.fen as string
+    const currentFen = (currentExplanation.value as any)?.fen as string
+    if (!currentFen) return
 
     // Check Cache
     if (mentorCache.value.has(currentFen)) {
@@ -253,7 +254,10 @@ export const useCoachStore = defineStore('coach', () => {
       isMentorLoading.value = true
       
       const fullPayload = {
-        ...payload,
+        ...extractLlmPayload(currentExplanation.value, {
+          lastMove: lastMoveAnalysis.value,
+          consequence: lastMoveConsequence.value
+        }),
         language: preferredLanguage.value,
       }
       

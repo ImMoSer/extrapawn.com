@@ -21,6 +21,7 @@
 
 import engine, { getEngineDefaults } from './engine'
 import { explainPosition, analyzeMove, isReady as wasmReady } from './analyzer-rs'
+import { explainMove } from './explainer'
 import { getSideToMove } from './chess'
 import { extractLlmPayload } from './llm-bridge'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -29,6 +30,9 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 // when classifying the move's character. Bump below this floor.
 const PLAN_MIN_MULTIPV = 5
 const PLAN_PLIES = 6 // walk the principal variation up to this many plies
+
+import { extractConcreteFacts } from './fact-extractor'
+import { composeTagline } from './analyzer-rs'
 
 // Motif IDs that count as "targeting the king" — used to score how much
 // the engine's preferred moves are king-attacking.
@@ -57,6 +61,9 @@ export async function buildFullExplanation(fen, opts = {}) {
   const staticBlob = explainPosition(fen)
   if (!staticBlob || staticBlob.error) return staticBlob || null
 
+  // Attach pre-calculated concrete facts (for UI and Bridge consistency)
+  staticBlob.concrete_facts = extractConcreteFacts(staticBlob)
+
   // ── Engine layer ────────────────────────────────────────────────────
   const defaults = getEngineDefaults()
   const planDepth = opts.depth || defaults.depth
@@ -74,45 +81,49 @@ export async function buildFullExplanation(fen, opts = {}) {
   if (!engineRes || !Array.isArray(engineRes.moves)) return staticBlob
 
   // ── Annotate each top move with motifs + a per-move plan brief ─────
-  //
-  // For each top engine move, we walk its principal variation (the
-  // engine's preferred continuation for THIS specific candidate) and
-  // produce:
-  //   - `plan_theme`: dominant motif category across the PV
-  //     (kingside_attack / simplification / piece_activity / pawn_advance
-  //      / tactics / consolidation / structural)
-  //   - `plan_brief`: a one-line forward-looking description showing
-  //     what THIS move sets up over the next few plies
-  //   - `character`: the move's tone — "Aggressive" / "Combative" /
-  //     "Positional" / "Solid" / "Risky" / "Forcing" / "Drawish".
-  //     A label answering "what kind of move is this?"
-  //
-  // The character classification combines the move's own motifs with
-  // the engine's view of the opponent's reply (multi-PV[0] vs the
-  // current eval) — a move whose best opp reply still leaves us much
-  // better is forcing; a sharp tactical with a real swing is
-  // aggressive; a quiet structural is positional.
   const annotatedMoves = engineRes.moves.map((m, idx) => {
     const result = analyzeMove(fen, m.move)
     const motifIds = (result?.motifs || []).map((x) => x.id)
     const planBrief = inferPlanBrief(fen, m.pv || [], motifIds, attackingSideOf(fen))
     const character = classifyCharacter(motifIds, m, idx, engineRes.moves)
+    
+    // UI-Synchronous Tagline
+    const taglineObj = composeTagline(result)
+
+    // Full Move Explanation (Quality, Summary, Details)
+    const explanation = explainMove(
+      fen,
+      result?.fen_after || fen, // Fallback if Rust fails
+      m.move,
+      staticBlob.eval_cp || 0,
+      m.score,
+      { topMoves: engineRes.moves }
+    )
+
     return {
       uci: m.move,
       san: result?.san || m.move,
       score: m.score,
       mate: m.mate,
       motifs: motifIds,
-      // Targets-king flag: any motif that's a king-attack signal.
       targetsKing: motifIds.some((id) => KING_ATTACK_MOTIFS.has(id)),
-      headline: result?.motifs?.[0]?.phrase || null,
+      headline: taglineObj.tagline || result?.motifs?.[0]?.phrase || null,
+      tagline: taglineObj.tagline,
       plan_theme: planBrief.theme,
       plan_brief: planBrief.text,
       plan_pv: planBrief.pv,
       character: character.label,
       character_reason: character.reason,
+      explanation: {
+        quality: explanation.quality,
+        summary: explanation.summary,
+        details: explanation.details,
+        best_move_san: explanation.bestMoveSan,
+        is_best_move: explanation.isBestMove
+      }
     }
   })
+
 
   // ── Engine-driven attack potential ──────────────────────────────────
   const targeters = annotatedMoves.filter((m) => m.targetsKing).length
