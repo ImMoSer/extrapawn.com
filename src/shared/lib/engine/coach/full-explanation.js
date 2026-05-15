@@ -23,6 +23,7 @@ import engine, { getEngineDefaults } from './engine'
 import { explainPosition, analyzeMove, isReady as wasmReady } from './analyzer-rs'
 import { getSideToMove } from './chess'
 import { extractLlmPayload } from './llm-bridge'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 // The plan walker needs enough breadth to compare alternative continuations
 // when classifying the move's character. Bump below this floor.
@@ -60,9 +61,13 @@ export async function buildFullExplanation(fen, opts = {}) {
   const defaults = getEngineDefaults()
   const planDepth = opts.depth || defaults.depth
   const planMultiPV = Math.max(opts.multipv || defaults.multipv, PLAN_MIN_MULTIPV)
+
+  const startFen = pgnService.getRootNode().fenAfter
+  const movesUci = pgnService.getCurrentUciPath()
+
   let engineRes
   try {
-    engineRes = await engine.analyzeMultiPV(fen, planMultiPV, planDepth)
+    engineRes = await engine.analyzeMultiPV(fen, planMultiPV, planDepth, startFen, movesUci)
   } catch {
     return staticBlob // engine failed; static is still useful
   }

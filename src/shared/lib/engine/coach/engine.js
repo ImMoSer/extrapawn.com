@@ -4,6 +4,13 @@
 
 const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
 
+export let USE_SERVER_ENGINE = localStorage.getItem('positional_chess.use_server_coach') !== 'false' // default true
+
+export function setUseServerEngine(val) {
+  USE_SERVER_ENGINE = val
+  localStorage.setItem('positional_chess.use_server_coach', String(val))
+}
+
 // Configurable defaults backed by localStorage. The UI's settings
 // panel writes to these so the engine layer reflects user preference
 // without each call-site having to thread depth through.
@@ -75,6 +82,9 @@ class LRU {
       this.map.delete(this.map.keys().next().value)
     }
   }
+  delete(key) {
+    this.map.delete(key)
+  }
   clear() {
     this.map.clear()
   }
@@ -131,6 +141,15 @@ class StockfishEngine {
     this._initPromise = new Promise((resolve, reject) => {
       this._initResolve = resolve
       this._initReject = reject
+
+      if (USE_SERVER_ENGINE) {
+        this.ready = true
+        resolve()
+        this._clearInit()
+        setTimeout(() => this._processQueue(), 0)
+        return
+      }
+
       try {
         this.worker = new Worker(this.workerUrl)
       } catch (err) {
@@ -214,35 +233,48 @@ class StockfishEngine {
     }
   }
 
-  evaluate(fen, depth = DEFAULT_DEPTH) {
+  evaluate(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
     const key = `e|${fen}|${depth}`
     const hit = this.cache.get(key)
-    if (hit) return Promise.resolve(hit)
-    return this._enqueue({ type: 'eval', fen, depth }).then((r) => {
-      this.cache.set(key, r)
-      return r
-    })
+    if (hit) return hit // Promise cached
+    
+    // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
+    const mpvKey = `m|${fen}|${USE_SERVER_ENGINE ? 3 : DEFAULT_MULTIPV}|${depth}`
+    const hitMpv = this.cache.get(mpvKey)
+    if (hitMpv) {
+      const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score }))
+      this.cache.set(key, p)
+      return p
+    }
+
+    const p = this._enqueue({ type: 'eval', fen, depth, startFen, moves })
+    p.catch(() => this.cache.delete(key))
+    this.cache.set(key, p)
+    return p
   }
 
-  analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH) {
-    const n = Math.max(1, Math.min(numLines, 10))
+  analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
+    // If server engine is forced to max 3 PV, cap cache key at 3 to prevent duplicate requests
+    const n = USE_SERVER_ENGINE ? Math.min(numLines, 3) : Math.max(1, Math.min(numLines, 10))
     const key = `m|${fen}|${n}|${depth}`
     const hit = this.cache.get(key)
-    if (hit) return Promise.resolve(hit)
-    return this._enqueue({ type: 'multipv', fen, depth, numLines: n }).then((r) => {
-      this.cache.set(key, r)
-      return r
-    })
+    if (hit) return hit // Promise cached
+
+    const p = this._enqueue({ type: 'multipv', fen, depth, numLines: n, startFen, moves })
+    p.catch(() => this.cache.delete(key))
+    this.cache.set(key, p)
+    return p
   }
 
-  getBestMove(fen, depth = DEFAULT_DEPTH) {
+  getBestMove(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
     const key = `b|${fen}|${depth}`
     const hit = this.cache.get(key)
-    if (hit) return Promise.resolve(hit)
-    return this._enqueue({ type: 'bestmove', fen, depth }).then((r) => {
-      this.cache.set(key, r)
-      return r
-    })
+    if (hit) return hit // Promise cached
+
+    const p = this._enqueue({ type: 'bestmove', fen, depth, startFen, moves })
+    p.catch(() => this.cache.delete(key))
+    this.cache.set(key, p)
+    return p
   }
 
   _enqueue(job) {
@@ -263,11 +295,13 @@ class StockfishEngine {
     job.lines = {}
 
     if (job.type === 'multipv') {
-      if (this.lastThreads !== DEFAULT_THREADS) {
+      if (!USE_SERVER_ENGINE && this.lastThreads !== DEFAULT_THREADS) {
         this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
         this.lastThreads = DEFAULT_THREADS
       }
-      this._send(`setoption name MultiPV value ${job.numLines}`)
+      if (!USE_SERVER_ENGINE) {
+        this._send(`setoption name MultiPV value ${job.numLines}`)
+      }
       this.lastMultiPV = job.numLines
 
       job.onLine = (line) => {
@@ -289,11 +323,11 @@ class StockfishEngine {
         }
       }
     } else {
-      if (this.lastThreads !== DEFAULT_THREADS) {
+      if (!USE_SERVER_ENGINE && this.lastThreads !== DEFAULT_THREADS) {
         this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
         this.lastThreads = DEFAULT_THREADS
       }
-      if (this.lastMultiPV !== 1) {
+      if (!USE_SERVER_ENGINE && this.lastMultiPV !== 1) {
         this._send('setoption name MultiPV value 1')
         this.lastMultiPV = 1
       }
@@ -311,14 +345,44 @@ class StockfishEngine {
 
     job._timer = setTimeout(() => {
       job._timedOut = true
-      this._send('stop')
+      if (!USE_SERVER_ENGINE) this._send('stop')
       job._guardTimer = setTimeout(() => {
         this._abortCurrentJob(new Error(`Stockfish job timed out after ${this.jobTimeoutMs}ms`))
       }, 2000)
     }, this.jobTimeoutMs)
 
-    this._send(`position fen ${job.fen}`)
-    this._send(`go depth ${job.depth}`)
+    if (USE_SERVER_ENGINE) {
+      const multipv = job.type === 'multipv' ? job.numLines : 1
+      fetch('/api/coach-engine/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          fen: job.fen, 
+          depth: job.depth, 
+          multipv,
+          start_fen: job.startFen,
+          moves: job.moves
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (job._timedOut) return
+        if (data.lines) {
+          data.lines.forEach(line => this._onLine(line))
+        }
+      })
+      .catch(err => {
+        if (!job._timedOut) this._abortCurrentJob(err)
+      })
+    } else {
+      if (job.startFen && job.moves) {
+        const sf = job.startFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' ? 'startpos' : `fen ${job.startFen}`
+        this._send(`position ${sf} moves ${job.moves.join(' ')}`)
+      } else {
+        this._send(`position fen ${job.fen}`)
+      }
+      this._send(`go depth ${job.depth}`)
+    }
   }
 
   _abortCurrentJob(err) {

@@ -10,6 +10,8 @@ declare module '@/shared/lib/engine/coach/engine' {
   export default engine
   export function setEngineDefaults(options: { depth?: number; multipv?: number; threads?: number }): void
   export function getEngineDefaults(): { depth: number; multipv: number; threads: number }
+  export let USE_SERVER_ENGINE: boolean
+  export function setUseServerEngine(val: boolean): void
 }
 
 declare module '@/shared/lib/engine/coach/analyzer-rs' {

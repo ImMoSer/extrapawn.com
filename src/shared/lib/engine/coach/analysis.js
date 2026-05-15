@@ -7,6 +7,7 @@ import engine, { getEngineDefaults } from './engine'
 import { uciToSan, makeMove, getSideToMove } from './chess'
 import { explainMove } from './explainer'
 import { quickExplain, explainPV } from './taglines'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 // Classifier needs a critical mass of candidate alternatives to reason
 // about "only move" / "second best" / "in top-3". 5 is the historical
@@ -59,7 +60,11 @@ export async function getTopMoves(fen, count = 10) {
   const turn = getSideToMove(fen)
   const { depth, multipv } = getEngineDefaults()
   const numLines = Math.min(count, multipv)
-  const result = await engine.analyzeMultiPV(fen, numLines, depth)
+  
+  const startFen = pgnService.getRootNode().fenAfter
+  const movesUci = pgnService.getCurrentUciPath()
+  
+  const result = await engine.analyzeMultiPV(fen, numLines, depth, startFen, movesUci)
   const moves = result.moves.map((m) => {
     const evalCp = normalizeToWhite(m.score, turn)
     // Local, engine-free tagline for the move and the next couple of plies
@@ -104,7 +109,14 @@ export async function explainMoveAt(fen, moveUCI) {
   // dialled MultiPV lower than that for the panel, bump it just for
   // explanation calls.
   const explainMultiPV = Math.max(multipv, EXPLAIN_MIN_MULTIPV)
-  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth)
+  
+  const startFen = pgnService.getRootNode().fenAfter
+  const fullMoves = pgnService.getCurrentUciPath()
+  const prevMoves = fullMoves.length > 0 && fullMoves[fullMoves.length - 1] === moveUCI 
+    ? fullMoves.slice(0, -1) 
+    : fullMoves
+    
+  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth, startFen, prevMoves)
 
   // Win-rate-before is approximated by the best move's score (the position's
   // value assuming optimal play). This is what Lichess-style classifiers use
@@ -132,7 +144,8 @@ export async function explainMoveAt(fen, moveUCI) {
     mateAfter = mateToWhite(playedTopEntry.mate, turn)
   } else {
     // Player played outside the top set — fall back to a separate eval.
-    const evalAfterRes = await engine.evaluate(newFen, depth)
+    const evalMoves = prevMoves.concat([moveUCI])
+    const evalAfterRes = await engine.evaluate(newFen, depth, startFen, evalMoves)
     evalAfterWhite = normalizeToWhite(evalAfterRes.cp, newTurn)
     mateAfter = mateToWhite(evalAfterRes.mate, newTurn)
   }

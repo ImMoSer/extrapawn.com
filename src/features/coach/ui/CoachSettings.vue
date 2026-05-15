@@ -14,6 +14,22 @@
     <div v-if="open" class="settings-dropdown">
       <div class="settings-title">Engine settings</div>
 
+      <!-- Server Engine Switch -->
+      <div class="setting-group">
+        <div class="setting-header">
+          <label for="setting-server">Use Server Engine (Premium)</label>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+          <span class="setting-desc" style="margin-top: 0;">Offloads analysis to the cloud</span>
+          <input
+            id="setting-server"
+            type="checkbox"
+            v-model="useServer"
+            @change="handleServerToggle"
+          />
+        </div>
+      </div>
+
       <!-- Language -->
       <div class="setting-group">
         <div class="setting-header">
@@ -50,7 +66,7 @@
       </div>
 
       <!-- Depth -->
-      <div class="setting-group">
+      <div class="setting-group" :class="{ 'is-disabled': useServer }">
         <div class="setting-header">
           <label for="setting-depth">Search depth</label>
           <span class="setting-value">{{ depth }}</span>
@@ -63,6 +79,7 @@
           step="1"
           v-model.number="depth"
           class="setting-slider"
+          :disabled="useServer"
         />
         <div class="setting-labels">
           <span>fast (6)</span>
@@ -74,7 +91,7 @@
       </div>
 
       <!-- MultiPV -->
-      <div class="setting-group">
+      <div class="setting-group" :class="{ 'is-disabled': useServer }">
         <div class="setting-header">
           <label for="setting-multipv">Top moves shown</label>
           <span class="setting-value">{{ multipv }}</span>
@@ -87,6 +104,7 @@
           step="1"
           v-model.number="multipv"
           class="setting-slider"
+          :disabled="useServer"
         />
         <div class="setting-labels">
           <span>1</span>
@@ -96,7 +114,7 @@
       </div>
 
       <!-- Threads -->
-      <div class="setting-group">
+      <div class="setting-group" :class="{ 'is-disabled': useServer }">
         <div class="setting-header">
           <label for="setting-threads">CPU Threads</label>
           <span class="setting-value">{{ threads }}</span>
@@ -109,6 +127,7 @@
           step="1"
           v-model.number="threads"
           class="setting-slider"
+          :disabled="useServer"
         />
         <div class="setting-labels">
           <span>1</span>
@@ -132,11 +151,17 @@ import { useCoachStore } from '@/features/coach/model/coach.store'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { getEngineDefaults } from '@/shared/lib/engine/coach/engine'
+import { getEngineDefaults, USE_SERVER_ENGINE, setUseServerEngine } from '@/shared/lib/engine/coach/engine'
 
 const emit = defineEmits(['change'])
 
 const open = ref(false)
+const useServer = ref(USE_SERVER_ENGINE)
+
+const handleServerToggle = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  setUseServerEngine(target.checked)
+}
 const defaults = getEngineDefaults()
 const depth = ref(defaults.depth)
 const multipv = ref(defaults.multipv)
@@ -263,6 +288,11 @@ const apply = () => {
 
 .setting-group {
   margin-bottom: 12px;
+}
+
+.setting-group.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .setting-header {

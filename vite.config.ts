@@ -109,6 +109,13 @@ export default defineConfig(({ mode }) => {
         'Cross-Origin-Opener-Policy': 'same-origin',
         'Cross-Origin-Embedder-Policy': 'require-corp',
       },
+      proxy: {
+        '/api/coach-engine': {
+          target: 'http://127.0.0.1:5004',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/coach-engine/, '')
+        }
+      }
     },
     build: {
       rollupOptions: {
