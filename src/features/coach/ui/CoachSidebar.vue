@@ -9,12 +9,16 @@
           :class="{ 'is-speaking': coachStore.isMentorSpeaking }"
           @click="coachStore.isMentorSpeaking ? coachStore.stopMentor() : coachStore.askMentor()"
           :disabled="coachStore.isMentorLoading"
-          :title="coachStore.isMentorSpeaking ? 'Stop mentor' : 'Ask the Lead Chess Mentor for a deep insight'"
+          :title="coachStore.isMentorSpeaking ? 'Stop mentor' : coachStore.hasCachedMentorResponse ? 'Repeat mentor insight' : 'Ask the Lead Chess Mentor for a deep insight'"
         >
           <span v-if="coachStore.isMentorLoading" class="btn-spinner"></span>
           <template v-else-if="coachStore.isMentorSpeaking">
             <n-icon size="14"><StopOutline /></n-icon>
             <span>Stop</span>
+          </template>
+          <template v-else-if="coachStore.hasCachedMentorResponse">
+            <n-icon size="14"><PlayOutline /></n-icon>
+            <span>Repeat</span>
           </template>
           <template v-else>
             <n-icon size="14"><SparklesOutline /></n-icon>
@@ -50,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { PowerOutline, SparklesOutline, StopOutline } from '@vicons/ionicons5'
+import { PowerOutline, SparklesOutline, StopOutline, PlayOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachSettings from './CoachSettings.vue'

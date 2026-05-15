@@ -30,8 +30,18 @@ export function extractLlmPayload(blob: any) {
     principal_plan: blob.principal_plan ? {
       description: blob.principal_plan.description,
       moves: (blob.principal_plan.moves || []).map((m: any) => m.san).join(' '),
-      zwischenzug: blob.principal_plan.zwischenzug?.description || null
+      zwischenzug: blob.principal_plan.zwischenzug?.description || null,
+      best_move_explanation: blob.engine_top_moves?.[0] ? {
+        san: blob.engine_top_moves[0].san,
+        character: blob.engine_top_moves[0].character,
+        character_reason: blob.engine_top_moves[0].character_reason,
+        headline: blob.engine_top_moves[0].headline,
+        plan_brief: blob.engine_top_moves[0].plan_brief
+      } : null
     } : null,
+
+    // Vorgefertigte visuelle Marker (Pfeile, Highlights), die das LLM in seine Erklärung einbauen soll
+    visual_commands: blob.visual_commands || null,
 
     // Nur die Top 2 Alternativen, falls der User vom Hauptplan abweicht
     top_alternatives: (blob.engine_top_moves || [])

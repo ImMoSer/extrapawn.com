@@ -98,30 +98,18 @@ export const useCoachStore = defineStore('coach', () => {
       const explanation = await coachEngineManager.getExplanation(fen)
       currentExplanation.value = explanation
 
-      // For now, we don't draw arrows on the board as per user request.
-      // This will be reactivated when blunder detection logic is implemented.
-      /*
-      if (
-        explanation &&
-        (explanation.principal_plan as any) &&
-        (explanation.principal_plan as any).moves?.length > 0
-      ) {
-        const bestMove = (explanation.principal_plan as any).moves[0]
-        if (bestMove.from && bestMove.to) {
-          boardStore.setAutoShapes([
-            {
-              orig: bestMove.from as Key,
-              dest: bestMove.to as Key,
-              brush: 'green',
-              modifiers: { lineWidth: 10 },
-            },
-          ])
+      // Render pre-calculated visual commands immediately
+      if (explanation?.visual_commands) {
+        // Combine all tags (e.g. "[mark:f4:blue]", "[route:e5->g5:green]") into one string separated by ';'
+        const commands = Object.values(explanation.visual_commands).join(';')
+        if (commands) {
+          executeMentorAction(commands)
+        } else {
+          boardStore.setAutoShapes([])
         }
       } else {
         boardStore.setAutoShapes([])
       }
-      */
-      boardStore.setAutoShapes([])
     } catch {
       logger.error('[CoachStore] Error generating explanation')
     } finally {
@@ -195,6 +183,13 @@ export const useCoachStore = defineStore('coach', () => {
     },
   )
 
+  // Mentor Caching
+  const mentorCache = ref(new Map<string, string>())
+  const hasCachedMentorResponse = computed(() => {
+    const payload = currentExplanation.value?.llm_payload as Record<string, any> | undefined
+    return !!payload?.fen && mentorCache.value.has(payload.fen as string)
+  })
+
   // Watch deep analysis and disable coach if analysis starts
   watch(
     () => analysisEngineStore.isAnalysisActive,
@@ -223,6 +218,16 @@ export const useCoachStore = defineStore('coach', () => {
       return
     }
 
+    const payload = currentExplanation.value.llm_payload as Record<string, any>
+    const currentFen = payload.fen as string
+
+    // Check Cache
+    if (mentorCache.value.has(currentFen)) {
+      logger.info('[CoachStore] Replaying cached Mentor response for current position.')
+      await playMentorResponse(mentorCache.value.get(currentFen)!)
+      return
+    }
+
     const webhookUrl = import.meta.env.VITE_LLM_BRIDGE
     if (!webhookUrl) {
       logger.error('[CoachStore] VITE_LLM_BRIDGE webhook URL not defined in .env')
@@ -232,18 +237,18 @@ export const useCoachStore = defineStore('coach', () => {
     try {
       isMentorLoading.value = true
       
-      const payload = {
-        ...currentExplanation.value.llm_payload,
+      const fullPayload = {
+        ...payload,
         language: preferredLanguage.value,
       }
       
-      logger.info('[CoachStore] Sending payload to Mentor via n8n...', payload)
+      logger.info('[CoachStore] Sending payload to Mentor via n8n...', fullPayload)
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(fullPayload),
       })
 
       if (!response.ok) {
@@ -253,62 +258,68 @@ export const useCoachStore = defineStore('coach', () => {
       const data = await response.json()
       
       if (data && data.output) {
-        stopMentor() // Cancel any ongoing mentor session
-        
-        const currentId = ++mentorSessionId
-        isMentorSpeaking.value = true
-
-        if ('speechSynthesis' in window) {
-          const parts = parseMentorActions(data.output)
-          
-          // Determine language and voice
-          const firstText = parts.find(p => p.type === 'text')?.content || data.output
-          let lang = 'en-US'
-          if (/[А-Яа-яЁё]/.test(firstText)) lang = 'ru-RU'
-          else if (/[ÄäÖöÜüß]/.test(firstText)) lang = 'de-DE'
-
-          const voices = window.speechSynthesis.getVoices()
-          let voice = preferredVoiceURI.value ? voices.find(v => v.voiceURI === preferredVoiceURI.value) : null
-          if (!voice) {
-            voice = voices.find(v => v.lang === lang && v.name.includes('Google')) || voices.find(v => v.lang === lang)
-          }
-
-          // Play sequence
-          for (const part of parts) {
-            if (currentId !== mentorSessionId) break
-
-            if (part.type === 'text') {
-              const text = part.content.trim()
-              if (!text) continue
-
-              await new Promise<void>((resolve) => {
-                const utterance = new SpeechSynthesisUtterance(text)
-                utterance.lang = lang
-                if (voice) utterance.voice = voice
-                
-                utterance.onend = () => resolve()
-                utterance.onerror = () => resolve()
-                
-                window.speechSynthesis.speak(utterance)
-              })
-            } else {
-              executeMentorAction(part.content)
-            }
-          }
-          
-          if (currentId === mentorSessionId) {
-            isMentorSpeaking.value = false
-          }
-        } else {
-          logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
-        }
+        // Cache the response
+        mentorCache.value.set(currentFen, data.output)
+        logger.info('[CoachStore] Mentor successfully received the payload and cached the response.')
+        await playMentorResponse(data.output)
       }
 
-      logger.info('[CoachStore] Mentor successfully received the payload.')
     } catch (error) {
       logger.error('[CoachStore] Failed to send payload to Mentor:', error)
     } finally {
       isMentorLoading.value = false
+    }
+  }
+
+  async function playMentorResponse(output: string) {
+    stopMentor() // Cancel any ongoing mentor session
+    
+    const currentId = ++mentorSessionId
+    isMentorSpeaking.value = true
+
+    if ('speechSynthesis' in window) {
+      const parts = parseMentorActions(output)
+      
+      // Determine language and voice
+      const firstText = parts.find(p => p.type === 'text')?.content || output
+      let lang = 'en-US'
+      if (/[А-Яа-яЁё]/.test(firstText)) lang = 'ru-RU'
+      else if (/[ÄäÖöÜüß]/.test(firstText)) lang = 'de-DE'
+
+      const voices = window.speechSynthesis.getVoices()
+      let voice = preferredVoiceURI.value ? voices.find(v => v.voiceURI === preferredVoiceURI.value) : null
+      if (!voice) {
+        voice = voices.find(v => v.lang === lang && v.name.includes('Google')) || voices.find(v => v.lang === lang)
+      }
+
+      // Play sequence
+      for (const part of parts) {
+        if (currentId !== mentorSessionId) break
+
+        if (part.type === 'text') {
+          const text = part.content.trim()
+          if (!text) continue
+
+          await new Promise<void>((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.lang = lang
+            if (voice) utterance.voice = voice
+            
+            utterance.onend = () => resolve()
+            utterance.onerror = () => resolve()
+            
+            window.speechSynthesis.speak(utterance)
+          })
+        } else {
+          executeMentorAction(part.content)
+        }
+      }
+      
+      if (currentId === mentorSessionId) {
+        isMentorSpeaking.value = false
+      }
+    } else {
+      logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
     }
   }
 
@@ -349,10 +360,12 @@ export const useCoachStore = defineStore('coach', () => {
     const allShapes: DrawShape[] = []
     
     for (const sub of subActions) {
-      const parts = sub.trim().split(':')
-      const cmd = parts[0]
-      const data = parts[1]
-      const color = parts[2]
+      // Remove any brackets to prevent matching issues, then split
+      const cleanSub = sub.replace(/[\[\]]/g, '').trim()
+      const parts = cleanSub.split(':')
+      const cmd = parts[0]?.trim()
+      const data = parts[1]?.trim()
+      const color = parts[2]?.trim() || 'green'
 
       if (cmd === 'clear') {
         boardStore.setAutoShapes([])
@@ -371,7 +384,7 @@ export const useCoachStore = defineStore('coach', () => {
             allShapes.push({
               orig: orig.trim() as Key,
               dest: dest.trim() as Key,
-              brush: color?.trim() || 'green',
+              brush: color,
               modifiers: { lineWidth: 8 }
             })
           }
@@ -381,13 +394,23 @@ export const useCoachStore = defineStore('coach', () => {
         squares.forEach(sq => {
           allShapes.push({
             orig: sq.trim() as Key,
-            brush: color?.trim() || 'green'
+            brush: color
           })
         })
       }
     }
     
     if (allShapes.length > 0) {
+      // Sort shapes by color priority so the highest priority renders on top.
+      // Priority: Red (top) > Blue > Green > Yellow (bottom).
+      // Rendering order: lowest index first (bottom), highest index last (top).
+      const COLOR_PRIORITY: Record<string, number> = { yellow: 0, green: 1, blue: 2, red: 3 }
+      allShapes.sort((a, b) => {
+        const pA = COLOR_PRIORITY[a.brush as string] ?? -1
+        const pB = COLOR_PRIORITY[b.brush as string] ?? -1
+        return pA - pB
+      })
+
       boardStore.setAutoShapes(allShapes)
     }
   }
@@ -415,5 +438,6 @@ export const useCoachStore = defineStore('coach', () => {
     setPreferredVoiceURI,
     setPreferredLanguage,
     stopMentor,
+    hasCachedMentorResponse,
   }
 })
