@@ -31,6 +31,7 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 const PLAN_MIN_MULTIPV = 5
 const PLAN_PLIES = 6 // walk the principal variation up to this many plies
 
+import { generateVisualCommands } from './visualizer'
 import { extractConcreteFacts } from './fact-extractor'
 import { composeTagline } from './analyzer-rs'
 
@@ -387,193 +388,21 @@ export async function buildFullExplanation(fen, opts = {}) {
   }
 
   // ── Visual Commands Generation ──────────────────────────────────────
-  const visual_commands = {}
-
-  // 1. Best Move (Immediate Action)
-  if (planSteps.length > 0 && planSteps[0].from && planSteps[0].to) {
-    const bestMove = planSteps[0]
-    visual_commands.best_move = `[mark:${bestMove.to}:red;route:${bestMove.from}->${bestMove.to}:red]`
-  }
-
-  // 1.5 Maneuvers (Piece Journeys) - Calculate first to populate routeSquares
-  const rootIsWhite = attackingSide === 'white'
-  const journeys = new Map()
-  planSteps.forEach((s, i) => {
-    const isOurMove = i % 2 === 0
-    const side = isOurMove ? (rootIsWhite ? 'white' : 'black') : rootIsWhite ? 'black' : 'white'
-    // Track non-pawn pieces of the attacking side
-    if (side === attackingSide && (!s.san.match(/^[a-hx]/) || s.san.match(/^[KQRBN]/))) {
-      let chain = null
-      for (const [, c] of journeys) {
-        if (c.lastSquare === s.from) {
-          chain = c
-          break
-        }
-      }
-      if (chain) {
-        chain.path.push(s.to)
-        chain.lastSquare = s.to
-      } else {
-        journeys.set(s.from, { originalFrom: s.from, path: [s.to], lastSquare: s.to })
-      }
-    }
-  })
-  let leadJourney = null
-  for (const c of journeys.values()) {
-    if (!leadJourney || c.path.length > leadJourney.path.length) leadJourney = c
-  }
-  // Only add maneuver if it's different/longer than just the immediate best move
-  if (leadJourney && leadJourney.path.length >= 2) {
-    // Use semicolon to combine shapes simultaneously!
-    visual_commands.maneuver = `[mark:${leadJourney.lastSquare}:blue;route:${leadJourney.originalFrom}->${leadJourney.path.join('->')}:blue]`
-  }
-
-  // 2. Passed Pawns (Static Structure)
-  const passedPawns = []
-  if (staticBlob.pawn_structure && staticBlob.pawn_structure[attackingSide]?.passed) {
-    passedPawns.push(...staticBlob.pawn_structure[attackingSide].passed)
-  }
-
-  if (passedPawns.length > 0) {
-    const promoRank = attackingSide === 'white' ? 8 : 1
-    const tags = passedPawns.map(sq => {
-      const file = sq.charAt(0)
-      const rank = parseInt(sq.charAt(1), 10)
-      if (isNaN(rank)) return ''
-
-      const route = []
-      const step = attackingSide === 'white' ? 1 : -1
-      for (let r = rank; r !== promoRank + step; r += step) {
-         route.push(`${file}${r}`)
-      }
-      if (route.length >= 2) {
-         return `[mark:${file}${promoRank}:yellow;route:${route.join('->')}:yellow]`
-      }
-      return ''
-    }).filter(Boolean)
-
-    if (tags.length > 0) {
-      visual_commands.pawn_race = tags.join(';')
-    }
-  }
-
-  // 3. Key Squares & Outposts (Filtered against routeSquares)
-  const markedSquares = new Set()
-  if (keySquares && keySquares.length > 0) {
-    keySquares.forEach(sq => markedSquares.add(sq))
-  }
-  if (staticBlob.activity) {
-    if (staticBlob.activity.white?.outposts) {
-      staticBlob.activity.white.outposts.forEach(o => markedSquares.add(o.square))
-    }
-    if (staticBlob.activity.black?.outposts) {
-      staticBlob.activity.black.outposts.forEach(o => markedSquares.add(o.square))
-    }
-  }
-
-  if (markedSquares.size > 0) {
-    visual_commands.key_squares = `[mark:${[...markedSquares].join(',')}:green]`
-  }
-
-  // 4. Diagonals
-  const diagonals = []
-  staticBlob.themes.forEach((t) => {
-    if (t.description) {
-      const match = t.description.match(/([a-h][1-8])-([a-h][1-8]) diagonal/i)
-      if (match) diagonals.push(`[arrow:${match[1]}->${match[2]}:blue]`)
-    }
-  })
-  annotatedMoves.forEach((m) => {
-    if (m.headline) {
-      const match = m.headline.match(/([a-h][1-8])-([a-h][1-8]) diagonal/i)
-      if (match) diagonals.push(`[arrow:${match[1]}->${match[2]}:blue]`)
-    }
-  })
-  if (diagonals.length > 0) {
-    visual_commands.diagonals = [...new Set(diagonals)].join(';')
-  }
-
-  // 5. Structure
-  const hasStructureTheme = staticBlob.themes.some(
-    (t) => t.id.includes('pawn') || t.id.includes('structure') || t.id.includes('isolated'),
+  const bestMoveUci = engineRes.moves[0] ? engineRes.moves[0].move : null
+  staticBlob.visual_commands = generateVisualCommands(
+    staticBlob,
+    fen,
+    attackingSide,
+    planSteps,
+    keySquares,
+    bestMoveUci
   )
-  if (hasStructureTheme) {
-    const wPawns = getPawnsFromFen(fen, 'white')
-    const bPawns = getPawnsFromFen(fen, 'black')
-    if (wPawns.length) visual_commands.structure_white = `[mark:${wPawns.join(',')}:green]`
-    if (bPawns.length) visual_commands.structure_black = `[mark:${bPawns.join(',')}:red]`
-  }
-
-  staticBlob.visual_commands = visual_commands
 
   // ── LLM Bridge ──────────────────────────────────────────────────────
   // Extract a token-efficient DTO for the LLM mentor.
   staticBlob.llm_payload = extractLlmPayload(staticBlob)
 
   return staticBlob
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Visual Helpers
-// ───────────────────────────────────────────────────────────────────────────
-
-function getPawnsFromFen(fenStr, color) {
-  const board = fenStr.split(' ')[0]
-  const ranks = board.split('/')
-  const pawns = []
-  const target = color === 'white' ? 'P' : 'p'
-  for (let r = 0; r < 8; r++) {
-    let f = 0
-    for (const char of ranks[r]) {
-      if (!isNaN(parseInt(char, 10))) {
-        f += parseInt(char, 10)
-      } else {
-        if (char === target) {
-          pawns.push(String.fromCharCode(97 + f) + (8 - r))
-        }
-        f++
-      }
-    }
-  }
-  return pawns
-}
-
-function getKingSquareFromFen(fenStr, color) {
-  const board = fenStr.split(' ')[0]
-  const ranks = board.split('/')
-  const target = color === 'white' ? 'K' : 'k'
-  for (let r = 0; r < 8; r++) {
-    let f = 0
-    for (const char of ranks[r]) {
-      if (!isNaN(parseInt(char, 10))) {
-        f += parseInt(char, 10)
-      } else {
-        if (char === target) {
-          return String.fromCharCode(97 + f) + (8 - r)
-        }
-        f++
-      }
-    }
-  }
-  return null
-}
-
-function getSurroundingSquares(sq) {
-  if (!sq) return []
-  const file = sq.charCodeAt(0) - 97
-  const rank = parseInt(sq[1], 10) - 1
-  const squares = []
-  for (let df = -1; df <= 1; df++) {
-    for (let dr = -1; dr <= 1; dr++) {
-      if (df === 0 && dr === 0) continue
-      const f = file + df
-      const r = rank + dr
-      if (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
-        squares.push(String.fromCharCode(97 + f) + (r + 1))
-      }
-    }
-  }
-  return squares
 }
 
 // ───────────────────────────────────────────────────────────────────────────

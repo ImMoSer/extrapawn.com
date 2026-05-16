@@ -199,7 +199,7 @@ function __wbg_get_imports() {
             return addHeapObject(ret);
         },
         __wbg_new_310879b66b6e95e1: function() {
-            const ret = new Array();
+            const ret = [];
             return addHeapObject(ret);
         },
         __wbg_new_7ddec6de44ff8f5d: function(arg0) {

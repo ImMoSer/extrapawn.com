@@ -1,0 +1,161 @@
+Rust-to-JS Visualisierungs-Contract
+
+Dieses Dokument definiert die exakte geometrische Struktur der targets-Arrays, die von der Rust-Engine (via WASM) an das JavaScript-Frontend geliefert werden.
+
+Ziel: Der JavaScript-Visualizer darf keine schachliche Logik mehr berechnen. Er liest lediglich die id des Motivs und übersetzt das deterministische targets-Array stumpf in UI-Elemente (Pfeile, Strahlen, Highlights).
+
+Grundregel (Der Contract)
+
+Wenn ein targets-Array existiert, gilt immer:
+
+targets[0] ist der Ursprung (die agierende/auslösende Figur oder das Startfeld).
+
+targets[1...n] sind die Ziele (die betroffenen Felder oder Figuren).
+
+1. Lineare Strahlen (Durchschlagende Geometrie)
+
+Diese Motive eignen sich für durchgehende Linien, die oft durch eine Figur hindurch auf eine andere zeigen.
+
+Motiv ID
+
+Array-Struktur
+
+Visualisierungs-Logik (Empfehlung)
+
+pin
+
+[Angreifer, Gefesselt, Dahinter]
+
+Strahl von [0] durch [1] bis [2].
+
+skewer
+
+[Angreifer, Ziel_1, Ziel_2]
+
+Strahl von [0] durch [1] bis [2].
+
+battery
+
+[Neue_Figur, Partner, Ziel_oder_Endfeld]
+
+Strahl vom hinteren Partner [1] durch die Neue_Figur [0] bis zum Ziel [2].
+
+discovered_check
+
+[Verdeckte_Figur, Abziehende_Figur, König]
+
+Strahl von [0] (die Figur, die jetzt freie Bahn hat) zum König [2]. [1] (die Figur, die Platz gemacht hat) kann ignoriert oder leicht hervorgehoben werden.
+
+2. Direkte Angriffe & Pfeile
+
+Motive, bei denen ein direkter Pfeil vom Ursprung zum Ziel gezeichnet werden sollte (oft rot).
+
+Motiv ID
+
+Array-Struktur
+
+Visualisierungs-Logik (Empfehlung)
+
+check
+
+[Angreifer, König]
+
+Roter Pfeil von [0] nach [1].
+
+threatens
+
+[Angreifer, Ziel]
+
+Roter Pfeil von [0] nach [1].
+
+attacks_pawn
+
+[Angreifer, Bauern_Ziel]
+
+Roter Pfeil von [0] nach [1].
+
+fork
+
+[Angreifer, Ziel_1, Ziel_2, ...]
+
+Mehrere Pfeile: Von [0] nach [1], von [0] nach [2], etc.
+
+attacks_king
+
+[Angreifer, Zone_Feld_1, ...]
+
+Mehrere Pfeile von [0] auf alle Zonen-Felder [1...n]. Alternativ: Nur Punkte/Highlights auf [1...n] setzen, um Pfeil-Salat zu vermeiden.
+
+3. Statische Highlights (Warnungen & Markierungen)
+
+Hier gibt es oft keinen direkten Ursprung, oder der Pfeil wäre irreführend. Ein Quadrat oder Leuchten auf dem Zielfeld ist hier die beste Wahl.
+
+Motiv ID
+
+Array-Struktur
+
+Visualisierungs-Logik (Empfehlung)
+
+creates_threat
+
+[Ziel]
+
+Rotes Highlight auf dem Ziel (Figur hing vorher nicht, jetzt schon).
+
+traps_piece
+
+[Gefangenes_Ziel]
+
+Starkes rotes Quadrat/Icon auf dem Ziel (Figur hat keine Fluchtfelder mehr).
+
+removes_defender
+
+[Jetzt_ungedecktes_Ziel]
+
+Rotes Highlight (Warnung) auf der eigenen Figur, die gerade ihre Deckung verloren hat.
+
+4. Spezielle & Komplexe Geometrie
+
+Diese Motive erfordern eine etwas smartere UI-Umsetzung.
+
+Motiv ID
+
+Array-Struktur
+
+Visualisierungs-Logik (Empfehlung)
+
+overloaded
+
+[Verteidiger, Z1, Z2, ...]
+
+Highlight auf [0] (die schwitzende Figur). Gestrichelte Linien von [0] zu den Zielen [1...n]. Zeigt das geometrische Zerreißen.
+
+opens_file_for / opens_diagonal_for
+
+[Slider, Geräumtes_Feld]
+
+Blauer/Grüner Strahl von der profitierenden Figur [0] durch das geräumte Feld [1] (welches from der Zug-Figur entspricht).
+
+defends
+
+[Verteidiger, Gedecktes_Ziel]
+
+Grüner/Blauer Pfeil von [0] nach [1]. (Achtung: Siehe Realitäts-Check unten!)
+
+eyes_king_zone
+
+[Angreifer, Ziel_oder_Zone, ...]
+
+Pfeil/Strahl von [0] in Richtung der Felder.
+
+⚠️ Realitäts-Check für den JS-Entwickler (Bekannte Engine-Limits)
+
+Die Rust-Engine ist extrem präzise, hat aber zwei architektonische Eigenheiten, die das JS-Frontend abfangen oder zumindest kennen muss:
+
+Der blinde Fleck bei defends:
+Wenn eine Abzugsverteidigung gespielt wird (z.B. Bauer zieht vor und öffnet die Linie für einen dahinterstehenden Turm, der nun deckt), sendet die Engine trotzdem den Bauern als Verteidiger [0]. Ein starrer Pfeil vom Bauern zum Ziel wäre hier falsch.
+Tipp für JS: Bei defends den Pfeil dezent halten oder nur das Gedecktes_Ziel [1] grün markieren.
+
+Dynamische Länge bei eyes_king_zone:
+Die Engine filtert intelligent. Zielt eine Figur direkt durch einen Blocker auf den König, kommt nur [Angreifer, König]. Visieren wir nur die Zone an, kommt [Angreifer, ZonenFeld1, ZonenFeld2, ...].
+Tipp für JS: Einfach iterativ von [0] zu allen vorhandenen [1...n] zeichnen. Die Engine hat die visuelle Bereinigung bereits übernommen.
