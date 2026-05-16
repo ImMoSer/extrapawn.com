@@ -512,16 +512,6 @@ export async function buildFullExplanation(fen, opts = {}) {
     if (bPawns.length) visual_commands.structure_black = `[mark:${bPawns.join(',')}:red]`
   }
 
-  // 6. King Zone Attack
-  if (planTheme && planTheme.includes('kingside_attack')) {
-    const oppKingSq = getKingSquareFromFen(fen, defendingSide)
-    if (oppKingSq) {
-      const zone = getSurroundingSquares(oppKingSq)
-      zone.push(oppKingSq)
-      if (zone.length) visual_commands.king_attack_zone = `[mark:${zone.join(',')}:red]`
-    }
-  }
-
   staticBlob.visual_commands = visual_commands
 
   // ── LLM Bridge ──────────────────────────────────────────────────────

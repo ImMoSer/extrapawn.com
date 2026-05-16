@@ -42,7 +42,6 @@ export interface CoachVisualCommands {
   diagonals?: string
   structure_white?: string
   structure_black?: string
-  king_attack_zone?: string
   [key: string]: string | undefined
 }
 
