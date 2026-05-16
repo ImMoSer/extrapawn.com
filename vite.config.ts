@@ -1,5 +1,5 @@
 import vue from '@vitejs/plugin-vue'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -90,12 +90,15 @@ export default defineConfig(({ mode }) => {
       {
         name: 'generate-version-json',
         apply: 'build',
-        closeBundle() {
-          const versionPath = resolve(__dirname, 'dist/version.json');
+        generateBundle() {
           const data = { version: pkg.version, timestamp: Date.now() };
-          writeFileSync(versionPath, JSON.stringify(data, null, 2));
-        }
-      }
+          this.emitFile({
+            type: 'asset',
+            fileName: 'version.json',
+            source: JSON.stringify(data, null, 2),
+          })
+        },
+      },
     ],
 
     resolve: {

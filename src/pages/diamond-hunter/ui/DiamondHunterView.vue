@@ -207,16 +207,16 @@ function goBack() {
           <n-button
             type="primary"
             @click="
-              diamondHunterStore.closeTheoryModal()
-              handleRestart()
+              diamondHunterStore.closeTheoryModal();
+              handleRestart();
             "
             >Restart</n-button
           >
           <n-button
             secondary
             @click="
-              diamondHunterStore.closeTheoryModal()
-              startAnalysis()
+              diamondHunterStore.closeTheoryModal();
+              startAnalysis();
             "
           >
             <template #icon
@@ -259,8 +259,8 @@ function goBack() {
             secondary
             block
             @click="
-              diamondHunterStore.stopHunt()
-              handleRestart()
+              diamondHunterStore.stopHunt();
+              handleRestart();
             "
           >
             Next Hunt
@@ -295,8 +295,8 @@ function goBack() {
           <n-button
             type="primary"
             @click="
-              diamondHunterStore.stopHunt()
-              handleRestart()
+              diamondHunterStore.stopHunt();
+              handleRestart();
             "
             >Try Again</n-button
           >
