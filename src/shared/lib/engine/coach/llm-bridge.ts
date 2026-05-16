@@ -22,7 +22,9 @@ const QUALITY_LABEL: Record<string, string> = {
   missed_mate: 'MISSED MATE',
 };
 
-export function extractLlmPayload(blob: any, extra?: { lastMove?: any, consequence?: string | null }) {
+import type { CoachExplanation, CoachLastMoveAnalysis } from './coach.types'
+
+export function extractLlmPayload(blob: CoachExplanation, extra?: { lastMove?: CoachLastMoveAnalysis, consequence?: string | null }) {
   if (!blob) return null;
 
   return {
@@ -46,16 +48,16 @@ export function extractLlmPayload(blob: any, extra?: { lastMove?: any, consequen
     } : null,
 
     // Concrete facts about the position (Material, Structure, King Safety, etc.)
-    concrete_facts: (blob.concrete_facts || []).map((f: any) => f.text),
+    concrete_facts: (blob.concrete_facts || []).map((f: { text: string }) => f.text),
 
     // Themes derived from the engine analysis
-    themes: (blob.themes || []).map((t: any) => t.description),
+    themes: (blob.themes || []).map((t: { description: string }) => t.description),
 
     // Detailed Next Move Alternatives (Top 3)
     // Bringing 1-to-1 the texts seen in the UI (Taglines, Plans, Qualities, Evaluations)
     top_moves: (blob.engine_top_moves || [])
       .slice(0, 3)
-      .map((m: any, idx: number) => ({
+      .map((m, idx: number) => ({
         rank: idx + 1,
         san: m.san,
         evaluation: formatScore(m.score),
@@ -74,7 +76,7 @@ export function extractLlmPayload(blob: any, extra?: { lastMove?: any, consequen
     // The Engine's Principal Plan
     principal_plan: blob.principal_plan ? {
       description: blob.principal_plan.description,
-      moves: (blob.principal_plan.moves || []).map((m: any) => m.san).join(' '),
+      moves: (blob.principal_plan.moves || []).map((m: { san: string }) => m.san).join(' '),
       zwischenzug: blob.principal_plan.zwischenzug?.description || null
     } : null,
 

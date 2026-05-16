@@ -10,6 +10,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { Key } from '@lichess-org/chessground/types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
+import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
@@ -19,8 +20,8 @@ export const useCoachStore = defineStore('coach', () => {
   const isAnalyzing = ref(false)
 
   // State for "About Position"
-  const currentExplanation = ref<Record<string, unknown> | null>(null)
-  const previousExplanation = ref<Record<string, unknown> | null>(null)
+  const currentExplanation = ref<CoachExplanation | null>(null)
+  const previousExplanation = ref<CoachExplanation | null>(null)
 
   // State for Visuals
   const showVisuals = ref(true)
@@ -38,7 +39,7 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   // State for "Top Moves"
-  const topMoves = ref<Record<string, unknown>[]>([])
+  const topMoves = ref<CoachTopMove[]>([])
   const topMovesLoading = ref(false)
 
   // State for Mentor
@@ -60,7 +61,7 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   // State for "Last Move"
-  const lastMoveAnalysis = ref<Record<string, unknown> | null>(null)
+  const lastMoveAnalysis = ref<CoachLastMoveAnalysis | null>(null)
 
   function toggleCoach() {
     isCoachEnabled.value = !isCoachEnabled.value
@@ -137,7 +138,7 @@ export const useCoachStore = defineStore('coach', () => {
     topMovesLoading.value = true
     try {
       const result = await getTopMoves(fen, 10)
-      topMoves.value = (result as any).moves || []
+      topMoves.value = result.moves || []
     } catch {
       logger.error('[CoachStore] Top moves failed')
     } finally {
@@ -167,10 +168,10 @@ export const useCoachStore = defineStore('coach', () => {
 
   // Handle click on a top move in the UI to explain it
   const selectedMoveIndex = ref<number | null>(null)
-  const selectedMoveExplanation = ref<Record<string, unknown> | null>(null)
+  const selectedMoveExplanation = ref<CoachLastMoveAnalysis | null>(null)
   const selectedMoveExplanationLoading = ref(false)
 
-  async function explainTopMove(move: { move: string }, index: number) {
+  async function explainTopMove(move: { uci: string }, index: number) {
     if (selectedMoveIndex.value === index) {
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
@@ -179,8 +180,8 @@ export const useCoachStore = defineStore('coach', () => {
     selectedMoveIndex.value = index
     selectedMoveExplanationLoading.value = true
     try {
-      const result = await explainMoveAt(boardStore.fen, move.move)
-      selectedMoveExplanation.value = result as Record<string, unknown>
+      const result = await explainMoveAt(boardStore.fen, move.uci)
+      selectedMoveExplanation.value = result
     } catch {
       logger.error('[CoachStore] Top Move Explanation failed')
     } finally {
@@ -202,7 +203,7 @@ export const useCoachStore = defineStore('coach', () => {
   // Mentor Caching
   const mentorCache = ref(new Map<string, string>())
   const hasCachedMentorResponse = computed(() => {
-    const payload = currentExplanation.value?.llm_payload as Record<string, any> | undefined
+    const payload = currentExplanation.value?.llm_payload
     return !!payload?.fen && mentorCache.value.has(payload.fen as string)
   })
 
@@ -222,9 +223,9 @@ export const useCoachStore = defineStore('coach', () => {
     if (lastMoveAnalysis.value.loading) return null
 
     return topConsequenceLine(previousExplanation.value, currentExplanation.value, {
-      movingSide: previousExplanation.value.side_to_move as string,
-      motifs: (lastMoveAnalysis.value.motifs as any[]) || [],
-      evalSwingCp: ((currentExplanation.value.eval_cp as number) || 0) - ((previousExplanation.value.eval_cp as number) || 0),
+      movingSide: previousExplanation.value.side_to_move,
+      motifs: lastMoveAnalysis.value.motifs || [],
+      evalSwingCp: (currentExplanation.value.eval_cp || 0) - (previousExplanation.value.eval_cp || 0),
     })
   })
 
@@ -234,7 +235,7 @@ export const useCoachStore = defineStore('coach', () => {
       return
     }
 
-    const currentFen = (currentExplanation.value as any)?.fen as string
+    const currentFen = currentExplanation.value.fen
     if (!currentFen) return
 
     // Check Cache
@@ -255,7 +256,7 @@ export const useCoachStore = defineStore('coach', () => {
       
       const fullPayload = {
         ...extractLlmPayload(currentExplanation.value, {
-          lastMove: lastMoveAnalysis.value,
+          lastMove: lastMoveAnalysis.value || undefined,
           consequence: lastMoveConsequence.value
         }),
         language: preferredLanguage.value,

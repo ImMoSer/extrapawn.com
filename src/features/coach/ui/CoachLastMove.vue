@@ -61,9 +61,10 @@
 import { computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
 import QualityIcon from './QualityIcon.vue'
+import type { CoachLastMoveAnalysis } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
-const lastMoveAnalysis = computed(() => coachStore.lastMoveAnalysis as Record<string, any> | null)
+const lastMoveAnalysis = computed<CoachLastMoveAnalysis | null>(() => coachStore.lastMoveAnalysis)
 const lastMoveConsequence = computed(() => coachStore.lastMoveConsequence as string | null)
 
 const QUALITY_COLOR: Record<string, string> = {

@@ -49,7 +49,7 @@
     <!-- Expanded Content -->
     <div v-if="expanded" class="expanded-content">
 
-      <div v-if="plan?.moves?.length > 0" class="expanded-section">
+      <div v-if="plan && plan.moves && plan.moves.length > 0" class="expanded-section">
         <div class="section-title">
           Engine plan{{ plan.depth ? ` · depth ${plan.depth}` : '' }}
         </div>
@@ -81,15 +81,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
+import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
 const expanded = ref(false)
 
-const explanation = computed<any>(() => coachStore.currentExplanation)
+const explanation = computed<CoachExplanation | null>(() => coachStore.currentExplanation)
 
 // ── Verdict formatting ──
-const verdictData = computed<any>(() => {
-  const blob = explanation.value as any
+const verdictData = computed<{ side: string | null; text: string }>(() => {
+  const blob = explanation.value
   if (!blob) return { side: null, text: '' }
   const cp = blob.eval_cp ?? 0
   if (Math.abs(cp) < 25) return { side: null, text: 'Roughly equal' }
@@ -102,27 +103,27 @@ const verdictData = computed<any>(() => {
 })
 
 // ── Facts extraction ──
-const allFacts = computed<any[]>(() => {
-  return explanation.value?.concrete_facts || []
+const allFacts = computed<{ side?: string; text: string; importance?: number }[]>(() => {
+  return (explanation.value?.concrete_facts) || []
 })
 
 
 const FACT_COUNT_DEFAULT = 3
 const FACT_IMPORTANCE_MIN = 60
 
-const decisiveFacts = computed<any[]>(() =>
-  allFacts.value.filter((f) => f.importance >= FACT_IMPORTANCE_MIN),
+const decisiveFacts = computed(() =>
+  allFacts.value.filter((f) => (f.importance ?? 0) >= FACT_IMPORTANCE_MIN),
 )
-const visibleFacts = computed<any[]>(() => decisiveFacts.value.slice(0, FACT_COUNT_DEFAULT))
+const visibleFacts = computed(() => decisiveFacts.value.slice(0, FACT_COUNT_DEFAULT))
 const remainingFacts = computed<number>(() => allFacts.value.length - visibleFacts.value.length)
 
-const plan = computed<any>(() => explanation.value?.principal_plan)
+const plan = computed(() => explanation.value?.principal_plan)
 const hasPlan = computed<boolean>(
-  () => plan.value && Array.isArray(plan.value.moves) && plan.value.moves.length >= 2,
+  () => !!(plan.value && Array.isArray(plan.value.moves) && plan.value.moves.length >= 2),
 )
 
 
-const getCueColor = (side: string) => {
+const getCueColor = (side: string | undefined) => {
   if (side === 'white') return '#a1a1aa'
   if (side === 'black') return '#3f3f46'
   return '#52525b'

@@ -95,15 +95,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
+import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
 const topMovesLoading = computed(() => coachStore.topMovesLoading)
-const topMoves = computed(() => coachStore.topMoves as any[])
-const currentExplanation = computed(() => coachStore.currentExplanation as any)
+const topMoves = computed(() => coachStore.topMoves)
+const currentExplanation = computed<CoachExplanation | null>(() => coachStore.currentExplanation)
 
-const getEnriched = (move: any) => {
+const getEnriched = (move: { rank: number; san: string; [key: string]: unknown }) => {
   if (!currentExplanation.value || !currentExplanation.value.engine_top_moves) return null
-  return currentExplanation.value.engine_top_moves.find((em: any) => em.uci === move.move) || null
+  return currentExplanation.value.engine_top_moves.find((em) => em.san === move.san) || null
 }
 
 const QUALITY_COLOR: Record<string, string> = {
@@ -132,10 +133,10 @@ const QUALITY_LABEL: Record<string, string> = {
   missed_mate: 'Missed mate',
 }
 
-const getQualityColor = (q: any) => QUALITY_COLOR[q as string] || '#a1a1aa'
-const getQualityLabel = (q: any) => QUALITY_LABEL[q as string] || ''
+const getQualityColor = (q: string | undefined) => QUALITY_COLOR[q || ''] || '#a1a1aa'
+const getQualityLabel = (q: string | undefined) => QUALITY_LABEL[q || ''] || ''
 
-const characterColor = (label: any) => {
+const characterColor = (label: string | undefined) => {
   switch (label) {
     case 'Aggressive': return '#fca5a5';
     case 'Combative':  return '#fdba74';
@@ -149,7 +150,7 @@ const characterColor = (label: any) => {
   }
 }
 
-const characterBorder = (label: string) => {
+const characterBorder = (label: string | undefined) => {
   switch (label) {
     case 'Aggressive': return 'rgba(248,113,113,0.30)';
     case 'Combative':  return 'rgba(253,186,116,0.30)';
