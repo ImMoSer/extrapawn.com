@@ -55,6 +55,7 @@ export function analyzeMove(fenBefore, moveUci) {
   if (!ready) return null
   try {
     const result = wasmAnalyze(fenBefore, moveUci)
+    console.log('[analyzer-rs] WASM PAYLOAD:', JSON.stringify(result, null, 2))
     if (!result || result.error) return null
     return result
   } catch (e) {
