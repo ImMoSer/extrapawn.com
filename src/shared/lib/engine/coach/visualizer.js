@@ -59,7 +59,7 @@ function mapManeuvers(cmds, planSteps, attackingSide) {
     const side = isOurMove ? (rootIsWhite ? 'white' : 'black') : rootIsWhite ? 'black' : 'white'
 
     // Track non-pawn pieces of the attacking side
-    if (side === attackingSide && (!s.san.match(/^[a-hx]/) || s.san.match(/^[KQRBN]/))) {
+    if (side === attackingSide && s.role && s.role !== 'p') {
       let chain = null
       for (const [, c] of journeys) {
         if (c.lastSquare === s.from) {

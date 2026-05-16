@@ -20,6 +20,7 @@
 // position.
 
 import engine, { getEngineDefaults } from './engine'
+import { Chess } from 'chess.js'
 import { explainPosition, analyzeMove, isReady as wasmReady } from './analyzer-rs'
 import { explainMove } from './explainer'
 import { getSideToMove } from './chess'
@@ -159,13 +160,20 @@ export async function buildFullExplanation(fen, opts = {}) {
     if (!uci) break
     const result = analyzeMove(curFen, uci)
     if (!result) break
+
+    // Determine the piece role (type) using chess.js
+    const chess = new Chess(curFen)
+    const fromSq = uci.slice(0, 2)
+    const piece = chess.get(fromSq)
+
     planSteps.push({
       uci,
       san: result.san,
+      role: piece ? piece.type : null, // 'p', 'n', 'b', 'r', 'q', 'k'
       motifs: (result.motifs || []).map((m) => m.id),
       headline: result.motifs?.[0]?.phrase || null,
       to: uci.slice(2, 4),
-      from: uci.slice(0, 2),
+      from: fromSq,
     })
     if (!result.fen_after) break
     curFen = result.fen_after
