@@ -116,8 +116,8 @@ export const useCoachStore = defineStore('coach', () => {
 
       // Render pre-calculated visual commands immediately
       if (showVisuals.value && explanation?.visual_commands) {
-        // Combine all tags (e.g. "[mark:f4:blue]", "[route:e5->g5:green]") into one string separated by ';'
-        const commands = Object.values(explanation.visual_commands).join(';')
+        // Flatten values in case some are arrays (e.g. diagonals) and join by ';'
+        const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
           executeMentorAction(commands)
         } else {
@@ -375,16 +375,30 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   function executeMentorAction(actionStr: string) {
+    if (!actionStr) return
+    
     const subActions = actionStr.split(';')
     const allShapes: DrawShape[] = []
     
+    // Chessground standard brushes + safety (10 colors)
+    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray']
+    
     for (const sub of subActions) {
+      if (!sub.trim()) continue
+      
       // Remove any brackets to prevent matching issues, then split
       const cleanSub = sub.replace(/[\[\]]/g, '').trim()
       const parts = cleanSub.split(':')
       const cmd = parts[0]?.trim()
       const data = parts[1]?.trim()
-      const color = parts[2]?.trim() || 'green'
+      
+      let brush = parts[2]?.trim() || 'green'
+      
+      // Validation & Debugging
+      if (!VALID_BRUSHES.includes(brush)) {
+        logger.warn(`[CoachStore] Unknown brush detected: "${brush}" in command "${sub}". Falling back to green.`)
+        brush = 'green'
+      }
 
       if (cmd === 'clear') {
         boardStore.setAutoShapes([])
@@ -394,36 +408,44 @@ export const useCoachStore = defineStore('coach', () => {
       if (!data) continue
 
       if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
-        const path = data
-        const squares = path.split('->')
+        const squares = data.split('->')
         for (let i = 0; i < squares.length - 1; i++) {
-          const orig = squares[i]
-          const dest = squares[i + 1]
-          if (orig && dest) {
+          const orig = squares[i]?.trim()
+          const dest = squares[i + 1]?.trim()
+          
+          // Coordinate validation (must be e.g. "e4")
+          if (orig && dest && orig.length === 2 && dest.length === 2) {
             allShapes.push({
-              orig: orig.trim() as Key,
-              dest: dest.trim() as Key,
-              brush: color,
+              orig: orig as Key,
+              dest: dest as Key,
+              brush,
               modifiers: { lineWidth: 8 }
             })
+          } else {
+            logger.warn(`[CoachStore] Invalid coordinates for route: "${orig}" -> "${dest}"`)
           }
         }
       } else if (cmd === 'mark') {
         const squares = data.split(',')
         squares.forEach(sq => {
-          allShapes.push({
-            orig: sq.trim() as Key,
-            brush: color
-          })
+          const cleanSq = sq.trim()
+          if (cleanSq && cleanSq.length === 2) {
+            allShapes.push({
+              orig: cleanSq as Key,
+              brush
+            })
+          } else {
+            logger.warn(`[CoachStore] Invalid coordinate for mark: "${cleanSq}"`)
+          }
         })
       }
     }
     
     if (allShapes.length > 0) {
       // Sort shapes by color priority so the highest priority renders on top.
-      // Priority: Red (top) > Blue > Green > Yellow (bottom).
-      // Rendering order: lowest index first (bottom), highest index last (top).
-      const COLOR_PRIORITY: Record<string, number> = { yellow: 0, green: 1, blue: 2, red: 3 }
+      const COLOR_PRIORITY: Record<string, number> = { 
+        gray: 0, brown: 1, yellow: 2, green: 3, cyan: 4, blue: 5, purple: 6, pink: 7, orange: 8, red: 9 
+      }
       allShapes.sort((a, b) => {
         const pA = COLOR_PRIORITY[a.brush as string] ?? -1
         const pB = COLOR_PRIORITY[b.brush as string] ?? -1

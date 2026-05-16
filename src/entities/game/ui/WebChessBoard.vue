@@ -44,6 +44,19 @@ const chessboardRef = ref<HTMLElement | null>(null)
 const ground = shallowRef<Api | null>(null)
 const boardStore = useBoardStore()
 
+const CHESSGROUND_BRUSHES = {
+  green: { key: 'g', color: '#15781B', opacity: 1, lineWidth: 10 },
+  red: { key: 'r', color: '#882020', opacity: 1, lineWidth: 10 },
+  blue: { key: 'b', color: '#0030C0', opacity: 1, lineWidth: 10 },
+  yellow: { key: 'y', color: '#E6A000', opacity: 1, lineWidth: 10 },
+  orange: { key: 'o', color: '#D56000', opacity: 1, lineWidth: 10 },
+  purple: { key: 'p', color: '#6A2FB5', opacity: 1, lineWidth: 10 },
+  cyan: { key: 'c', color: '#008BA1', opacity: 1, lineWidth: 10 },
+  pink: { key: 'k', color: '#B3205D', opacity: 1, lineWidth: 10 },
+  brown: { key: 'w', color: '#6D4C41', opacity: 1, lineWidth: 10 },
+  gray: { key: 'x', color: '#616161', opacity: 1, lineWidth: 10 },
+} as const
+
 const nagMarkerStyle = computed(() => {
   if (!boardStore.lastNag) return null
   const square = boardStore.lastNag.square
@@ -150,6 +163,7 @@ onMounted(() => {
       },
       drawable: {
         enabled: true,
+        brushes: CHESSGROUND_BRUSHES,
         shapes: combinedShapes.value as DrawShape[],
         onChange: (shapes) => {
           const autoKey = (s: DrawShape) => `${s.orig}-${s.dest}-${s.brush}`
@@ -179,7 +193,10 @@ watch(
     ground.value.set({
       fen: newFen,
       turnColor: props.turnColor, // Ensure turn color is synced with FEN
-      drawable: { shapes: combinedShapes.value as DrawShape[] },
+      drawable: {
+        brushes: CHESSGROUND_BRUSHES,
+        shapes: combinedShapes.value as DrawShape[]
+      },
     })
   },
 )
@@ -194,7 +211,10 @@ watch(
       lastMove: props.lastMove,
       check: props.check,
       turnColor: props.turnColor,
-      drawable: { shapes: combinedShapes.value as DrawShape[] },
+      drawable: {
+        brushes: CHESSGROUND_BRUSHES,
+        shapes: combinedShapes.value as DrawShape[]
+      },
     })
   },
 )
@@ -220,6 +240,7 @@ watch(
       },
       drawable: {
         enabled: canEdit as boolean,
+        brushes: CHESSGROUND_BRUSHES,
       },
     })
   },

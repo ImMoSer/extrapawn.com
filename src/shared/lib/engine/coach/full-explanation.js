@@ -498,7 +498,7 @@ export async function buildFullExplanation(fen, opts = {}) {
     }
   })
   if (diagonals.length > 0) {
-    visual_commands.diagonals = [...new Set(diagonals)]
+    visual_commands.diagonals = [...new Set(diagonals)].join(';')
   }
 
   // 5. Structure
