@@ -388,14 +388,11 @@ export async function buildFullExplanation(fen, opts = {}) {
 
   // ── Visual Commands Generation ──────────────────────────────────────
   const visual_commands = {}
-  const routeSquares = new Set() // Track squares used in lines to avoid double-marking
 
   // 1. Best Move (Immediate Action)
   if (planSteps.length > 0 && planSteps[0].from && planSteps[0].to) {
     const bestMove = planSteps[0]
     visual_commands.best_move = `[mark:${bestMove.to}:red;route:${bestMove.from}->${bestMove.to}:red]`
-    routeSquares.add(bestMove.from)
-    routeSquares.add(bestMove.to)
   }
 
   // 1.5 Maneuvers (Piece Journeys) - Calculate first to populate routeSquares
@@ -427,8 +424,6 @@ export async function buildFullExplanation(fen, opts = {}) {
   }
   // Only add maneuver if it's different/longer than just the immediate best move
   if (leadJourney && leadJourney.path.length >= 2) {
-    routeSquares.add(leadJourney.originalFrom)
-    leadJourney.path.forEach(sq => routeSquares.add(sq))
     // Use semicolon to combine shapes simultaneously!
     visual_commands.maneuver = `[mark:${leadJourney.lastSquare}:blue;route:${leadJourney.originalFrom}->${leadJourney.path.join('->')}:blue]`
   }
@@ -452,7 +447,6 @@ export async function buildFullExplanation(fen, opts = {}) {
          route.push(`${file}${r}`)
       }
       if (route.length >= 2) {
-         routeSquares.add(sq)
          return `[mark:${file}${promoRank}:yellow;route:${route.join('->')}:yellow]`
       }
       return ''
@@ -476,8 +470,6 @@ export async function buildFullExplanation(fen, opts = {}) {
       staticBlob.activity.black.outposts.forEach(o => markedSquares.add(o.square))
     }
   }
-  // Remove collision squares to prevent messy UI overlap
-  routeSquares.forEach(sq => markedSquares.delete(sq))
 
   if (markedSquares.size > 0) {
     visual_commands.key_squares = `[mark:${[...markedSquares].join(',')}:green]`
