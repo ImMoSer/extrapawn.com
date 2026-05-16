@@ -8,10 +8,10 @@ import { MozerBook } from '@/features/mozer-book'
 import {
   OpeningSparringSettingsModal,
   OpeningSparringSummaryModal,
-  SessionHistoryList,
   useOpeningSparringStore,
   useSparringLoop,
 } from '@/features/opening-sparring'
+import { CoachSidebar, useCoachStore } from '@/features/coach'
 import { useSmartHintStore } from '@/features/smart-hint'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -24,6 +24,7 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 const t = i18n.global.t
 const controlsStore = useControlsStore()
 const openingStore = useOpeningSparringStore()
+const coachStore = useCoachStore()
 const theoryStore = useTheoryStore()
 const gameStore = useGameStore()
 const uiStore = useUiStore()
@@ -32,6 +33,20 @@ const smartHintStore = useSmartHintStore()
 const router = useRouter()
 const route = useRoute()
 const loop = useSparringLoop()
+
+// Sync MozerBook visibility with Coach visualization suppression
+watch(
+  () => openingStore.showMozerBook,
+  (show) => {
+    coachStore.isVisualsSuppressed = show
+    // If we just unsuppressed, trigger a re-render of coach visuals if available
+    if (!show && coachStore.currentExplanation?.visual_commands) {
+      const commands = Object.values(coachStore.currentExplanation.visual_commands).flat().join(';')
+      coachStore.executeMentorAction(commands)
+    }
+  },
+  { immediate: true },
+)
 
 const isSettingsModalOpen = ref(true)
 const showSummaryModal = ref(false)
@@ -320,23 +335,26 @@ function goBack() {
     </template>
 
     <template #right-panel>
-      <AnalysisPanel
-        v-if="showAnalysisPanel"
-        :show-pgn="false"
-        style="margin-bottom: 12px; flex-shrink: 0"
-      />
+      <div class="right-panel-content-wrapper">
+        <AnalysisPanel
+          v-if="showAnalysisPanel"
+          :show-pgn="false"
+          style="margin-bottom: 12px; flex-shrink: 0"
+        />
 
-      <SessionHistoryList />
+        <CoachSidebar />
 
-      <div v-if="openingStore.error" class="error-msg">
-        {{ openingStore.error }}
+        <div v-if="openingStore.error" class="error-msg">
+          {{ openingStore.error }}
+        </div>
       </div>
     </template>
   </GameLayout>
 </template>
 
 <style scoped>
-.left-panel-content {
+.left-panel-content,
+.right-panel-content-wrapper {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -373,16 +391,7 @@ function goBack() {
   opacity: 0.6;
 }
 
-.history-list-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
 
-.review-engine-container {
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
 
 .loader-overlay {
   position: absolute;

@@ -4,11 +4,10 @@ import { theoryGraphService, useTheoryStore } from '@/entities/opening'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
-import { type SessionMove } from '@/shared/types/openingSparring.types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
-import { type TopInfoDisplay, type TopInfoStat } from '@/entities/puzzle'
+import { type TopInfoDisplay } from '@/entities/puzzle'
 import i18n from '@/shared/config/i18n'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -20,45 +19,6 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
   const theoryStore = useTheoryStore()
   const uiStore = useUiStore()
   const router = useRouter()
-
-  // -- sessionHistory ref with computed from PGN --
-  const sessionHistory = computed<SessionMove[]>(() => {
-    // Reactivity dependency
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _v = pgnTreeVersion.value
-
-    const moves: SessionMove[] = []
-    let node = pgnService.getRootNode().children[0]
-
-    // Traverse the Main Line (assuming sparring session is linear)
-    while (node) {
-      const meta = node.metadata || {}
-
-      // Calculate derived fields
-      const fenParts = node.fenBefore.split(' ')
-      const turn = fenParts[1] as 'w' | 'b'
-      const moveNumber = parseInt(fenParts[5] || '1', 10)
-
-      moves.push({
-        fen: node.fenAfter,
-        moveUci: node.uci,
-        san: node.san,
-        phase: meta.phase || 'theory',
-        stats: meta.stats,
-        ply: node.ply,
-        turn,
-        moveNumber,
-        quality: meta.quality,
-        nag: meta.nag,
-        evaluation: meta.evaluation,
-        popularity: meta.popularity,
-        winRate: meta.winRate,
-      })
-
-      node = node.children[0]
-    }
-    return moves
-  })
 
   const isTheoryOver = ref(false)
   const isDeviation = ref(false)
@@ -124,28 +84,10 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
   const isFinalEvaluating = ref(false)
   const finalEvalDepth = ref(0)
 
-  const movesCount = computed(() => sessionHistory.value.length)
-
-  const averagePopularity = computed(() => {
-    const playerMoves = sessionHistory.value.filter(
-      (m) =>
-        (m.turn === 'w' && playerColor.value === 'white') ||
-        (m.turn === 'b' && playerColor.value === 'black'),
-    )
-    if (playerMoves.length === 0) return 0
-    const sum = playerMoves.reduce((acc, m) => acc + (m.popularity ?? 0), 0)
-    return Math.round(sum / playerMoves.length)
-  })
-
-  const averageWinRate = computed(() => {
-    const playerMoves = sessionHistory.value.filter(
-      (m) =>
-        (m.turn === 'w' && playerColor.value === 'white') ||
-        (m.turn === 'b' && playerColor.value === 'black'),
-    )
-    if (playerMoves.length === 0) return 0
-    const sum = playerMoves.reduce((acc, m) => acc + (m.winRate ?? 0), 0)
-    return Math.round(sum / playerMoves.length)
+  const movesCount = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _v = pgnTreeVersion.value
+    return pgnService.getNodesCount()
   })
 
   const isInitializing = ref(false)
@@ -230,16 +172,13 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
     isReviewMode.value = false
     reviewMoveIndex.value = -1
     moveQueue.value = []
-    finalEval.value = null
-    isFinalEvaluating.value = false
-    finalEvalDepth.value = 0
     theoryStore.reset()
   }
 
   function enterReviewMode() {
     isReviewMode.value = true
     isPlayoutMode.value = false
-    reviewMoveIndex.value = sessionHistory.value.length - 1
+    reviewMoveIndex.value = movesCount.value - 1
     const gameStore = useGameStore()
     gameStore.setGamePhase('IDLE')
   }
@@ -250,7 +189,7 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
   }
 
   function setReviewMove(index: number) {
-    if (index < -1 || index >= sessionHistory.value.length) return
+    if (index < -1 || index >= movesCount.value) return
 
     reviewMoveIndex.value = index
 
@@ -258,16 +197,13 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       pgnService.navigateToStart()
       boardStore.syncBoardWithPgn()
     } else {
-      const move = sessionHistory.value[index]
-      if (move && move.ply) {
-        pgnService.navigateToPly(move.ply)
-        boardStore.syncBoardWithPgn()
-      }
+      pgnService.navigateToPly(index + 1)
+      boardStore.syncBoardWithPgn()
     }
   }
 
   function nextReviewMove() {
-    if (reviewMoveIndex.value < sessionHistory.value.length - 1) {
+    if (reviewMoveIndex.value < movesCount.value - 1) {
       setReviewMove(reviewMoveIndex.value + 1)
     }
   }
@@ -277,28 +213,6 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
       setReviewMove(reviewMoveIndex.value - 1)
     }
   }
-
-  // Reactive Name & ECO from Local Graph
-  watch(
-    () => theoryStore.currentFen,
-    (fen) => {
-      if (fen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-        openingName.value = t('features.diamondHunter.settings.startPosition')
-        currentEco.value = ''
-        return
-      }
-
-      const node = pgnService.getCurrentNode()
-      if (!node || node.ply === 0) return
-
-      const result = theoryGraphService.getOpeningByMove(node.fenBefore, node.uci)
-      if (result) {
-        if (result.name) openingName.value = result.name
-        if (result.eco) currentEco.value = result.eco
-      }
-    },
-    { immediate: true },
-  )
 
   async function runFinalEvaluation() {
     if (isFinalEvaluating.value) return
@@ -335,35 +249,27 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
     })
   }
 
-  const playerAccuracy = computed(() => {
-    const playerMoves = sessionHistory.value.filter(
-      (m) =>
-        m.phase === 'playout' &&
-        ((m.turn === 'w' && playerColor.value === 'white') ||
-          (m.turn === 'b' && playerColor.value === 'black')) &&
-        m.evaluation?.delta_wp !== undefined,
-    )
+  // Reactive Name & ECO from Local Graph
+  watch(
+    () => theoryStore.currentFen,
+    (fen) => {
+      if (fen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+        openingName.value = t('features.diamondHunter.settings.startPosition')
+        currentEco.value = ''
+        return
+      }
 
-    if (playerMoves.length === 0) return 0
+      const node = pgnService.getCurrentNode()
+      if (!node || node.ply === 0) return
 
-    let totalWeightedAccuracy = 0
-    let totalWeight = 0
-
-    playerMoves.forEach((m) => {
-      const wpLoss = Math.abs(m.evaluation!.delta_wp || 0)
-      const moveAccuracy = 100 * Math.exp(-0.025 * wpLoss)
-
-      const chaos = m.chaos_index || 0
-      const moveWeight = 1.0 + Math.min(chaos, 150) / 100
-
-      totalWeightedAccuracy += moveAccuracy * moveWeight
-      totalWeight += moveWeight
-    })
-
-    if (totalWeight === 0) return 100
-
-    return Math.round(totalWeightedAccuracy / totalWeight)
-  })
+      const result = theoryGraphService.getOpeningByMove(node.fenBefore, node.uci)
+      if (result) {
+        if (result.name) openingName.value = result.name
+        if (result.eco) currentEco.value = result.eco
+      }
+    },
+    { immediate: true },
+  )
 
   const topInfoDisplay = computed<TopInfoDisplay>(() => {
     const gameStore = useGameStore()
@@ -379,47 +285,16 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
 
     const badges = [{ text: 'SPARRING' }, { text: phase }, { text: opponent.toUpperCase() }]
 
-    const stats: TopInfoStat[] = []
-    if (!isPlayoutMode.value) {
-      stats.push(
-        { value: `POPULARITY (${averagePopularity.value}%)`, label: 'POPULARITY' },
-        { value: `WIN-RATE (${averageWinRate.value}%)`, label: 'WIN-RATE' },
-      )
-    } else {
-      // Get latest eval
-      let evalMove = sessionHistory.value[sessionHistory.value.length - 1]
-      if (!evalMove || !evalMove.evaluation) {
-        for (let i = sessionHistory.value.length - 2; i >= 0; i--) {
-          if (sessionHistory.value[i]?.evaluation) {
-            evalMove = sessionHistory.value[i]
-            break
-          }
-        }
-      }
-      const evaluationValue =
-        evalMove && evalMove.evaluation ? (evalMove.evaluation.score_cp / 100).toFixed(1) : '0.0'
-      const formattedEval =
-        parseFloat(evaluationValue) >= 0 ? `+${evaluationValue}` : evaluationValue
-
-      stats.push(
-        { value: `ACCURACY (${playerAccuracy.value}%)`, label: 'ACCURACY' },
-        { value: `EVAL (${formattedEval})`, label: 'EVAL' },
-      )
-    }
-
     return {
       title: '',
       badges,
-      stats,
+      stats: [], // Radical cleanup: no stats in header, all focus on coach
       customType: 'opening-sparring',
     }
   })
 
   return {
     currentStats,
-    sessionHistory,
-    averagePopularity,
-    averageWinRate,
     movesCount,
     isTheoryOver,
     isDeviation,

@@ -283,6 +283,16 @@ class PgnServiceController {
     return pgn.trim()
   }
 
+  public getNodesCount(): number {
+    let count = 0
+    let node = this.rootNode.children[0]
+    while (node) {
+      count++
+      node = node.children[0]
+    }
+    return count
+  }
+
   public getFullPgn(tags: Record<string, string>, root?: PgnNode): string {
     let pgn = ''
     for (const [key, value] of Object.entries(tags)) {

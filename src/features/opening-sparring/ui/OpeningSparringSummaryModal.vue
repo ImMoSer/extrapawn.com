@@ -3,10 +3,8 @@ import {
   CheckmarkDoneOutline,
   CloseOutline,
   PlayOutline,
-  PulseOutline,
   RefreshOutline,
   SearchOutline,
-  TrendingUpOutline,
 } from '@vicons/ionicons5'
 import {
   NButton,
@@ -16,7 +14,6 @@ import {
   NModal,
   NProgress,
   NSpace,
-  NStatistic,
   NTag,
   NText,
   NH1,
@@ -84,38 +81,6 @@ const progressPercent = computed(() => {
         </div>
 
         <div class="selection-sections">
-          <!-- Stats Grid -->
-          <div class="section">
-            <n-grid :cols="2" :x-gap="12">
-              <n-grid-item>
-                <div class="stat-box">
-                  <n-statistic
-                    :label="t('features.diamondHunter.header.popularity')"
-                    :value="openingStore.averagePopularity"
-                  >
-                    <template #prefix
-                      ><n-icon class="stat-icon"><PulseOutline /></n-icon
-                    ></template>
-                    <template #suffix>%</template>
-                  </n-statistic>
-                </div>
-              </n-grid-item>
-              <n-grid-item>
-                <div class="stat-box">
-                  <n-statistic
-                    :label="t('features.diamondHunter.header.winRate')"
-                    :value="openingStore.averageWinRate"
-                  >
-                    <template #prefix
-                      ><n-icon class="stat-icon"><TrendingUpOutline /></n-icon
-                    ></template>
-                    <template #suffix>%</template>
-                  </n-statistic>
-                </div>
-              </n-grid-item>
-            </n-grid>
-          </div>
-
           <!-- Engine Evaluation Section -->
           <div class="section eval-section" :class="{ loading: openingStore.isFinalEvaluating }">
             <div

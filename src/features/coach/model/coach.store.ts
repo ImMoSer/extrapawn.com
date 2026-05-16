@@ -26,14 +26,16 @@ export const useCoachStore = defineStore('coach', () => {
   // State for Visuals
   const showVisuals = ref(true)
 
+  const isVisualsSuppressed = ref(false)
+
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
-    if (showVisuals.value && currentExplanation.value?.visual_commands) {
+    if (showVisuals.value && !isVisualsSuppressed.value && currentExplanation.value?.visual_commands) {
       const commands = Object.values(currentExplanation.value.visual_commands).join(';')
       if (commands) {
         executeMentorAction(commands)
       }
-    } else {
+    } else if (!showVisuals.value || isVisualsSuppressed.value) {
       boardStore.setAutoShapes([])
     }
   }
@@ -116,7 +118,8 @@ export const useCoachStore = defineStore('coach', () => {
       currentExplanation.value = explanation
 
       // Render pre-calculated visual commands immediately
-      if (showVisuals.value && explanation?.visual_commands) {
+      // Only if visuals are enabled AND not suppressed by another module (like MozerBook)
+      if (showVisuals.value && !isVisualsSuppressed.value && explanation?.visual_commands) {
         // Flatten values in case some are arrays (e.g. diagonals) and join by ';'
         const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
@@ -124,7 +127,9 @@ export const useCoachStore = defineStore('coach', () => {
         } else {
           boardStore.setAutoShapes([])
         }
-      } else {
+      } else if (!showVisuals.value) {
+        // Only clear if coach visuals are disabled.
+        // If they are just suppressed, we don't clear to avoid wiping other module's arrows.
         boardStore.setAutoShapes([])
       }
     } catch {
@@ -194,6 +199,17 @@ export const useCoachStore = defineStore('coach', () => {
     () => boardStore.fen,
     (newFen) => {
       if (!isCoachEnabled.value) return
+      
+      // Optimization: Only analyze during live play if it's the user's turn.
+      // In Analysis/Review mode, we always analyze to provide full feedback.
+      const isUserTurn = boardStore.turn === boardStore.orientation
+      const isAnalysisMode = boardStore.isAnalysisModeActive
+      
+      if (!isAnalysisMode && !isUserTurn) {
+        logger.info('[CoachStore] Skipping analysis because it is the opponent\'s turn.')
+        return
+      }
+
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
       triggerAnalysis(newFen)
@@ -441,8 +457,8 @@ export const useCoachStore = defineStore('coach', () => {
         })
       }
     }
-    
-    if (allShapes.length > 0) {
+
+    if (allShapes.length > 0 && !isVisualsSuppressed.value) {
       // Sort shapes by color priority so the highest priority renders on top.
       const COLOR_PRIORITY: Record<string, number> = { 
         gray: 0, brown: 1, yellow: 2, green: 3, cyan: 4, blue: 5, purple: 6, pink: 7, orange: 8, red: 9 
@@ -483,5 +499,7 @@ export const useCoachStore = defineStore('coach', () => {
     hasCachedMentorResponse,
     showVisuals,
     toggleVisuals,
+    isVisualsSuppressed,
+    executeMentorAction,
   }
 })
