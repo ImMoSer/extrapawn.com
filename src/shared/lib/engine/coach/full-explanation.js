@@ -92,13 +92,16 @@ export async function buildFullExplanation(fen, opts = {}) {
     // UI-Synchronous Tagline
     const taglineObj = composeTagline(result)
 
+    const stm = getSideToMove(fen)
+    const evalAfterWhite = stm === 'w' ? m.score : -m.score
+
     // Full Move Explanation (Quality, Summary, Details)
     const explanation = explainMove(
       fen,
       result?.fen_after || fen, // Fallback if Rust fails
       m.move,
       staticBlob.eval_cp || 0,
-      m.score,
+      evalAfterWhite,
       { topMoves: engineRes.moves }
     )
 
