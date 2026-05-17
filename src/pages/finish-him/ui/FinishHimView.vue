@@ -8,13 +8,13 @@ import { shareService } from '@/shared/lib/share.service'
 import ChessboardPreview from '@/shared/ui/board-preview/ChessboardPreview.vue'
 import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
 import { AnalysisPanel } from '@/features/analysis'
+import { CoachSidebar } from '@/features/coach'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
-import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
@@ -57,7 +57,7 @@ const handleImprove = (options: GameLaunchOptions) => {
       throw new Error('[FinishHimView] handleImprove was called without a subMode (difficulty)!')
     }
 
-    finishHimStore.setParams(options.theme, options.subMode as FinishHimDifficulty)
+    finishHimStore.setParams(options.theme, options.difficulty as FinishHimDifficulty)
     finishHimStore.loadNewPuzzle()
   }
 }

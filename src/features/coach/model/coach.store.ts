@@ -1,5 +1,5 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
@@ -14,6 +14,7 @@ import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/sh
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
+  const gameStore = useGameStore()
   const analysisEngineStore = useAnalysisEngineStore()
 
   const isCoachEnabled = ref(false)
@@ -232,6 +233,17 @@ export const useCoachStore = defineStore('coach', () => {
         setCoachEnabled(false)
       }
     },
+  )
+
+  // Watch for game loading or resetting to sleep the coach
+  watch(
+    () => gameStore.gamePhase,
+    (newPhase) => {
+      if (newPhase === 'LOADING' || newPhase === 'IDLE') {
+        logger.info(`[CoachStore] Game phase changed to ${newPhase}, putting coach to sleep.`)
+        setCoachEnabled(false)
+      }
+    }
   )
 
   const lastMoveConsequence = computed(() => {
