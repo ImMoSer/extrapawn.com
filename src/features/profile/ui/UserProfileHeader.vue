@@ -201,7 +201,9 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
                   (userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)
                 }}</span>
               </template>
-              <template #suffix v-if="!isLimitless"> / {{ userProfile.dailyLimit || 0 }}</template>
+              <template #suffix>
+                <span v-if="!isLimitless"> / {{ userProfile.dailyLimit || 0 }}</span>
+              </template>
             </n-statistic>
           </div>
         </div>

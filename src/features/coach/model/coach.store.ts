@@ -6,6 +6,7 @@ import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
+import { useAuthStore } from '@/entities/user'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { Key } from '@lichess-org/chessground/types'
@@ -273,29 +274,36 @@ export const useCoachStore = defineStore('coach', () => {
       return
     }
 
-    const webhookUrl = import.meta.env.VITE_LLM_BRIDGE
-    if (!webhookUrl) {
-      logger.error('[CoachStore] VITE_LLM_BRIDGE webhook URL not defined in .env')
+    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
+    if (!backendApiUrl) {
+      logger.error('[CoachStore] VITE_BACKEND_API_URL not defined in .env')
       return
     }
 
     try {
       isMentorLoading.value = true
+      const authStore = useAuthStore()
       
-      const fullPayload = {
+      const basePayload = {
         ...extractLlmPayload(currentExplanation.value, {
           lastMove: lastMoveAnalysis.value || undefined,
           consequence: lastMoveConsequence.value
         }),
         language: preferredLanguage.value,
       }
+
+      const fullPayload = {
+        payload: basePayload,
+        profile: authStore.userProfile,
+      }
       
-      logger.info('[CoachStore] Sending payload to Mentor via n8n...', fullPayload)
-      const response = await fetch(webhookUrl, {
+      logger.info('[CoachStore] Sending payload to secure backend mentor proxy...', fullPayload)
+      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(fullPayload),
       })
 

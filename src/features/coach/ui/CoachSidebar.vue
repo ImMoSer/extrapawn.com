@@ -4,7 +4,7 @@
       <h3 class="sidebar-title">Chess Coach</h3>
       <div class="header-actions">
         <button
-          v-if="coachStore.isCoachEnabled && coachStore.currentExplanation"
+          v-if="coachStore.isCoachEnabled && coachStore.currentExplanation && isKing"
           class="mentor-btn"
           :class="{ 'is-speaking': coachStore.isMentorSpeaking }"
           @click="coachStore.isMentorSpeaking ? coachStore.stopMentor() : coachStore.askMentor()"
@@ -65,15 +65,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { PowerOutline, SparklesOutline, StopOutline, PlayOutline, EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
+import { useAuthStore } from '@/entities/user'
 import CoachSettings from './CoachSettings.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
 
 const coachStore = useCoachStore()
+const authStore = useAuthStore()
+
+const isKing = computed(() => authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King')
 
 const onSettingsChange = () => {
   if (coachStore.isCoachEnabled) {

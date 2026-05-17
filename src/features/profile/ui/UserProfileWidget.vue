@@ -109,8 +109,8 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
                   :to="(userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)"
                 />
               </template>
-              <template #suffix v-if="!isLimitless">
-                <span class="limit-text"> / {{ userProfile.dailyLimit || 0 }}</span>
+              <template #suffix>
+                <span v-if="!isLimitless" class="limit-text"> / {{ userProfile.dailyLimit || 0 }}</span>
               </template>
             </n-statistic>
           </n-space>
