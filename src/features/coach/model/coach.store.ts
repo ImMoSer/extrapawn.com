@@ -1,17 +1,17 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
+import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
+import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
-import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
-import { useAuthStore } from '@/entities/user'
+import type { DrawShape } from '@lichess-org/chessground/draw'
+import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import type { Key } from '@lichess-org/chessground/types'
-import type { DrawShape } from '@lichess-org/chessground/draw'
-import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
@@ -201,12 +201,12 @@ export const useCoachStore = defineStore('coach', () => {
     () => boardStore.fen,
     (newFen) => {
       if (!isCoachEnabled.value) return
-      
+
       // Optimization: Only analyze during live play if it's the user's turn.
       // In Analysis/Review mode, we always analyze to provide full feedback.
       const isUserTurn = boardStore.turn === boardStore.orientation
       const isAnalysisMode = boardStore.isAnalysisModeActive
-      
+
       if (!isAnalysisMode && !isUserTurn) {
         logger.info('[CoachStore] Skipping analysis because it is the opponent\'s turn.')
         return
@@ -283,7 +283,7 @@ export const useCoachStore = defineStore('coach', () => {
     try {
       isMentorLoading.value = true
       const authStore = useAuthStore()
-      
+
       const basePayload = {
         ...extractLlmPayload(currentExplanation.value, {
           lastMove: lastMoveAnalysis.value || undefined,
@@ -296,7 +296,7 @@ export const useCoachStore = defineStore('coach', () => {
         payload: basePayload,
         profile: authStore.userProfile,
       }
-      
+
       logger.info('[CoachStore] Sending payload to secure backend mentor proxy...', fullPayload)
       const response = await fetch(`${backendApiUrl}/coach/mentor`, {
         method: 'POST',
@@ -312,7 +312,7 @@ export const useCoachStore = defineStore('coach', () => {
       }
 
       const data = await response.json()
-      
+
       if (data && data.output) {
         // Cache the response
         mentorCache.value.set(currentFen, data.output)
@@ -329,13 +329,13 @@ export const useCoachStore = defineStore('coach', () => {
 
   async function playMentorResponse(output: string) {
     stopMentor() // Cancel any ongoing mentor session
-    
+
     const currentId = ++mentorSessionId
     isMentorSpeaking.value = true
 
     if ('speechSynthesis' in window) {
       const parts = parseMentorActions(output)
-      
+
       // Determine language and voice
       const firstText = parts.find(p => p.type === 'text')?.content || output
       let lang = 'en-US'
@@ -360,17 +360,17 @@ export const useCoachStore = defineStore('coach', () => {
             const utterance = new SpeechSynthesisUtterance(text)
             utterance.lang = lang
             if (voice) utterance.voice = voice
-            
+
             utterance.onend = () => resolve()
             utterance.onerror = () => resolve()
-            
+
             window.speechSynthesis.speak(utterance)
           })
         } else {
           executeMentorAction(part.content)
         }
       }
-      
+
       if (currentId === mentorSessionId) {
         isMentorSpeaking.value = false
       }
@@ -413,24 +413,24 @@ export const useCoachStore = defineStore('coach', () => {
 
   function executeMentorAction(actionStr: string) {
     if (!actionStr) return
-    
+
     const subActions = actionStr.split(';')
     const allShapes: DrawShape[] = []
-    
-    // Chessground standard brushes + safety (10 colors)
-    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray']
-    
+
+    // Chessground standard brushes + safety (11 colors)
+    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove']
+
     for (const sub of subActions) {
       if (!sub.trim()) continue
-      
+
       // Remove any brackets to prevent matching issues, then split
       const cleanSub = sub.replace(/[\[\]]/g, '').trim()
       const parts = cleanSub.split(':')
       const cmd = parts[0]?.trim()
       const data = parts[1]?.trim()
-      
+
       let brush = parts[2]?.trim() || 'green'
-      
+
       // Validation & Debugging
       if (!VALID_BRUSHES.includes(brush)) {
         logger.warn(`[CoachStore] Unknown brush detected: "${brush}" in command "${sub}". Falling back to green.`)
@@ -449,7 +449,7 @@ export const useCoachStore = defineStore('coach', () => {
         for (let i = 0; i < squares.length - 1; i++) {
           const orig = squares[i]?.trim()
           const dest = squares[i + 1]?.trim()
-          
+
           // Coordinate validation (must be e.g. "e4")
           if (orig && dest && orig.length === 2 && dest.length === 2) {
             allShapes.push({
@@ -480,8 +480,8 @@ export const useCoachStore = defineStore('coach', () => {
 
     if (allShapes.length > 0 && !isVisualsSuppressed.value) {
       // Sort shapes by color priority so the highest priority renders on top.
-      const COLOR_PRIORITY: Record<string, number> = { 
-        gray: 0, brown: 1, yellow: 2, green: 3, cyan: 4, blue: 5, purple: 6, pink: 7, orange: 8, red: 9 
+      const COLOR_PRIORITY: Record<string, number> = {
+        gray: 0, brown: 1, yellow: 2, green: 3, cyan: 4, blue: 5, purple: 6, pink: 7, orange: 8, red: 9, bestmove: 10
       }
       allShapes.sort((a, b) => {
         const pA = COLOR_PRIORITY[a.brush as string] ?? -1

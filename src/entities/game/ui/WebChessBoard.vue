@@ -50,7 +50,7 @@ const CHESSGROUND_BRUSHES = {
   blue: { key: 'b', color: '#0030C0', opacity: 1, lineWidth: 10 },
   yellow: { key: 'y', color: '#E6A000', opacity: 1, lineWidth: 10 },
   orange: { key: 'o', color: '#D56000', opacity: 1, lineWidth: 10 },
-  purple: { key: 'p', color: '#6A2FB5', opacity: 1, lineWidth: 10 },
+  bestmove: { key: 'p', color: '#ff007a', opacity: 1, lineWidth: 10 },
   cyan: { key: 'c', color: '#008BA1', opacity: 1, lineWidth: 10 },
   pink: { key: 'k', color: '#B3205D', opacity: 1, lineWidth: 10 },
   brown: { key: 'w', color: '#6D4C41', opacity: 1, lineWidth: 10 },
@@ -354,4 +354,25 @@ watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, 
     min-height: 16px;
   }
 }
+
+/* Pulsating animation for the BEST MOVE (bestmove brush) */
+@keyframes bestmove-arrow-pulse {
+  0% {
+    stroke-width: 0.3%;
+  }
+  50% {
+    stroke-width: 0.5%;
+  }
+  100% {
+    stroke-width: 0.3%;
+  }
+}
+
+/* Apply thickness pulsation to arrows (paths/lines) - NO scale to prevent displacement */
+:deep(.cg-shapes) g.bestmove path,
+:deep(.cg-shapes) g.bestmove line,
+:deep(.cg-shapes) [stroke="#ff007a"] {
+  animation: bestmove-arrow-pulse 1.8s infinite ease-in-out;
+}
+
 </style>
