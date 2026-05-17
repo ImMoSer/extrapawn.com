@@ -88,7 +88,7 @@ export async function buildFullExplanation(fen, opts = {}) {
     const motifIds = (result?.motifs || []).map((x) => x.id)
     const planBrief = inferPlanBrief(fen, m.pv || [], motifIds, attackingSideOf(fen))
     const character = classifyCharacter(motifIds, m, idx, engineRes.moves)
-    
+
     // UI-Synchronous Tagline
     const taglineObj = composeTagline(result)
 
@@ -121,7 +121,8 @@ export async function buildFullExplanation(fen, opts = {}) {
         summary: explanation.summary,
         details: explanation.details,
         best_move_san: explanation.bestMoveSan,
-        is_best_move: explanation.isBestMove
+        is_best_move: explanation.isBestMove,
+        winRateLoss: explanation.winRateLoss
       }
     }
   })

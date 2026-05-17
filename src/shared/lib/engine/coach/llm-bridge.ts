@@ -4,8 +4,13 @@
  * Wir nutzen einen Whitelisting-Ansatz, um maximale Signalstärke bei minimalem Token-Verbrauch zu erreichen.
  */
 
-const formatScore = (cp: number) => {
-  const v = cp / 100;
+const formatScore = (cp: number, mate: number | null | undefined, sideToMove: 'white' | 'black') => {
+  if (mate !== null && mate !== undefined) {
+    const normalizedMate = sideToMove === 'white' ? mate : -mate;
+    return `M${normalizedMate}`;
+  }
+  const normalizedCp = sideToMove === 'white' ? cp : -cp;
+  const v = normalizedCp / 100;
   return v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
 };
 
@@ -22,7 +27,7 @@ const QUALITY_LABEL: Record<string, string> = {
   missed_mate: 'MISSED MATE',
 };
 
-import type { CoachExplanation, CoachLastMoveAnalysis } from './coach.types'
+import type { CoachExplanation, CoachLastMoveAnalysis } from './coach.types';
 
 export function extractLlmPayload(blob: CoachExplanation, extra?: { lastMove?: CoachLastMoveAnalysis, consequence?: string | null }) {
   if (!blob) return null;
@@ -31,7 +36,7 @@ export function extractLlmPayload(blob: CoachExplanation, extra?: { lastMove?: C
     fen: blob.fen,
     side_to_move: blob.side_to_move,
     phase: blob.phase,
-    
+
     // Engine evaluation and verdict
     eval_cp: blob.eval_cp,
     verdict: blob.verdict,
@@ -60,8 +65,9 @@ export function extractLlmPayload(blob: CoachExplanation, extra?: { lastMove?: C
       .map((m, idx: number) => ({
         rank: idx + 1,
         san: m.san,
-        evaluation: formatScore(m.score),
-        quality_label: QUALITY_LABEL[m.explanation?.quality] || m.character?.toUpperCase() || 'QUIET',
+        evaluation: formatScore(m.score, m.mate, blob.side_to_move),
+        quality_label: QUALITY_LABEL[m.explanation?.quality] || 'UNKNOWN',
+        character: m.character || 'QUIET',
         win_rate_loss: m.explanation?.winRateLoss ? `-${m.explanation.winRateLoss.toFixed(1)}%` : null,
         tagline: m.tagline || m.headline,
         plan_brief: m.plan_brief,
