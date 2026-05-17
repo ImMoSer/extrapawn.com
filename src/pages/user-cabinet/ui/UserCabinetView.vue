@@ -11,7 +11,7 @@ import {
   generateRandomDetailedStats,
   generateRandomUserProfile,
 } from '@/shared/lib/statsRandomizer'
-import type { FinishHimDifficulty, TornadoMode } from '@/shared/types/api.types'
+import type { FinishHimDifficulty, TornadoMode, UserProfileStatsDto } from '@/shared/types/api.types'
 import {
   NAlert,
   NButton,
@@ -100,6 +100,64 @@ const detailedStats = computed(() => {
   const stats = detailedStatsData.value
   const baseRating = displayProfile.value?.base_puzzle_rating || 1000
   return normalizeProfileStats(stats || null, baseRating)
+})
+
+const displayStats = computed<UserProfileStatsDto | null>(() => {
+  if (isExample.value) {
+    const baseRating = displayProfile.value?.base_puzzle_rating || 1500
+    return {
+      user: {
+        id: 'example_user',
+        username: displayProfile.value?.username || 'ExampleUser',
+        tier: displayProfile.value?.subscriptionTier || 'Pawn',
+      },
+      stats: [
+        {
+          game_mode: 'finish_him',
+          sub_mode: 'win',
+          theme: 'mix',
+          difficulty: 'Novice',
+          puzzles_solved: 5,
+          puzzles_failed: 2,
+          rating: baseRating + 120,
+        },
+        {
+          game_mode: 'theory',
+          sub_mode: 'win',
+          theme: 'mix',
+          difficulty: 'Novice',
+          puzzles_solved: 8,
+          puzzles_failed: 3,
+          rating: baseRating + 80,
+        },
+        {
+          game_mode: 'practical-chess',
+          sub_mode: 'win',
+          theme: 'mix',
+          difficulty: 'Novice',
+          puzzles_solved: 3,
+          puzzles_failed: 1,
+          rating: baseRating + 50,
+        },
+        {
+          game_mode: 'tornado',
+          sub_mode: 'mix',
+          theme: 'mix',
+          difficulty: 'mix',
+          puzzles_solved: 15,
+          puzzles_failed: 4,
+          rating: baseRating + 150,
+        },
+      ],
+      tornadoHighScores: {
+        bullet: baseRating - 50,
+        blitz: baseRating + 150,
+        rapid: baseRating + 20,
+        classic: baseRating,
+      },
+    }
+  }
+  return detailedStatsData.value || null
 })
 
 const error = computed(() => {
@@ -213,6 +271,7 @@ const handleManageSubscription = async () => {
       <n-space vertical size="large">
         <UserProfileHeader
           :profile-override="displayProfile"
+          :profile-stats="displayStats"
           @reactivate="handleManageSubscription"
         />
 

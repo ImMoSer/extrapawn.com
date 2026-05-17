@@ -2,21 +2,18 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
 import type { TornadoMode } from '@/shared/types/api.types'
-import { GolfOutline, LockClosedOutline, RibbonOutline, WalletOutline } from '@vicons/ionicons5'
+import { LockClosedOutline, RibbonOutline, WalletOutline } from '@vicons/ionicons5'
 import {
   NAvatar,
   NButton,
   NCard,
   NDivider,
-  NGrid,
-  NGridItem,
   NIcon,
   NNumberAnimation,
   NSpace,
   NStatistic,
   NTag,
   NText,
-  NTooltip,
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
@@ -31,29 +28,6 @@ const route = useRoute()
 const handleLogin = () => {
   authStore.login()
 }
-
-const localResetTimeMessage = computed(() => {
-  const now = new Date()
-  const tomorrowUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
-  )
-  const localTime = tomorrowUTC.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  return t('features.userCabinet.stats.activity.titleWithTime', { time: localTime })
-})
-
-const activityModes = [
-  { key: 'finish_him' as const, label: t('nav.finishHim'), icon: '🎯' },
-  { key: 'tornado' as const, label: t('nav.tornado'), icon: '🌪️' },
-  {
-    key: 'practical-chess' as const,
-    label: t('features.practicalChess.selection.title'),
-    icon: '♙♖',
-  },
-  { key: 'theory' as const, label: t('nav.theoryEndgames'), icon: '♔♙' },
-]
 
 const tornadoMode = computed(() => {
   if (route.name === 'tornado' && route.params.mode) {
@@ -141,62 +115,21 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
             </n-statistic>
           </n-space>
 
-          <n-divider class="mini-divider" />
+          <template v-if="tornadoMode && tornadoHighScore !== null">
+            <n-divider class="mini-divider" />
 
-          <!-- Dynamic Rating (if applicable) -->
-          <div v-if="tornadoMode && tornadoHighScore !== null" class="dynamic-rating-row">
-            <n-statistic :label="`${t('features.tornado.leaderboard.highScore')} (${tornadoMode})`">
-              <template #prefix>
-                <n-icon color="#f0a020">
-                  <RibbonOutline />
-                </n-icon>
-              </template>
-              {{ tornadoHighScore }}
-            </n-statistic>
-          </div>
-
-          <!-- Today's Activity Section -->
-          <div v-if="userProfile.today_activity" class="activity-section">
-            <div class="activity-header">
-              <n-text depth="3" class="reset-timer">{{ localResetTimeMessage }}</n-text>
+            <!-- Dynamic Rating (if applicable) -->
+            <div class="dynamic-rating-row">
+              <n-statistic :label="`${t('features.tornado.leaderboard.highScore')} (${tornadoMode})`">
+                <template #prefix>
+                  <n-icon color="#f0a020">
+                    <RibbonOutline />
+                  </n-icon>
+                </template>
+                {{ tornadoHighScore }}
+              </n-statistic>
             </div>
-
-            <n-space vertical :size="16">
-              <!-- Puzzles Solved Today -->
-              <div class="activity-item">
-                <n-space align="center" justify="space-between" class="mb-4">
-                  <n-space align="center" :size="8">
-                    <n-icon size="18" depth="2" color="var(--color-accent)">
-                      <GolfOutline />
-                    </n-icon>
-                    <n-text strong>{{
-                      t('features.userCabinet.stats.puzzlesSolved', {
-                        count: userProfile.today_activity.puzzles_solved_today.total,
-                      })
-                    }}</n-text>
-                  </n-space>
-                  <n-text type="primary" strong class="total-value">
-                    {{ userProfile.today_activity.puzzles_solved_today.total }}
-                  </n-text>
-                </n-space>
-                <n-grid :cols="2" :x-gap="12" :y-gap="12">
-                  <n-grid-item v-for="mode in activityModes" :key="mode.key">
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <div class="mini-stat-box">
-                          <span class="mode-icon">{{ mode.icon }}</span>
-                          <span class="mode-count">
-                            {{ userProfile.today_activity.puzzles_solved_today[mode.key] ?? 0 }}
-                          </span>
-                        </div>
-                      </template>
-                      {{ mode.label }}
-                    </n-tooltip>
-                  </n-grid-item>
-                </n-grid>
-              </div>
-            </n-space>
-          </div>
+          </template>
         </n-space>
       </n-card>
     </div>

@@ -1,14 +1,14 @@
 <!-- src/components/userCabinet/sections/UserProfileHeader.vue -->
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
-import type { TornadoMode, UserSessionProfile } from '@/shared/types/api.types'
-import { Calendar, Flash, Timer } from '@vicons/ionicons5'
+import type { UserProfileStatsDto, UserSessionProfile } from '@/shared/types/api.types'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref, type Component } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   profileOverride?: UserSessionProfile | null
+  profileStats?: UserProfileStatsDto | null
 }>()
 
 const { t } = useI18n()
@@ -53,21 +53,74 @@ const getTierType = (tier: string = '') => {
   return 'default'
 }
 
-// Tornado ratings logic
-const modeMeta: Record<TornadoMode, { color: string; icon: Component }> = {
-  bullet: { color: 'var(--color-accent-primary)', icon: Flash },
-  blitz: { color: 'var(--color-accent-success)', icon: Flash },
-  rapid: { color: 'var(--color-accent-warning)', icon: Timer },
-  classic: { color: 'var(--color-accent-error)', icon: Calendar },
-}
+// Game modes best ratings logic
+const gameModeScores = computed(() => {
+  const baseRating = userProfile.value?.base_puzzle_rating || 1500
+  
+  const ratings = {
+    'finish_him': baseRating,
+    'tornado': baseRating,
+    'practical-chess': baseRating,
+    'theory': baseRating,
+  }
 
-const tornadoScores = computed(() => {
-  if (!userProfile.value?.tornadoHighScores) return []
-  const modes: TornadoMode[] = ['bullet', 'blitz', 'rapid', 'classic']
-  return modes.map((mode) => ({
-    mode,
-    score: userProfile.value?.tornadoHighScores?.[mode] || 0,
-  }))
+  if (props.profileStats) {
+    const statsArray = props.profileStats.stats || []
+    
+    // Find best rating in stats for each mode
+    let key: keyof typeof ratings
+    for (key in ratings) {
+      const modeStats = statsArray.filter((s) => s.game_mode === key)
+      if (modeStats.length > 0) {
+        const maxRating = Math.max(...modeStats.map((s) => s.rating || 0))
+        if (maxRating > 0) {
+          ratings[key] = maxRating
+        }
+      }
+    }
+
+    // Special check for tornadoHighScores if present
+    if (props.profileStats.tornadoHighScores) {
+      const scores = Object.values(props.profileStats.tornadoHighScores)
+      if (scores.length > 0) {
+        const maxHighScore = Math.max(...scores)
+        if (maxHighScore > ratings['tornado']) {
+          ratings['tornado'] = maxHighScore
+        }
+      }
+    }
+  }
+
+  return [
+    {
+      key: 'finish_him',
+      label: t('features.userCabinet.stats.modes.finishHim'),
+      icon: '🎯',
+      color: 'var(--color-accent-success)',
+      rating: ratings['finish_him'],
+    },
+    {
+      key: 'tornado',
+      label: t('features.userCabinet.stats.modes.tornado'),
+      icon: '🌪️',
+      color: 'var(--color-accent-primary)',
+      rating: ratings['tornado'],
+    },
+    {
+      key: 'practical-chess',
+      label: t('features.practicalChess.selection.title'),
+      icon: '♙',
+      color: 'var(--color-accent-warning)',
+      rating: ratings['practical-chess'],
+    },
+    {
+      key: 'theory',
+      label: t('nav.theoryEndgames'),
+      icon: '🎓',
+      color: 'var(--color-accent-error)',
+      rating: ratings['theory'],
+    },
+  ]
 })
 
 // Responsive avatar size
@@ -154,20 +207,18 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
         </div>
       </div>
 
-      <!-- Right: Tornado Ratings (taking remaining space) -->
+      <!-- Right: Best Ratings (taking remaining space) -->
       <div class="tornado-ratings-section">
-        <div class="section-title">{{ t('features.userCabinet.stats.tornadoTitle') }}</div>
+        <div class="section-title">{{ t('features.userCabinet.stats.bestRatingsTitle') }}</div>
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
-          <n-grid-item v-for="stat in tornadoScores" :key="stat.mode">
-            <div class="score-item" :style="{ borderColor: modeMeta[stat.mode].color }">
-              <n-icon
-                :component="modeMeta[stat.mode].icon"
-                :color="modeMeta[stat.mode].color"
-                size="20"
-              />
-              <div class="score-details">
-                <div class="mode-name">{{ stat.mode }}</div>
-                <div class="mode-score">{{ stat.score }}</div>
+          <n-grid-item v-for="stat in gameModeScores" :key="stat.key">
+            <div class="score-item" :style="{ borderColor: stat.color }">
+              <div class="mode-emoji-icon" style="font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px;">
+                {{ stat.icon }}
+              </div>
+              <div class="score-details" style="margin-left: 8px;">
+                <div class="mode-name">{{ stat.label }}</div>
+                <div class="mode-score">{{ stat.rating }}</div>
               </div>
             </div>
           </n-grid-item>
@@ -262,7 +313,6 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
 .mode-name {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  text-transform: capitalize;
 }
 
 .mode-score {
