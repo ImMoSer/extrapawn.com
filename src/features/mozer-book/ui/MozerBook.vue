@@ -17,6 +17,7 @@ import type { Key } from '@lichess-org/chessground/types'
 const props = defineProps<{
   blurred?: boolean
   isPaused?: boolean
+  isCoachSuppressed?: boolean
 }>()
 
 const { t } = useI18n()
@@ -32,43 +33,48 @@ const currentFen = computed(() => mozerStore.currentFen)
 watch(
   () => stats.value?.styles,
   (styles) => {
-    if (!styles) {
-      boardStore.setAutoShapes([])
-      return
-    }
-
     const shapes: DrawShape[] = []
     const usedUcis = new Set<string>()
 
-    // Priority: Grossmaster (Green) > Hustler (Blue) > Schuler (Red)
-    if (styles.grossmaster?.uci) {
-      shapes.push({
-        orig: styles.grossmaster.uci.slice(0, 2) as Key,
-        dest: styles.grossmaster.uci.slice(2, 4) as Key,
-        brush: 'green',
-      })
-      usedUcis.add(styles.grossmaster.uci)
+    if (styles) {
+      // Priority: Grossmaster (Green) > Hustler (Blue) > Schuler (Red)
+      if (styles.grossmaster?.uci) {
+        shapes.push({
+          orig: styles.grossmaster.uci.slice(0, 2) as Key,
+          dest: styles.grossmaster.uci.slice(2, 4) as Key,
+          brush: 'green',
+        })
+        usedUcis.add(styles.grossmaster.uci)
+      }
+
+      if (styles.hustler?.uci && !usedUcis.has(styles.hustler.uci)) {
+        shapes.push({
+          orig: styles.hustler.uci.slice(0, 2) as Key,
+          dest: styles.hustler.uci.slice(2, 4) as Key,
+          brush: 'blue',
+        })
+        usedUcis.add(styles.hustler.uci)
+      }
+
+      if (styles.schuler?.uci && !usedUcis.has(styles.schuler.uci)) {
+        shapes.push({
+          orig: styles.schuler.uci.slice(0, 2) as Key,
+          dest: styles.schuler.uci.slice(2, 4) as Key,
+          brush: 'red',
+        })
+        usedUcis.add(styles.schuler.uci)
+      }
     }
 
-    if (styles.hustler?.uci && !usedUcis.has(styles.hustler.uci)) {
-      shapes.push({
-        orig: styles.hustler.uci.slice(0, 2) as Key,
-        dest: styles.hustler.uci.slice(2, 4) as Key,
-        brush: 'blue',
-      })
-      usedUcis.add(styles.hustler.uci)
+    if (shapes.length > 0) {
+      boardStore.setAutoShapes(shapes)
+    } else {
+      // Only clear the board if the Coach is suppressed (defaulting to true if not specified).
+      // If the Coach is NOT suppressed, we leave the board's shapes untouched so the Coach's arrows remain visible.
+      if (props.isCoachSuppressed !== false) {
+        boardStore.setAutoShapes([])
+      }
     }
-
-    if (styles.schuler?.uci && !usedUcis.has(styles.schuler.uci)) {
-      shapes.push({
-        orig: styles.schuler.uci.slice(0, 2) as Key,
-        dest: styles.schuler.uci.slice(2, 4) as Key,
-        brush: 'red',
-      })
-      usedUcis.add(styles.schuler.uci)
-    }
-
-    boardStore.setAutoShapes(shapes)
   },
   { immediate: true },
 )
@@ -98,7 +104,12 @@ watch(
     if (props.isPaused) return
     mozerStore.fetchStats()
     showTheory.value = false // Close theory when position changes
-    boardStore.setAutoShapes([]) // Clear previous styles while loading
+
+    // Only clear previous styles if the Coach is suppressed (defaulting to true if not specified).
+    // This prevents wiping the board if the Coach has already calculated and drawn arrows.
+    if (props.isCoachSuppressed !== false) {
+      boardStore.setAutoShapes([])
+    }
   },
   { immediate: true },
 )
@@ -109,7 +120,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  boardStore.setAutoShapes([])
+  if (props.isCoachSuppressed !== false) {
+    boardStore.setAutoShapes([])
+  }
 })
 
 const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {

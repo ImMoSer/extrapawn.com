@@ -34,13 +34,29 @@ const router = useRouter()
 const route = useRoute()
 const loop = useSparringLoop()
 
-// Sync MozerBook visibility with Coach visualization suppression
+// Sync MozerBook visibility and active styles/arrows with Coach visualization suppression
+const shouldSuppressCoach = computed(() => {
+  // 1. If MozerBook is hidden, Coach is not suppressed
+  if (!openingStore.showMozerBook) return false
+
+  // 2. If MozerBook is visible, check if there are actual style moves
+  const stats = openingStore.currentStats
+  if (!stats || !stats.styles) return false
+
+  const hasGrossmaster = !!stats.styles.grossmaster?.uci
+  const hasHustler = !!stats.styles.hustler?.uci
+  const hasSchuler = !!stats.styles.schuler?.uci
+
+  // Suppress Coach ONLY if MozerBook has at least one arrow to draw
+  return hasGrossmaster || hasHustler || hasSchuler
+})
+
 watch(
-  () => openingStore.showMozerBook,
-  (show) => {
-    coachStore.isVisualsSuppressed = show
+  shouldSuppressCoach,
+  (suppress) => {
+    coachStore.isVisualsSuppressed = suppress
     // If we just unsuppressed, trigger a re-render of coach visuals if available
-    if (!show && coachStore.currentExplanation?.visual_commands) {
+    if (!suppress && coachStore.currentExplanation?.visual_commands) {
       const commands = Object.values(coachStore.currentExplanation.visual_commands).flat().join(';')
       coachStore.executeMentorAction(commands)
     }
@@ -289,8 +305,8 @@ function goBack() {
 
         <div class="mozer-book-wrapper" v-if="openingStore.showMozerBook">
           <MozerBook
-            :blurred="openingStore.isPlayoutMode"
             :is-paused="openingStore.isPlayoutMode"
+            :is-coach-suppressed="shouldSuppressCoach"
           />
         </div>
         <div v-else class="book-placeholder">
