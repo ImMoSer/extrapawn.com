@@ -1,5 +1,6 @@
 <template>
-  <div class="coach-top-moves thin-scroll">
+  <div class="coach-top-moves">
+    <div class="next-move-title">Next moves</div>
     <div v-if="topMovesLoading" class="status-msg">Analyzing…</div>
     <div v-else-if="topMoves.length === 0" class="status-msg">No moves</div>
     <div v-else class="moves-list">
@@ -167,9 +168,16 @@ const characterBorder = (label: string | undefined) => {
 
 <style scoped>
 .coach-top-moves {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #27272a;
+}
+.next-move-title {
+  font-size: 9px;
+  color: #71717a;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 .status-msg {
   text-align: center;

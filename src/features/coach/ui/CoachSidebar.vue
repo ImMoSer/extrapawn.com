@@ -58,9 +58,9 @@
 
     <div v-else class="coach-content">
       <CoachLastMove />
+      <CoachTopMoves />
       <CoachPositionSummary />
       <CoachBook />
-      <CoachTopMoves />
     </div>
   </div>
 </template>
@@ -214,6 +214,21 @@ const onSettingsChange = () => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.coach-content::-webkit-scrollbar {
+  width: 4px;
+}
+.coach-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.coach-content::-webkit-scrollbar-thumb {
+  background-color: #27272a;
+  border-radius: 4px;
+}
+.coach-content::-webkit-scrollbar-thumb:hover {
+  background-color: #3f3f46;
 }
 </style>

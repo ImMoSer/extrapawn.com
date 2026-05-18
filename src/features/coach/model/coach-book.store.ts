@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useBoardStore } from '@/entities/game'
-import { wikiBooksApiService, WikiUrlBuilder } from '@/features/mozer-book/api/WikiBooksService'
+import { wikiBooksApiService, WikiUrlBuilder } from '@/shared/api/WikiBooksService'
 import { Chess } from 'chess.js'
 
 export interface WikiNode {

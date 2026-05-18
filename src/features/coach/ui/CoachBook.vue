@@ -96,21 +96,23 @@ function handleContinuationClick(uci: string) {
       </button>
 
       <div v-if="isContinuationsExpanded" class="moves-grid-wrapper">
-        <div class="moves-grid">
-          <button
-            v-for="move in wikiInfo.forwardMoves"
-            :key="move.uci"
-            class="move-btn"
-            @click="handleContinuationClick(move.uci)"
-            :title="move.name ? `${move.san} - ${move.name}` : `Play ${move.san}`"
-          >
-            <span class="move-san">{{ move.san }}</span>
-            <span v-if="move.name" class="move-name">
-              <span v-if="move.isNearestDescendant" class="arrow-indicator">→</span>
-              {{ formatMoveName(move.name) }}
-            </span>
-          </button>
-        </div>
+        <n-scrollbar style="max-height: 200px" trigger="none">
+          <div class="moves-grid">
+            <button
+              v-for="move in wikiInfo.forwardMoves"
+              :key="move.uci"
+              class="move-btn"
+              @click="handleContinuationClick(move.uci)"
+              :title="move.name ? `${move.san} - ${move.name}` : `Play ${move.san}`"
+            >
+              <span class="move-san">{{ move.san }}</span>
+              <span v-if="move.name" class="move-name">
+                <span v-if="move.isNearestDescendant" class="arrow-indicator">→</span>
+                {{ formatMoveName(move.name) }}
+              </span>
+            </button>
+          </div>
+        </n-scrollbar>
       </div>
     </div>
     <div v-else-if="bookStore.isOutOfBook" class="out-of-book-notice">
@@ -305,6 +307,7 @@ function handleContinuationClick(uci: string) {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-right: 6px;
 }
 
 .move-btn {

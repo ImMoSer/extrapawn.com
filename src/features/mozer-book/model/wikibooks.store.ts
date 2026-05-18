@@ -1,7 +1,7 @@
 // src/stores/wikibooks.store.ts
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { wikiBooksApiService, WikiUrlBuilder } from '../api/WikiBooksService'
+import { wikiBooksApiService, WikiUrlBuilder } from '@/shared/api/WikiBooksService'
 import type { WikiPageExtract } from '@/shared/types/wikibooks.types'
 import logger from '@/shared/lib/logger'
 
