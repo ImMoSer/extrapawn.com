@@ -169,6 +169,9 @@ export interface TornadoPuzzle {
   tactical_solution: string
   tactical_rating: number
   themes: string[]
+  puzzle_fen?: string
+  game_modus?: string
+  first_move?: string
 }
 
 export interface FinishHimPuzzle {
@@ -184,6 +187,9 @@ export interface FinishHimPuzzle {
   tactical_rating: number
   category: string
   sub_category?: string
+  puzzle_fen?: string
+  game_modus?: string
+  first_move?: string
 }
 
 export interface PracticalPuzzle {
@@ -196,6 +202,9 @@ export interface PracticalPuzzle {
   eval: number
   category: string
   rating?: number
+  puzzle_fen?: string
+  game_modus?: string
+  first_move?: string
 }
 
 export interface TheoryPuzzle {
@@ -209,6 +218,9 @@ export interface TheoryPuzzle {
   difficulty: string
   result: string
   rating?: number
+  puzzle_fen?: string
+  game_modus?: string
+  first_move?: string
 }
 
 export interface GamePuzzle {
