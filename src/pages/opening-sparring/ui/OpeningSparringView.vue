@@ -11,7 +11,7 @@ import {
   useOpeningSparringStore,
   useSparringLoop,
 } from '@/features/opening-sparring'
-import { CoachSidebar } from '@/features/coach'
+import { CoachSidebar, useCoachStore } from '@/features/coach'
 import { useSmartHintStore } from '@/features/smart-hint'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -161,6 +161,11 @@ async function startSession(color: 'white' | 'black', moves: string[] = [], slug
 
   // initializeSession now handles GameStore setup and stats fetching internally
   await openingStore.initializeSession(color, moves, loop.createStrategy())
+
+  // Enable Coach by default for new sparring game and clear any previous memories/cache/history
+  const coachStore = useCoachStore()
+  coachStore.setCoachEnabled(false)
+  coachStore.setCoachEnabled(true)
 }
 
 async function handleNewGame() {

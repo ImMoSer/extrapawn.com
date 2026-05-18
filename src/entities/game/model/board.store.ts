@@ -54,9 +54,8 @@ export const useBoardStore = defineStore('board', () => {
   const orientation = ref<ChessgroundColor>('white')
   const promotionState = ref<PromotionState | null>(null)
   const drawableShapes = ref<DrawShape[]>([])
-  const mozerShapes = ref<DrawShape[]>([])
   const coachShapes = ref<DrawShape[]>([])
-  const autoShapes = computed(() => [...mozerShapes.value, ...coachShapes.value])
+  const autoShapes = computed(() => coachShapes.value)
   const isAnalysisModeActive = ref(false)
   const queuedPremove = ref<{ orig: Key; dest: Key } | null>(null)
   const lastNag = ref<NagMarker | null>(null)
@@ -112,7 +111,6 @@ export const useBoardStore = defineStore('board', () => {
 
     // 3. Sync shapes (arrows and squares)
     drawableShapes.value = (currentNode.shapes as DrawShape[]) || []
-    mozerShapes.value = []
     coachShapes.value = []
 
     return { isChanged, lastPgnMove: currentNode }
@@ -555,17 +553,10 @@ export const useBoardStore = defineStore('board', () => {
     flipBoard,
     getGameStatus,
     setDrawableShapes,
-    setAutoShapes(shapes: DrawShape[]) {
-      mozerShapes.value = shapes
-    },
-    setMozerShapes(shapes: DrawShape[]) {
-      mozerShapes.value = shapes
-    },
     setCoachShapes(shapes: DrawShape[]) {
       coachShapes.value = shapes
     },
     clearAutoShapes() {
-      mozerShapes.value = []
       coachShapes.value = []
     },
     setLastNag,

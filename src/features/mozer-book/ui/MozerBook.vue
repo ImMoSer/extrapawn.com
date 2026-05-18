@@ -4,15 +4,12 @@ import { useMozerBookStore } from '../index'
 import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import { InformationCircleOutline, LeafOutline } from '@vicons/ionicons5'
 import { NIcon, NText } from 'naive-ui'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MozerBookFooter from './MozerBookFooter.vue'
 import MozerBookRow from './MozerBookRow.vue'
 import TheoryExplorerModal from './TheoryExplorerModal.vue'
 import { type TheoryItemWithChildren } from './types'
-
-import type { DrawShape } from '@lichess-org/chessground/draw'
-import type { Key } from '@lichess-org/chessground/types'
 
 const props = defineProps<{
   blurred?: boolean
@@ -28,47 +25,7 @@ const loading = computed(() => mozerStore.isLoading)
 
 const currentFen = computed(() => mozerStore.currentFen)
 
-// Draw arrows for character styles
-watch(
-  () => stats.value?.styles,
-  (styles) => {
-    const shapes: DrawShape[] = []
-    const usedUcis = new Set<string>()
 
-    if (styles) {
-      // Priority: Grossmaster (Green) > Hustler (Blue) > Schuler (Red)
-      if (styles.grossmaster?.uci) {
-        shapes.push({
-          orig: styles.grossmaster.uci.slice(0, 2) as Key,
-          dest: styles.grossmaster.uci.slice(2, 4) as Key,
-          brush: 'green',
-        })
-        usedUcis.add(styles.grossmaster.uci)
-      }
-
-      if (styles.hustler?.uci && !usedUcis.has(styles.hustler.uci)) {
-        shapes.push({
-          orig: styles.hustler.uci.slice(0, 2) as Key,
-          dest: styles.hustler.uci.slice(2, 4) as Key,
-          brush: 'blue',
-        })
-        usedUcis.add(styles.hustler.uci)
-      }
-
-      if (styles.schuler?.uci && !usedUcis.has(styles.schuler.uci)) {
-        shapes.push({
-          orig: styles.schuler.uci.slice(0, 2) as Key,
-          dest: styles.schuler.uci.slice(2, 4) as Key,
-          brush: 'red',
-        })
-        usedUcis.add(styles.schuler.uci)
-      }
-    }
-
-    boardStore.setMozerShapes(shapes)
-  },
-  { immediate: true },
-)
 
 const turn = computed(() => {
   const parts = currentFen.value.split(' ')
@@ -95,19 +52,9 @@ watch(
     if (props.isPaused) return
     mozerStore.fetchStats()
     showTheory.value = false // Close theory when position changes
-    boardStore.setMozerShapes([]) // Clear previous styles while loading
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  // No need for explicit fetch here as watch(immediate) covers it,
-  // and we want to avoid double fetch during mounting.
-})
-
-onUnmounted(() => {
-  boardStore.setMozerShapes([])
-})
 
 const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {
   if (!stats.value?.theory) return []

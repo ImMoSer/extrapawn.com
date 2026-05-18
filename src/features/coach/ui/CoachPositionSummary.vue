@@ -37,13 +37,7 @@
       :aria-expanded="expanded"
     >
       <span class="expand-icon" :class="{ 'is-expanded': expanded }">▾</span>
-      {{
-        expanded
-          ? 'less'
-          : remainingFacts > 0
-            ? `${remainingFacts} more · plan · narrative`
-            : 'plan · narrative'
-      }}
+      {{ expanded ? 'less' : 'Detailed Plan' }}
     </button>
 
     <!-- Expanded Content -->
@@ -79,9 +73,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useCoachStore } from '../model/coach.store'
 import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
+import { computed, ref } from 'vue'
+import { useCoachStore } from '../model/coach.store'
 
 const coachStore = useCoachStore()
 const expanded = ref(false)
@@ -149,6 +143,7 @@ const copyJson = () => {
   font-size: 13px;
   line-height: 1.5;
   margin-bottom: 8px;
+  display: none;
 }
 
 .verdict-side {
@@ -165,6 +160,7 @@ const copyJson = () => {
   gap: 4px;
   font-size: 12px;
   line-height: 1.5;
+  display: none;
 }
 
 .fact-item {
@@ -192,6 +188,7 @@ const copyJson = () => {
   border-top: 1px dashed #27272a;
   font-size: 12px;
   line-height: 1.55;
+
 }
 
 .section-title {

@@ -8,6 +8,7 @@ import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { useCoachBookStore } from '../model/coach-book.store'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
@@ -28,16 +29,14 @@ export const useCoachStore = defineStore('coach', () => {
   // State for Visuals
   const showVisuals = ref(true)
 
-  const isVisualsSuppressed = ref(false)
-
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
-    if (showVisuals.value && !isVisualsSuppressed.value && currentExplanation.value?.visual_commands) {
-      const commands = Object.values(currentExplanation.value.visual_commands).join(';')
+    if (showVisuals.value && currentExplanation.value?.visual_commands) {
+      const commands = Object.values(currentExplanation.value.visual_commands).flat().join(';')
       if (commands) {
         executeMentorAction(commands)
       }
-    } else if (!showVisuals.value || isVisualsSuppressed.value) {
+    } else if (!showVisuals.value) {
       boardStore.setCoachShapes([])
     }
   }
@@ -50,6 +49,7 @@ export const useCoachStore = defineStore('coach', () => {
   const isMentorLoading = ref(false)
   const isMentorSpeaking = ref(false)
   let mentorSessionId = 0
+  const coachHistory = ref<{ fen: string; message: string }[]>([])
 
   const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
   const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
@@ -76,6 +76,8 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
+      coachHistory.value = []
+      mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -96,6 +98,8 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
+      coachHistory.value = []
+      mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -120,8 +124,7 @@ export const useCoachStore = defineStore('coach', () => {
       currentExplanation.value = explanation
 
       // Render pre-calculated visual commands immediately
-      // Only if visuals are enabled AND not suppressed by another module (like MozerBook)
-      if (showVisuals.value && !isVisualsSuppressed.value && explanation?.visual_commands) {
+      if (showVisuals.value && explanation?.visual_commands) {
         // Flatten values in case some are arrays (e.g. diagonals) and join by ';'
         const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
@@ -130,8 +133,6 @@ export const useCoachStore = defineStore('coach', () => {
           boardStore.setCoachShapes([])
         }
       } else if (!showVisuals.value) {
-        // Only clear if coach visuals are disabled.
-        // If they are just suppressed, we don't clear to avoid wiping other module's arrows.
         boardStore.setCoachShapes([])
       }
     } catch {
@@ -200,6 +201,11 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => boardStore.fen,
     (newFen) => {
+      if (newFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+        mentorCache.value.clear()
+        coachHistory.value = []
+      }
+
       if (!isCoachEnabled.value) return
 
       // Optimization: Only analyze during live play if it's the user's turn.
@@ -270,7 +276,11 @@ export const useCoachStore = defineStore('coach', () => {
     // Check Cache
     if (mentorCache.value.has(currentFen)) {
       logger.info('[CoachStore] Replaying cached Mentor response for current position.')
-      await playMentorResponse(mentorCache.value.get(currentFen)!)
+      const cachedMsg = mentorCache.value.get(currentFen)!
+      if (coachHistory.value[coachHistory.value.length - 1]?.fen !== currentFen) {
+        coachHistory.value.push({ fen: currentFen, message: cachedMsg })
+      }
+      await playMentorResponse(cachedMsg)
       return
     }
 
@@ -283,11 +293,46 @@ export const useCoachStore = defineStore('coach', () => {
     try {
       isMentorLoading.value = true
       const authStore = useAuthStore()
+      const bookStore = useCoachBookStore()
+
+      // Format book path nicely if available
+      let formattedBookPath = ''
+      const wikiInfo = bookStore.currentWikiInfo
+      if (wikiInfo?.canonicalSanPath) {
+        const formatted: string[] = []
+        for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
+          const move = wikiInfo.canonicalSanPath[i]
+          if (!move) continue
+          if (i % 2 === 0) {
+            formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
+          } else {
+            formatted.push(move)
+          }
+        }
+        formattedBookPath = formatted.join(' ')
+      }
 
       const basePayload = {
         ...extractLlmPayload(currentExplanation.value, {
           lastMove: lastMoveAnalysis.value || undefined,
-          consequence: lastMoveConsequence.value
+          consequence: lastMoveConsequence.value,
+          book: wikiInfo ? {
+            name: wikiInfo.name,
+            eco: wikiInfo.eco,
+            canonicalPathSan: formattedBookPath,
+            isOutOfBook: bookStore.isOutOfBook,
+            wikibooksUrl: wikiInfo.wikibooksUrl,
+            wikibooksContent: wikiInfo.wikibooksContent,
+            forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
+          } : {
+            name: 'Unknown Opening',
+            eco: '-',
+            canonicalPathSan: '',
+            isOutOfBook: bookStore.isOutOfBook,
+            forwardMoves: []
+          },
+          userColor: boardStore.orientation,
+          coachHistory: coachHistory.value
         }),
         language: preferredLanguage.value,
       }
@@ -316,6 +361,10 @@ export const useCoachStore = defineStore('coach', () => {
       if (data && data.output) {
         // Cache the response
         mentorCache.value.set(currentFen, data.output)
+        // Add to history
+        if (coachHistory.value[coachHistory.value.length - 1]?.fen !== currentFen) {
+          coachHistory.value.push({ fen: currentFen, message: data.output })
+        }
         logger.info('[CoachStore] Mentor successfully received the payload and cached the response.')
         await playMentorResponse(data.output)
       }
@@ -481,7 +530,7 @@ export const useCoachStore = defineStore('coach', () => {
       }
     }
 
-    if (allShapes.length > 0 && !isVisualsSuppressed.value) {
+    if (allShapes.length > 0) {
       // Sort shapes by color priority so the highest priority renders on top.
       const COLOR_PRIORITY: Record<string, number> = {
         coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
@@ -522,7 +571,6 @@ export const useCoachStore = defineStore('coach', () => {
     hasCachedMentorResponse,
     showVisuals,
     toggleVisuals,
-    isVisualsSuppressed,
     executeMentorAction,
   }
 })

@@ -170,7 +170,9 @@ export const useCoachBookStore = defineStore('coachBook', () => {
 
       // Resolve name: if node has no name, walk backward to find nearest parent name
       let name = 'Theoretical Variation'
-      if (node.n !== -1) {
+      if (nodeId === graphData.root_id) {
+        name = 'Start Position'
+      } else if (node.n !== -1) {
         name = graphData.names[node.n] ?? 'Theoretical Variation'
       } else {
         let currentId = nodeId
@@ -249,6 +251,15 @@ export const useCoachBookStore = defineStore('coachBook', () => {
             })
           }
         }
+
+        // Sort forward moves by the number of their children (descending)
+        forwardMoves.sort((a, b) => {
+          const childA = graphData!.nodes[String(a.childId)]
+          const childB = graphData!.nodes[String(b.childId)]
+          const countA = childA?.c ? Object.keys(childA.c).length : 0
+          const countB = childB?.c ? Object.keys(childB.c).length : 0
+          return countB - countA
+        })
       }
 
       // 3. Fetch Wikibooks summary with fallback resolution

@@ -113,3 +113,14 @@ export interface CoachLastMoveAnalysis {
   isBestMove?: boolean
   [key: string]: unknown
 }
+
+export interface CoachBookInfo {
+  name: string
+  eco: string
+  canonicalPathSan: string
+  isOutOfBook: boolean
+  wikibooksUrl?: string
+  wikibooksContent?: string | null
+  forwardMoves?: { san: string; name: string | null }[]
+}
+

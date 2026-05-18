@@ -15,7 +15,7 @@ const isExpanded = ref(false)
 const isContinuationsExpanded = ref(true)
 
 function formatMoveName(name: string): string {
-  return name.split(':')[1]?.trim() || name.split(',')[1]?.trim() || name.trim()
+  return name.trim()
 }
 
 const sanitizedContent = computed(() => {
