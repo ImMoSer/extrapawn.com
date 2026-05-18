@@ -59,6 +59,7 @@
     <div v-else class="coach-content">
       <CoachLastMove />
       <CoachPositionSummary />
+      <CoachBook />
       <CoachTopMoves />
     </div>
   </div>
@@ -73,6 +74,7 @@ import { useAuthStore } from '@/entities/user'
 import CoachSettings from './CoachSettings.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
+import CoachBook from './CoachBook.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
 
 const coachStore = useCoachStore()
