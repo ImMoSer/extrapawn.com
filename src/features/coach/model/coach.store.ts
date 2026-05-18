@@ -38,7 +38,7 @@ export const useCoachStore = defineStore('coach', () => {
         executeMentorAction(commands)
       }
     } else if (!showVisuals.value || isVisualsSuppressed.value) {
-      boardStore.setAutoShapes([])
+      boardStore.setCoachShapes([])
     }
   }
 
@@ -75,7 +75,7 @@ export const useCoachStore = defineStore('coach', () => {
       previousExplanation.value = null
       topMoves.value = []
       lastMoveAnalysis.value = null
-      boardStore.setAutoShapes([])
+      boardStore.setCoachShapes([])
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -95,7 +95,7 @@ export const useCoachStore = defineStore('coach', () => {
       previousExplanation.value = null
       topMoves.value = []
       lastMoveAnalysis.value = null
-      boardStore.setAutoShapes([])
+      boardStore.setCoachShapes([])
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -127,12 +127,12 @@ export const useCoachStore = defineStore('coach', () => {
         if (commands) {
           executeMentorAction(commands)
         } else {
-          boardStore.setAutoShapes([])
+          boardStore.setCoachShapes([])
         }
       } else if (!showVisuals.value) {
         // Only clear if coach visuals are disabled.
         // If they are just suppressed, we don't clear to avoid wiping other module's arrows.
-        boardStore.setAutoShapes([])
+        boardStore.setCoachShapes([])
       }
     } catch {
       logger.error('[CoachStore] Error generating explanation')
@@ -384,7 +384,7 @@ export const useCoachStore = defineStore('coach', () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }
-    boardStore.setAutoShapes([])
+    boardStore.setCoachShapes([])
     isMentorSpeaking.value = false
   }
 
@@ -437,8 +437,11 @@ export const useCoachStore = defineStore('coach', () => {
         brush = 'green'
       }
 
+      // Map standard brushes to thin coach-specific brushes
+      const coachBrush = brush === 'bestmove' ? 'bestmove' : `coach${brush}`
+
       if (cmd === 'clear') {
-        boardStore.setAutoShapes([])
+        boardStore.setCoachShapes([])
         return
       }
 
@@ -455,8 +458,8 @@ export const useCoachStore = defineStore('coach', () => {
             allShapes.push({
               orig: orig as Key,
               dest: dest as Key,
-              brush,
-              modifiers: { lineWidth: 8 }
+              brush: coachBrush,
+              modifiers: { lineWidth: 3 }
             })
           } else {
             logger.warn(`[CoachStore] Invalid coordinates for route: "${orig}" -> "${dest}"`)
@@ -469,7 +472,7 @@ export const useCoachStore = defineStore('coach', () => {
           if (cleanSq && cleanSq.length === 2) {
             allShapes.push({
               orig: cleanSq as Key,
-              brush
+              brush: coachBrush
             })
           } else {
             logger.warn(`[CoachStore] Invalid coordinate for mark: "${cleanSq}"`)
@@ -481,7 +484,7 @@ export const useCoachStore = defineStore('coach', () => {
     if (allShapes.length > 0 && !isVisualsSuppressed.value) {
       // Sort shapes by color priority so the highest priority renders on top.
       const COLOR_PRIORITY: Record<string, number> = {
-        gray: 0, brown: 1, yellow: 2, green: 3, cyan: 4, blue: 5, purple: 6, pink: 7, orange: 8, red: 9, bestmove: 10
+        coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
       }
       allShapes.sort((a, b) => {
         const pA = COLOR_PRIORITY[a.brush as string] ?? -1
@@ -489,7 +492,7 @@ export const useCoachStore = defineStore('coach', () => {
         return pA - pB
       })
 
-      boardStore.setAutoShapes(allShapes)
+      boardStore.setCoachShapes(allShapes)
     }
   }
 

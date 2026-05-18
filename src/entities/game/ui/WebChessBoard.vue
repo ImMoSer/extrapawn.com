@@ -55,6 +55,18 @@ const CHESSGROUND_BRUSHES = {
   pink: { key: 'k', color: '#B3205D', opacity: 1, lineWidth: 10 },
   brown: { key: 'w', color: '#6D4C41', opacity: 1, lineWidth: 10 },
   gray: { key: 'x', color: '#616161', opacity: 1, lineWidth: 10 },
+
+  // Coach-specific thin brushes
+  coachgreen: { key: 'G', color: '#15781B', opacity: 0.5, lineWidth: 5 },
+  coachred: { key: 'R', color: '#882020', opacity: 0.5, lineWidth: 5 },
+  coachblue: { key: 'B', color: '#0030C0', opacity: 0.5, lineWidth: 5 },
+  coachyellow: { key: 'Y', color: '#E6A000', opacity: 0.5, lineWidth: 5 },
+  coachorange: { key: 'O', color: '#D56000', opacity: 0.5, lineWidth: 5 },
+  coachpurple: { key: 'U', color: '#7B1FA2', opacity: 0.5, lineWidth: 5 },
+  coachcyan: { key: 'C', color: '#008BA1', opacity: 0.5, lineWidth: 5 },
+  coachpink: { key: 'K', color: '#B3205D', opacity: 0.5, lineWidth: 5 },
+  coachbrown: { key: 'W', color: '#6D4C41', opacity: 0.5, lineWidth: 5 },
+  coachgray: { key: 'X', color: '#616161', opacity: 0.5, lineWidth: 5 },
 } as const
 
 const nagMarkerStyle = computed(() => {
@@ -373,6 +385,20 @@ watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, 
 :deep(.cg-shapes) g.bestmove line,
 :deep(.cg-shapes) [stroke="#ff007a"] {
   animation: bestmove-arrow-pulse 1.8s infinite ease-in-out;
+}
+
+/* Make Coach-specific arrows thin and distinct */
+:deep(.cg-shapes) g.coachgreen path, :deep(.cg-shapes) g.coachgreen line,
+:deep(.cg-shapes) g.coachred path, :deep(.cg-shapes) g.coachred line,
+:deep(.cg-shapes) g.coachblue path, :deep(.cg-shapes) g.coachblue line,
+:deep(.cg-shapes) g.coachyellow path, :deep(.cg-shapes) g.coachyellow line,
+:deep(.cg-shapes) g.coachorange path, :deep(.cg-shapes) g.coachorange line,
+:deep(.cg-shapes) g.coachpurple path, :deep(.cg-shapes) g.coachpurple line,
+:deep(.cg-shapes) g.coachcyan path, :deep(.cg-shapes) g.coachcyan line,
+:deep(.cg-shapes) g.coachpink path, :deep(.cg-shapes) g.coachpink line,
+:deep(.cg-shapes) g.coachbrown path, :deep(.cg-shapes) g.coachbrown line,
+:deep(.cg-shapes) g.coachgray path, :deep(.cg-shapes) g.coachgray line {
+  stroke-width: 0.35% !important;
 }
 
 </style>

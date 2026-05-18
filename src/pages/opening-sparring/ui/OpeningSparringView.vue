@@ -11,7 +11,7 @@ import {
   useOpeningSparringStore,
   useSparringLoop,
 } from '@/features/opening-sparring'
-import { CoachSidebar, useCoachStore } from '@/features/coach'
+import { CoachSidebar } from '@/features/coach'
 import { useSmartHintStore } from '@/features/smart-hint'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -24,7 +24,6 @@ import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 const t = i18n.global.t
 const controlsStore = useControlsStore()
 const openingStore = useOpeningSparringStore()
-const coachStore = useCoachStore()
 const theoryStore = useTheoryStore()
 const gameStore = useGameStore()
 const uiStore = useUiStore()
@@ -34,35 +33,7 @@ const router = useRouter()
 const route = useRoute()
 const loop = useSparringLoop()
 
-// Sync MozerBook visibility and active styles/arrows with Coach visualization suppression
-const shouldSuppressCoach = computed(() => {
-  // 1. If MozerBook is hidden, Coach is not suppressed
-  if (!openingStore.showMozerBook) return false
 
-  // 2. If MozerBook is visible, check if there are actual style moves
-  const stats = openingStore.currentStats
-  if (!stats || !stats.styles) return false
-
-  const hasGrossmaster = !!stats.styles.grossmaster?.uci
-  const hasHustler = !!stats.styles.hustler?.uci
-  const hasSchuler = !!stats.styles.schuler?.uci
-
-  // Suppress Coach ONLY if MozerBook has at least one arrow to draw
-  return hasGrossmaster || hasHustler || hasSchuler
-})
-
-watch(
-  shouldSuppressCoach,
-  (suppress) => {
-    coachStore.isVisualsSuppressed = suppress
-    // If we just unsuppressed, trigger a re-render of coach visuals if available
-    if (!suppress && coachStore.currentExplanation?.visual_commands) {
-      const commands = Object.values(coachStore.currentExplanation.visual_commands).flat().join(';')
-      coachStore.executeMentorAction(commands)
-    }
-  },
-  { immediate: true },
-)
 
 const isSettingsModalOpen = ref(true)
 const showSummaryModal = ref(false)
@@ -306,7 +277,6 @@ function goBack() {
         <div class="mozer-book-wrapper" v-if="openingStore.showMozerBook">
           <MozerBook
             :is-paused="openingStore.isPlayoutMode"
-            :is-coach-suppressed="shouldSuppressCoach"
           />
         </div>
         <div v-else class="book-placeholder">

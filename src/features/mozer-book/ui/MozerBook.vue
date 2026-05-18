@@ -17,7 +17,6 @@ import type { Key } from '@lichess-org/chessground/types'
 const props = defineProps<{
   blurred?: boolean
   isPaused?: boolean
-  isCoachSuppressed?: boolean
 }>()
 
 const { t } = useI18n()
@@ -66,15 +65,7 @@ watch(
       }
     }
 
-    if (shapes.length > 0) {
-      boardStore.setAutoShapes(shapes)
-    } else {
-      // Only clear the board if the Coach is suppressed (defaulting to true if not specified).
-      // If the Coach is NOT suppressed, we leave the board's shapes untouched so the Coach's arrows remain visible.
-      if (props.isCoachSuppressed !== false) {
-        boardStore.setAutoShapes([])
-      }
-    }
+    boardStore.setMozerShapes(shapes)
   },
   { immediate: true },
 )
@@ -104,12 +95,7 @@ watch(
     if (props.isPaused) return
     mozerStore.fetchStats()
     showTheory.value = false // Close theory when position changes
-
-    // Only clear previous styles if the Coach is suppressed (defaulting to true if not specified).
-    // This prevents wiping the board if the Coach has already calculated and drawn arrows.
-    if (props.isCoachSuppressed !== false) {
-      boardStore.setAutoShapes([])
-    }
+    boardStore.setMozerShapes([]) // Clear previous styles while loading
   },
   { immediate: true },
 )
@@ -120,9 +106,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (props.isCoachSuppressed !== false) {
-    boardStore.setAutoShapes([])
-  }
+  boardStore.setMozerShapes([])
 })
 
 const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {
