@@ -1,5 +1,5 @@
 /* eslint-disable vitest/no-conditional-expect */
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { extractConsequences, topConsequenceLine } from '../connectors.js'
 
 // Minimal fake "explanation blob" shape — only the fields the

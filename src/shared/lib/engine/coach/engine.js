@@ -3,6 +3,43 @@
 // Same public API as the (now-deprecated) server engine: evaluate / analyzeMultiPV / getBestMove.
 
 import { tablebaseService } from '@/shared/api/TablebaseService'
+import { Chess } from 'chess.js'
+
+function checkTerminalPosition(fen) {
+  try {
+    const c = new Chess(fen)
+    if (c.isGameOver()) {
+      if (c.isCheckmate()) {
+        return {
+          isTerminal: true,
+          type: 'checkmate',
+          score: -100000,
+          mate: 0,
+          moves: [],
+          bestMove: null,
+          ponderMove: null,
+          pv: [],
+        }
+      }
+      if (c.isStalemate() || c.isDraw() || c.isThreefoldRepetition() || c.isInsufficientMaterial()) {
+        return {
+          isTerminal: true,
+          type: 'draw',
+          score: 0,
+          mate: null,
+          moves: [],
+          bestMove: null,
+          ponderMove: null,
+          pv: [],
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
 
 const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
 
@@ -259,6 +296,13 @@ class StockfishEngine {
     const key = `e|${fen}|${depth}`
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
+
+    const terminal = checkTerminalPosition(fen)
+    if (terminal) {
+      const p = Promise.resolve({ cp: terminal.score, mate: terminal.mate, score: terminal.score })
+      this.cache.set(key, p)
+      return p
+    }
     
     // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
     const mpvKey = `m|${fen}|${USE_SERVER_ENGINE ? 3 : DEFAULT_MULTIPV}|${depth}`
@@ -282,6 +326,19 @@ class StockfishEngine {
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
 
+    const terminal = checkTerminalPosition(fen)
+    if (terminal) {
+      const p = Promise.resolve({
+        moves: [],
+        bestMove: null,
+        score: terminal.score,
+        cp: terminal.score,
+        mate: terminal.mate,
+      })
+      this.cache.set(key, p)
+      return p
+    }
+
     const p = this._enqueue({ type: 'multipv', fen, depth, numLines: n, startFen, moves })
     p.catch(() => this.cache.delete(key))
     this.cache.set(key, p)
@@ -292,6 +349,20 @@ class StockfishEngine {
     const key = `b|${fen}|${depth}`
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
+
+    const terminal = checkTerminalPosition(fen)
+    if (terminal) {
+      const p = Promise.resolve({
+        bestMove: null,
+        ponderMove: null,
+        score: terminal.score,
+        cp: terminal.score,
+        mate: terminal.mate,
+        pv: [],
+      })
+      this.cache.set(key, p)
+      return p
+    }
 
     const p = this._enqueue({ type: 'bestmove', fen, depth, startFen, moves })
     p.catch(() => this.cache.delete(key))
