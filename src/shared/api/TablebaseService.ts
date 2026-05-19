@@ -25,7 +25,7 @@ interface CacheEntry {
 }
 
 class TablebaseServiceController {
-  private isFetching = false
+  private activeFetches = new Map<string, Promise<TablebaseResponse | null>>()
   private cooldownUntil = 0
   private cache = new Map<string, CacheEntry>()
   private readonly CACHE_TTL = 3600000 // 1 hour in ms
@@ -43,11 +43,7 @@ class TablebaseServiceController {
       this.cache.delete(fen)
     }
 
-    if (this.isFetching) {
-      logger.warn('[TablebaseService] Request ignored: Another fetch is in progress.')
-      return null
-    }
-
+    // 2. Check Cooldown
     const now = Date.now()
     if (now < this.cooldownUntil) {
       const waitSec = Math.ceil((this.cooldownUntil - now) / 1000)
@@ -57,41 +53,53 @@ class TablebaseServiceController {
       return null
     }
 
-    this.isFetching = true
-    try {
-      const encodedFen = fen.replace(/ /g, '_')
-      const url = `https://tablebase.lichess.org/standard?fen=${encodedFen}`
-
-      const response = await fetch(url)
-
-      if (response.status === 429) {
-        logger.error(
-          '[TablebaseService] HTTP 429: Too many requests. Activating 1-minute cooldown.',
-        )
-        this.cooldownUntil = Date.now() + 60000
-        return null
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      // 2. Save to Cache
-      if (this.cache.size >= this.MAX_CACHE_SIZE) {
-        const oldestKey = this.cache.keys().next().value
-        if (oldestKey) this.cache.delete(oldestKey)
-      }
-      this.cache.set(fen, { data, timestamp: Date.now() })
-
-      return data as TablebaseResponse
-    } catch (error) {
-      logger.error('[TablebaseService] Fetch error:', error)
-      return null
-    } finally {
-      this.isFetching = false
+    // 3. Check if there is already an active fetch for this exact FEN
+    const activePromise = this.activeFetches.get(fen)
+    if (activePromise) {
+      logger.debug(`[TablebaseService] Reusing active promise for FEN: ${fen.substring(0, 20)}...`)
+      return activePromise
     }
+
+    // 4. Start new fetch
+    const fetchPromise = (async () => {
+      try {
+        const encodedFen = fen.replace(/ /g, '_')
+        const url = `https://tablebase.lichess.org/standard?fen=${encodedFen}`
+
+        const response = await fetch(url)
+
+        if (response.status === 429) {
+          logger.error(
+            '[TablebaseService] HTTP 429: Too many requests. Activating 1-minute cooldown.',
+          )
+          this.cooldownUntil = Date.now() + 60000
+          return null
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        // Save to Cache
+        if (this.cache.size >= this.MAX_CACHE_SIZE) {
+          const oldestKey = this.cache.keys().next().value
+          if (oldestKey) this.cache.delete(oldestKey)
+        }
+        this.cache.set(fen, { data, timestamp: Date.now() })
+
+        return data as TablebaseResponse
+      } catch (error) {
+        logger.error('[TablebaseService] Fetch error:', error)
+        return null
+      } finally {
+        this.activeFetches.delete(fen)
+      }
+    })()
+
+    this.activeFetches.set(fen, fetchPromise)
+    return fetchPromise
   }
 
   public isCooldownActive(): boolean {

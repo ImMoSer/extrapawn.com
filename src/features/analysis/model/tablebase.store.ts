@@ -2,7 +2,7 @@ import { useBoardStore } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { tablebaseService, type TablebaseResponse } from '../api/TablebaseService'
+import { tablebaseService, type TablebaseResponse } from '@/shared/api/TablebaseService'
 import { useAnalysisStore } from './analysis.store'
 
 export const useTablebaseStore = defineStore('tablebase', () => {

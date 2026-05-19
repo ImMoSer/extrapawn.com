@@ -2,6 +2,8 @@
 // Runs Stockfish 18-lite (multi-threaded) in a Web Worker, talks UCI over postMessage.
 // Same public API as the (now-deprecated) server engine: evaluate / analyzeMultiPV / getBestMove.
 
+import { tablebaseService } from '@/shared/api/TablebaseService'
+
 const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
 
 export let USE_SERVER_ENGINE = localStorage.getItem('positional_chess.use_server_coach') !== 'false' // default true
@@ -129,28 +131,10 @@ export function getPieceCount(fen) {
   return (boardPart.match(/[a-zA-Z]/g) || []).length;
 }
 
-const lichessTBCache = new LRU(200)
-
 export function fetchTablebaseMoves(fen) {
-  const tbKey = fen.split(' ').slice(0, 4).join(' ')
-  const hit = lichessTBCache.get(tbKey)
-  if (hit !== undefined) {
-    if (hit instanceof Promise) return hit
-    return Promise.resolve(hit)
-  }
-  const p = fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(fen)}`)
-    .then(res => res.json())
-    .then(data => {
-      const m = data.moves || null
-      lichessTBCache.set(tbKey, m)
-      return m
-    })
-    .catch(() => {
-      lichessTBCache.set(tbKey, null)
-      return null
-    })
-  lichessTBCache.set(tbKey, p)
-  return p
+  return tablebaseService.fetchStandard(fen)
+    .then(data => data?.moves || null)
+    .catch(() => null)
 }
 
 class StockfishEngine {
