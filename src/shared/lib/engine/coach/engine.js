@@ -11,6 +11,14 @@ export function setUseServerEngine(val) {
   localStorage.setItem('positional_chess.use_server_coach', String(val))
 }
 
+export let CURRENT_IS_ANALYSIS_MODE = false
+export let CURRENT_USER_COLOR = 'w'
+
+export function setEngineContext(isAnalysisMode, userColor) {
+  CURRENT_IS_ANALYSIS_MODE = isAnalysisMode
+  CURRENT_USER_COLOR = (userColor || 'w').toLowerCase().startsWith('b') ? 'b' : 'w'
+}
+
 // Configurable defaults backed by localStorage. The UI's settings
 // panel writes to these so the engine layer reflects user preference
 // without each call-site having to thread depth through.
@@ -113,6 +121,36 @@ function parsePV(line) {
 function parseMultiPV(line) {
   const m = line.match(/multipv (\d+)/)
   return m ? parseInt(m[1], 10) : 1
+}
+
+export function getPieceCount(fen) {
+  if (!fen) return 32;
+  const boardPart = fen.split(' ')[0];
+  return (boardPart.match(/[a-zA-Z]/g) || []).length;
+}
+
+const lichessTBCache = new LRU(200)
+
+export function fetchTablebaseMoves(fen) {
+  const tbKey = fen.split(' ').slice(0, 4).join(' ')
+  const hit = lichessTBCache.get(tbKey)
+  if (hit !== undefined) {
+    if (hit instanceof Promise) return hit
+    return Promise.resolve(hit)
+  }
+  const p = fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(fen)}`)
+    .then(res => res.json())
+    .then(data => {
+      const m = data.moves || null
+      lichessTBCache.set(tbKey, m)
+      return m
+    })
+    .catch(() => {
+      lichessTBCache.set(tbKey, null)
+      return null
+    })
+  lichessTBCache.set(tbKey, p)
+  return p
 }
 
 class StockfishEngine {
@@ -353,27 +391,47 @@ class StockfishEngine {
 
     if (USE_SERVER_ENGINE) {
       const multipv = job.type === 'multipv' ? job.numLines : 1
-      fetch('/api/coach-engine/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          fen: job.fen, 
-          depth: job.depth, 
-          multipv,
-          start_fen: job.startFen,
-          moves: job.moves
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
+      
+      const doBackendFetch = (lichess_moves = null) => {
         if (job._timedOut) return
-        if (data.lines) {
-          data.lines.forEach(line => this._onLine(line))
+        fetch('/api/coach-engine/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            fen: job.fen, 
+            depth: job.depth, 
+            multipv,
+            start_fen: job.startFen,
+            moves: job.moves,
+            lichess_moves
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (job._timedOut) return
+          if (data.lines) {
+            data.lines.forEach(line => this._onLine(line))
+          }
+        })
+        .catch(err => {
+          if (!job._timedOut) this._abortCurrentJob(err)
+        })
+      }
+
+      if (getPieceCount(job.fen) <= 5) {
+        const sideToMove = job.fen.split(' ')[1] // 'w' or 'b'
+        const shouldFetchTB = CURRENT_IS_ANALYSIS_MODE || sideToMove === CURRENT_USER_COLOR
+
+        if (shouldFetchTB) {
+          fetchTablebaseMoves(job.fen)
+            .then(moves => doBackendFetch(moves))
+            .catch(() => doBackendFetch(null))
+        } else {
+          doBackendFetch(null)
         }
-      })
-      .catch(err => {
-        if (!job._timedOut) this._abortCurrentJob(err)
-      })
+      } else {
+        doBackendFetch(null)
+      }
     } else {
       if (job.startFen && job.moves) {
         const sf = job.startFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' ? 'startpos' : `fen ${job.startFen}`

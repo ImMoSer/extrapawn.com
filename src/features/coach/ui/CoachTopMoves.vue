@@ -90,6 +90,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Tablebase Best Move Section -->
+    <div v-if="coachStore.tablebaseBestMove" class="tb-best-move">
+      <div class="tb-title">Tablebase Best Move</div>
+      <div class="tb-move-content">
+        <span class="tb-san">{{ coachStore.tablebaseBestMove.san }}</span>
+        <span
+          class="tb-eval"
+          :class="{
+            'wdl-win': coachStore.tablebaseBestMove.wdl === 'win',
+            'wdl-loss': coachStore.tablebaseBestMove.wdl === 'loss'
+          }"
+        >
+          {{ coachStore.tablebaseBestMove.winner }} mates in {{ coachStore.tablebaseBestMove.mateIn }}
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -336,5 +353,53 @@ const characterBorder = (label: string | undefined) => {
 .thin-scroll::-webkit-scrollbar-thumb {
   background-color: #3f3f46;
   border-radius: 4px;
+}
+.tb-best-move {
+  margin-top: 12px;
+  padding: 8px 10px;
+  background-color: rgba(74, 222, 128, 0.05);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 6px;
+}
+.tb-title {
+  font-size: 9px;
+  color: #4ade80;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.tb-move-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tb-san {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4ade80;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.tb-eval {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: -0.02em;
+}
+.wdl-win {
+  background-color: rgba(74, 222, 128, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+.wdl-loss {
+  background-color: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.wdl-draw {
+  background-color: rgba(161, 161, 170, 0.1);
+  color: #a1a1aa;
+  border: 1px solid rgba(161, 161, 170, 0.2);
 }
 </style>

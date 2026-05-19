@@ -2,6 +2,7 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { setEngineContext, getPieceCount, fetchTablebaseMoves } from '@/shared/lib/engine/coach/engine'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
@@ -44,6 +45,13 @@ export const useCoachStore = defineStore('coach', () => {
   // State for "Top Moves"
   const topMoves = ref<CoachTopMove[]>([])
   const topMovesLoading = ref(false)
+  const tablebaseBestMove = ref<{
+    san: string
+    uci: string
+    winner: string
+    mateIn: number
+    wdl: 'win' | 'loss'
+  } | null>(null)
 
   // State for Mentor
   const isMentorLoading = ref(false)
@@ -218,7 +226,51 @@ export const useCoachStore = defineStore('coach', () => {
 
   async function fetchTopMoves(fen: string) {
     topMovesLoading.value = true
+    tablebaseBestMove.value = null
     try {
+      if (getPieceCount(fen) <= 5) {
+        fetchTablebaseMoves(fen).then((moves) => {
+          if (moves && moves.length > 0) {
+            const bestMove = moves[0]
+            if (bestMove) {
+              const hasDtm = bestMove.checkmate || (bestMove.dtm !== null && bestMove.dtm !== undefined)
+              if (hasDtm) {
+                const sideToMove = fen.split(' ')[1] // 'w' or 'b'
+                let winner = ''
+                let mateIn = 0
+                if (bestMove.checkmate) {
+                  winner = sideToMove === 'w' ? 'White' : 'Black'
+                  mateIn = 1
+                } else if (bestMove.dtm !== null && bestMove.dtm !== undefined) {
+                  const dtmVal = bestMove.dtm
+                  if (dtmVal < 0) {
+                    winner = sideToMove === 'w' ? 'White' : 'Black'
+                  } else {
+                    winner = sideToMove === 'w' ? 'Black' : 'White'
+                  }
+                  mateIn = Math.ceil(Math.abs(dtmVal) / 2)
+                }
+
+                if (winner && mateIn > 0) {
+                  const userColor = boardStore.orientation.toLowerCase()
+                  const wdl = winner.toLowerCase() === userColor ? 'win' : 'loss'
+                  tablebaseBestMove.value = {
+                    san: bestMove.san,
+                    uci: bestMove.uci,
+                    winner,
+                    mateIn,
+                    wdl
+                  }
+                  return
+                }
+              }
+            }
+          }
+          tablebaseBestMove.value = null
+        }).catch(() => {
+          tablebaseBestMove.value = null
+        })
+      }
       const result = await getTopMoves(fen, 10)
       topMoves.value = result.moves || []
     } catch {
@@ -284,6 +336,8 @@ export const useCoachStore = defineStore('coach', () => {
 
       const isUserTurn = boardStore.turn === boardStore.orientation
       const isAnalysisMode = boardStore.isAnalysisModeActive
+
+      setEngineContext(isAnalysisMode, boardStore.orientation)
 
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
@@ -631,6 +685,7 @@ export const useCoachStore = defineStore('coach', () => {
     previousExplanation,
     topMoves,
     topMovesLoading,
+    tablebaseBestMove,
     lastMoveAnalysis,
     lastMoveConsequence,
     selectedMoveIndex,
