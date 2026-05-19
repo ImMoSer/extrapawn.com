@@ -78,7 +78,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function _triggerBotMove(overrideDelay?: number) {
+  async function triggerBotMove(overrideDelay?: number) {
     if (currentStrategy.value) {
       const uci = await currentStrategy.value.requestBotMove?.(boardStore.fen)
 
@@ -160,7 +160,7 @@ export const useGameStore = defineStore('game', () => {
 
       const isBotTurn = setup.turn !== humanPlayerColor
       if (isBotTurn) {
-        _triggerBotMove(strategy.config?.initialBotDelayMs)
+        triggerBotMove(strategy.config?.initialBotDelayMs)
       } else {
         // If it's human turn at start, check if they already set a premove (unlikely but possible)
         _tryExecutePremove()
@@ -215,7 +215,7 @@ export const useGameStore = defineStore('game', () => {
       await strategyAtStart.onUserMoveExecuted?.(uciMove, boardStore.fen)
 
       if (!isGameOver && currentStrategy.value === strategyAtStart) {
-        await _triggerBotMove()
+        await triggerBotMove()
       }
     }
   }
@@ -255,5 +255,6 @@ export const useGameStore = defineStore('game', () => {
     userMovesCount,
     botEngineId,
     setBotEngineId,
+    triggerBotMove,
   }
 })

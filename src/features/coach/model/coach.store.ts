@@ -109,36 +109,110 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  async function triggerAnalysis(fen: string) {
+  // State for Takeback Modal
+  const takebackModalVisible = ref(false)
+  const takebackQuality = ref('')
+  const isCoachIntervening = ref(false)
+  let takebackResolve: ((value: boolean) => void) | null = null
+
+  async function promptTakeback(quality: string): Promise<boolean> {
+    takebackQuality.value = quality
+    takebackModalVisible.value = true
+    return new Promise((resolve) => {
+      takebackResolve = resolve
+    })
+  }
+
+  function resolveTakeback(takeback: boolean) {
+    takebackModalVisible.value = false
+    if (takebackResolve) {
+      takebackResolve(takeback)
+      takebackResolve = null
+    }
+  }
+
+  async function triggerAnalysis(fen: string, isBotTurnFastCheck = false) {
     if (!fen) return
     isAnalyzing.value = true
 
-    // We launch Top Moves and the Full Explanation concurrently.
-    fetchTopMoves(fen)
-    fetchLastMoveAnalysis()
+    if (isBotTurnFastCheck) {
+      // 1. Nur LastMoveAnalysis (explainMoveAt) laden
+      await fetchLastMoveAnalysis()
+      const quality = lastMoveAnalysis.value?.quality
+      const isBadMove = quality && ['inaccuracy', 'mistake', 'blunder'].includes(quality)
 
-    try {
-      // Capture the current explanation before overwriting it
-      previousExplanation.value = currentExplanation.value || previousExplanation.value
-      const explanation = await coachEngineManager.getExplanation(fen)
-      currentExplanation.value = explanation
+      if (isBadMove) {
+        isCoachIntervening.value = true
+        // Halt den Bot auf (pausiert das Spiel, bis Takeback entschieden ist)
+        gameStore.setGamePhase('IDLE')
 
-      // Render pre-calculated visual commands immediately
-      if (showVisuals.value && explanation?.visual_commands) {
-        // Flatten values in case some are arrays (e.g. diagonals) and join by ';'
-        const commands = Object.values(explanation.visual_commands).flat().join(';')
-        if (commands) {
-          executeMentorAction(commands)
-        } else {
+        // Vollständige Analyse für die Visualisierung nachladen
+        fetchTopMoves(fen)
+        try {
+          previousExplanation.value = currentExplanation.value || previousExplanation.value
+          const explanation = await coachEngineManager.getExplanation(fen)
+          currentExplanation.value = explanation
+
+          if (showVisuals.value && explanation?.visual_commands) {
+            const commands = Object.values(explanation.visual_commands).flat().join(';')
+            if (commands) {
+              executeMentorAction(commands)
+            } else {
+              boardStore.setCoachShapes([])
+            }
+          }
+        } catch {
+          logger.error('[CoachStore] Error generating explanation during fast check')
+        } finally {
+          isAnalyzing.value = false
+        }
+
+        // Asynchron auf die Entscheidung des Users warten
+        setTimeout(async () => {
+          const takeback = await promptTakeback(quality)
+          if (takeback) {
+            pgnService.undoLastMove() // Entfernt den Zug aus der Historie
+            boardStore.syncBoardWithPgn() // Setzt die visuelle Anzeige zurück
+            gameStore.setGamePhase('PLAYING')
+            boardStore.setCoachShapes([])
+          } else {
+            // Bot soll doch ziehen
+            gameStore.setGamePhase('PLAYING')
+            await gameStore.triggerBotMove()
+          }
+          isCoachIntervening.value = false
+        }, 100) // Timeout damit die SVG Pfeile vorher rendern
+
+      } else {
+        // Zug war in Ordnung! Abbruch, Bot einfach weitermachen lassen.
+        isAnalyzing.value = false
+        return
+      }
+    } else {
+      // Normaler Ablauf (User ist am Zug)
+      fetchTopMoves(fen)
+      fetchLastMoveAnalysis()
+
+      try {
+        previousExplanation.value = currentExplanation.value || previousExplanation.value
+        const explanation = await coachEngineManager.getExplanation(fen)
+        currentExplanation.value = explanation
+
+        if (showVisuals.value && explanation?.visual_commands) {
+          const commands = Object.values(explanation.visual_commands).flat().join(';')
+          if (commands) {
+            executeMentorAction(commands)
+          } else {
+            boardStore.setCoachShapes([])
+          }
+        } else if (!showVisuals.value) {
           boardStore.setCoachShapes([])
         }
-      } else if (!showVisuals.value) {
-        boardStore.setCoachShapes([])
+      } catch {
+        logger.error('[CoachStore] Error generating explanation')
+      } finally {
+        isAnalyzing.value = false
       }
-    } catch {
-      logger.error('[CoachStore] Error generating explanation')
-    } finally {
-      isAnalyzing.value = false
     }
   }
 
@@ -208,19 +282,20 @@ export const useCoachStore = defineStore('coach', () => {
 
       if (!isCoachEnabled.value) return
 
-      // Optimization: Only analyze during live play if it's the user's turn.
-      // In Analysis/Review mode, we always analyze to provide full feedback.
       const isUserTurn = boardStore.turn === boardStore.orientation
       const isAnalysisMode = boardStore.isAnalysisModeActive
 
-      if (!isAnalysisMode && !isUserTurn) {
-        logger.info('[CoachStore] Skipping analysis because it is the opponent\'s turn.')
-        return
-      }
-
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
-      triggerAnalysis(newFen)
+
+      if (!isAnalysisMode && !isUserTurn) {
+        // User hat gerade gezogen, Bot ist nun am Zug.
+        // Führe den schnellen Coach-Check durch:
+        triggerAnalysis(newFen, true)
+      } else {
+        // Normaler Analyse-Modus oder User ist am Zug
+        triggerAnalysis(newFen, false)
+      }
     },
   )
 
@@ -246,6 +321,8 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => gameStore.gamePhase,
     (newPhase) => {
+      if (isCoachIntervening.value) return // Ignoriere GamePhase Änderungen, die durch Coach Takeback verursacht werden
+
       if (newPhase === 'LOADING' || newPhase === 'IDLE') {
         logger.info(`[CoachStore] Game phase changed to ${newPhase}, putting coach to sleep.`)
         setCoachEnabled(false)
@@ -572,5 +649,8 @@ export const useCoachStore = defineStore('coach', () => {
     showVisuals,
     toggleVisuals,
     executeMentorAction,
+    takebackModalVisible,
+    takebackQuality,
+    resolveTakeback,
   }
 })
