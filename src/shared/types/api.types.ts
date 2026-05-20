@@ -33,6 +33,9 @@ export const TORNADO_THEMES = [
 
 export type TornadoTheme = (typeof TORNADO_THEMES)[number]
 
+export type TacticsTheme = (typeof TORNADO_THEMES)[number]
+export type TacticsDifficulty = 'Novice' | 'Pro' | 'Master'
+
 export interface TornadoSessionResult {
   puzzleId: string
   puzzleRating: number
@@ -168,11 +171,14 @@ export interface TornadoPuzzle {
   initial_fen: string
   tactical_solution: string
   tactical_rating: number
+  difficulty: string
   themes: string[]
   puzzle_fen?: string
   game_modus?: string
   first_move?: string
 }
+
+export type TacticsPuzzle = TornadoPuzzle
 
 export interface FinishHimPuzzle {
   puzzle_id: string

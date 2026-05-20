@@ -170,12 +170,19 @@ export async function buildFullExplanation(fen, opts = {}) {
     const fromSq = uci.slice(0, 2)
     const piece = chess.get(fromSq)
 
+    const motifs = result.motifs || []
+    let headline = motifs[0]?.phrase || null
+    if (motifs[0]?.id === 'fork' && motifs[0]?.targets?.length >= 3) {
+      const targets = motifs[0].targets.slice(1).join(', ')
+      headline = `${headline} (${targets})`
+    }
+
     planSteps.push({
       uci,
       san: result.san,
       role: piece ? piece.type : null, // 'p', 'n', 'b', 'r', 'q', 'k'
-      motifs: (result.motifs || []).map((m) => m.id),
-      headline: result.motifs?.[0]?.phrase || null,
+      motifs: motifs.map((m) => m.id),
+      headline,
       to: uci.slice(2, 4),
       from: fromSq,
     })
