@@ -1,9 +1,10 @@
-// Browser-side Stockfish (WASM) wrapper.
-// Runs Stockfish 18-lite (multi-threaded) in a Web Worker, talks UCI over postMessage.
-// Same public API as the (now-deprecated) server engine: evaluate / analyzeMultiPV / getBestMove.
+// Browser-side Stockfish (WASM) wrapper & Server analysis orchestrator.
+// Delegates job execution to WasmEngineStrategy or ServerEngineStrategy.
 
 import { tablebaseService } from '@/shared/api/TablebaseService'
 import { Chess } from 'chess.js'
+import { LRU } from './engine-cache'
+import { WasmEngineStrategy, ServerEngineStrategy } from './engine-providers'
 
 function checkTerminalPosition(fen) {
   try {
@@ -40,7 +41,6 @@ function checkTerminalPosition(fen) {
   return null
 }
 
-
 const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
 
 export let USE_SERVER_ENGINE = localStorage.getItem('positional_chess.use_server_coach') !== 'false' // default true
@@ -58,9 +58,7 @@ export function setEngineContext(isAnalysisMode, userColor) {
   CURRENT_USER_COLOR = (userColor || 'w').toLowerCase().startsWith('b') ? 'b' : 'w'
 }
 
-// Configurable defaults backed by localStorage. The UI's settings
-// panel writes to these so the engine layer reflects user preference
-// without each call-site having to thread depth through.
+// Configurable defaults backed by localStorage.
 function readPref(key, fallback, min, max) {
   try {
     const raw = localStorage.getItem(`positional_chess.${key}`)
@@ -110,33 +108,6 @@ const DEFAULT_JOB_TIMEOUT_MS = 30_000
 const DEFAULT_INIT_TIMEOUT_MS = 15_000
 const DEFAULT_CACHE_SIZE = 500
 
-class LRU {
-  constructor(maxSize) {
-    this.maxSize = maxSize
-    this.map = new Map()
-  }
-  get(key) {
-    if (!this.map.has(key)) return undefined
-    const v = this.map.get(key)
-    this.map.delete(key)
-    this.map.set(key, v)
-    return v
-  }
-  set(key, value) {
-    if (this.map.has(key)) this.map.delete(key)
-    this.map.set(key, value)
-    while (this.map.size > this.maxSize) {
-      this.map.delete(this.map.keys().next().value)
-    }
-  }
-  delete(key) {
-    this.map.delete(key)
-  }
-  clear() {
-    this.map.clear()
-  }
-}
-
 function parseScore(line) {
   const m = line.match(/score (cp|mate) (-?\d+)/)
   if (!m) return null
@@ -163,9 +134,9 @@ function parseMultiPV(line) {
 }
 
 export function getPieceCount(fen) {
-  if (!fen) return 32;
-  const boardPart = fen.split(' ')[0];
-  return (boardPart.match(/[a-zA-Z]/g) || []).length;
+  if (!fen) return 32
+  const boardPart = fen.split(' ')[0]
+  return (boardPart.match(/[a-zA-Z]/g) || []).length
 }
 
 export function fetchTablebaseMoves(fen) {
@@ -181,13 +152,14 @@ class StockfishEngine {
     this.initTimeoutMs = opts.initTimeoutMs ?? DEFAULT_INIT_TIMEOUT_MS
     this.cache = new LRU(opts.cacheSize ?? DEFAULT_CACHE_SIZE)
 
-    this.worker = null
     this.ready = false
     this.queue = []
     this.currentJob = null
     this.working = false
-    this.lastMultiPV = 1
-    this.lastThreads = 1
+
+    this._wasmStrategy = null
+    this._serverStrategy = null
+    this._lastInitWasServer = null
 
     this._initResolve = null
     this._initReject = null
@@ -195,37 +167,38 @@ class StockfishEngine {
     this._initPromise = null
   }
 
+  get activeStrategy() {
+    if (USE_SERVER_ENGINE) {
+      if (!this._serverStrategy) {
+        this._serverStrategy = new ServerEngineStrategy({
+          getPieceCount,
+          fetchTablebaseMoves,
+          getEngineContext: () => ({
+            isAnalysisMode: CURRENT_IS_ANALYSIS_MODE,
+            userColor: CURRENT_USER_COLOR,
+          }),
+        })
+      }
+      return this._serverStrategy
+    } else {
+      if (!this._wasmStrategy) {
+        this._wasmStrategy = new WasmEngineStrategy(this.workerUrl)
+      }
+      return this._wasmStrategy
+    }
+  }
+
   init() {
-    if (this._initPromise) return this._initPromise
+    if (this._initPromise && this._lastInitWasServer === USE_SERVER_ENGINE) {
+      return this._initPromise
+    }
+
+    this._lastInitWasServer = USE_SERVER_ENGINE
     this._initPromise = new Promise((resolve, reject) => {
       this._initResolve = resolve
       this._initReject = reject
+      this.ready = false
 
-      if (USE_SERVER_ENGINE) {
-        this.ready = true
-        resolve()
-        this._clearInit()
-        setTimeout(() => this._processQueue(), 0)
-        return
-      }
-
-      try {
-        this.worker = new Worker(this.workerUrl)
-      } catch (err) {
-        return reject(new Error(`Failed to spawn Stockfish worker: ${err.message}`))
-      }
-      this.worker.onmessage = (e) => {
-        if (typeof e.data === 'string') this._onLine(e.data.trim())
-      }
-      this.worker.onerror = (err) => {
-        const msg = err.message || 'Worker error'
-        if (this._initReject) {
-          this._initReject(new Error(`Stockfish worker error: ${msg}`))
-          this._clearInit()
-        } else {
-          this._abortCurrentJob(new Error(`Stockfish worker error: ${msg}`))
-        }
-      }
       this._initTimer = setTimeout(() => {
         if (this._initReject) {
           this._initReject(
@@ -235,9 +208,34 @@ class StockfishEngine {
         }
       }, this.initTimeoutMs)
 
-      this._send('uci')
-      this._send('isready')
+      this.activeStrategy.init({
+        onLine: (line) => this._onLine(line),
+        onError: (err) => {
+          if (this._initReject) {
+            this._initReject(err)
+            this._clearInit()
+          } else {
+            this._abortCurrentJob(err)
+          }
+        },
+        onReady: () => {
+          if (this._initResolve) {
+            this.ready = true
+            this._initResolve()
+            this._clearInit()
+            setTimeout(() => this._processQueue(), 0)
+          }
+        },
+      }).catch((err) => {
+        if (this._initReject) {
+          this._initReject(err)
+          this._clearInit()
+        } else {
+          reject(err)
+        }
+      })
     })
+
     return this._initPromise
   }
 
@@ -249,38 +247,24 @@ class StockfishEngine {
   }
 
   shutdown() {
-    if (this.worker) {
-      try {
-        this._send('quit')
-      } catch {
-        /* ignore */
-      }
-      try {
-        this.worker.terminate()
-      } catch {
-        /* ignore */
-      }
-      this.worker = null
+    if (this._wasmStrategy) {
+      this._wasmStrategy.shutdown()
+    }
+    if (this._serverStrategy) {
+      this._serverStrategy.shutdown()
     }
     this.ready = false
+    this._initPromise = null
   }
 
   _send(cmd) {
-    if (this.worker) this.worker.postMessage(cmd)
+    if (this.activeStrategy && typeof this.activeStrategy.send === 'function') {
+      this.activeStrategy.send(cmd)
+    }
   }
 
   _onLine(line) {
     if (!line) return
-
-    if (line === 'readyok') {
-      if (this._initResolve) {
-        this.ready = true
-        this._initResolve()
-        this._clearInit()
-        setTimeout(() => this._processQueue(), 0)
-      }
-      return
-    }
 
     if (line.startsWith('bestmove')) {
       this._finishJob(line)
@@ -303,7 +287,7 @@ class StockfishEngine {
       this.cache.set(key, p)
       return p
     }
-    
+
     // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
     const mpvKey = `m|${fen}|${USE_SERVER_ENGINE ? 3 : DEFAULT_MULTIPV}|${depth}`
     const hitMpv = this.cache.get(mpvKey)
@@ -388,15 +372,6 @@ class StockfishEngine {
     job.lines = {}
 
     if (job.type === 'multipv') {
-      if (!USE_SERVER_ENGINE && this.lastThreads !== DEFAULT_THREADS) {
-        this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
-        this.lastThreads = DEFAULT_THREADS
-      }
-      if (!USE_SERVER_ENGINE) {
-        this._send(`setoption name MultiPV value ${job.numLines}`)
-      }
-      this.lastMultiPV = job.numLines
-
       job.onLine = (line) => {
         if (line.startsWith('info') && line.includes(' score ') && line.includes(' pv ')) {
           const mpv = parseMultiPV(line)
@@ -416,14 +391,6 @@ class StockfishEngine {
         }
       }
     } else {
-      if (!USE_SERVER_ENGINE && this.lastThreads !== DEFAULT_THREADS) {
-        this._send(`setoption name Threads value ${DEFAULT_THREADS}`)
-        this.lastThreads = DEFAULT_THREADS
-      }
-      if (!USE_SERVER_ENGINE && this.lastMultiPV !== 1) {
-        this._send('setoption name MultiPV value 1')
-        this.lastMultiPV = 1
-      }
       job.onLine = (line) => {
         if (line.startsWith('info') && line.includes(' score ')) {
           const score = parseScore(line)
@@ -438,64 +405,25 @@ class StockfishEngine {
 
     job._timer = setTimeout(() => {
       job._timedOut = true
-      if (!USE_SERVER_ENGINE) this._send('stop')
+      this.activeStrategy.stop()
       job._guardTimer = setTimeout(() => {
         this._abortCurrentJob(new Error(`Stockfish job timed out after ${this.jobTimeoutMs}ms`))
       }, 2000)
     }, this.jobTimeoutMs)
 
-    if (USE_SERVER_ENGINE) {
-      const multipv = job.type === 'multipv' ? job.numLines : 1
-      
-      const doBackendFetch = (lichess_moves = null) => {
+    const multipv = job.type === 'multipv' ? job.numLines : 1
+    this.activeStrategy.executeJob(job, {
+      multipv,
+      threads: DEFAULT_THREADS,
+      onLine: (line) => {
         if (job._timedOut) return
-        fetch('/api/coach-engine/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            fen: job.fen, 
-            depth: job.depth, 
-            multipv,
-            start_fen: job.startFen,
-            moves: job.moves,
-            lichess_moves
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (job._timedOut) return
-          if (data.lines) {
-            data.lines.forEach(line => this._onLine(line))
-          }
-        })
-        .catch(err => {
-          if (!job._timedOut) this._abortCurrentJob(err)
-        })
-      }
-
-      if (getPieceCount(job.fen) <= 5) {
-        const sideToMove = job.fen.split(' ')[1] // 'w' or 'b'
-        const shouldFetchTB = CURRENT_IS_ANALYSIS_MODE || sideToMove === CURRENT_USER_COLOR
-
-        if (shouldFetchTB) {
-          fetchTablebaseMoves(job.fen)
-            .then(moves => doBackendFetch(moves))
-            .catch(() => doBackendFetch(null))
-        } else {
-          doBackendFetch(null)
-        }
-      } else {
-        doBackendFetch(null)
-      }
-    } else {
-      if (job.startFen && job.moves) {
-        const sf = job.startFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' ? 'startpos' : `fen ${job.startFen}`
-        this._send(`position ${sf} moves ${job.moves.join(' ')}`)
-      } else {
-        this._send(`position fen ${job.fen}`)
-      }
-      this._send(`go depth ${job.depth}`)
-    }
+        this._onLine(line)
+      },
+      onError: (err) => {
+        if (job._timedOut) return
+        this._abortCurrentJob(err)
+      },
+    })
   }
 
   _abortCurrentJob(err) {
