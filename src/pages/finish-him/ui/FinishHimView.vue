@@ -12,7 +12,6 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
 import { AnalysisPanel } from '@/features/analysis'
-import { CoachSidebar } from '@/features/coach'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
@@ -146,16 +145,6 @@ watch(
     <template #left-panel>
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
-        <ThemeRoseChart
-          v-if="normalizedStats && normalizedStats.finish_him"
-          v-model:activeMode="finishHimStore.selectedDifficulty"
-          mode="finish_him"
-          subMode="win"
-          :modes="['Novice', 'Pro', 'Master']"
-          :themes="currentFinishHimThemes"
-          :title="t('features.userCabinet.stats.modes.finishHim')"
-          @improve="handleImprove"
-        />
         <ChessboardPreview
           v-if="finishHimStore.fenFinal"
           :fen="finishHimStore.fenFinal"
@@ -182,7 +171,16 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <CoachSidebar />
+          <ThemeRoseChart
+            v-if="normalizedStats && normalizedStats.finish_him"
+            v-model:activeMode="finishHimStore.selectedDifficulty"
+            mode="finish_him"
+            subMode="win"
+            :modes="['Novice', 'Pro', 'Master']"
+            :themes="currentFinishHimThemes"
+            :title="t('features.userCabinet.stats.modes.finishHim')"
+            @improve="handleImprove"
+          />
           <SidebarLeaderboard
             game-mode="finish_him"
             sub-mode="win"

@@ -13,7 +13,6 @@ import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { YouMoveSelection } from '@/features/practical-chess'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
-import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
@@ -151,15 +150,6 @@ watch(
     <template #left-panel>
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
-        <ThemeRoseChart
-          v-if="normalizedStats && normalizedStats.practical"
-          :activeMode="practicalStore.activeDifficulty || 'Novice'"
-          mode="practical"
-          subMode="win"
-          :themes="currentPracticalThemes"
-          :title="t('features.userCabinet.stats.modes.practical')"
-          @improve="handleImprove"
-        />
       </div>
     </template>
 
@@ -181,7 +171,15 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <CoachSidebar />
+          <ThemeRoseChart
+            v-if="normalizedStats && normalizedStats.practical"
+            :activeMode="practicalStore.activeDifficulty || 'Novice'"
+            mode="practical"
+            subMode="win"
+            :themes="currentPracticalThemes"
+            :title="t('features.userCabinet.stats.modes.practical')"
+            @improve="handleImprove"
+          />
           <SidebarLeaderboard
             game-mode="practical"
             sub-mode="win"

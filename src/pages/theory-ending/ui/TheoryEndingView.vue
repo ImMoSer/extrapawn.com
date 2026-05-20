@@ -19,7 +19,6 @@ import type {
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
-import { CoachSidebar } from '@/features/coach'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
@@ -187,15 +186,6 @@ watch(
     <template #left-panel>
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
-        <ThemeRoseChart
-          v-if="normalizedStats && normalizedStats.theory"
-          :activeMode="theoryStore.activeDifficulty || 'Novice'"
-          :mode="currentTheoryMode"
-          :subMode="currentTheorySubMode"
-          :themes="currentTheoryThemes"
-          :title="currentTheoryTitle"
-          @improve="handleImprove"
-        />
       </div>
     </template>
 
@@ -218,7 +208,15 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <CoachSidebar />
+          <ThemeRoseChart
+            v-if="normalizedStats && normalizedStats.theory"
+            :activeMode="theoryStore.activeDifficulty || 'Novice'"
+            :mode="currentTheoryMode"
+            :subMode="currentTheorySubMode"
+            :themes="currentTheoryThemes"
+            :title="currentTheoryTitle"
+            @improve="handleImprove"
+          />
           <SidebarLeaderboard
             game-mode="theory"
             :sub-mode="theoryStore.activeType || 'win'"
