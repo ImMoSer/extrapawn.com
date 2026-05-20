@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import BaseSelectionLayout from '@/shared/ui/BaseSelectionLayout.vue'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { useTheoryEndingsStore } from '@/features/theory-endings'
-import { NRadioGroup, NRadioButton, NText } from 'naive-ui'
+import { NRadioGroup, NRadioButton, NText, NSpace } from 'naive-ui'
 import {
   THEORY_ENDING_CATEGORIES,
   type TheoryEndingCategory,
@@ -12,7 +11,6 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, computed } from 'vue'
-
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 
 const { t } = useI18n()
@@ -49,35 +47,15 @@ function handleStart() {
     params: { type: selectedType.value },
   })
 }
+
+defineExpose({ handleStart })
 </script>
 
 <template>
-  <BaseSelectionLayout
-    :title="t('features.theoryEndgames.selection.title')"
-    :subtitle="t('features.theoryEndgames.selection.subtitle')"
-    accent-type="primary"
-    @start="handleStart"
-  >
-    <template #sections>
-      <!-- Type Selection -->
-      <div class="section">
-        <n-text class="section-label">{{
-          t('features.theoryEndgames.selection.typeLabel')
-        }}</n-text>
-        <n-radio-group v-model:value="selectedType" size="large" expand>
-          <n-radio-button
-            v-for="type in ['win', 'draw'] as const"
-            :key="type"
-            :value="type"
-            style="text-align: center"
-          >
-            {{ t(`chess.types.${type}`) }}
-          </n-radio-button>
-        </n-radio-group>
-      </div>
-
-      <!-- Difficulty Selection -->
-      <div class="section">
+  <div class="selection-sections">
+    <n-space justify="space-between" :size="24" class="top-row">
+      <!-- Difficulty Selection (Left) -->
+      <div class="section flex-grow">
         <n-text class="section-label">{{
           t('features.theoryEndgames.selection.difficultyLabel')
         }}</n-text>
@@ -93,23 +71,74 @@ function handleStart() {
         </n-radio-group>
       </div>
 
-      <!-- Categories / Themes Selection -->
-      <div class="section">
+      <!-- Type Selection (Right) -->
+      <div class="section type-section">
         <n-text class="section-label">{{
-          t('features.theoryEndgames.selection.categoryLabel')
+          t('features.theoryEndgames.selection.typeLabel')
         }}</n-text>
-        <VisualRadioGroup v-model:value="selectedCategory" :options="themeOptions" />
+        <n-radio-group v-model:value="selectedType" size="large">
+          <n-radio-button
+            v-for="type in ['win', 'draw'] as const"
+            :key="type"
+            :value="type"
+            style="text-align: center"
+          >
+            {{ t(`chess.types.${type}`) }}
+          </n-radio-button>
+        </n-radio-group>
       </div>
-    </template>
+    </n-space>
 
-    <template #start-button-label>
-      {{ t('features.theoryEndgames.selection.start') }}
-    </template>
-  </BaseSelectionLayout>
+    <!-- Categories / Themes Selection -->
+    <div class="section">
+      <n-text class="section-label">{{
+        t('features.theoryEndgames.selection.categoryLabel')
+      }}</n-text>
+      <VisualRadioGroup v-model:value="selectedCategory" :options="themeOptions" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.engine-selector-wrapper {
+.selection-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   width: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.flex-grow {
+  flex: 1;
+}
+
+.type-section {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.section-label {
+  font-weight: 600;
+  color: var(--text-secondary, #999);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+@media (max-width: 600px) {
+  .top-row {
+    flex-direction: column;
+    gap: 16px !important;
+  }
+  .type-section {
+    text-align: left;
+    align-items: flex-start;
+  }
 }
 </style>

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import {
-  BookOutline,
-  BuildOutline,
   CashOutline,
   ChatbubbleEllipsesOutline,
   DiamondOutline,
@@ -50,24 +48,14 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('nav.finishHim'),
-    key: '/finish-him',
+    label: () => t('nav.endgames'),
+    key: '/endgames',
     icon: renderIcon(HammerOutline),
   },
   {
     label: () => t('nav.tornado'),
     key: '/tornado',
     icon: renderIcon(ThunderstormOutline),
-  },
-  {
-    label: () => t('nav.theoryEndgames'),
-    key: '/theory-endings',
-    icon: renderIcon(BookOutline),
-  },
-  {
-    label: () => t('nav.practicalChess'),
-    key: '/practical-chess',
-    icon: renderIcon(BuildOutline),
   },
   {
     label: () => t('nav.diamondHunter'),

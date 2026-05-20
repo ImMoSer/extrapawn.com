@@ -2,8 +2,6 @@
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
-  BookOutline,
-  BuildOutline,
   ChatbubbleEllipsesOutline,
   DiamondOutline,
   FlashOutline,
@@ -41,9 +39,9 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   {
-    path: '/finish-him',
+    path: '/endgames',
     icon: HammerOutline,
-    labelKey: 'welcome.buttons.finishHim',
+    labelKey: 'welcome.buttons.endgames',
     color: 'var(--neon-pink)',
   },
   {
@@ -51,18 +49,6 @@ const menuItems = [
     icon: ThunderstormOutline,
     labelKey: 'welcome.buttons.tornado',
     color: 'var(--neon-cyan)',
-  },
-  {
-    path: '/theory-endings',
-    icon: BookOutline,
-    labelKey: 'welcome.buttons.theoryEndgames',
-    color: 'var(--neon-purple)',
-  },
-  {
-    path: '/practical-chess',
-    icon: BuildOutline,
-    labelKey: 'welcome.buttons.practicalChess',
-    color: 'var(--neon-orange)',
   },
   {
     path: '/diamond-hunter',
@@ -93,6 +79,12 @@ const menuItems = [
     icon: PersonOutline,
     labelKey: 'nav.userCabinet',
     color: 'var(--neon-orange)',
+  },
+  {
+    path: '/bonus',
+    icon: TrophyOutline,
+    labelKey: 'welcome.buttons.club',
+    color: 'var(--neon-yellow)',
   },
   {
     path: '/records',

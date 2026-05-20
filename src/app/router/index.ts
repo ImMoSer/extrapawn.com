@@ -40,18 +40,20 @@ const router = createRouter({
       },
     },
     {
-      path: '/finish-him',
-      name: 'finish-him-selection',
-      component: () => import('@/pages/finish-him/ui/FinishHimSelectionPage.vue'),
+      path: '/endgames',
+      name: 'endgames-selection',
+      component: () => import('@/pages/endgames/ui/EndgamesSelectionPage.vue'),
       meta: {
         requiresAuth: true,
-        gameMode: 'finish-him',
         seo: {
-          titleKey: 'seo.finishHim.title',
-          descriptionKey: 'seo.finishHim.description',
-          keywordsKey: 'seo.finishHim.keywords',
+          titleKey: 'seo.endgames.title',
+          descriptionKey: 'seo.endgames.description',
         },
       },
+    },
+    {
+      path: '/finish-him',
+      redirect: '/endgames',
     },
     {
       path: '/finish-him/play',
@@ -182,16 +184,7 @@ const router = createRouter({
     },
     {
       path: '/theory-endings',
-      name: 'theory-endings-selection',
-      component: () => import('@/pages/theory-ending/ui/TheoryEndingsSelectionPage.vue'),
-      meta: {
-        requiresAuth: true,
-        gameMode: 'theory',
-        seo: {
-          titleKey: 'seo.theoryEndings.title',
-          descriptionKey: 'seo.theoryEndings.description',
-        },
-      },
+      redirect: '/endgames',
     },
     {
       path: '/theory-endings/play/:type?/:puzzleId?',
@@ -225,9 +218,7 @@ const router = createRouter({
     },
     {
       path: '/practical-chess',
-      name: 'practical-chess',
-      component: () => import('@/pages/practical-chess/ui/PracticalChessSelectionPage.vue'),
-      meta: { requiresAuth: true, gameMode: 'practical' },
+      redirect: '/endgames',
     },
     {
       path: '/practical-chess/play/:id?',

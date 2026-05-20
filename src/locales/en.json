@@ -9,6 +9,10 @@
       "title": "Welcome",
       "description": "The closed-loop chess gym for tournament players (1500+). Stop playing, start training."
     },
+    "endgames": {
+      "title": "Endgames Training — Master the Final Stage",
+      "description": "Improve your endgame technique with our unified training module including Finish Him, Theoretical and Practical Endgames."
+    },
     "finishHim": {
       "title": "Finish Him — Master Realization",
       "description": "Convert your winning advantage against human-like AI resistance. Learn to finish off your opponents.",
@@ -739,7 +743,7 @@
       }
     },
     "learningCoach": {
-      "title": "Learn Coach",
+      "title": "Coach",
       "difficultyLabel": "Difficulty",
       "categoryLabel": "Category",
       "modeLabel": "Endgame Mode",
@@ -1100,10 +1104,8 @@
     "diamondHunter": "Brilliants",
     "openingExam": "Sparring",
     "openingSparring": "Sparring",
-    "learningCoach": "Learn Coach",
-    "finishHim": "Finish Him",
-    "theoryEndgames": "Endgames",
-    "practicalChess": "Practical",
+    "learningCoach": "Coach",
+    "endgames": "Endgames",
     "tornado": "Tornado",
     "speedrun": "Speedrun",
     "leaderboards": "LeaderBoards",
@@ -1415,10 +1417,12 @@
       "practicalChess": "Practical",
       "tornado": "Tornado",
       "leaderboards": "Leaderboards",
+      "club": "Club",
       "diamondHunter": "Brilliants",
       "openingSparring": "Sparring",
-      "learningCoach": "Learn Coach",
-      "repertoire": "Study"
+      "learningCoach": "Coach",
+      "repertoire": "Study",
+      "endgames": "Endgames"
     },
     "loginPrompt": "Or log in to access all features:"
   },

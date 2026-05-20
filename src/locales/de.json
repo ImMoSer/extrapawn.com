@@ -9,6 +9,10 @@
       "title": "Willkommen",
       "description": "Das geschlossene Schach-Gym für Turnierspieler (1500+). Hör auf zu spielen, fang an zu trainieren."
     },
+    "endgames": {
+      "title": "Endspiel-Training — Meistere die finale Phase",
+      "description": "Verbessere deine Endspieltechnik mit unserem vereinten Trainingsmodul inklusive Finish Him, Theoretischen und Praktischen Endspielen."
+    },
     "finishHim": {
       "title": "Finish Him — Die Kunst der Realisierung",
       "description": "Verwerte deinen Gewinnvorteil gegen menschenähnliche KI-Resistenz. Lerne, deine Gegner eiskalt zu besiegen.",
@@ -1101,9 +1105,7 @@
     "openingExam": "Sparring",
     "openingSparring": "Sparring",
     "learningCoach": "Lern Coach",
-    "finishHim": "Finish Him",
-    "theoryEndgames": "Endspiele",
-    "practicalChess": "Praxis",
+    "endgames": "Endspiele",
     "tornado": "Tornado",
     "speedrun": "Speedrun",
     "leaderboards": "Bestenliste",
@@ -1415,11 +1417,13 @@
       "practicalChess": "Praxis",
       "tornado": "Tornado",
       "leaderboards": "Bestenliste",
+      "club": "Club",
       "diamondHunter": "Brillanten",
       "openingSparring": "Sparring",
-      "learningCoach": "Lern Coach",
-      "repertoire": "Studien"
-    },
+      "learningCoach": "Coach",
+      "repertoire": "Studium",
+      "endgames": "Endspiele"
+      },
     "loginPrompt": "Oder melde dich an, um alle Funktionen zu nutzen:"
   },
   "clubPage": {
