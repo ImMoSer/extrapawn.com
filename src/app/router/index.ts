@@ -1,6 +1,6 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
-import { useFinishHimStore } from '@/features/finish-him'
+import { useEndgameStore } from '@/features/endgames'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { watch } from 'vue'
@@ -8,9 +8,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
 import { useOpeningSparringStore } from '@/features/opening-sparring'
-import { usePracticalChessStore } from '@/features/practical-chess'
 import { useStudyStore } from '@/features/study'
-import { useTheoryEndingsStore } from '@/features/theory-endings'
 import { useTornadoStore } from '@/features/tornado'
 
 import { AboutPage } from '@/pages/about'
@@ -333,19 +331,19 @@ router.afterEach(async (to, from) => {
   const isTornadoToMistakes = fromBaseRoute === 'tornado' && toBaseRoute === 'tornado-mistakes'
 
   if (fromBaseRoute === 'finish-him' && toBaseRoute !== 'finish-him') {
-    useFinishHimStore().reset()
+    useEndgameStore().reset()
   } else if (fromBaseRoute === 'tornado' && toBaseRoute !== 'tornado' && !isTornadoToMistakes) {
     useTornadoStore().reset()
   } else if (
     fromBaseRoute?.startsWith('theory-endings') &&
     !toBaseRoute?.startsWith('theory-endings')
   ) {
-    useTheoryEndingsStore().reset()
+    useEndgameStore().reset()
   } else if (
     fromBaseRoute?.startsWith('practical-chess') &&
     !toBaseRoute?.startsWith('practical-chess')
   ) {
-    usePracticalChessStore().reset()
+    useEndgameStore().reset()
   } else if (fromBaseRoute === 'opening-sparring' && toBaseRoute !== 'opening-sparring') {
     useOpeningSparringStore().reset()
   }

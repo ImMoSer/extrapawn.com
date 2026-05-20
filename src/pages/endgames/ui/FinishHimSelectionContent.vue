@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
-import { useFinishHimStore } from '@/features/finish-him'
+import { useEndgameStore } from '@/features/endgames'
 import { NRadioGroup, NRadioButton, NText } from 'naive-ui'
 import { type FinishHimDifficulty, type FinishHimTheme } from '@/shared/types/api.types'
 import { useRouter } from 'vue-router'
@@ -10,7 +10,7 @@ import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 
 const { t } = useI18n()
 const router = useRouter()
-const finishHimStore = useFinishHimStore()
+const endgameStore = useEndgameStore()
 
 const difficultyLevels = ['Novice', 'Pro', 'Master'] as const
 const selectedDifficulty = ref<string>('Novice')
@@ -29,7 +29,7 @@ const categories: FinishHimTheme[] = [
 ]
 
 onMounted(() => {
-  finishHimStore.reset()
+  endgameStore.reset()
 })
 
 const themeOptions = computed(() => {
@@ -43,10 +43,10 @@ const themeOptions = computed(() => {
 })
 
 function handleStart() {
-  finishHimStore.setParams(
-    selectedCategory.value,
-    selectedDifficulty.value as FinishHimDifficulty,
-  )
+  endgameStore.setParams({
+    theme: selectedCategory.value,
+    difficulty: selectedDifficulty.value as FinishHimDifficulty,
+  })
   router.push({ name: 'finish-him-play' })
 }
 

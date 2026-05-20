@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
-import { useFinishHimStore } from '@/features/finish-him'
+import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
 import ChessboardPreview from '@/shared/ui/board-preview/ChessboardPreview.vue'
@@ -21,7 +21,7 @@ import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import type { FinishHimDifficulty, GameLaunchOptions } from '@/shared/types/api.types'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
 
-const finishHimStore = useFinishHimStore()
+const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
 const boardStore = useBoardStore()
 const controlsStore = useControlsStore()
@@ -35,7 +35,7 @@ const { t } = useI18n()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'FINISH_HIM',
   subMode: 'win',
-  theme: finishHimStore.selectedTheme || '',
+  theme: endgameStore.activeParams.theme || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -47,7 +47,7 @@ const normalizedStats = computed(() => {
 
 const currentFinishHimThemes = computed(() => {
   if (!normalizedStats.value?.finish_him?.modes?.win) return []
-  return normalizedStats.value.finish_him.modes.win[finishHimStore.selectedDifficulty] || []
+  return normalizedStats.value.finish_him.modes.win[endgameStore.activeParams.difficulty || 'Novice'] || []
 })
 
 const handleImprove = (options: GameLaunchOptions) => {
@@ -56,23 +56,23 @@ const handleImprove = (options: GameLaunchOptions) => {
       throw new Error('[FinishHimView] handleImprove was called without a subMode (difficulty)!')
     }
 
-    finishHimStore.setParams(options.theme, options.difficulty as FinishHimDifficulty)
-    finishHimStore.loadNewPuzzle()
+    endgameStore.setParams({ theme: options.theme, difficulty: options.difficulty as FinishHimDifficulty })
+    endgameStore.loadNewPuzzle('finish_him')
   }
 }
 
 onMounted(() => {
-  finishHimStore.initialize()
+  endgameStore.initialize()
   const puzzleId = route.params.puzzleId as string | undefined
   const fen = route.params.fen as string | undefined
   const color = route.params.color as 'white' | 'black' | undefined
 
   if (fen && color) {
-    finishHimStore.startPlayoutFromFen(fen.replace(/_/g, ' '), color)
+    endgameStore.startPlayoutFromFen(fen.replace(/_/g, ' '), color)
   } else if (puzzleId) {
-    finishHimStore.loadNewPuzzle(puzzleId)
-  } else if (finishHimStore.selectedTheme) {
-    finishHimStore.loadNewPuzzle()
+    endgameStore.loadNewPuzzle('finish_him', { puzzleId })
+  } else if (endgameStore.activeParams.theme) {
+    endgameStore.loadNewPuzzle('finish_him')
   } else {
     // If accessed without parameters, redirect to selection
     router.push('/finish-him')
@@ -84,15 +84,13 @@ onBeforeRouteLeave(() => {
 })
 
 watch(
-  () => finishHimStore.activePuzzle,
+  () => endgameStore.activePuzzle,
   (newPuzzle) => {
     if (newPuzzle?.puzzle_id && route.params.puzzleId !== newPuzzle.puzzle_id) {
       if (route.name === 'finish-him-play' || route.name === 'finish-him-puzzle') {
         router.replace({ name: 'finish-him-puzzle', params: { puzzleId: newPuzzle.puzzle_id } })
       }
     }
-    // Every time a new puzzle is loaded or restarted (if we handle restart carefully) we reset hints
-    // Wait, activePuzzle might not change on restart. Let's just watch puzzle_id or gamePhase
   },
 )
 
@@ -123,15 +121,15 @@ watch(
 
     controlsStore.setControls({
       canRequestNew: isGameOver || isIdle,
-      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!finishHimStore.activePuzzle,
+      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!endgameStore.activePuzzle,
       canResign: isPlaying,
-      canShare: !!finishHimStore.activePuzzle,
+      canShare: !!endgameStore.activePuzzle,
       canRequestHint: isPlaying,
-      onRequestNew: () => finishHimStore.loadNewPuzzle(),
-      onRestart: finishHimStore.handleRestart,
+      onRequestNew: () => endgameStore.loadNewPuzzle('finish_him'),
+      onRestart: endgameStore.handleRestart,
       onShare: () => {
-        if (finishHimStore.activePuzzle?.puzzle_id) {
-          shareService.share('finish-him', finishHimStore.activePuzzle.puzzle_id)
+        if (endgameStore.activePuzzle?.puzzle_id) {
+          shareService.share('finish-him', endgameStore.activePuzzle.puzzle_id)
         }
       },
     })
@@ -146,8 +144,8 @@ watch(
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
         <ChessboardPreview
-          v-if="finishHimStore.fenFinal"
-          :fen="finishHimStore.fenFinal"
+          v-if="endgameStore.fenFinal"
+          :fen="endgameStore.fenFinal"
           :orientation="boardStore.orientation"
           class="final-position-preview"
         />
@@ -173,7 +171,7 @@ watch(
         <template v-else>
           <ThemeRoseChart
             v-if="normalizedStats && normalizedStats.finish_him"
-            v-model:activeMode="finishHimStore.selectedDifficulty"
+            v-model:activeMode="endgameStore.activeParams.difficulty"
             mode="finish_him"
             subMode="win"
             :modes="['Novice', 'Pro', 'Master']"
@@ -184,8 +182,8 @@ watch(
           <SidebarLeaderboard
             game-mode="finish_him"
             sub-mode="win"
-            :theme="finishHimStore.selectedTheme || ''"
-            :difficulty="finishHimStore.selectedDifficulty"
+            :theme="endgameStore.activeParams.theme || ''"
+            :difficulty="endgameStore.activeParams.difficulty || 'Novice'"
           />
         </template>
       </div>

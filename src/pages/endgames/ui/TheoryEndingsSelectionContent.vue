@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
-import { useTheoryEndingsStore } from '@/features/theory-endings'
+import { useEndgameStore } from '@/features/endgames'
 import { NRadioGroup, NRadioButton, NText } from 'naive-ui'
 import {
   THEORY_ENDING_CATEGORIES,
@@ -14,7 +14,7 @@ import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 
 const { t } = useI18n()
 const router = useRouter()
-const theoryStore = useTheoryEndingsStore()
+const endgameStore = useEndgameStore()
 
 const difficultyLevels = ['Novice', 'Pro', 'Master'] as const
 const selectedDifficulty = ref<string>('Novice')
@@ -22,7 +22,7 @@ const selectedType = 'win' as const
 const selectedCategory = ref<string>('pawn')
 
 onMounted(() => {
-  theoryStore.reset()
+  endgameStore.reset()
 })
 
 const themeOptions = computed(() => {
@@ -36,11 +36,11 @@ const themeOptions = computed(() => {
 })
 
 function handleStart() {
-  theoryStore.setParams(
-    selectedType,
-    selectedDifficulty.value as TheoryEndingDifficulty,
-    selectedCategory.value as TheoryEndingCategory,
-  )
+  endgameStore.setParams({
+    type: selectedType,
+    difficulty: selectedDifficulty.value as TheoryEndingDifficulty,
+    category: selectedCategory.value as TheoryEndingCategory,
+  })
   router.push({
     name: 'theory-endings-play',
     params: { type: selectedType },

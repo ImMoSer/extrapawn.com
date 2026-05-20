@@ -1,11 +1,11 @@
 <!-- src/features/practical-chess/ui/YouMoveSelection.vue -->
 <script setup lang="ts">
-import { usePracticalChessStore } from '../index'
+import { useEndgameStore } from '@/features/endgames'
 
-const practicalStore = usePracticalChessStore()
+const endgameStore = useEndgameStore()
 
 const handleSelection = (color: 'white' | 'black') => {
-  practicalStore.startYouMoveGame(color)
+  endgameStore.startYouMoveGame(color)
 }
 </script>
 

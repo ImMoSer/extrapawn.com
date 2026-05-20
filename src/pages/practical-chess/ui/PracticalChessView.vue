@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
-import { usePracticalChessStore } from '@/features/practical-chess'
+import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
 import { computed, onMounted, watch } from 'vue'
@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n'
 
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
-import { YouMoveSelection } from '@/features/practical-chess'
+import { YouMoveSelection } from '@/features/endgames'
 import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
@@ -26,7 +26,7 @@ import type {
 } from '@/shared/types/api.types'
 
 const { t } = useI18n()
-const practicalStore = usePracticalChessStore()
+const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
@@ -38,7 +38,7 @@ const route = useRoute()
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'PRACTICAL_CHESS',
   subMode: 'win',
-  theme: practicalStore.activeCategory || '',
+  theme: endgameStore.activeParams.category || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -51,7 +51,7 @@ const normalizedStats = computed(() => {
 const currentPracticalThemes = computed(() => {
   if (!normalizedStats.value?.practical?.modes?.win) return []
   return (
-    normalizedStats.value.practical.modes.win[practicalStore.activeDifficulty || 'Novice'] || []
+    normalizedStats.value.practical.modes.win[endgameStore.activeParams.difficulty || 'Novice'] || []
   )
 })
 
@@ -60,15 +60,17 @@ const handleImprove = (options: GameLaunchOptions) => {
     if (!options.theme || !options.difficulty) {
       throw new Error('[PracticalChessView] handleImprove was called with missing options!')
     }
-    practicalStore.selectDifficulty(options.difficulty as PracticalChessDifficulty)
-    practicalStore.selectCategory(options.theme as PracticalChessCategory)
-    practicalStore.loadNewPuzzle()
+    endgameStore.setParams({
+      difficulty: options.difficulty as PracticalChessDifficulty,
+      category: options.theme as PracticalChessCategory,
+    })
+    endgameStore.loadNewPuzzle('practical_chess')
   }
 }
 
 onMounted(() => {
   const id = route.params.id as string
-  practicalStore.loadNewPuzzle(id)
+  endgameStore.loadNewPuzzle('practical_chess', { puzzleId: id })
 })
 
 onBeforeRouteLeave(() => {
@@ -85,7 +87,7 @@ watch(
 )
 
 watch(
-  () => practicalStore.activePuzzle,
+  () => endgameStore.activePuzzle,
   (newPuzzle) => {
     if (newPuzzle?.puzzle_id && route.params.id !== newPuzzle.puzzle_id) {
       if (route.name === 'practical-chess-play' || route.name === 'practical-chess-puzzle') {
@@ -113,21 +115,21 @@ watch(
 
     controlsStore.setControls({
       canRequestNew: isGameOver || isIdle,
-      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!practicalStore.activePuzzle,
+      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!endgameStore.activePuzzle,
       canResign: isPlaying,
-      canShare: !!practicalStore.activePuzzle,
+      canShare: !!endgameStore.activePuzzle,
       canRequestHint: isPlaying,
       onRequestNew: () => {
         if (route.params.id) {
           router.push({ name: 'practical-chess' })
         } else {
-          practicalStore.loadNewPuzzle()
+          endgameStore.loadNewPuzzle('practical_chess')
         }
       },
-      onRestart: practicalStore.handleRestart,
+      onRestart: endgameStore.handleRestart,
       onShare: async () => {
-        if (practicalStore.activePuzzle) {
-          await shareService.share('practical-chess', practicalStore.activePuzzle.puzzle_id)
+        if (endgameStore.activePuzzle) {
+          await shareService.share('practical-chess', endgameStore.activePuzzle.puzzle_id)
         }
       },
     })
@@ -139,14 +141,14 @@ watch(
   () => route.params.id,
   (newId, oldId) => {
     if (oldId && !newId) {
-      practicalStore.loadNewPuzzle()
+      endgameStore.loadNewPuzzle('practical_chess')
     }
   },
 )
 </script>
 
 <template>
-  <GameLayout :boardLocked="practicalStore.isWaitingForColorSelection">
+  <GameLayout :boardLocked="endgameStore.isWaitingForColorSelection">
     <template #left-panel>
       <div class="left-panel-content-wrapper">
         <UserProfileWidget />
@@ -160,7 +162,7 @@ watch(
     <template #center-column> </template>
 
     <template #controls>
-      <YouMoveSelection v-if="practicalStore.isWaitingForColorSelection" />
+      <YouMoveSelection v-if="endgameStore.isWaitingForColorSelection" />
       <ControlPanel v-else />
     </template>
 
@@ -173,7 +175,7 @@ watch(
         <template v-else>
           <ThemeRoseChart
             v-if="normalizedStats && normalizedStats.practical"
-            :activeMode="practicalStore.activeDifficulty || 'Novice'"
+            :activeMode="endgameStore.activeParams.difficulty || 'Novice'"
             mode="practical"
             subMode="win"
             :themes="currentPracticalThemes"
@@ -183,8 +185,8 @@ watch(
           <SidebarLeaderboard
             game-mode="practical"
             sub-mode="win"
-            :theme="practicalStore.activeCategory || ''"
-            :difficulty="practicalStore.activeDifficulty || 'Novice'"
+            :theme="endgameStore.activeParams.category || ''"
+            :difficulty="endgameStore.activeParams.difficulty || 'Novice'"
           />
         </template>
       </div>

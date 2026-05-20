@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
-import { useTheoryEndingsStore } from '@/features/theory-endings'
+import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
 import { computed, onMounted, watch } from 'vue'
@@ -27,7 +27,7 @@ import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useAuthStore } from '@/entities/user'
 
 const { t } = useI18n()
-const theoryStore = useTheoryEndingsStore()
+const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
@@ -38,8 +38,8 @@ const route = useRoute()
 
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'THEORY_ENDING',
-  subMode: theoryStore.activeType || 'win',
-  theme: theoryStore.activeCategory || '',
+  subMode: endgameStore.activeParams.type || 'win',
+  theme: endgameStore.activeParams.category || '',
 }))
 
 const { data: detailedStatsData } = useDetailedStatsQuery()
@@ -50,7 +50,7 @@ const normalizedStats = computed(() => {
 })
 
 const currentTheoryThemes = computed(() => {
-  const diff = theoryStore.activeDifficulty || 'Novice'
+  const diff = endgameStore.activeParams.difficulty || 'Novice'
   if (!normalizedStats.value?.theory?.modes?.win) return []
   return normalizedStats.value.theory.modes.win[diff] || []
 })
@@ -73,12 +73,12 @@ const handleImprove = (options: GameLaunchOptions) => {
       throw new Error('[TheoryEndingView] handleImprove was called with missing options!')
     }
     const targetType = 'win'
-    theoryStore.setParams(
-      targetType,
-      options.difficulty as TheoryEndingDifficulty,
-      options.theme as TheoryEndingCategory,
-    )
-    theoryStore.loadNewPuzzle(targetType)
+    endgameStore.setParams({
+      type: targetType,
+      difficulty: options.difficulty as TheoryEndingDifficulty,
+      category: options.theme as TheoryEndingCategory,
+    })
+    endgameStore.loadNewPuzzle('theory_endings')
   }
 }
 
@@ -86,11 +86,11 @@ onMounted(() => {
   const type = route.params.type as TheoryEndingType
   const puzzleId = route.params.puzzleId as string
 
-  if (!type && !theoryStore.activeType) {
+  if (!type && !endgameStore.activeParams.type) {
     router.push('/theory-endings')
     return
   }
-  theoryStore.loadNewPuzzle(type, puzzleId)
+  endgameStore.loadNewPuzzle('theory_endings', { type, puzzleId })
 })
 
 onBeforeRouteLeave(() => {
@@ -107,14 +107,14 @@ watch(
 )
 
 watch(
-  () => theoryStore.activePuzzle,
+  () => endgameStore.activePuzzle,
   (newPuzzle) => {
     if (newPuzzle?.puzzle_id && route.params.puzzleId !== newPuzzle.puzzle_id) {
       if (route.name === 'theory-endings-play' || route.name === 'theory-endings-puzzle') {
         router.replace({
           name: 'theory-endings-puzzle',
           params: {
-            type: theoryStore.activeType || 'win',
+            type: endgameStore.activeParams.type || 'win',
             puzzleId: newPuzzle.puzzle_id,
           },
         })
@@ -139,22 +139,22 @@ watch(
 
     controlsStore.setControls({
       canRequestNew: isGameOver || isIdle,
-      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!theoryStore.activePuzzle,
+      canRestart: gameStore.gamePhase === 'GAMEOVER' && !!endgameStore.activePuzzle,
       canResign: isPlaying,
-      canShare: !!theoryStore.activePuzzle,
+      canShare: !!endgameStore.activePuzzle,
       canRequestHint: isPlaying,
       onRequestNew: () => {
         if (route.params.puzzleId) {
           router.push({ name: 'theory-endings-play' })
         } else {
-          theoryStore.loadNewPuzzle()
+          endgameStore.loadNewPuzzle('theory_endings')
         }
       },
-      onRestart: theoryStore.handleRestart,
+      onRestart: endgameStore.handleRestart,
       onShare: async () => {
-        if (theoryStore.activePuzzle && theoryStore.activeType) {
-          await shareService.share('theory-endings', theoryStore.activePuzzle.puzzle_id, {
-            theoryType: theoryStore.activeType,
+        if (endgameStore.activePuzzle && endgameStore.activeParams.type) {
+          await shareService.share('theory-endings', endgameStore.activePuzzle.puzzle_id, {
+            theoryType: endgameStore.activeParams.type as "win" | "draw",
           })
         }
       },
@@ -167,7 +167,7 @@ watch(
   () => route.params.puzzleId,
   (newId, oldId) => {
     if (oldId && !newId) {
-      theoryStore.loadNewPuzzle()
+      endgameStore.loadNewPuzzle('theory_endings')
     }
   },
 )
@@ -202,7 +202,7 @@ watch(
         <template v-else>
           <ThemeRoseChart
             v-if="normalizedStats && normalizedStats.theory"
-            :activeMode="theoryStore.activeDifficulty || 'Novice'"
+            :activeMode="endgameStore.activeParams.difficulty || 'Novice'"
             :mode="currentTheoryMode"
             :subMode="currentTheorySubMode"
             :themes="currentTheoryThemes"
@@ -211,9 +211,9 @@ watch(
           />
           <SidebarLeaderboard
             game-mode="theory"
-            :sub-mode="theoryStore.activeType || 'win'"
-            :theme="theoryStore.activeCategory || ''"
-            :difficulty="theoryStore.activeDifficulty || 'Novice'"
+            :sub-mode="endgameStore.activeParams.type || 'win'"
+            :theme="endgameStore.activeParams.category || ''"
+            :difficulty="endgameStore.activeParams.difficulty || 'Novice'"
           />
         </template>
       </div>

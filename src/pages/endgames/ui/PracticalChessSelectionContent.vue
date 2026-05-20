@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
-import { usePracticalChessStore } from '@/features/practical-chess'
+import { useEndgameStore } from '@/features/endgames'
 import { NRadioGroup, NRadioButton, NText } from 'naive-ui'
 import {
   PRACTICAL_CHESS_CATEGORIES,
@@ -9,16 +9,20 @@ import {
 } from '@/shared/types/api.types'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 
 const { t } = useI18n()
 const router = useRouter()
-const practicalStore = usePracticalChessStore()
+const endgameStore = useEndgameStore()
 
 const difficultyLevels = ['Novice', 'Pro', 'Master'] as const
-const selectedDifficulty = ref<string>(practicalStore.activeDifficulty)
-const selectedCategory = ref<string>(practicalStore.activeCategory)
+const selectedDifficulty = ref<string>(endgameStore.activeParams.difficulty || 'Novice')
+const selectedCategory = ref<string>(endgameStore.activeParams.category || 'extraPawn')
+
+onMounted(() => {
+  endgameStore.reset()
+})
 
 const themeOptions = computed(() => {
   return PRACTICAL_CHESS_CATEGORIES.map((cat) => {
@@ -31,8 +35,10 @@ const themeOptions = computed(() => {
 })
 
 function handleStart() {
-  practicalStore.selectDifficulty(selectedDifficulty.value as PracticalChessDifficulty)
-  practicalStore.selectCategory(selectedCategory.value as PracticalChessCategory)
+  endgameStore.setParams({
+    difficulty: selectedDifficulty.value as PracticalChessDifficulty,
+    category: selectedCategory.value as PracticalChessCategory,
+  })
   router.push({ name: 'practical-chess-play' })
 }
 

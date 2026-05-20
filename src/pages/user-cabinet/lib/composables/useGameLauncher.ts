@@ -1,11 +1,6 @@
-import { useFinishHimStore } from '@/features/finish-him'
-import { usePracticalChessStore } from '@/features/practical-chess'
-import { useTheoryEndingsStore } from '@/features/theory-endings'
+import { useEndgameStore } from '@/features/endgames'
 import type {
-  FinishHimTheme,
   GameLaunchOptions,
-  PracticalChessCategory,
-  TheoryEndingCategory,
   TheoryEndingType,
   TornadoMode,
 } from '@/shared/types/api.types'
@@ -13,9 +8,7 @@ import { useRouter } from 'vue-router'
 
 export function useGameLauncher() {
   const router = useRouter()
-  const finishHimStore = useFinishHimStore()
-  const theoryStore = useTheoryEndingsStore()
-  const practicalStore = usePracticalChessStore()
+  const endgameStore = useEndgameStore()
 
   const launchGame = (options: GameLaunchOptions) => {
     const { mode, subMode, difficulty, theme } = options
@@ -32,7 +25,7 @@ export function useGameLauncher() {
     // 1. FINISH HIM
     if (mode === 'finish_him') {
       const targetDiff = capitalizeDiff(difficulty)
-      finishHimStore.setParams(theme as FinishHimTheme, targetDiff)
+      endgameStore.setParams({ theme, difficulty: targetDiff })
       router.push({ name: 'finish-him-play' })
       return
     }
@@ -42,7 +35,7 @@ export function useGameLauncher() {
       const targetMode = (subMode || 'win') as TheoryEndingType
       const targetDiff = capitalizeDiff(difficulty)
 
-      theoryStore.setParams(targetMode, targetDiff, theme as TheoryEndingCategory)
+      endgameStore.setParams({ type: targetMode, difficulty: targetDiff, category: theme })
 
       router.push({
         name: 'theory-endings-play',
@@ -55,8 +48,7 @@ export function useGameLauncher() {
     if (mode === 'practical') {
       const targetDiff = capitalizeDiff(difficulty)
 
-      practicalStore.selectDifficulty(targetDiff)
-      practicalStore.selectCategory(theme as PracticalChessCategory)
+      endgameStore.setParams({ difficulty: targetDiff, category: theme })
 
       router.push({ name: 'practical-chess-play' })
       return

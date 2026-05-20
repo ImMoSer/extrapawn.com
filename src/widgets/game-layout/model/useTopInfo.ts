@@ -1,10 +1,8 @@
 // src/widgets/game-layout/model/useTopInfo.ts
 import { type TopInfoDisplay } from '@/entities/puzzle'
 import { useDiamondHunterStore } from '@/features/diamond-hunter'
-import { useFinishHimStore } from '@/features/finish-him'
+import { useEndgameStore } from '@/features/endgames'
 import { useOpeningSparringStore } from '@/features/opening-sparring'
-import { usePracticalChessStore } from '@/features/practical-chess'
-import { useTheoryEndingsStore } from '@/features/theory-endings'
 import { useTornadoStore } from '@/features/tornado'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -17,9 +15,9 @@ export function useTopInfo() {
 
     if (routeName === 'tornado') return useTornadoStore().topInfoDisplay
     if (routeName === 'diamond-hunter') return useDiamondHunterStore().topInfoDisplay
-    if (routeName.startsWith('finish-him')) return useFinishHimStore().topInfoDisplay
-    if (routeName.startsWith('theory-endings')) return useTheoryEndingsStore().topInfoDisplay
-    if (routeName.startsWith('practical-chess')) return usePracticalChessStore().topInfoDisplay
+    if (routeName.startsWith('finish-him')) return useEndgameStore().topInfoDisplay
+    if (routeName.startsWith('theory-endings')) return useEndgameStore().topInfoDisplay
+    if (routeName.startsWith('practical-chess')) return useEndgameStore().topInfoDisplay
     if (routeName === 'opening-sparring') return useOpeningSparringStore().topInfoDisplay
 
     // Default fallback

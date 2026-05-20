@@ -1,15 +1,15 @@
 <!-- src/features/finish-him/ui/FinishHimSelection.vue -->
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
-import { useFinishHimStore } from '../index'
+import { useEndgameStore } from '@/features/endgames'
 import { FINISH_HIM_THEMES } from '@/shared/types/api.types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const finishHimStore = useFinishHimStore()
+const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
-const { selectedTheme } = storeToRefs(finishHimStore)
+const { activeParams } = storeToRefs(endgameStore)
 const { isGameActive } = storeToRefs(gameStore)
 const { t } = useI18n()
 
@@ -19,8 +19,9 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const availableThemes: string[] = ['auto', ...FINISH_HIM_THEMES]
 
 const selectedThemeName = computed(() => {
-  if (selectedTheme.value === 'auto') return t('chess.tactics.auto')
-  return t(`chess.themes.${selectedTheme.value}`)
+  const theme = activeParams.value.theme || 'auto'
+  if (theme === 'auto') return t('chess.tactics.auto')
+  return t(`chess.themes.${theme}`)
 })
 
 const toggleDropdown = () => {
@@ -29,8 +30,8 @@ const toggleDropdown = () => {
 }
 
 const handleThemeSelect = (theme: string) => {
-  // Casting or ensure store accepts string or FinishHimTheme
-  finishHimStore.setThemeAndLoadPuzzle(theme)
+  endgameStore.setParams({ theme })
+  endgameStore.loadNewPuzzle('finish_him')
   isOpen.value = false
 }
 
@@ -66,7 +67,7 @@ onUnmounted(() => {
         v-for="theme in availableThemes"
         :key="theme"
         class="theme-item"
-        :class="{ active: theme === selectedTheme }"
+        :class="{ active: theme === (activeParams.theme || 'auto') }"
         @click="handleThemeSelect(theme)"
       >
         {{ getThemeName(theme) }}
