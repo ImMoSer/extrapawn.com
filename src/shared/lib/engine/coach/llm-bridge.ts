@@ -4,28 +4,7 @@
  * Wir nutzen einen Whitelisting-Ansatz, um maximale Signalstärke bei minimalem Token-Verbrauch zu erreichen.
  */
 
-const formatScore = (cp: number, mate: number | null | undefined, sideToMove: 'white' | 'black') => {
-  if (mate !== null && mate !== undefined) {
-    const normalizedMate = sideToMove === 'white' ? mate : -mate;
-    return `M${normalizedMate}`;
-  }
-  const normalizedCp = sideToMove === 'white' ? cp : -cp;
-  const v = normalizedCp / 100;
-  return v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2);
-};
 
-const QUALITY_LABEL: Record<string, string> = {
-  brilliant: 'BRILLIANT',
-  great: 'GREAT',
-  best: 'BEST',
-  excellent: 'EXCELLENT',
-  good: 'GOOD',
-  neutral: 'NEUTRAL',
-  inaccuracy: 'INACCURACY',
-  mistake: 'MISTAKE',
-  blunder: 'BLUNDER',
-  missed_mate: 'MISSED MATE',
-};
 
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachBookInfo } from './coach.types';
 
@@ -92,33 +71,9 @@ export function extractLlmPayload(
     // Themes derived from the engine analysis
     themes: (blob.themes || []).map((t: { description: string }) => t.description),
 
-    // Detailed Next Move Alternatives (Top 3)
-    // Bringing 1-to-1 the texts seen in the UI (Taglines, Plans, Qualities, Evaluations)
-    top_moves: (blob.engine_top_moves || [])
-      .slice(0, 3)
-      .map((m, idx: number) => ({
-        rank: idx + 1,
-        san: m.san,
-        evaluation: formatScore(m.score, m.mate, blob.side_to_move),
-        quality_label: QUALITY_LABEL[m.explanation?.quality] || 'UNKNOWN',
-        character: m.character || 'QUIET',
-        win_rate_loss: m.explanation?.winRateLoss ? `-${m.explanation.winRateLoss.toFixed(1)}%` : null,
-        tagline: m.tagline || m.headline,
-        plan_brief: m.plan_brief,
-        explanation_summary: m.explanation?.summary,
-        explanation_details: m.explanation?.details,
-        best_move_if_not_this: !m.explanation?.is_best_move ? m.explanation?.best_move_san : null,
-        pv: m.plan_pv?.join(' ')
-      })),
-
-
-
-    // The Engine's Principal Plan
-    principal_plan: blob.principal_plan ? {
-      description: blob.principal_plan.description,
-      moves: (blob.principal_plan.moves || []).map((m: { san: string }) => m.san).join(' '),
-      zwischenzug: blob.principal_plan.zwischenzug?.description || null
-    } : null,
+    // Raw engine top moves and principal plan (1:1 from the full explanation blob)
+    engine_top_moves: blob.engine_top_moves || [],
+    principal_plan: blob.principal_plan || null,
 
     // Pre-calculated visual commands (arrows, marks)
     visual_commands: blob.visual_commands || null,

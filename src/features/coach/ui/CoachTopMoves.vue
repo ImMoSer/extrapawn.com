@@ -59,6 +59,15 @@
           Plan: {{ getEnriched(move)?.plan_brief }}.
         </div>
 
+        <div v-if="getEnriched(move)?.explanation" class="move-explanation-brief">
+          <div v-if="getEnriched(move)?.explanation?.summary" class="explanation-summary-brief">
+            {{ getEnriched(move)?.explanation?.summary }}
+          </div>
+          <div v-if="getEnriched(move)?.explanation?.details" class="explanation-details-brief">
+            {{ getEnriched(move)?.explanation?.details }}
+          </div>
+        </div>
+
         <div
           v-if="coachStore.selectedMoveIndex === idx && Array.isArray(move.pvLine) && move.pvLine.length > 1"
           class="pv-line"
@@ -282,6 +291,24 @@ const characterBorder = (label: string | undefined) => {
   font-size: 10px;
   color: #71717a;
   font-style: italic;
+  line-height: 1.4;
+}
+.move-explanation-brief {
+  margin-top: 3px;
+  margin-left: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.explanation-summary-brief {
+  font-size: 11px;
+  color: #e4e4e7;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.explanation-details-brief {
+  font-size: 11px;
+  color: #a1a1aa;
   line-height: 1.4;
 }
 .pv-line {
