@@ -238,11 +238,19 @@ export function extractConcreteFacts(blob) {
   }
 
   const seen = new Set();
-  return facts
+  const result = facts
     .sort((a, b) => b.importance - a.importance)
     .filter((f) => {
       if (seen.has(f.text)) return false;
       seen.add(f.text);
       return true;
     });
+
+  console.groupCollapsed('[Fact Extractor] Input Blob & Extracted Facts');
+  console.log('Input Explanation Blob:', blob);
+  console.log('Extracted Facts:', result);
+  console.groupEnd();
+
+  return result;
 }
+
