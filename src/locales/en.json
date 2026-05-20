@@ -1412,8 +1412,8 @@
     "titleV2": "Select a Game Mode",
     "slogan": "Consistency is the key to mastery.",
     "buttons": {
-      "finishHim": "Finish Him",
-      "theoryEndgames": "Endgames",
+      "finishHim": "GoTo",
+      "theoryEndgames": "Theoretical",
       "practicalChess": "Practical",
       "tornado": "Tornado",
       "leaderboards": "Leaderboards",

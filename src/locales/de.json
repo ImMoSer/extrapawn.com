@@ -123,8 +123,8 @@
   "gameModes": {
     "tornado": "Tornado",
     "finishHim": "Finish Him",
-    "theoryEndgames": "Endspiele",
-    "practicalChess": "Praxis",
+    "theoryEndgames": "Theoretische",
+    "practicalChess": "Practische",
     "diamondHunter": "Brilliante",
     "repertoire": "Repertoire",
     "openingSparring": "Sparring"
@@ -1412,9 +1412,9 @@
     "titleV2": "Wähle einen Modus",
     "slogan": "Übung macht den Meister!",
     "buttons": {
-      "finishHim": "Finish Him",
-      "theoryEndgames": "Endspiele",
-      "practicalChess": "Praxis",
+      "finishHim": "Übergang",
+      "theoryEndgames": "Theoretische",
+      "practicalChess": "Practische",
       "tornado": "Tornado",
       "leaderboards": "Bestenliste",
       "club": "Club",

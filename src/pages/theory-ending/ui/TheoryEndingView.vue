@@ -51,13 +51,8 @@ const normalizedStats = computed(() => {
 
 const currentTheoryThemes = computed(() => {
   const diff = theoryStore.activeDifficulty || 'Novice'
-  if (theoryStore.activeType === 'win') {
-    if (!normalizedStats.value?.theory?.modes?.win) return []
-    return normalizedStats.value.theory.modes.win[diff] || []
-  } else {
-    if (!normalizedStats.value?.theory?.modes?.draw) return []
-    return normalizedStats.value.theory.modes.draw[diff] || []
-  }
+  if (!normalizedStats.value?.theory?.modes?.win) return []
+  return normalizedStats.value.theory.modes.win[diff] || []
 })
 
 const currentTheoryMode = computed(() => {
@@ -65,14 +60,11 @@ const currentTheoryMode = computed(() => {
 })
 
 const currentTheorySubMode = computed(() => {
-  return theoryStore.activeType === 'win' ? 'win' : 'draw'
+  return 'win' as const
 })
 
 const currentTheoryTitle = computed(() => {
-  return (
-    t('features.userCabinet.stats.modes.theory') +
-    (theoryStore.activeType === 'win' ? ' (Win)' : ' (Draw)')
-  )
+  return t('features.userCabinet.stats.modes.theory')
 })
 
 const handleImprove = (options: GameLaunchOptions) => {
@@ -80,13 +72,13 @@ const handleImprove = (options: GameLaunchOptions) => {
     if (!options.theme || !options.difficulty) {
       throw new Error('[TheoryEndingView] handleImprove was called with missing options!')
     }
-    const targetType = options.subMode === 'win' ? 'win' : 'draw'
+    const targetType = 'win'
     theoryStore.setParams(
-      targetType as TheoryEndingType,
+      targetType,
       options.difficulty as TheoryEndingDifficulty,
       options.theme as TheoryEndingCategory,
     )
-    theoryStore.loadNewPuzzle(targetType as TheoryEndingType)
+    theoryStore.loadNewPuzzle(targetType)
   }
 }
 

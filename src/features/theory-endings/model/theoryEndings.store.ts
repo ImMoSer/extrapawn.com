@@ -77,10 +77,7 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
     gameStore.setGamePhase('GAMEOVER')
 
     if (isWin) {
-      feedbackMessage.value =
-        activeType.value === 'win'
-          ? t('features.theoryEndgames.feedback.win')
-          : t('features.theoryEndgames.feedback.drawSuccess')
+      feedbackMessage.value = t('features.theoryEndgames.feedback.win')
     } else {
       const reason = outcome?.reason
       if (reason === 'resign') {
@@ -161,18 +158,8 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
       activeDifficulty.value = puzzle.difficulty as TheoryEndingDifficulty
       activeCategory.value = puzzle.category as TheoryEndingCategory
 
-      // Determine human color
-      let humanColor: 'white' | 'black'
-      // Use activeType.value for game type logic
-      if (activeType.value === 'win') {
-        humanColor = 'white'
-      } else {
-        if (puzzle.weak_side === 'even') {
-          humanColor = Math.random() > 0.5 ? 'white' : 'black'
-        } else {
-          humanColor = puzzle.weak_side as 'white' | 'black'
-        }
-      }
+      // All Theory Endings are now 'win' mode, so human is white
+      const humanColor = 'white'
 
       const strategy: IGameplayStrategy = {
         config: {
@@ -186,12 +173,7 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
           // Resignation is always a loss
           if (outcome.reason === 'resign') return false
 
-          if (activeType.value === 'win') {
-            return outcome.winner === humanColor && outcome.reason === 'checkmate'
-          } else {
-            // Draw mode: any draw (winner is undefined) or win for human is success
-            return outcome.winner === humanColor || outcome.winner === undefined
-          }
+          return outcome.winner === humanColor && outcome.reason === 'checkmate'
         },
 
         requestBotMove: async (fen: string) => {
@@ -283,11 +265,9 @@ export const useTheoryEndingsStore = defineStore('theoryEndings', () => {
       const puzzle = activePuzzle.value
       if (!puzzle) return { title: '', badges: [], stats: [] }
 
-      const resultKey = puzzle.result === 'win' ? 'win' : 'draw'
-
       return {
         title: t(`chess.themes.${activeCategory.value}`).toUpperCase(),
-        mainValue: t(`chess.types.${resultKey}`).toUpperCase(),
+        mainValue: t('chess.types.win').toUpperCase(),
         badges: [
           { text: 'THEORY' },
           { text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() },

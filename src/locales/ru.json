@@ -120,7 +120,7 @@
   },
   "gameModes": {
     "tornado": "Торнадо",
-    "finishHim": "Finish Him",
+    "finishHim": "Переход в эндшпиль",
     "theoryEndgames": "Эндшпиль",
     "practicalChess": "Практика",
     "diamondHunter": "Бриллианты",
@@ -214,7 +214,7 @@
         "loadFailed": "Не удалось загрузить задачу."
       },
       "selection": {
-        "title": "Finish Him",
+        "title": "Переход в эндшпиль",
         "subtitle": "Реализуйте свое преимущество против движка",
         "themeLabel": "Тема эндшпиля"
       },
@@ -519,7 +519,7 @@
         "endgameSkillLabel": "Мастерство эндшпиля",
         "puzzlesSolved": "Решена {count} задача | Решено {count} задачи | Решено {count} задач",
         "skillEarned": "Skill за сегодня",
-        "finishHimRatingLabel": "Рейтинг FinishHim",
+        "finishHimRatingLabel": "Рейтинг Перехода в эндшпиль",
         "tornadoTitle": "Рейтинги Торнадо",
         "bestRatingsTitle": "Лучшие рейтинги",
         "global": {
@@ -536,7 +536,7 @@
         "modes": {
           "all": "Режим",
           "tornado": "Торнадо",
-          "finishHim": "Finish Him",
+          "finishHim": "Переход в эндшпиль",
           "theory": "Теория",
           "theoryWin": "Теория (Победа)",
           "theoryDraw": "Теория (Ничья)",
@@ -897,12 +897,12 @@
         "hallOfFame": "ЗАЛ СЛАВЫ 🏛️"
       },
       "titles": {
-        "topFinishHim": "Finish-Him",
+        "topFinishHim": "Переход в эндшпиль",
         "overallSkill": "Общий Skill",
         "skillStreak": "+100 каждый день",
         "skillStreakMega": "Торнадо +300 каждый день",
         "topToday": "Лучшие сегодня",
-        "finishHimLeaderboard": "Finish-Him",
+        "finishHimLeaderboard": "Переход в эндшпиль",
         "theoryLeaderboard": "Теоретические",
         "practicalLeaderboard": "Практические"
       },
@@ -1309,7 +1309,7 @@
         "text": "Адаптивный тактический тренажёр на базе системы Glicko-2. Без лимита ошибок, без скучного разогрева — с первой минуты на реальном уровне сложности. 15 тематических векторов и режим проработки ошибок Tornado Mistakes."
       },
       "finishHim": {
-        "title": "FINISH HIM — Искусство реализации",
+        "title": "ПЕРЕХОД В ЭНДШПИЛЬ — Искусство реализации",
         "text": "Двухфазный тренажёр: сначала тактический удар, затем — обязательная реализация полученного преимущества против нейросети Maia (1900-2400), которая сопротивляется по-человечески. Умение хладнокровно добить выигранную позицию."
       },
       "practicalChess": {
@@ -1410,9 +1410,9 @@
     "titleV2": "Выберите режим игры",
     "slogan": "Постоянство — ключ к мастерству.",
     "buttons": {
-      "finishHim": "Finish Him",
-      "theoryEndgames": "Эндшпиль",
-      "practicalChess": "Практика",
+      "finishHim": "Переход в эндшпиль",
+      "theoryEndgames": "Учебные",
+      "practicalChess": "Практикические",
       "tornado": "Торнадо",
       "leaderboards": "Таблицы",
       "club": "Клуб",
