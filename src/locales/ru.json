@@ -736,6 +736,51 @@
         "stalemate": "Пат"
       }
     },
+    "learningCoach": {
+      "title": "Тренер",
+      "difficultyLabel": "Сложность",
+      "categoryLabel": "Категория",
+      "modeLabel": "Режим эндшпиля",
+      "tacticsLabel": "Тактические приемы",
+      "loadPosition": "Загрузить позицию",
+      "generatePosition": "Создать позицию",
+      "chatPlaceholder": "Задать вопрос тренеру...",
+      "coachThinking": "Тренер думает...",
+      "tabs": {
+        "endgame": "Эндшпиль",
+        "tactic": "Тактика",
+        "opening": "Дебюты",
+        "chat": "Чат"
+      },
+      "modes": {
+        "goto": "Переход",
+        "theory": "Теория",
+        "practical": "Практика"
+      },
+      "details": {
+        "title": "Детали позиции",
+        "id": "ID",
+        "mode": "Режим",
+        "rating": "Рейтинг",
+        "solution": "Решение",
+        "initialFen": "Исходный FEN",
+        "category": "Категория",
+        "difficulty": "Сложность",
+        "gameModus": "Игровой режим",
+        "engmRating": "Рейтинг движка",
+        "tacticalRating": "Тактический рейтинг",
+        "subCategory": "Подкатегория",
+        "themes": "Мотивы",
+        "copied": "FEN скопирован в буфер обмена!"
+      },
+      "topInfo": {
+        "tag": "ОБУЧЕНИЕ",
+        "selectLesson": "Выберите урок",
+        "activeLesson": "Активно: {source} ({id})"
+      },
+      "welcomeMsg": "Привет! Я загрузил позицию из раздела \"{source}\". Давай разберем её. Ты можешь задавать мне вопросы прямо здесь!",
+      "openingPlaceholder": "Дебют \"{name}\" выбран (заглушка)."
+    },
     "theoryEndgames": {
       "selection": {
         "title": "Учебные эндшпили",
@@ -1053,6 +1098,7 @@
     "diamondHunter": "Бриллианты",
     "openingExam": "Спарринг",
     "openingSparring": "Спарринг",
+    "learningCoach": "Тренер",
     "finishHim": "Finish Him",
     "theoryEndgames": "Эндшпиль",
     "practicalChess": "Практика",
@@ -1369,6 +1415,7 @@
       "leaderboards": "Таблицы",
       "diamondHunter": "Бриллианты",
       "openingSparring": "Спарринг",
+      "learningCoach": "Тренер",
       "repertoire": "Студия"
     },
     "loginPrompt": "Или войдите, чтобы использовать все функции:"

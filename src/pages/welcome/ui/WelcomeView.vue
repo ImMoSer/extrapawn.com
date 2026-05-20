@@ -4,6 +4,7 @@ import { changeLang } from '@/shared/config/i18n'
 import {
   BookOutline,
   BuildOutline,
+  ChatbubbleEllipsesOutline,
   DiamondOutline,
   FlashOutline,
   HammerOutline,
@@ -74,6 +75,12 @@ const menuItems = [
     icon: FlashOutline,
     labelKey: 'welcome.buttons.openingSparring',
     color: 'var(--neon-pink)',
+  },
+  {
+    path: '/learning-coach',
+    icon: ChatbubbleEllipsesOutline,
+    labelKey: 'welcome.buttons.learningCoach',
+    color: 'var(--neon-purple)',
   },
   {
     path: '/study',

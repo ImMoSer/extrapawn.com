@@ -738,6 +738,51 @@
         "stalemate": "Stalemate"
       }
     },
+    "learningCoach": {
+      "title": "Learn Coach",
+      "difficultyLabel": "Difficulty",
+      "categoryLabel": "Category",
+      "modeLabel": "Endgame Mode",
+      "tacticsLabel": "Tactical Motifs",
+      "loadPosition": "Load Position",
+      "generatePosition": "Generate Position",
+      "chatPlaceholder": "Ask the coach a question...",
+      "coachThinking": "Coach is thinking...",
+      "tabs": {
+        "endgame": "Endgames",
+        "tactic": "Tactics",
+        "opening": "Openings",
+        "chat": "Chat Coach"
+      },
+      "modes": {
+        "goto": "GoTo",
+        "theory": "Theoretical",
+        "practical": "Practical"
+      },
+      "details": {
+        "title": "Position Details",
+        "id": "ID",
+        "mode": "Mode",
+        "rating": "Rating",
+        "solution": "Solution Path",
+        "initialFen": "Initial FEN",
+        "category": "Category",
+        "difficulty": "Difficulty",
+        "gameModus": "Game Mode",
+        "engmRating": "Engine Rating",
+        "tacticalRating": "Tactics Rating",
+        "subCategory": "Sub-Category",
+        "themes": "Themes",
+        "copied": "FEN copied to clipboard!"
+      },
+      "topInfo": {
+        "tag": "LEARN",
+        "selectLesson": "Select a training lesson",
+        "activeLesson": "Active: {source} ({id})"
+      },
+      "welcomeMsg": "Hi! I have loaded the position from the \"{source}\" section. Let's analyze this position. You can also ask me questions about it here!",
+      "openingPlaceholder": "Opening \"{name}\" selected (placeholder)."
+    },
     "theoryEndgames": {
       "selection": {
         "title": "Theoretical Endgames",
@@ -1055,6 +1100,7 @@
     "diamondHunter": "Brilliants",
     "openingExam": "Sparring",
     "openingSparring": "Sparring",
+    "learningCoach": "Learn Coach",
     "finishHim": "Finish Him",
     "theoryEndgames": "Endgames",
     "practicalChess": "Practical",
@@ -1371,6 +1417,7 @@
       "leaderboards": "Leaderboards",
       "diamondHunter": "Brilliants",
       "openingSparring": "Sparring",
+      "learningCoach": "Learn Coach",
       "repertoire": "Study"
     },
     "loginPrompt": "Or log in to access all features:"

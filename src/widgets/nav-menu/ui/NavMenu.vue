@@ -3,6 +3,7 @@ import {
   BookOutline,
   BuildOutline,
   CashOutline,
+  ChatbubbleEllipsesOutline,
   DiamondOutline,
   FlashOutline,
   HammerOutline,
@@ -77,6 +78,11 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.openingSparring'),
     key: '/opening-sparring',
     icon: renderIcon(FlashOutline),
+  },
+  {
+    label: () => t('nav.learningCoach'),
+    key: '/learning-coach',
+    icon: renderIcon(ChatbubbleEllipsesOutline),
   },
   {
     label: () => t('nav.repertoire'),

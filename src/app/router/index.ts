@@ -168,6 +168,12 @@ const router = createRouter({
       meta: { isGame: true, game: 'opening-sparring', requiresAuth: true },
     },
     {
+      path: '/learning-coach',
+      name: 'learning-coach',
+      component: () => import('@/pages/learning-coach').then((m) => m.LearningCoachPage),
+      meta: { isGame: true, game: 'learning-coach', requiresAuth: true },
+    },
+    {
       path: '/opening-trainer/:openingSlug?/:color?',
       redirect: (to) => ({
         name: 'diamond-hunter',

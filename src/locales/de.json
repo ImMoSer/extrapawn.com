@@ -738,6 +738,51 @@
         "stalemate": "Patt"
       }
     },
+    "learningCoach": {
+      "title": "Lern Coach",
+      "difficultyLabel": "Schwierigkeit",
+      "categoryLabel": "Kategorie",
+      "modeLabel": "Endspiel-Modus",
+      "tacticsLabel": "Taktische Motive",
+      "loadPosition": "Stellung laden",
+      "generatePosition": "Stellung generieren",
+      "chatPlaceholder": "Frage an den Coach stellen...",
+      "coachThinking": "Coach überlegt...",
+      "tabs": {
+        "endgame": "Endspiele",
+        "tactic": "Taktik",
+        "opening": "Eröffnungen",
+        "chat": "Chat Coach"
+      },
+      "modes": {
+        "goto": "Übergang",
+        "theory": "Theoretische",
+        "practical": "Praktische"
+      },
+      "details": {
+        "title": "Details zur Stellung",
+        "id": "ID",
+        "mode": "Modus",
+        "rating": "Rating",
+        "solution": "Lösungsweg",
+        "initialFen": "Ausgangs-FEN",
+        "category": "Kategorie",
+        "difficulty": "Schwierigkeit",
+        "gameModus": "Spielmodus",
+        "engmRating": "Engine-Rating",
+        "tacticalRating": "Taktik-Rating",
+        "subCategory": "Unterkategorie",
+        "themes": "Motive",
+        "copied": "FEN in die Zwischenablage kopiert!"
+      },
+      "topInfo": {
+        "tag": "LERNEN",
+        "selectLesson": "Wähle eine Trainings-Lektion",
+        "activeLesson": "Aktiv: {source} ({id})"
+      },
+      "welcomeMsg": "Hallo! Ich habe die Stellung aus dem Bereich \"{source}\" geladen. Lass uns diese Stellung analysieren. Du kannst mir hier auch Fragen dazu stellen!",
+      "openingPlaceholder": "Eröffnung \"{name}\" ausgewählt (Platzhalter)."
+    },
     "theoryEndgames": {
       "selection": {
         "title": "Theoretische Endspiele",
@@ -1055,6 +1100,7 @@
     "diamondHunter": "Brilliante",
     "openingExam": "Sparring",
     "openingSparring": "Sparring",
+    "learningCoach": "Lern Coach",
     "finishHim": "Finish Him",
     "theoryEndgames": "Endspiele",
     "practicalChess": "Praxis",
@@ -1371,6 +1417,7 @@
       "leaderboards": "Bestenliste",
       "diamondHunter": "Brillanten",
       "openingSparring": "Sparring",
+      "learningCoach": "Lern Coach",
       "repertoire": "Studien"
     },
     "loginPrompt": "Oder melde dich an, um alle Funktionen zu nutzen:"
