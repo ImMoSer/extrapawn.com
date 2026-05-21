@@ -89,61 +89,97 @@ const currentSource = ref<string>('')
 const isLoading = ref<boolean>(false)
 
 // Bot play solver state
-let botMoveTimeout: ReturnType<typeof setTimeout> | null = null
+const botMoveTimeout: ReturnType<typeof setTimeout> | null = null
 let isBotPlaying = false
 
 function isBotTurn(plyIndex: number): boolean {
   return currentPuzzle.value?.first_move === 'bot' ? plyIndex % 2 === 0 : plyIndex % 2 === 1
 }
 
-// Watcher for board moves to reply as bot in solution paths
-watch(() => boardStore.boardSyncCounter, () => {
-  if (isBotPlaying) return
-  if (!currentPuzzle.value || !currentPuzzle.value.tactical_solution) return
+// Define Stockfish Analysis Synchronizer
+async function waitForAnalysis() {
+  if (!coachStore.isAnalyzing && coachStore.currentExplanation?.fen === boardStore.fen) {
+    return
+  }
+  return new Promise<void>((resolve) => {
+    const unwatch = watch(
+      [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
+      ([isAnalyzing, explanation]) => {
+        if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
+          unwatch()
+          resolve()
+        }
+      }
+    )
+  })
+}
 
-  const moves = currentPuzzle.value.tactical_solution.split(' ').filter(Boolean)
-  if (moves.length === 0) return
+// Watcher for board moves to reply as bot using n8n sparring loop
+watch(() => boardStore.boardSyncCounter, async () => {
+  if (isBotPlaying) return
+  if (!currentPuzzle.value) return
 
   const path = pgnService.getCurrentUciPath()
   const L = path.length
+  if (L === 0) return
 
-  // Check if current navigated PGN path is a prefix of the solution
-  let matches = true
-  for (let i = 0; i < L; i++) {
-    if (path[i] !== moves[i]) {
-      matches = false
-      break
-    }
-  }
-
-  if (!matches) {
-    // User went off solution path. Let them explore.
-    return
-  }
-
-  // Check if user completed the puzzle
-  if (L === moves.length) {
-    message.success(t('features.theoryEndgames.feedback.win'))
-    return
-  }
-
-  // If it is the bot's turn to respond
+  // If it is the bot's turn to respond:
   if (isBotTurn(L)) {
     isBotPlaying = true
-    if (botMoveTimeout) clearTimeout(botMoveTimeout)
+    
+    try {
+      // 1. Wait for Stockfish analysis of the user's move to complete
+      await waitForAnalysis()
 
-    botMoveTimeout = setTimeout(() => {
-      const currentPath = pgnService.getCurrentUciPath()
-      if (currentPath.length === L && moves[L]) {
-        boardStore.applyUciMove(moves[L])
+      // 2. Call backend for coach_fitback
+      const feedback = await coachStore.fetchCoachFeedback()
+      if (feedback?.coach_fitback) {
+        const fb = feedback.coach_fitback
+        
+        // Step 1: Add user's move feedback to the chat
+        if (fb.user_last_move_chat) {
+          coachStore.addCoachMessage(fb.user_last_move_chat)
+        }
 
-        // Check if final bot move completed the puzzle
-        if (L + 1 === moves.length) {
-          message.success(t('features.theoryEndgames.feedback.win'))
+        // Step 1b: Speak user's move feedback
+        if (fb.user_last_move_tts) {
+          await coachStore.playMentorResponse(fb.user_last_move_tts)
+        }
+        
+        // Step 2: Play the bot's move directly on the board
+        if (fb.coach_next_move_uci) {
+          boardStore.applyUciMove(fb.coach_next_move_uci)
+        }
+        
+        // Step 3: Add the bot's move explanation/idea to the chat
+        if (fb.coach_next_move_idea) {
+          coachStore.addCoachMessage(fb.coach_next_move_idea)
+        }
+        
+        // 3. Wait for Stockfish analysis of the resulting FEN to complete
+        await waitForAnalysis()
+        
+        // 4. Call backend for coach_explained
+        const explanation = await coachStore.fetchCoachExplanation()
+        if (explanation?.coach_explained) {
+          const exp = explanation.coach_explained
+          
+          // Step 4: Add coach explanation of the new position to the chat
+          if (exp.chat) {
+            coachStore.addCoachMessage(exp.chat)
+          }
+          
+          // Step 5: Read out the TTS explanation via the speech synthesis engine
+          if (exp.tts) {
+            coachStore.playMentorResponse(exp.tts)
+          }
         }
       }
+    } catch (err) {
+      console.error('[LearningCoachView] Sparring cycle failed:', err)
+    } finally {
       isBotPlaying = false
-    }, 500) // 500ms response delay
+    }
   }
 })
 

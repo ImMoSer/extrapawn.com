@@ -15,6 +15,30 @@ import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
+export interface CoachFeedbackResponse {
+  coach_fitback?: {
+    user_last_move_tts?: string
+    user_last_move_chat?: string
+    coach_next_move_uci: string
+    coach_next_move_idea: string
+  }
+}
+
+export interface CoachExplanationResponse {
+  coach_explained?: {
+    tts: string
+    chat: string
+  }
+}
+
+export interface SessionStartResponse {
+  session_start?: {
+    tts: string
+    chat: string
+  }
+  output?: string
+}
+
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
@@ -396,6 +420,72 @@ export const useCoachStore = defineStore('coach', () => {
     })
   })
 
+  function buildMentorPayload(query?: string) {
+    if (!currentExplanation.value) {
+      throw new Error('No analysis context available.')
+    }
+
+    const authStore = useAuthStore()
+    const bookStore = useCoachBookStore()
+    const wikiInfo = bookStore.currentWikiInfo
+
+    let formattedBookPath = ''
+    if (wikiInfo?.canonicalSanPath) {
+      const formatted: string[] = []
+      for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
+        const move = wikiInfo.canonicalSanPath[i]
+        if (!move) continue
+        if (i % 2 === 0) {
+          formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
+        } else {
+          formatted.push(move)
+        }
+      }
+      formattedBookPath = formatted.join(' ')
+    }
+
+    const isChatActive = !!chatSessionId.value
+    const history = isChatActive
+      ? chatMessages.value.map(m => ({
+          fen: boardStore.fen,
+          message: `${m.sender === 'user' ? 'User' : 'Coach'}: ${m.text}`
+        }))
+      : coachHistory.value
+
+    const basePayload = {
+      ...extractLlmPayload(currentExplanation.value, {
+        lastMove: lastMoveAnalysis.value || undefined,
+        consequence: lastMoveConsequence.value,
+        book: wikiInfo ? {
+          name: wikiInfo.name,
+          eco: wikiInfo.eco,
+          canonicalPathSan: formattedBookPath,
+          isOutOfBook: bookStore.isOutOfBook,
+          wikibooksUrl: wikiInfo.wikibooksUrl,
+          wikibooksContent: wikiInfo.wikibooksContent,
+          forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
+        } : {
+          name: 'Unknown Opening',
+          eco: '-',
+          canonicalPathSan: '',
+          isOutOfBook: bookStore.isOutOfBook,
+          forwardMoves: []
+        },
+        userColor: boardStore.orientation,
+        coachHistory: history,
+        session_id: chatSessionId.value || undefined,
+        session_puzzle: sessionPuzzle.value || undefined,
+        question: query
+      }),
+      language: preferredLanguage.value,
+    }
+
+    return {
+      payload: basePayload,
+      profile: authStore.userProfile,
+    }
+  }
+
   async function askMentor() {
     if (!currentExplanation.value || !currentExplanation.value.llm_payload) {
       logger.warn('[CoachStore] No LLM payload available to send to mentor.')
@@ -424,57 +514,7 @@ export const useCoachStore = defineStore('coach', () => {
 
     try {
       isMentorLoading.value = true
-      const authStore = useAuthStore()
-      const bookStore = useCoachBookStore()
-
-      // Format book path nicely if available
-      let formattedBookPath = ''
-      const wikiInfo = bookStore.currentWikiInfo
-      if (wikiInfo?.canonicalSanPath) {
-        const formatted: string[] = []
-        for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
-          const move = wikiInfo.canonicalSanPath[i]
-          if (!move) continue
-          if (i % 2 === 0) {
-            formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
-          } else {
-            formatted.push(move)
-          }
-        }
-        formattedBookPath = formatted.join(' ')
-      }
-
-      const basePayload = {
-        ...extractLlmPayload(currentExplanation.value, {
-          lastMove: lastMoveAnalysis.value || undefined,
-          consequence: lastMoveConsequence.value,
-          book: wikiInfo ? {
-            name: wikiInfo.name,
-            eco: wikiInfo.eco,
-            canonicalPathSan: formattedBookPath,
-            isOutOfBook: bookStore.isOutOfBook,
-            wikibooksUrl: wikiInfo.wikibooksUrl,
-            wikibooksContent: wikiInfo.wikibooksContent,
-            forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
-          } : {
-            name: 'Unknown Opening',
-            eco: '-',
-            canonicalPathSan: '',
-            isOutOfBook: bookStore.isOutOfBook,
-            forwardMoves: []
-          },
-          userColor: boardStore.orientation,
-          coachHistory: coachHistory.value,
-          session_id: chatSessionId.value || undefined,
-          session_puzzle: sessionPuzzle.value || undefined
-        }),
-        language: preferredLanguage.value,
-      }
-
-      const fullPayload = {
-        payload: basePayload,
-        profile: authStore.userProfile,
-      }
+      const fullPayload = buildMentorPayload()
 
       logger.info('[CoachStore] Sending payload to secure backend mentor proxy...', fullPayload)
       const response = await fetch(`${backendApiUrl}/coach/mentor`, {
@@ -523,64 +563,7 @@ export const useCoachStore = defineStore('coach', () => {
     const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
 
     try {
-      if (!currentExplanation.value) {
-        throw new Error('No analysis context available.')
-      }
-
-      const authStore = useAuthStore()
-      const bookStore = useCoachBookStore()
-      const wikiInfo = bookStore.currentWikiInfo
-
-      let formattedBookPath = ''
-      if (wikiInfo?.canonicalSanPath) {
-        const formatted: string[] = []
-        for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
-          const move = wikiInfo.canonicalSanPath[i]
-          if (!move) continue
-          if (i % 2 === 0) {
-            formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
-          } else {
-            formatted.push(move)
-          }
-        }
-        formattedBookPath = formatted.join(' ')
-      }
-
-      const basePayload = {
-        ...extractLlmPayload(currentExplanation.value, {
-          lastMove: lastMoveAnalysis.value || undefined,
-          consequence: lastMoveConsequence.value,
-          book: wikiInfo ? {
-            name: wikiInfo.name,
-            eco: wikiInfo.eco,
-            canonicalPathSan: formattedBookPath,
-            isOutOfBook: bookStore.isOutOfBook,
-            wikibooksUrl: wikiInfo.wikibooksUrl,
-            wikibooksContent: wikiInfo.wikibooksContent,
-            forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
-          } : {
-            name: 'Unknown Opening',
-            eco: '-',
-            canonicalPathSan: '',
-            isOutOfBook: bookStore.isOutOfBook,
-            forwardMoves: []
-          },
-          userColor: boardStore.orientation,
-          coachHistory: chatMessages.value.map(m => ({
-            fen: boardStore.fen,
-            message: `${m.sender === 'user' ? 'User' : 'Coach'}: ${m.text}`
-          })),
-          session_id: chatSessionId.value,
-          session_puzzle: sessionPuzzle.value,
-          question: query
-        }),
-        language: preferredLanguage.value,
-      }
-
-      const fullPayload = {
-        payload: basePayload,
-        profile: authStore.userProfile,
-      }
+      const fullPayload = buildMentorPayload(query)
 
       const response = await fetch(`${backendApiUrl}/coach/mentor`, {
         method: 'POST',
@@ -595,8 +578,20 @@ export const useCoachStore = defineStore('coach', () => {
         throw new Error(`Server returned status ${response.status}`)
       }
 
-      const data = await response.json()
-      if (data && data.output) {
+      const data = await response.json() as SessionStartResponse
+      if (data && data.session_start) {
+        const start = data.session_start
+        if (start.chat) {
+          chatMessages.value.push({
+            sender: 'coach',
+            text: start.chat,
+            timestamp: new Date(),
+          })
+        }
+        if (start.tts) {
+          await playMentorResponse(start.tts)
+        }
+      } else if (data && data.output) {
         chatMessages.value.push({
           sender: 'coach',
           text: data.output,
@@ -617,8 +612,73 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
+  async function fetchCoachFeedback(): Promise<CoachFeedbackResponse> {
+    isChatLoading.value = true
+    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
+
+    try {
+      const fullPayload = buildMentorPayload()
+      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(fullPayload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`)
+      }
+
+      return await response.json() as CoachFeedbackResponse
+    } catch (err: unknown) {
+      logger.error('[CoachStore] Error fetching coach feedback:', err)
+      throw err
+    } finally {
+      isChatLoading.value = false
+    }
+  }
+
+  async function fetchCoachExplanation(): Promise<CoachExplanationResponse> {
+    isChatLoading.value = true
+    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
+
+    try {
+      const fullPayload = buildMentorPayload()
+      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(fullPayload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`)
+      }
+
+      return await response.json() as CoachExplanationResponse
+    } catch (err: unknown) {
+      logger.error('[CoachStore] Error fetching coach explanation:', err)
+      throw err
+    } finally {
+      isChatLoading.value = false
+    }
+  }
+
+  function addCoachMessage(text: string) {
+    chatMessages.value.push({
+      sender: 'coach',
+      text,
+      timestamp: new Date(),
+    })
+  }
+
   async function playMentorResponse(output: string) {
-    stopMentor() // Cancel any ongoing mentor session
+    const shouldClear = output.trim().startsWith('[clear]')
+    stopMentor(shouldClear) // Cancel any ongoing mentor session
 
     const currentId = ++mentorSessionId
     isMentorSpeaking.value = true
@@ -669,12 +729,14 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  function stopMentor() {
+  function stopMentor(clearShapes = true) {
     mentorSessionId++
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }
-    boardStore.setCoachShapes([])
+    if (clearShapes) {
+      boardStore.setCoachShapes([])
+    }
     isMentorSpeaking.value = false
   }
 
@@ -811,6 +873,10 @@ export const useCoachStore = defineStore('coach', () => {
     askMentor,
     initChatSession,
     sendChatMessage,
+    fetchCoachFeedback,
+    fetchCoachExplanation,
+    addCoachMessage,
+    playMentorResponse,
     preferredVoiceURI,
     preferredLanguage,
     setPreferredVoiceURI,

@@ -1,7 +1,7 @@
 
 /**
  * fact-extractor.js
- * 
+ *
  * Extrahiert konkrete, menschlich lesbare Fakten aus einem Explanation-Blob.
  * Diese Logik wird sowohl für die UI (CoachPositionSummary) als auch für
  * das LLM (Bridge) verwendet, um Konsistenz zu garantieren.
@@ -61,7 +61,7 @@ export function extractConcreteFacts(blob) {
       importance: 65,
       text: `${capitalize(ps.dark_complex_weak)}'s dark squares are weak`,
     });
-  
+
   for (const sq of ps.white?.passed || [])
     facts.push({ side: 'white', importance: 70, text: `White has a passed pawn on ${sq}` });
   for (const sq of ps.black?.passed || [])
@@ -253,4 +253,3 @@ export function extractConcreteFacts(blob) {
 
   return result;
 }
-
