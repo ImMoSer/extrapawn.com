@@ -197,10 +197,6 @@ function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string 
   boardStore.setAnalysisMode(true)
   boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
 
-  // Trigger coach
-  coachStore.setCoachEnabled(false)
-  coachStore.setCoachEnabled(true)
-
   // Configure Control Panel
   controlsStore.setControls({
     canRequestNew: false,
@@ -210,8 +206,6 @@ function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string 
     canRequestHint: false,
     onRestart: () => {
       boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
-      coachStore.setCoachEnabled(false)
-      coachStore.setCoachEnabled(true)
       triggerBotMoveStart()
       message.success(t('features.gameplay.restartSuccess'))
     },
@@ -224,6 +218,7 @@ function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string 
 // Lifecycle Hooks
 onMounted(() => {
   boardStore.setAnalysisMode(true)
+  coachStore.setCoachEnabled(true)
   controlsStore.setControls({
     canRequestNew: false,
     canRestart: false,

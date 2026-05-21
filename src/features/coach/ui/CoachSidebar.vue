@@ -4,7 +4,7 @@
       <h3 class="sidebar-title">Chess Coach</h3>
       <div class="header-actions">
         <button
-          v-if="coachStore.isCoachEnabled && coachStore.currentExplanation && isKing"
+          v-if="coachStore.currentExplanation && isKing"
           class="mentor-btn"
           :class="{ 'is-speaking': coachStore.isMentorSpeaking }"
           @click="coachStore.isMentorSpeaking ? coachStore.stopMentor() : coachStore.askMentor()"
@@ -37,30 +37,43 @@
             <EyeOffOutline v-else />
           </n-icon>
         </button>
-        <button
-          class="toggle-btn"
-          :class="{ active: coachStore.isCoachEnabled }"
-          @click="coachStore.toggleCoach"
-        >
-          <n-icon size="16"><PowerOutline /></n-icon>
-        </button>
       </div>
     </div>
 
-    <div v-if="!coachStore.isCoachEnabled" class="coach-disabled">
-      <p>The coach is sleeping. Turn it on to get real-time feedback and analysis.</p>
+    <!-- Tab Switcher -->
+    <div class="tab-switcher">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'ANALYSIS' }"
+        @click="activeTab = 'ANALYSIS'"
+      >
+        Analysis
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'CHAT_COACH' }"
+        @click="activeTab = 'CHAT_COACH'"
+      >
+        Chat Coach
+      </button>
     </div>
 
-    <div v-else-if="coachStore.isAnalyzing && !coachStore.currentExplanation" class="coach-loading">
-      <div class="spinner"></div>
-      <p>Analyzing position...</p>
+    <div v-if="activeTab === 'ANALYSIS'">
+      <div v-if="coachStore.isAnalyzing && !coachStore.currentExplanation" class="coach-loading">
+        <div class="spinner"></div>
+        <p>Analyzing position...</p>
+      </div>
+
+      <div v-else class="coach-content">
+        <CoachLastMove />
+        <CoachTopMoves />
+        <CoachPositionSummary />
+        <CoachBook />
+      </div>
     </div>
 
-    <div v-else class="coach-content">
-      <CoachLastMove />
-      <CoachTopMoves />
-      <CoachPositionSummary />
-      <CoachBook />
+    <div v-else-if="activeTab === 'CHAT_COACH'" class="coach-chat-wrapper">
+      <CoachChat />
     </div>
 
     <!-- Modals -->
@@ -69,8 +82,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { PowerOutline, SparklesOutline, StopOutline, PlayOutline, EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
+import { ref, computed } from 'vue'
+import { SparklesOutline, StopOutline, PlayOutline, EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import { useAuthStore } from '@/entities/user'
@@ -80,9 +93,12 @@ import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachBook from './CoachBook.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
 import CoachTakebackModal from './CoachTakebackModal.vue'
+import CoachChat from './CoachChat.vue'
 
 const coachStore = useCoachStore()
 const authStore = useAuthStore()
+
+const activeTab = ref<'ANALYSIS' | 'CHAT_COACH'>('ANALYSIS')
 
 const isKing = computed(() => authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King')
 
@@ -109,7 +125,7 @@ const onSettingsChange = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding: 12px 14px 0;
 }
 
@@ -123,6 +139,35 @@ const onSettingsChange = () => {
 .header-actions {
   display: flex;
   gap: 8px;
+}
+
+.tab-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 0 14px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: #a1a1aa;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+  color: #fff;
+}
+
+.tab-btn.active {
+  color: #00f2ff;
+  border-bottom-color: #00f2ff;
 }
 
 .toggle-btn {
@@ -144,7 +189,6 @@ const onSettingsChange = () => {
   border-color: rgba(0, 242, 255, 0.4);
 }
 
-.coach-disabled,
 .coach-loading {
   font-size: 12px;
   color: #a1a1aa;
@@ -214,12 +258,17 @@ const onSettingsChange = () => {
   }
 }
 
-.coach-content {
+.coach-content,
+.coach-chat-wrapper {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.coach-chat-wrapper {
+  padding: 0 14px 14px;
 }
 
 .coach-content::-webkit-scrollbar {

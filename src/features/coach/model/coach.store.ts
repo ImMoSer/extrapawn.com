@@ -371,19 +371,6 @@ export const useCoachStore = defineStore('coach', () => {
     },
   )
 
-  // Watch for game loading or resetting to sleep the coach
-  watch(
-    () => gameStore.gamePhase,
-    (newPhase) => {
-      if (isCoachIntervening.value) return // Ignoriere GamePhase Änderungen, die durch Coach Takeback verursacht werden
-
-      if (newPhase === 'LOADING' || newPhase === 'IDLE') {
-        logger.info(`[CoachStore] Game phase changed to ${newPhase}, putting coach to sleep.`)
-        setCoachEnabled(false)
-      }
-    }
-  )
-
   const lastMoveConsequence = computed(() => {
     if (!previousExplanation.value || !currentExplanation.value || !lastMoveAnalysis.value) return null
     if (lastMoveAnalysis.value.loading) return null
