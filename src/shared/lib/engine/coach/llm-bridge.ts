@@ -23,9 +23,6 @@ export function extractLlmPayload(
 ) {
   if (!blob) return null;
 
-  const historyLength = extra?.coachHistory?.length || 0;
-  const lastCoachMessage = historyLength > 0 ? extra!.coachHistory![historyLength - 1]?.message || null : null;
-
   const userColor = extra?.userColor || 'white';
 
   return {
@@ -39,7 +36,6 @@ export function extractLlmPayload(
     coach_color: userColor === 'black' ? 'white' : 'black',
 
     // Past Coach Context for history / conversational context
-    last_coach_message: lastCoachMessage,
     coach_history: extra?.coachHistory || [],
 
     // Engine evaluation and verdict
@@ -54,11 +50,11 @@ export function extractLlmPayload(
       is_out_of_book: extra.book.isOutOfBook,
       theory_active: !extra.book.isOutOfBook,
       wikibooks_url: extra.book.wikibooksUrl || null,
-      wikibooks_content: cleanWikibooksContent(extra.book.wikibooksContent),
-      theoretical_continuations: (extra.book.forwardMoves || []).map(m => ({
+      wikibooks_content: !extra.book.isOutOfBook ? cleanWikibooksContent(extra.book.wikibooksContent) : null,
+      theoretical_continuations: !extra.book.isOutOfBook ? (extra.book.forwardMoves || []).map(m => ({
         san: m.san,
         name: m.name || null
-      }))
+      })) : null
     } : null,
 
 
@@ -74,14 +70,34 @@ export function extractLlmPayload(
     } : null,
 
     // Concrete facts about the position (Material, Structure, King Safety, etc.)
-    concrete_facts: (blob.concrete_facts || []).map((f: { text: string }) => f.text),
+    facts_white: (blob.concrete_facts || [])
+      .filter(f => f.side === 'white' || f.side === 'both')
+      .map(f => ({ side: f.side, weight: f.importance || 0, text: f.text }))
+      .sort((a, b) => b.weight - a.weight),
+
+    facts_black: (blob.concrete_facts || [])
+      .filter(f => f.side === 'black' || f.side === 'both')
+      .map(f => ({ side: f.side, weight: f.importance || 0, text: f.text }))
+      .sort((a, b) => b.weight - a.weight),
 
     // Themes derived from the engine analysis
-    themes: (blob.themes || []).map((t: { description: string }) => t.description),
+    themes_white: (blob.themes || [])
+      .filter(t => t.side === 'white' || (t.side as string) === 'both')
+      .map(t => ({ id: t.id, side: t.side, weight: t.strength || 0, description: t.description }))
+      .sort((a, b) => b.weight - a.weight),
+
+    themes_black: (blob.themes || [])
+      .filter(t => t.side === 'black' || (t.side as string) === 'both')
+      .map(t => ({ id: t.id, side: t.side, weight: t.strength || 0, description: t.description }))
+      .sort((a, b) => b.weight - a.weight),
 
     // Raw engine top moves and principal plan (1:1 from the full explanation blob)
     engine_top_moves: blob.engine_top_moves || [],
     principal_plan: blob.principal_plan || null,
+
+    // Specific domain modules
+    tactics: blob.tactics || null,
+    endgame: blob.endgame || null,
 
     // Pre-calculated visual commands (arrows, marks)
     visual_commands: blob.visual_commands || null,
