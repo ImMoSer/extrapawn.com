@@ -59,6 +59,20 @@ export const useCoachStore = defineStore('coach', () => {
   let mentorSessionId = 0
   const coachHistory = ref<{ fen: string; message: string }[]>([])
 
+  // State for Chat Coach
+  const chatSessionId = ref('')
+  const chatMessages = ref<{ sender: 'user' | 'coach'; text: string; timestamp: Date }[]>([])
+  const isChatLoading = ref(false)
+  const sessionPuzzle = ref<Record<string, unknown> | null>(null)
+
+  function initChatSession(puzzle?: Record<string, unknown>) {
+    chatSessionId.value = window.crypto.randomUUID()
+    chatMessages.value = []
+    isChatLoading.value = false
+    sessionPuzzle.value = puzzle || null
+    logger.info('[CoachStore] New chat session initialized:', chatSessionId.value)
+  }
+
   const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
   const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
 
@@ -450,7 +464,9 @@ export const useCoachStore = defineStore('coach', () => {
             forwardMoves: []
           },
           userColor: boardStore.orientation,
-          coachHistory: coachHistory.value
+          coachHistory: coachHistory.value,
+          session_id: chatSessionId.value || undefined,
+          session_puzzle: sessionPuzzle.value || undefined
         }),
         language: preferredLanguage.value,
       }
@@ -491,6 +507,113 @@ export const useCoachStore = defineStore('coach', () => {
       logger.error('[CoachStore] Failed to send payload to Mentor:', error)
     } finally {
       isMentorLoading.value = false
+    }
+  }
+
+  async function sendChatMessage(query?: string) {
+    if (query) {
+      chatMessages.value.push({
+        sender: 'user',
+        text: query,
+        timestamp: new Date(),
+      })
+    }
+
+    isChatLoading.value = true
+    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
+
+    try {
+      if (!currentExplanation.value) {
+        throw new Error('No analysis context available.')
+      }
+
+      const authStore = useAuthStore()
+      const bookStore = useCoachBookStore()
+      const wikiInfo = bookStore.currentWikiInfo
+
+      let formattedBookPath = ''
+      if (wikiInfo?.canonicalSanPath) {
+        const formatted: string[] = []
+        for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
+          const move = wikiInfo.canonicalSanPath[i]
+          if (!move) continue
+          if (i % 2 === 0) {
+            formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
+          } else {
+            formatted.push(move)
+          }
+        }
+        formattedBookPath = formatted.join(' ')
+      }
+
+      const basePayload = {
+        ...extractLlmPayload(currentExplanation.value, {
+          lastMove: lastMoveAnalysis.value || undefined,
+          consequence: lastMoveConsequence.value,
+          book: wikiInfo ? {
+            name: wikiInfo.name,
+            eco: wikiInfo.eco,
+            canonicalPathSan: formattedBookPath,
+            isOutOfBook: bookStore.isOutOfBook,
+            wikibooksUrl: wikiInfo.wikibooksUrl,
+            wikibooksContent: wikiInfo.wikibooksContent,
+            forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
+          } : {
+            name: 'Unknown Opening',
+            eco: '-',
+            canonicalPathSan: '',
+            isOutOfBook: bookStore.isOutOfBook,
+            forwardMoves: []
+          },
+          userColor: boardStore.orientation,
+          coachHistory: chatMessages.value.map(m => ({
+            fen: boardStore.fen,
+            message: `${m.sender === 'user' ? 'User' : 'Coach'}: ${m.text}`
+          })),
+          session_id: chatSessionId.value,
+          session_puzzle: sessionPuzzle.value,
+          question: query
+        }),
+        language: preferredLanguage.value,
+      }
+
+      const fullPayload = {
+        payload: basePayload,
+        profile: authStore.userProfile,
+      }
+
+      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(fullPayload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`)
+      }
+
+      const data = await response.json()
+      if (data && data.output) {
+        chatMessages.value.push({
+          sender: 'coach',
+          text: data.output,
+          timestamp: new Date(),
+        })
+      } else {
+        throw new Error('Empty response from LLM')
+      }
+    } catch (err: unknown) {
+      logger.error('[CoachStore] Chat communication error:', err)
+      chatMessages.value.push({
+        sender: 'coach',
+        text: `Entschuldigung, ich konnte keine Verbindung herstellen. Details: ${err instanceof Error ? err.message : String(err)}`,
+        timestamp: new Date(),
+      })
+    } finally {
+      isChatLoading.value = false
     }
   }
 
@@ -668,6 +791,10 @@ export const useCoachStore = defineStore('coach', () => {
     isAnalyzing,
     isMentorLoading,
     isMentorSpeaking,
+    chatSessionId,
+    chatMessages,
+    isChatLoading,
+    sessionPuzzle,
     currentExplanation,
     previousExplanation,
     topMoves,
@@ -682,6 +809,8 @@ export const useCoachStore = defineStore('coach', () => {
     setCoachEnabled,
     explainTopMove,
     askMentor,
+    initChatSession,
+    sendChatMessage,
     preferredVoiceURI,
     preferredLanguage,
     setPreferredVoiceURI,

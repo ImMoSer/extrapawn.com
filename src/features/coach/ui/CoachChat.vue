@@ -1,6 +1,6 @@
 <!-- src/features/coach/ui/CoachChat.vue -->
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NButton,
@@ -8,29 +8,16 @@ import {
   NScrollbar,
   NInput,
   NSpin,
-  useMessage,
   type ScrollbarInst,
 } from 'naive-ui'
 import { SendOutline } from '@vicons/ionicons5'
 import { useCoachStore } from '../model/coach.store'
-import { useBoardStore } from '@/entities/game'
-
-// Types
-type ChatMessage = {
-  sender: 'user' | 'coach'
-  text: string
-  timestamp: Date
-}
 
 // State
 const { t } = useI18n()
-const message = useMessage()
-const boardStore = useBoardStore()
 const coachStore = useCoachStore()
 
-const chatMessages = ref<ChatMessage[]>([])
 const currentQuestion = ref<string>('')
-const isChatLoading = ref<boolean>(false)
 const chatScrollbarRef = ref<ScrollbarInst | null>(null)
 
 // Chat Coach LLM Communication
@@ -38,110 +25,26 @@ async function sendChatMessage() {
   const query = currentQuestion.value.trim()
   if (!query) return
 
-  chatMessages.value.push({
-    sender: 'user',
-    text: query,
-    timestamp: new Date(),
-  })
-
   currentQuestion.value = ''
-  isChatLoading.value = true
-  nextTick(() => {
-    chatScrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
-  })
-
-  const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
-  if (!backendApiUrl) {
-    message.error('Backend URL configuration is missing.')
-    isChatLoading.value = false
-    return
-  }
-
-  try {
-    const currentExplanation = coachStore.currentExplanation
-    
-    // Convert current chat messages to the format expected by the backend
-    const historyPayload = chatMessages.value.map((msg) => ({
-      fen: boardStore.fen,
-      message: `${msg.sender === 'user' ? 'User' : 'Coach'}: ${msg.text}`,
-    }))
-
-    const basePayload = {
-      question: query,
-      fen: boardStore.fen,
-      side_to_move: boardStore.turn,
-      user_color: boardStore.orientation,
-      language: coachStore.preferredLanguage || 'DE',
-      coach_history: historyPayload,
-      context_summary: currentExplanation?.summary_text || 'No static analysis context available.',
-      eval_cp: currentExplanation?.eval_cp || 0,
-      verdict: currentExplanation?.verdict || 'unknown',
-    }
-
-    const fullPayload = {
-      payload: basePayload,
-      profile: null,
-    }
-
-    const response = await fetch(`${backendApiUrl}/coach/mentor`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(fullPayload),
-    })
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('Nur Abonnenten mit King-Status haben Zugriff auf den Chat-Coach.')
-      }
-      throw new Error(`Server returned status ${response.status}`)
-    }
-
-    const data = await response.json()
-    if (data && data.output) {
-      chatMessages.value.push({
-        sender: 'coach',
-        text: data.output,
-        timestamp: new Date(),
-      })
-    } else {
-      throw new Error('Empty response from LLM')
-    }
-  } catch (err: unknown) {
-    console.error('LLM Mentor communication error:', err)
-    const errMessage = err instanceof Error ? err.message : String(err)
-    chatMessages.value.push({
-      sender: 'coach',
-      text: `Entschuldigung, ich konnte keine Verbindung herstellen. Details: ${errMessage}`,
-      timestamp: new Date(),
-    })
-  } finally {
-    isChatLoading.value = false
-    nextTick(() => {
-      chatScrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
-    })
-  }
-}
-
-function addWelcomeMessage() {
-  chatMessages.value = [
-    {
-      sender: 'coach',
-      text: t('features.learningCoach.welcomeMsg', { source: 'Chat Coach' }),
-      timestamp: new Date(),
-    },
-  ]
+  
+  await coachStore.sendChatMessage(query)
+  
   nextTick(() => {
     chatScrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
   })
 }
+
+// Watch for new messages to scroll
+watch(() => coachStore.chatMessages.length, () => {
+  nextTick(() => {
+    chatScrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
+  })
+})
 
 onMounted(() => {
-  if (chatMessages.value.length === 0) {
-    addWelcomeMessage()
-  }
+  nextTick(() => {
+    chatScrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
+  })
 })
 </script>
 
@@ -153,7 +56,7 @@ onMounted(() => {
         <n-scrollbar ref="chatScrollbarRef">
           <div class="messages-list">
             <div
-              v-for="(msg, idx) in chatMessages"
+              v-for="(msg, idx) in coachStore.chatMessages"
               :key="idx"
               class="msg-bubble-wrapper"
               :class="msg.sender"
@@ -165,7 +68,7 @@ onMounted(() => {
                 <div class="msg-text">{{ msg.text }}</div>
               </div>
             </div>
-            <div v-if="isChatLoading" class="chat-loading-indicator">
+            <div v-if="coachStore.isChatLoading" class="chat-loading-indicator">
               <n-spin size="small" />
               <n-text depth="3" style="margin-left: 8px">
                 {{ t('features.learningCoach.coachThinking') }}
@@ -184,7 +87,7 @@ onMounted(() => {
           @keyup.enter="sendChatMessage"
           class="glass-chat-input"
         />
-        <n-button type="primary" class="send-btn" @click="sendChatMessage" :disabled="isChatLoading">
+        <n-button type="primary" class="send-btn" @click="sendChatMessage" :disabled="coachStore.isChatLoading">
           <template #icon>
             <n-icon><SendOutline /></n-icon>
           </template>

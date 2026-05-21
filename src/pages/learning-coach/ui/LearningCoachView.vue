@@ -12,6 +12,7 @@ import { useCoachStore, CoachSidebar } from '@/features/coach'
 import { useAnalysisStore, AnalysisPanel } from '@/features/analysis'
 import { ControlPanel, GameLayout, useControlsStore } from '@/widgets/game-layout'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { apiClient } from '@/shared/api/client'
 import TrainingsSidebar from './TrainingsSidebar.vue'
 
 // Types
@@ -95,30 +96,6 @@ function isBotTurn(plyIndex: number): boolean {
   return currentPuzzle.value?.first_move === 'bot' ? plyIndex % 2 === 0 : plyIndex % 2 === 1
 }
 
-function triggerBotMoveStart() {
-  if (botMoveTimeout) {
-    clearTimeout(botMoveTimeout)
-    botMoveTimeout = null
-  }
-  
-  if (!currentPuzzle.value || !currentPuzzle.value.tactical_solution) return
-  
-  const moves = currentPuzzle.value.tactical_solution.split(' ').filter(Boolean)
-  if (moves.length === 0) return
-
-  // If the bot plays the first move
-  if (isBotTurn(0)) {
-    isBotPlaying = true
-    botMoveTimeout = setTimeout(() => {
-      const currentPath = pgnService.getCurrentUciPath()
-      if (currentPath.length === 0 && moves[0]) {
-        boardStore.applyUciMove(moves[0])
-      }
-      isBotPlaying = false
-    }, 1000) // 1000ms delay for the first bot move
-  }
-}
-
 // Watcher for board moves to reply as bot in solution paths
 watch(() => boardStore.boardSyncCounter, () => {
   if (isBotPlaying) return
@@ -187,15 +164,50 @@ const determineOrientation = (puzzle: LearningPuzzle): 'white' | 'black' => {
 }
 
 // Handle position load callback from Sidebar
-function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string }) {
+async function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string }) {
   currentPuzzle.value = payload.puzzle
   currentSource.value = payload.source
   const orientation = determineOrientation(payload.puzzle)
 
-  // Setup board
+  // 1. Setup board WITHOUT triggering automatic analysis immediately if possible
+  // We temporarily disable coach to avoid the watch(boardStore.fen) trigger
+  coachStore.setCoachEnabled(false)
+
   boardStore.resetBoardState()
   boardStore.setAnalysisMode(true)
   boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
+
+  // 2. Execute Bot Move if applicable BEFORE starting the session
+  if (payload.puzzle.tactical_solution) {
+
+    const moves = payload.puzzle.tactical_solution.split(' ').filter(Boolean)
+    if (moves.length > 0 && isBotTurn(0)) {
+      isBotPlaying = true
+      // Apply move immediately for the internal state
+      const firstMove = moves[0]
+      if (firstMove) {
+        boardStore.applyUciMove(firstMove)
+      }
+      isBotPlaying = false
+    }
+  }
+
+  // 3. Now enable Coach and trigger analysis for the CORRECT position
+  coachStore.setCoachEnabled(true)
+  coachStore.initChatSession(payload.puzzle)
+
+  // 4. Wait for the analysis of the final position to complete before greeting
+  // We use a watch on isAnalyzing that checks if currentExplanation is ready
+  const unwatch = watch(
+    [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
+    ([isAnalyzing, explanation]) => {
+      if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
+        coachStore.sendChatMessage() 
+        unwatch()
+      }
+    },
+    { immediate: true }
+  )
 
   // Configure Control Panel
   controlsStore.setControls({
@@ -205,20 +217,16 @@ function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string 
     canShare: false,
     canRequestHint: false,
     onRestart: () => {
-      boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
-      triggerBotMoveStart()
+      // Re-use the same logic for restart
+      handlePositionLoaded({ puzzle: payload.puzzle, source: payload.source })
       message.success(t('features.gameplay.restartSuccess'))
     },
   })
-
-  // Start bot play routine if applicable
-  triggerBotMoveStart()
 }
 
 // Lifecycle Hooks
-onMounted(() => {
+onMounted(async () => {
   boardStore.setAnalysisMode(true)
-  coachStore.setCoachEnabled(true)
   controlsStore.setControls({
     canRequestNew: false,
     canRestart: false,
@@ -226,6 +234,22 @@ onMounted(() => {
     canShare: false,
     canRequestHint: false,
   })
+
+  // Automatically load the first puzzle on mount
+  isLoading.value = true
+  try {
+    const data = await apiClient<LearningPuzzle>('/finish-him/start?theme=pawn&difficulty=Novice')
+    if (data && data.initial_fen) {
+      handlePositionLoaded({ 
+        puzzle: data, 
+        source: t('features.learningCoach.modes.goto') 
+      })
+    }
+  } catch (err) {
+    console.error('[LearningCoachView] Initial load failed:', err)
+  } finally {
+    isLoading.value = false
+  }
 })
 
 onUnmounted(() => {

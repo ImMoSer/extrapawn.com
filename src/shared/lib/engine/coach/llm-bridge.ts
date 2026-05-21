@@ -16,6 +16,9 @@ export function extractLlmPayload(
     book?: CoachBookInfo | null;
     userColor?: 'white' | 'black';
     coachHistory?: { fen: string; message: string }[];
+    session_id?: string;
+    question?: string;
+    session_puzzle?: Record<string, unknown> | null;
   }
 ) {
   if (!blob) return null;
@@ -23,12 +26,17 @@ export function extractLlmPayload(
   const historyLength = extra?.coachHistory?.length || 0;
   const lastCoachMessage = historyLength > 0 ? extra!.coachHistory![historyLength - 1]?.message || null : null;
 
+  const userColor = extra?.userColor || 'white';
+
   return {
+    session_id: extra?.session_id || null,
+    session_puzzle: extra?.session_puzzle || null,
+    question: extra?.question || null,
     fen: blob.fen,
-    side_to_move: blob.side_to_move,
+    side_to_move: blob.side_to_move === userColor ? 'user' : 'coach',
     phase: blob.phase,
-    user_color: extra?.userColor || 'white',
-    coach_color: extra?.userColor === 'black' ? 'white' : 'black',
+    user_color: userColor,
+    coach_color: userColor === 'black' ? 'white' : 'black',
 
     // Past Coach Context for history / conversational context
     last_coach_message: lastCoachMessage,
