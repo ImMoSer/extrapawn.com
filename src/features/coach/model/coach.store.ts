@@ -175,28 +175,6 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  // State for Takeback Modal
-  const takebackModalVisible = ref(false)
-  const takebackQuality = ref('')
-  const isCoachIntervening = ref(false)
-  let takebackResolve: ((value: boolean) => void) | null = null
-
-  async function promptTakeback(quality: string): Promise<boolean> {
-    takebackQuality.value = quality
-    takebackModalVisible.value = true
-    return new Promise((resolve) => {
-      takebackResolve = resolve
-    })
-  }
-
-  function resolveTakeback(takeback: boolean) {
-    takebackModalVisible.value = false
-    if (takebackResolve) {
-      takebackResolve(takeback)
-      takebackResolve = null
-    }
-  }
-
   async function triggerAnalysis(fen: string) {
     if (!fen) return
     isAnalyzing.value = true
@@ -254,14 +232,12 @@ export const useCoachStore = defineStore('coach', () => {
                 }
 
                 if (winner && mateIn > 0) {
-                  const userColor = boardStore.orientation.toLowerCase()
-                  const wdl = winner.toLowerCase() === userColor ? 'win' : 'loss'
                   tablebaseBestMove.value = {
                     san: bestMove.san,
                     uci: bestMove.uci,
                     winner,
                     mateIn,
-                    wdl
+                    wdl: 'win'
                   }
                   return
                 }
@@ -331,19 +307,11 @@ export const useCoachStore = defineStore('coach', () => {
     (newFen) => {
       if (!isCoachEnabled.value) return
 
-      const isUserTurn = boardStore.turn === boardStore.orientation
-      const isAnalysisMode = boardStore.isAnalysisModeActive
-
-      setEngineContext(isAnalysisMode, boardStore.orientation)
+      // Side-neutral context
+      setEngineContext(true, 'white')
 
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
-
-      if (!isAnalysisMode && !isUserTurn) {
-        // User hat gerade gezogen, Bot ist nun am Zug.
-        // Blunder checks werden direkt von der EndgameStrategy koordiniert!
-        return
-      }
 
       triggerAnalysis(newFen)
     },
@@ -390,12 +358,7 @@ export const useCoachStore = defineStore('coach', () => {
     showVisuals,
     toggleVisuals,
     executeVisualCommands,
-    takebackModalVisible,
-    takebackQuality,
-    resolveTakeback,
-    isCoachIntervening,
     fetchLastMoveAnalysis,
     fetchTopMoves,
-    promptTakeback,
   }
 })

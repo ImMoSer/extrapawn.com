@@ -31,9 +31,6 @@
         <CoachBook />
       </div>
     </div>
-
-    <!-- Modals -->
-    <CoachTakebackModal />
   </div>
 </template>
 
@@ -45,7 +42,6 @@ import CoachBook from './CoachBook.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachSettings from './CoachSettings.vue'
-import CoachTakebackModal from './CoachTakebackModal.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
 
 const coachStore = useCoachStore()

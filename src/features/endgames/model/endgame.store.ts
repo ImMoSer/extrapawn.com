@@ -22,8 +22,6 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEndgamesMutations } from '../api/endgames.queries'
 import type { GameResultResponse } from '@/shared/types/api.types'
-// eslint-disable-next-line boundaries/element-types
-import { useCoachStore, coachEngineManager } from '@/features/coach'
 
 const t = i18n.global.t
 
@@ -145,7 +143,6 @@ export const useEndgameStore = defineStore('endgames', () => {
     // State backups for takebacks
     let prevScenarioIndex = 0
     let prevPlayoutMode = isPlayoutMode
-    let isForcedPlayout = false
 
     return {
       config: {
@@ -173,15 +170,11 @@ export const useEndgameStore = defineStore('endgames', () => {
         prevScenarioIndex = currentScenarioIndex
         prevPlayoutMode = isPlayoutMode
 
-        const coachStore = useCoachStore()
-        let isBlunder = false
-        let blunderQuality = ''
-
         if (!isPlayoutMode && scenarioMoves.length > 0) {
           const expectedMove = scenarioMoves[currentScenarioIndex]
           if (uciMove === expectedMove) {
             currentScenarioIndex++
-            
+
             if (puzzle.game_modus === 'tactics' && currentScenarioIndex >= scenarioMoves.length) {
               _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
               setTimeout(() => {
@@ -189,65 +182,7 @@ export const useEndgameStore = defineStore('endgames', () => {
               }, 1000)
             }
           } else {
-            isBlunder = true
-            blunderQuality = 'wrong move'
-          }
-        } else {
-          // Playout phase or playout-only mode
-          if (coachStore.isCoachEnabled) {
-            await coachStore.fetchLastMoveAnalysis()
-            const quality = coachStore.lastMoveAnalysis?.quality
-            if (quality && ['inaccuracy', 'mistake', 'blunder'].includes(quality)) {
-              isBlunder = true
-              blunderQuality = quality
-            }
-          }
-        }
-
-        if (isBlunder) {
-          if (coachStore.isCoachEnabled) {
-            coachStore.isCoachIntervening = true
-            gameStore.setGamePhase('IDLE')
-
-            const currentFen = useBoardStore().fen
-            coachStore.fetchTopMoves(currentFen)
-            try {
-              coachStore.previousExplanation = coachStore.currentExplanation || coachStore.previousExplanation
-              const explanation = await coachEngineManager.getExplanation(currentFen)
-              coachStore.currentExplanation = explanation
-
-              if (coachStore.showVisuals && explanation?.visual_commands) {
-                const commands = Object.values(explanation.visual_commands).flat().join(';')
-                if (commands) {
-                  coachStore.executeVisualCommands(commands)
-                } else {
-                  useBoardStore().setCoachShapes([])
-                }
-              }
-            } catch (e) {
-              logger.error('[EndgameStrategy] Error explaining blunder:', e)
-            }
-
-            const takeback = await coachStore.promptTakeback(blunderQuality)
-
-            coachStore.isCoachIntervening = false
-            useBoardStore().setCoachShapes([])
-
-            if (takeback) {
-              gameStore.undoLastUserMove()
-              return
-            } else {
-              isPlayoutMode = true
-              currentScenarioIndex = scenarioMoves.length
-              isForcedPlayout = true
-              useBoardStore().setAnalysisMode(false)
-              isProcessingGameOver.value = false
-              gameStore.setGamePhase('PLAYING')
-              soundService.playSound('game_play_out_start')
-              logger.info('[EndgameStrategy] Forced playout mode by coach.')
-            }
-          } else {
-            // Coach is disabled, default fallback
+            // Wrong move in scenario
             if (puzzle.game_modus === 'tactics') {
               useBoardStore().setAnalysisMode(true)
               _handleGameOverUnified(puzzle, false, { winner: undefined, reason: 'resign' }, humanColor)
@@ -265,23 +200,11 @@ export const useEndgameStore = defineStore('endgames', () => {
         isPlayoutMode = prevPlayoutMode
         isProcessingGameOver.value = false
         useBoardStore().setAnalysisMode(false)
-        isForcedPlayout = false
         logger.info(`[EndgameStrategy] Reverted to index ${currentScenarioIndex}, playout: ${isPlayoutMode}`)
       },
 
-      forcePlayoutMode() {
-        isForcedPlayout = true
-        isPlayoutMode = true
-        currentScenarioIndex = scenarioMoves.length
-        useBoardStore().setAnalysisMode(false)
-        isProcessingGameOver.value = false
-        gameStore.setGamePhase('PLAYING')
-        soundService.playSound('game_play_out_start')
-        logger.info('[EndgameStrategy] Forced playout mode by coach.')
-      },
-
       async onBotMoveExecuted() {
-        if (puzzle.game_modus === 'tactics' && !isForcedPlayout && currentScenarioIndex >= scenarioMoves.length) {
+        if (puzzle.game_modus === 'tactics' && currentScenarioIndex >= scenarioMoves.length) {
           _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
           setTimeout(() => {
             loadNewPuzzle('tactics', activeParams.value)
@@ -296,7 +219,7 @@ export const useEndgameStore = defineStore('endgames', () => {
           return move
         }
 
-        if (puzzle.game_modus === 'tactics' && !isForcedPlayout) return null;
+        if (puzzle.game_modus === 'tactics') return null;
 
         try {
           return await gameplayService.getBestMove(gameStore.botEngineId, fen)
