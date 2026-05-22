@@ -1,19 +1,14 @@
 <!-- src/pages/learning-coach/ui/LearningCoachView.vue -->
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NText,
-  useMessage,
 } from 'naive-ui'
 
-import { useAuthStore } from '@/entities/user'
 import { useCoachStore, CoachSidebar } from '@/features/coach'
-import { useAnalysisStore, AnalysisPanel } from '@/features/analysis'
-import { useEndgameStore, type EndgamePuzzle } from '@/features/endgames'
-import { ControlPanel, GameLayout, useControlsStore } from '@/widgets/game-layout'
-import { pgnService } from '@/shared/lib/pgn/PgnService'
-import { useGameStore, useBoardStore } from '@/entities/game'
+import { GameLayout } from '@/widgets/game-layout'
+import { useBoardStore } from '@/entities/game'
 import { apiClient } from '@/shared/api/client'
 import TrainingsSidebar from './TrainingsSidebar.vue'
 
@@ -37,18 +32,8 @@ type LearningPuzzle = {
 
 // State
 const { t } = useI18n()
-const message = useMessage()
 const boardStore = useBoardStore()
 const coachStore = useCoachStore()
-const controlsStore = useControlsStore()
-const analysisStore = useAnalysisStore()
-const authStore = useAuthStore()
-const gameStore = useGameStore()
-const endgameStore = useEndgameStore()
-
-const isKing = computed(() => {
-  return authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
-})
 
 const categoryBadgeText = computed(() => {
   if (!currentPuzzle.value) return ''
@@ -97,120 +82,16 @@ const currentPuzzle = ref<LearningPuzzle | null>(null)
 const currentSource = ref<string>('')
 const isLoading = ref<boolean>(false)
 
-// Move tracking for sparring/feedback
-let prevPathLength = 0
-
-function isBotTurn(plyIndex: number): boolean {
-  return currentPuzzle.value?.first_move === 'bot' ? plyIndex % 2 === 0 : plyIndex % 2 === 1
-}
-
-// Define Stockfish Analysis Synchronizer
-async function waitForAnalysis() {
-  if (!coachStore.isAnalyzing && coachStore.currentExplanation?.fen === boardStore.fen) {
-    return
-  }
-  return new Promise<void>((resolve) => {
-    const unwatch = watch(
-      [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
-      ([isAnalyzing, explanation]) => {
-        if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
-          unwatch()
-          resolve()
-        }
-      }
-    )
-  })
-}
-
-// Watcher for board moves to reply as bot using n8n sparring loop
-watch(() => boardStore.boardSyncCounter, async () => {
-  if (!isKing.value) return
-  if (!currentPuzzle.value) return
-
-  const path = pgnService.getCurrentUciPath()
-  const L = path.length
-  if (L === 0) {
-    prevPathLength = 0
-    return
-  }
-
-  // Skip if we did a takeback / undo (current path is shorter than previous)
-  if (L < prevPathLength) {
-    prevPathLength = L
-    return
-  }
-
-  const wasUserMove = !isBotTurn(L - 1)
-  prevPathLength = L
-
-  if (wasUserMove) {
-    try {
-      // 1. Wait for Stockfish analysis of the user's move to complete
-      await waitForAnalysis()
-
-      // The LLM feedback fetching has been removed.
-    } catch (err) {
-      console.error('[LearningCoachView] Sparring analysis wait failed:', err)
-    }
-  } else {
-    // It was a bot move
-    // Removed referee message
-  }
-})
-
 // Handle position load callback from Sidebar
 async function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string }) {
   currentPuzzle.value = payload.puzzle
   currentSource.value = payload.source
 
-  // Unify King and Non-King puzzle loading:
-  boardStore.setAnalysisMode(false)
-  coachStore.setCoachEnabled(false)
-  endgameStore.startGameFromPuzzle(payload.puzzle as unknown as EndgamePuzzle)
-  
+  // Pure Analysis Flow:
+  boardStore.setAnalysisMode(true)
+  boardStore.setupPosition(payload.puzzle.initial_fen)
   coachStore.setCoachEnabled(true)
-
-  // Reset prevPathLength for tracking moves
-  prevPathLength = 0
-
-  // The King specific greeting watch has been removed
 }
-
-// Watchers for game phases and UI controls
-watch(() => gameStore.gamePhase, (phase) => {
-  if (phase === 'GAMEOVER') {
-    boardStore.setAnalysisMode(true)
-  }
-})
-
-watch(
-  [() => gameStore.isGameActive, () => currentPuzzle.value],
-  ([isGameActive, puzzle]) => {
-    if (!puzzle) {
-      controlsStore.setControls({
-        canRequestNew: false,
-        canRestart: false,
-        canResign: false,
-        canShare: false,
-        canRequestHint: false,
-      })
-      return
-    }
-
-    controlsStore.setControls({
-      canRequestNew: false,
-      canRestart: true,
-      canResign: isGameActive,
-      canShare: false,
-      canRequestHint: false,
-      onRestart: () => {
-        handlePositionLoaded({ puzzle: puzzle as unknown as LearningPuzzle, source: currentSource.value })
-        message.success(t('features.gameplay.restartSuccess'))
-      },
-    })
-  },
-  { immediate: true }
-)
 
 // Lifecycle Hooks
 onMounted(async () => {
@@ -237,11 +118,6 @@ onUnmounted(() => {
   boardStore.setAnalysisMode(false)
   boardStore.resetBoardState()
   coachStore.setCoachEnabled(false)
-  analysisStore.hidePanel()
-})
-
-const showAnalysisPanel = computed(() => {
-  return true
 })
 </script>
 
@@ -265,7 +141,6 @@ const showAnalysisPanel = computed(() => {
             {{ subBadgeText }}
           </span>
         </div>
-
       </div>
       <div v-else class="learning-top-info-placeholder">
         <n-text class="status-indicator select-lesson-prompt">
@@ -274,13 +149,13 @@ const showAnalysisPanel = computed(() => {
       </div>
     </template>
 
+    <!-- Controls removed: we are in analysis mode only -->
     <template #controls>
-      <ControlPanel />
+      <div />
     </template>
 
     <template #right-panel>
       <div class="right-panel-content-wrapper">
-        <AnalysisPanel v-if="showAnalysisPanel" :show-pgn="true" style="margin-bottom: 12px; flex-shrink: 0" />
         <CoachSidebar />
       </div>
     </template>
@@ -374,8 +249,6 @@ const showAnalysisPanel = computed(() => {
   color: #f44336;
   border: 1px solid rgba(244, 67, 54, 0.3);
 }
-
-
 
 .right-panel-content-wrapper {
   display: flex;

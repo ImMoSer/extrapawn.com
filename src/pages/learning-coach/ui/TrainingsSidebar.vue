@@ -17,6 +17,11 @@ import { SchoolOutline } from '@vicons/ionicons5'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import { apiClient } from '@/shared/api/client'
+import {
+  FINISH_HIM_THEMES,
+  THEORY_ENDING_CATEGORIES,
+  PRACTICAL_CHESS_CATEGORIES,
+} from '@/shared/types/api.types'
 
 // Types
 type LearningPuzzle = {
@@ -59,40 +64,6 @@ const selectedEndgameMode = ref<'GOTO' | 'THEORETICAL' | 'PRACTICAL'>('GOTO')
 // Selections
 const selectedEndgameTheme = ref<string>('pawn')
 const selectedTacticsTheme = ref<string>('fork')
-
-// Themes constants
-const ENDGAME_THEORETICAL_THEMES = [
-  'pawn',
-  'knight',
-  'bishop',
-  'knightBishop',
-  'rookPawn',
-  'rookPieces',
-  'queen',
-  'queenPieces',
-]
-
-const ENDGAME_PRACTICAL_THEMES = [
-  'pawn',
-  'knight',
-  'bishop',
-  'knightBishop',
-  'rookPawn',
-  'exchange',
-  'queen',
-  'queenPieces',
-]
-
-const ENDGAME_GOTO_THEMES = [
-  'pawn',
-  'knight',
-  'bishop',
-  'knightBishop',
-  'rookPawn',
-  'rookPieces',
-  'queen',
-  'queenPieces',
-]
 
 const TACTICS_THEMES = [
   'fork',
@@ -197,12 +168,15 @@ const formatThemeName = (theme: string, isTactic = false): string => {
 }
 
 const endgameThemeOptions = computed(() => {
-  const list =
-    selectedEndgameMode.value === 'THEORETICAL'
-      ? ENDGAME_THEORETICAL_THEMES
-      : selectedEndgameMode.value === 'PRACTICAL'
-        ? ENDGAME_PRACTICAL_THEMES
-        : ENDGAME_GOTO_THEMES
+  let list: readonly string[] = []
+
+  if (selectedEndgameMode.value === 'THEORETICAL') {
+    list = THEORY_ENDING_CATEGORIES
+  } else if (selectedEndgameMode.value === 'PRACTICAL') {
+    list = PRACTICAL_CHESS_CATEGORIES
+  } else {
+    list = FINISH_HIM_THEMES
+  }
 
   return list.map((theme) => ({
     label: formatThemeName(theme, false),
@@ -220,8 +194,14 @@ const tacticsOptions = computed(() => {
 })
 
 // Auto-reset selected theme if it isn't in the new list of endgame mode
-watch(selectedEndgameMode, () => {
-  selectedEndgameTheme.value = 'pawn'
+watch(selectedEndgameMode, (newMode) => {
+  if (newMode === 'THEORETICAL') {
+    selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+  } else if (newMode === 'PRACTICAL') {
+    selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+  } else {
+    selectedEndgameTheme.value = FINISH_HIM_THEMES[0] || 'pawn'
+  }
 })
 
 // Unified Load Functions
@@ -358,19 +338,9 @@ function handleOpeningClick(name: string) {
                 v-model:value="selectedEndgameTheme"
                 :options="endgameThemeOptions"
                 :columns="2"
+                @update:value="loadEndgame"
               />
             </div>
-
-            <n-button
-              type="primary"
-              block
-              secondary
-              :loading="props.isLoading"
-              @click="loadEndgame"
-              class="btn-glow-purple action-btn"
-            >
-              {{ t('features.learningCoach.loadPosition') }}
-            </n-button>
           </div>
 
           <!-- TAB 2: TACTICS -->
@@ -381,19 +351,9 @@ function handleOpeningClick(name: string) {
                 v-model:value="selectedTacticsTheme"
                 :options="tacticsOptions"
                 :columns="2"
+                @update:value="loadTactics"
               />
             </div>
-
-            <n-button
-              type="primary"
-              block
-              secondary
-              :loading="props.isLoading"
-              @click="loadTactics"
-              class="btn-glow-cyan action-btn"
-            >
-              {{ t('features.learningCoach.generatePosition') }}
-            </n-button>
           </div>
 
           <!-- TAB 3: OPENINGS -->
