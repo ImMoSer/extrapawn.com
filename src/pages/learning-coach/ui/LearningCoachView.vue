@@ -109,9 +109,8 @@ const currentPuzzle = ref<LearningPuzzle | null>(null)
 const currentSource = ref<string>('')
 const isLoading = ref<boolean>(false)
 
-// Bot play solver state
-const botMoveTimeout: ReturnType<typeof setTimeout> | null = null
-let isBotPlaying = false
+// Move tracking for sparring/feedback
+let prevPathLength = 0
 
 function isBotTurn(plyIndex: number): boolean {
   return currentPuzzle.value?.first_move === 'bot' ? plyIndex % 2 === 0 : plyIndex % 2 === 1
@@ -137,164 +136,133 @@ async function waitForAnalysis() {
 
 // Watcher for board moves to reply as bot using n8n sparring loop
 watch(() => boardStore.boardSyncCounter, async () => {
-  if (!isKing.value) return // For Non-King users, EndgameStrategy automatically handles bot responses
-  if (isBotPlaying) return
+  if (!isKing.value) return
   if (!currentPuzzle.value) return
 
   const path = pgnService.getCurrentUciPath()
   const L = path.length
-  if (L === 0) return
+  if (L === 0) {
+    prevPathLength = 0
+    return
+  }
 
-  // If it is the bot's turn to respond:
-  if (isBotTurn(L)) {
+  // Skip if we did a takeback / undo (current path is shorter than previous)
+  if (L < prevPathLength) {
+    prevPathLength = L
+    return
+  }
+
+  const wasUserMove = !isBotTurn(L - 1)
+  prevPathLength = L
+
+  if (wasUserMove) {
     const currentNode = pgnService.getCurrentNode()
     if (currentNode) {
       coachStore.addRefereeMessage(formatMoveWithNumber(currentNode), 'userMove')
     }
 
-    isBotPlaying = true
-    
     try {
       // 1. Wait for Stockfish analysis of the user's move to complete
       await waitForAnalysis()
 
-      // Full Coach Experience for Kings
+      // 2. Fetch coach feedback for King users (chat and TTS only)
       const feedback = await coachStore.fetchCoachFeedback()
       if (feedback?.coach_fitback) {
         const fb = feedback.coach_fitback
         
-        // Step 1: Add user's move feedback to the chat
+        // Add user's move feedback to the chat
         if (fb.user_last_move_chat) {
           coachStore.addCoachMessage(fb.user_last_move_chat, 'coachFeedback')
         }
 
-        // Step 1b: Speak user's move feedback
+        // Speak user's move feedback
         if (fb.user_last_move_tts) {
           await coachStore.playMentorResponse(fb.user_last_move_tts)
         }
-        
-        // Step 2: Play the bot's move directly on the board
-        if (fb.coach_next_move_uci) {
-          boardStore.applyUciMove(fb.coach_next_move_uci)
-          const botNode = pgnService.getCurrentNode()
-          if (botNode) {
-            coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
-          }
-        }
       }
     } catch (err) {
-      console.error('[LearningCoachView] Sparring cycle failed:', err)
-    } finally {
-      isBotPlaying = false
+      console.error('[LearningCoachView] Sparring feedback cycle failed:', err)
+    }
+  } else {
+    // It was a bot move
+    const botNode = pgnService.getCurrentNode()
+    if (botNode) {
+      coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
     }
   }
 })
-
-// Determine orientation helper
-const determineOrientation = (puzzle: LearningPuzzle): 'white' | 'black' => {
-  if (puzzle.weak_side) {
-    return puzzle.weak_side === 'black' ? 'white' : 'black'
-  }
-  if (puzzle.winner) {
-    return puzzle.winner === 'black' ? 'black' : 'white'
-  }
-  const turn = puzzle.initial_fen.split(' ')[1] || 'w'
-  const isWhiteTurn = turn === 'w'
-  if (puzzle.first_move === 'bot') {
-    return isWhiteTurn ? 'black' : 'white'
-  }
-  return isWhiteTurn ? 'white' : 'black'
-}
 
 // Handle position load callback from Sidebar
 async function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string }) {
   currentPuzzle.value = payload.puzzle
   currentSource.value = payload.source
 
-  if (!isKing.value) {
-    // Non-King Fallback: Delegate gameplay entirely to the endgame store
-    boardStore.setAnalysisMode(false)
-    coachStore.setCoachEnabled(false)
-    endgameStore.startGameFromPuzzle(payload.puzzle as unknown as EndgamePuzzle)
-    
-    // Maintain coach as a passive observer
-    coachStore.initChatSession(payload.puzzle)
-    coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
-    coachStore.setCoachEnabled(true)
-  } else {
-    // King Logic: Use n8n sparring loop
-    const orientation = determineOrientation(payload.puzzle)
+  // Unify King and Non-King puzzle loading:
+  boardStore.setAnalysisMode(false)
+  coachStore.setCoachEnabled(false)
+  endgameStore.startGameFromPuzzle(payload.puzzle as unknown as EndgamePuzzle)
+  
+  coachStore.initChatSession(payload.puzzle)
+  coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
+  coachStore.setCoachEnabled(true)
 
-    // 1. Setup board WITHOUT triggering automatic analysis immediately if possible
-    coachStore.setCoachEnabled(false)
+  // Reset prevPathLength for tracking moves
+  prevPathLength = 0
 
-    boardStore.resetBoardState()
-    boardStore.setAnalysisMode(true)
-    boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
-
-    // 2. Prepare Coach Session
-    coachStore.initChatSession(payload.puzzle)
-    coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
-    coachStore.setCoachEnabled(true)
-
-    // 3. Handle First Move Strategy
-    gameStore.setGamePhase('IDLE')
+  if (isKing.value) {
+    // Start-of-puzzle greeting watch for King users
     const unwatch = watch(
       [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
       async ([isAnalyzing, explanation]) => {
         if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
           unwatch()
-          // First, greet the user
           await coachStore.sendChatMessage()
-          
-          // Now activate the game so the sparring loop (boardSyncCounter watcher) can respond
-          gameStore.setGamePhase('PLAYING')
-          
-          if (isBotTurn(0)) {
-             // We manually trigger the first feedback for the bot
-             const feedback = await coachStore.fetchCoachFeedback()
-             if (feedback?.coach_fitback) {
-               const fb = feedback.coach_fitback
-               if (fb.user_last_move_chat) coachStore.addCoachMessage(fb.user_last_move_chat, 'coachFeedback')
-               if (fb.user_last_move_tts) await coachStore.playMentorResponse(fb.user_last_move_tts)
-               if (fb.coach_next_move_uci) {
-                 boardStore.applyUciMove(fb.coach_next_move_uci)
-                 const botNode = pgnService.getCurrentNode()
-                 if (botNode) coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
-               }
-             }
-          }
         }
       },
       { immediate: true }
     )
   }
-
-  // Configure Control Panel
-  controlsStore.setControls({
-    canRequestNew: false,
-    canRestart: true,
-    canResign: false,
-    canShare: false,
-    canRequestHint: false,
-    onRestart: () => {
-      // Re-use the same logic for restart
-      handlePositionLoaded({ puzzle: payload.puzzle, source: payload.source })
-      message.success(t('features.gameplay.restartSuccess'))
-    },
-  })
 }
+
+// Watchers for game phases and UI controls
+watch(() => gameStore.gamePhase, (phase) => {
+  if (phase === 'GAMEOVER') {
+    boardStore.setAnalysisMode(true)
+  }
+})
+
+watch(
+  [() => gameStore.isGameActive, () => currentPuzzle.value],
+  ([isGameActive, puzzle]) => {
+    if (!puzzle) {
+      controlsStore.setControls({
+        canRequestNew: false,
+        canRestart: false,
+        canResign: false,
+        canShare: false,
+        canRequestHint: false,
+      })
+      return
+    }
+
+    controlsStore.setControls({
+      canRequestNew: false,
+      canRestart: true,
+      canResign: isGameActive,
+      canShare: false,
+      canRequestHint: false,
+      onRestart: () => {
+        handlePositionLoaded({ puzzle: puzzle as unknown as LearningPuzzle, source: currentSource.value })
+        message.success(t('features.gameplay.restartSuccess'))
+      },
+    })
+  },
+  { immediate: true }
+)
 
 // Lifecycle Hooks
 onMounted(async () => {
   boardStore.setAnalysisMode(true)
-  controlsStore.setControls({
-    canRequestNew: false,
-    canRestart: false,
-    canResign: false,
-    canShare: false,
-    canRequestHint: false,
-  })
 
   // Automatically load the first puzzle on mount
   isLoading.value = true
@@ -314,9 +282,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (botMoveTimeout) {
-    clearTimeout(botMoveTimeout)
-  }
   boardStore.setAnalysisMode(false)
   boardStore.resetBoardState()
   coachStore.setCoachEnabled(false)
