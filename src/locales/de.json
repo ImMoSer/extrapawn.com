@@ -23,7 +23,6 @@
       "description": "Hochintensives, dynamisches Schachtaktik-Training mit Glicko-2-Rating und tiefer Fehleranalyse.",
       "keywords": "Schachtaktik-Trainer, dynamische Puzzles, Blitz-Taktik"
     },
-
     "theoryEndings": {
       "title": "Theoretische Endspiele",
       "description": "Übe klassische Endspielpositionen bis zur Perfektion. Rette Remis und zerstöre die Hoffnungen deiner Gegner."
@@ -121,9 +120,7 @@
     "finishHim": "Finish Him",
     "theoryEndgames": "Theoretische",
     "practicalChess": "Practische",
-
-    "repertoire": "Repertoire",
-    "openingSparring": "Sparring"
+    "repertoire": "Repertoire"
   },
   "chess": {
     "subThemes": {
@@ -595,7 +592,6 @@
     },
     "pricing": {
       "title": "Abos & Preise",
-
       "repertoireGenerator": "Repertoire Generator",
       "upgrade": {
         "title": "Abo Upgrade",
@@ -726,6 +722,8 @@
       "loadingTheory": "Theorie wird geladen...",
       "noTheoryFound": "Keine spezielle Theorie für diese Stellung gefunden.",
       "noTheorySubtext": "Versuche eine andere Zugfolge.",
+      "reviewModeOverlay": "Review-Modus für Theorie",
+      "move": "Zug",
       "tablebase": {
         "whiteWins": "Weiß gewinnt",
         "whiteMatesIn": "Weiß setzt matt in {moves}",
@@ -942,7 +940,6 @@
         "days21": "Letzte 21 Tage"
       }
     },
-
     "controls": {
       "new": "Neu",
       "restart": "Neustart",
@@ -1031,67 +1028,10 @@
         },
         "autoLoad": "AutoNext"
       }
-    },
-    "openingSparring": {
-      "header": {
-        "bookEnded": "Buch-Ende",
-        "deviation": "Abweichung",
-        "accuracy": "Genauigkeit",
-        "winRate": "WinRate",
-        "avgRating": "Ø Rating",
-        "newSession": "Neue Session",
-        "hint": "Hinweis",
-        "hideTheory": "Theorie ausblenden",
-        "showTheory": "Theorie anzeigen",
-        "analysis": "Analyse",
-        "playout": "Playout",
-        "popularity": "Popularität",
-        "mode": {
-          "label": "Modus",
-          "game": "Partie",
-          "training": "Training"
-        }
-      },
-      "stats": {
-        "reviewModeOverlay": "Review-Modus für Theorie",
-        "move": "Zug",
-        "games": "Partien (%)",
-        "winRate": "WinRate",
-        "avgRating": "Rating"
-      },
-      "settings": {
-        "title": "Opening Trainer Einstellungen",
-        "subtitle": "Konfiguriere deine Sparring-Session",
-        "color": "Farbe wählen",
-        "white": "Weiß",
-        "black": "Schwarz",
-        "opponentSource": "Gegner-Basis",
-        "opponentDb": "Gegner DB",
-        "masters": "Meister DB",
-        "lichessPlayers": "Lichess DB",
-        "ratings": "Ratings",
-        "selectRatings": "Gegner-Rating wählen",
-        "masterHint": "Der Bot spielt optimale Züge aus Meisterpartien.",
-        "lichessHint": "Der Bot simuliert menschliche Spielstile basierend auf den gewählten Ratings.",
-        "timeControls": "Zeitkontrollen",
-        "selectOpening": "Eröffnung wählen (Optional)",
-        "startPosition": "Startposition",
-        "variability": "Variabilität: {value}",
-        "variabilityHint": "Höhere Variabilität bedeutet, dass der Bot seltener gespielte Züge öfter wählt.",
-        "selectCharacter": "Master Charakter-Stil",
-        "random": "Zufällig",
-        "characterDefaultHint": "Der Bot spielt zufällige Top-Züge basierend auf der Variabilität.",
-        "characterSpecificHint": "Der Bot spielt ausschließlich die theoretischen Züge des gewählten Charakters.",
-        "engineHint": "Engine für Playout-Modus wählen.",
-        "startSession": "Session starten"
-      }
     }
   },
   "nav": {
     "home": "Startseite",
-
-    "openingExam": "Sparring",
-    "openingSparring": "Sparring",
     "learningCoach": "Lern Coach",
     "endgames": "Endspiele",
     "tornado": "Tornado",
@@ -1286,11 +1226,6 @@
         "title": "STUDY — Analytisches Labor",
         "text": "Ein interaktives Tool zum Aufbau und **aktiven Einprägen** deines Eröffnungsrepertoires. 1-Klick-Generator basierend auf Elite-Statistiken (MozerBook), visuelle Variantenbäume und Hardcore-Trainingsmodi wie Speedrun und Reply Training. Volle Lichess-Synchronisation."
       },
-      "openingSparring": {
-        "title": "OPENING SPARRING — Eröffnungssimulator",
-        "text": "Simuliere reale Turniereröffnungen. Unser Bot zieht basierend auf Live-Spielerstatistiken (Lichess 1000–2200+) mit anpassbarer Variabilität. Wähle zwischen den Charakteren Master, Hustler oder Swindler. Verfeinere danach die Realisierung gegen die Maia-KI."
-      },
-
       "tornado": {
         "title": "TORNADO — Taktischer Sturm",
         "text": "Adaptiver Taktiktrainer basierend auf Glicko-2. Keine Fehlerlimits, kein langweiliges Aufwärmen – hohes Schwierigkeitsniveau ab der ersten Minute. 15 thematische Vektoren und ein spezieller Modus zur Bearbeitung deiner Fehler."
@@ -1392,7 +1327,6 @@
     },
     "footerNote": "Gebaut mit ❤️ für alle, die nach schachlicher Meisterschaft streben."
   },
-
   "welcome": {
     "titleV2": "Wähle einen Modus",
     "slogan": "Übung macht den Meister!",
@@ -1403,12 +1337,10 @@
       "tornado": "Tornado",
       "leaderboards": "Bestenliste",
       "club": "Club",
-
-      "openingSparring": "Sparring",
       "learningCoach": "Coach",
       "repertoire": "Studium",
       "endgames": "Endspiele"
-      },
+    },
     "loginPrompt": "Oder melde dich an, um alle Funktionen zu nutzen:"
   },
   "clubPage": {

@@ -60,7 +60,6 @@ const aggregateActivity = (
     theory: { puzzles_requested: 0, puzzles_solved: 0 },
     'practical-chess': { puzzles_requested: 0, puzzles_solved: 0 },
     rep_generator: { puzzles_requested: 0, puzzles_solved: 0 },
-    'opening-sparring': { puzzles_requested: 0, puzzles_solved: 0 },
     'study-reply': { puzzles_requested: 0, puzzles_solved: 0 },
     speedrun: { puzzles_requested: 0, puzzles_solved: 0 },
   }
@@ -109,7 +108,6 @@ const chartOption = computed(() => {
       cost: 50,
       color: '#e74c3c',
     },
-    { key: 'opening-sparring', name: t('nav.openingExam'), cost: 25, color: '#e67e22' },
     {
       key: 'study-reply',
       name: t('features.study.sidebar.replyTraining', 'Reply Training'),

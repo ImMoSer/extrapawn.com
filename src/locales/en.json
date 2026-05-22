@@ -23,7 +23,6 @@
       "description": "High-intensity dynamic chess tactics training with Glicko-2 rating and deep error analysis.",
       "keywords": "chess tactics trainer, dynamic puzzles, blitz tactics"
     },
-
     "theoryEndings": {
       "title": "Theoretical Endings",
       "description": "Practice classic endgame positions to perfection. Save draws and break your opponent's hopes."
@@ -121,9 +120,7 @@
     "finishHim": "Finish Him",
     "theoryEndgames": "Endgames",
     "practicalChess": "Practical",
-
-    "repertoire": "Repertoire",
-    "openingSparring": "Sparring"
+    "repertoire": "Repertoire"
   },
   "chess": {
     "subThemes": {
@@ -581,21 +578,20 @@
         "description": "Enter your 8-digit code to activate your club subscription.",
         "placeholder": "Code",
         "activate": "Activate",
-        "successTitle": "Congratulations! \ud83c\udf89",
+        "successTitle": "Congratulations! 🎉",
         "successMessage": "You have successfully activated the {tier} club tier. It will remain active until {date}. We wish you great success in your training!",
         "ok": "OK",
         "invalid": "Invalid or already used code.",
         "error": "Error during redemption."
       },
       "polar": {
-        "successTitle": "Payment Successful! \ud83c\udf89",
+        "successTitle": "Payment Successful! 🎉",
         "successMessage": "Thank you for subscribing. Your account has been upgraded and your PawnCoins balance corresponds to your new tier.",
         "ok": "Start Training"
       }
     },
     "pricing": {
       "title": "Subscriptions and Prices",
-
       "repertoireGenerator": "Repertoire Generator",
       "upgrade": {
         "title": "Subscription Upgrade",
@@ -637,19 +633,19 @@
           "name": "Rook",
           "role": "The \"No-Brainer\" entry for amateurs.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "3.99 \u20ac / Month"
+          "price": "3.99 € / Month"
         },
         "queen": {
           "name": "Queen",
           "role": "The \"Standard\" for ambitious club players.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "5.99 \u20ac / Month"
+          "price": "5.99 € / Month"
         },
         "king": {
           "name": "King",
           "role": "The \"Full-Power\" package for pros & analysts.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "9.99 \u20ac / Month"
+          "price": "9.99 € / Month"
         },
         "price": {
           "soon": "Price will be announced",
@@ -726,6 +722,8 @@
       "loadingTheory": "Loading theory...",
       "noTheoryFound": "No dedicated theory found for this position.",
       "noTheorySubtext": "Try a more common move order.",
+      "reviewModeOverlay": "Review mode to see theory",
+      "move": "Move",
       "tablebase": {
         "whiteWins": "White wins",
         "whiteMatesIn": "White mates in {moves}",
@@ -889,10 +887,10 @@
     "leaderboards": {
       "bannerAlt": "Leaderboards Banner",
       "sections": {
-        "hot": "HOT \ud83d\udd25",
-        "competitive": "COMPETITIVE MODES \ud83c\udfc6",
-        "strategic": "STRATEGIC MASTERY \ud83c\udff0",
-        "hallOfFame": "HALL OF FAME \ud83c\udfdb\ufe0f"
+        "hot": "HOT 🔥",
+        "competitive": "COMPETITIVE MODES 🏆",
+        "strategic": "STRATEGIC MASTERY 🏰",
+        "hallOfFame": "HALL OF FAME 🏛️"
       },
       "titles": {
         "topFinishHim": "Finish Him",
@@ -942,7 +940,6 @@
         "days21": "Last 21 days"
       }
     },
-
     "controls": {
       "new": "New",
       "restart": "Restart",
@@ -1031,67 +1028,10 @@
         },
         "autoLoad": "AutoNext"
       }
-    },
-    "openingSparring": {
-      "header": {
-        "bookEnded": "Book Ended",
-        "deviation": "Deviation",
-        "accuracy": "Accuracy",
-        "winRate": "Win Rate",
-        "avgRating": "Avg Rating",
-        "newSession": "New Session",
-        "hint": "Hint",
-        "hideTheory": "Hide Theory",
-        "showTheory": "Show Theory",
-        "analysis": "Analysis",
-        "playout": "Playout",
-        "popularity": "Popularity",
-        "mode": {
-          "label": "Mode",
-          "game": "Game",
-          "training": "Training"
-        }
-      },
-      "stats": {
-        "reviewModeOverlay": "Review mode to see theory",
-        "move": "Move",
-        "games": "Games (%)",
-        "winRate": "WinRate",
-        "avgRating": "Rating"
-      },
-      "settings": {
-        "title": "Opening Trainer Settings",
-        "subtitle": "Configure your Sparring Session",
-        "color": "Choose Color",
-        "white": "White",
-        "black": "Black",
-        "opponentSource": "Opponent Base",
-        "opponentDb": "Opponent DB",
-        "masters": "Masters DB",
-        "lichessPlayers": "Lichess DB",
-        "ratings": "Ratings",
-        "selectRatings": "Select Opponent Ratings",
-        "masterHint": "Bot plays optimal moves from Master games.",
-        "lichessHint": "Bot simulates human play styles based on selected ratings.",
-        "timeControls": "Time Controls",
-        "selectOpening": "Select Opening (Optional)",
-        "startPosition": "Start Position",
-        "variability": "Variability: {value}",
-        "variabilityHint": "Higher variability means the bot plays less popular moves more often.",
-        "selectCharacter": "Master Character Style",
-        "random": "Random",
-        "characterDefaultHint": "Bot plays random top moves based on variability.",
-        "characterSpecificHint": "Bot exclusively plays the chosen character's theoretical moves.",
-        "engineHint": "Choose the engine for playout mode.",
-        "startSession": "Start Session"
-      }
     }
   },
   "nav": {
     "home": "Home",
-
-    "openingExam": "Sparring",
-    "openingSparring": "Sparring",
     "learningCoach": "Coach",
     "endgames": "Endgames",
     "tornado": "Tornado",
@@ -1116,20 +1056,20 @@
     },
     "imprint": {
       "title": "Imprint",
-      "subtitle": "Information according to \u00a7 5 DDG",
+      "subtitle": "Information according to § 5 DDG",
       "name": "Sergej Siemens, M.Eng.",
-      "address": "Schuhbauerstra\u00dfe 19\n84166 Adlkofen",
+      "address": "Schuhbauerstraße 19\n84166 Adlkofen",
       "contact": "Contact",
       "email": "E-Mail: immozerai{'@'}gmail.com",
       "phone": "Phone: +4917681068118",
-      "vatId": "Value Added Tax Identification Number according to \u00a7 27 a of the Value Added Tax Act: DE366185109",
+      "vatId": "Value Added Tax Identification Number according to § 27 a of the Value Added Tax Act: DE366185109",
       "dispute": "Dispute Resolution",
       "disputeText": "EU Online Dispute Resolution platform:",
       "disputeLink": "https://ec.europa.eu/consumers/odr/",
       "disputeRefusal": "Consumer dispute resolution: We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.",
       "legalNotice": "Legal Notice",
       "liabilityTitle": "Liability for Contents & Links",
-      "liabilityContent": "As a service provider, we are responsible for our own content according to general laws (\u00a7 7 Para. 1 DDG). There is no obligation to monitor transmitted or stored third-party information (\u00a7\u00a7 8-10 DDG). Upon becoming aware of legal violations, we will immediately remove corresponding content or links to external third-party websites. No liability is assumed for external content.",
+      "liabilityContent": "As a service provider, we are responsible for our own content according to general laws (§ 7 Para. 1 DDG). There is no obligation to monitor transmitted or stored third-party information (§§ 8-10 DDG). Upon becoming aware of legal violations, we will immediately remove corresponding content or links to external third-party websites. No liability is assumed for external content.",
       "copyrightTitle": "Copyright",
       "copyrightContent": "The content created by us on these pages is subject to German copyright law. Duplication, processing, and any kind of exploitation outside the limits of copyright law require written consent. Downloads and copies are only permitted for private use."
     },
@@ -1141,7 +1081,7 @@
           "The protection of your personal data is an important concern for us. We follow the 'Privacy by Design' approach: We only process data that is technically absolutely necessary for the operation of the app.",
           "Controller within the meaning of the GDPR:",
           "Sergej Siemens, M.Eng.",
-          "Schuhbauerstra\u00dfe 19",
+          "Schuhbauerstraße 19",
           "84166 Adlkofen",
           "E-Mail: immozerai{'@'}gmail.com"
         ],
@@ -1286,11 +1226,6 @@
         "title": "STUDY — Analytical Laboratory",
         "text": "An interactive tool for building and **actively memorizing** your opening repertoire. 1-click generator based on elite statistics (MozerBook), visual trees, and hardcore training modes like Speedrun and Reply Training. Full Lichess Study synchronization."
       },
-      "openingSparring": {
-        "title": "OPENING SPARRING — Opening Simulator",
-        "text": "Simulate real tournament openings. Our bot moves based on live player statistics (Lichess 1000–2200+) with adjustable variability. Choose between Master, Hustler, or Swindler personalities. Follow up with realization training against Maia AI."
-      },
-
       "tornado": {
         "title": "TORNADO — Tactical Storm",
         "text": "Adaptive tactical trainer based on Glicko-2. No error limits, no boring warm-ups — high-level difficulty from the first minute. 15 thematic vectors and a dedicated mode for fixing your mistakes."
@@ -1390,9 +1325,8 @@
       "github": "GitHub",
       "separator": ": "
     },
-    "footerNote": "Built with \u2764\ufe0f for those who seek chess mastery."
+    "footerNote": "Built with ❤️ for those who seek chess mastery."
   },
-
   "welcome": {
     "titleV2": "Select a Game Mode",
     "slogan": "Consistency is the key to mastery.",
@@ -1403,8 +1337,6 @@
       "tornado": "Tornado",
       "leaderboards": "Leaderboards",
       "club": "Club",
-  
-      "openingSparring": "Sparring",
       "learningCoach": "Coach",
       "repertoire": "Study",
       "endgames": "Endgames"

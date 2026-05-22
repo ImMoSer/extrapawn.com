@@ -184,7 +184,6 @@ const gameCosts = computed(() => {
     { name: t('nav.theoryEndgames'), icon: '📚', cost: 5 },
     { name: t('nav.practicalChess'), icon: '♟️', cost: 5 },
     { name: t('nav.finishHim'), icon: '🎯', cost: 10 },
-    { name: t('nav.openingExam'), icon: '🤺', cost: 25 },
     { name: t('features.study.replyTraining.title', 'Reply Training'), icon: '🔁', cost: 25 },
     { name: t('nav.speedrun'), icon: '🏃', cost: 25 },
     { name: t('features.pricing.repertoireGenerator'), icon: '📖', cost: 50 },

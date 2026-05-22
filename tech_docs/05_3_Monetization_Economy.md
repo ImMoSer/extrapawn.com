@@ -10,7 +10,6 @@ The platform operates on a unique "Active-First" economic model. While providing
   - **Tornado**: 10 PawnCoins per session.
   - **Theory Endgames / Practical Chess**: 5 PawnCoins per attempt.
   - **Finish Him**: 10 PawnCoins per attempt (reflects the high computational cost of the playout engine).
-  - **Opening Sparring**: 25 PawnCoins per session.
   - **Study Generator**: 50 PawnCoins per generation.
 - **Replenishment**:
   - **Daily Allowance**: Every user receives a daily replenishment up to their tier's limit (e.g., 150 for Pawn tier).

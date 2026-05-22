@@ -7,7 +7,6 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-import { useOpeningSparringStore } from '@/features/opening-sparring'
 import { useStudyStore } from '@/features/study'
 import { useTornadoStore } from '@/features/tornado'
 
@@ -145,13 +144,6 @@ const router = createRouter({
       path: '/bonus',
       name: 'bonus',
       component: () => import('@/pages/bonus/ui/BonusView.vue'),
-    },
-
-    {
-      path: '/opening-sparring/:openingSlug?/:color?',
-      name: 'opening-sparring',
-      component: () => import('@/pages/opening-sparring').then((m) => m.OpeningSparringPage),
-      meta: { isGame: true, game: 'opening-sparring', requiresAuth: true },
     },
     {
       path: '/learning-coach',
@@ -324,8 +316,6 @@ router.afterEach(async (to, from) => {
     !toBaseRoute?.startsWith('practical-chess')
   ) {
     useEndgameStore().reset()
-  } else if (fromBaseRoute === 'opening-sparring' && toBaseRoute !== 'opening-sparring') {
-    useOpeningSparringStore().reset()
   }
 
   // Update SEO Meta Tags with translations

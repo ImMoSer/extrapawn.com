@@ -82,7 +82,7 @@ const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {
 <template>
   <div class="mozer-book" :class="{ blurred: blurred }">
     <div v-if="blurred" class="overlay">
-      <n-text strong depth="1">{{ t('features.openingSparring.stats.reviewModeOverlay') }}</n-text>
+      <n-text strong depth="1">{{ t('features.analysis.reviewModeOverlay') }}</n-text>
     </div>
 
     <div class="book-header">

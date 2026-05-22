@@ -171,17 +171,6 @@ const { displayInfo } = useTopInfo()
     justify-content: center;
   }
 
-  .mode-opening-sparring .info-left {
-    display: flex;
-    flex: none;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .mode-opening-sparring .info-center {
-    display: none;
-  }
-
   .glued-item,
   .glue {
     font-size: 0.9rem;

@@ -2,7 +2,6 @@
 import {
   CashOutline,
   ChatbubbleEllipsesOutline,
-  FlashOutline,
   HammerOutline,
   HomeOutline,
   InformationCircleOutline,
@@ -55,11 +54,6 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.tornado'),
     key: '/tornado',
     icon: renderIcon(ThunderstormOutline),
-  },
-  {
-    label: () => t('nav.openingSparring'),
-    key: '/opening-sparring',
-    icon: renderIcon(FlashOutline),
   },
   {
     label: () => t('nav.learningCoach'),

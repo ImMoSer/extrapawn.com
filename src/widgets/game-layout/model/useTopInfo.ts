@@ -1,7 +1,6 @@
 // src/widgets/game-layout/model/useTopInfo.ts
 import { type TopInfoDisplay } from '@/entities/puzzle'
 import { useEndgameStore } from '@/features/endgames'
-import { useOpeningSparringStore } from '@/features/opening-sparring'
 import { useTornadoStore } from '@/features/tornado'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -16,7 +15,6 @@ export function useTopInfo() {
     if (routeName.startsWith('finish-him')) return useEndgameStore().topInfoDisplay
     if (routeName.startsWith('theory-endings')) return useEndgameStore().topInfoDisplay
     if (routeName.startsWith('practical-chess')) return useEndgameStore().topInfoDisplay
-    if (routeName === 'opening-sparring') return useOpeningSparringStore().topInfoDisplay
 
     // Default fallback
     return {

@@ -29,12 +29,6 @@ Your interactive command center for repertoire building.
 - **MozerBook Integration**: Leverage elite statistics and engine-verified trees to build bulletproof preparation.
 - **Lichess Sync**: Two-way synchronization with your Lichess studies.
 
-### ⚔️ OPENING SPARRING — Repertoire Simulator
-Test your preparation in a realistic tournament environment.
-- **Dynamic Opponents**: Bots move based on live player statistics (Lichess 1000–2200+) with adjustable variability.
-- **Personality Types**: Choose between **Master** (theoretical), **Hustler** (statistical), or **Swindler** (poisonous traps).
-- **Playout Transition**: Seamlessly transition from the opening to advantage realization against Maia AI.
-
 
 
 ## 🎮 Training Ecosystem

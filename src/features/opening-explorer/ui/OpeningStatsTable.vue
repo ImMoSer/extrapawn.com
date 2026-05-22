@@ -125,7 +125,7 @@ const renderWinrateBar = (win_p: number, draw_p: number, loss_p: number) => {
 
 const columns = computed<DataTableColumns<StatsTableRow>>(() => [
   {
-    title: t('features.openingSparring.stats.move'),
+    title: t('features.analysis.move'),
     key: 'san',
     width: 90,
     render(row) {
@@ -182,7 +182,7 @@ const columns = computed<DataTableColumns<StatsTableRow>>(() => [
 <template>
   <div class="stats-container" :class="{ blurred: !isReviewMode }">
     <div v-if="!isReviewMode" class="overlay">
-      <n-text strong depth="1">{{ t('features.openingSparring.stats.reviewModeOverlay') }}</n-text>
+      <n-text strong depth="1">{{ t('features.analysis.reviewModeOverlay') }}</n-text>
     </div>
 
     <!-- Global Winrate Bar -->

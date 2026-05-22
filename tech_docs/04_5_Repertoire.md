@@ -1,4 +1,4 @@
-# 4.6 Study! (The Grandmaster's Studio)
+# 4.5 Study! (The Grandmaster's Studio)
 
 **Study!** is the analytical heart of the platform. It is a high-performance environment designed for professional opening preparation and tactical deep-dives, combining a flexible study tree with the deep theoretical intelligence of **MozerBook**.
 

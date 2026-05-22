@@ -89,7 +89,7 @@ onMounted(() => {
 <template>
   <div class="lichess-opening-explorer" :class="{ blurred: blurred }">
     <div v-if="blurred" class="overlay">
-      <n-text strong depth="1">{{ t('features.openingSparring.stats.reviewModeOverlay') }}</n-text>
+      <n-text strong depth="1">{{ t('features.analysis.reviewModeOverlay') }}</n-text>
     </div>
     <div class="explorer-header">
       <div class="header-left">

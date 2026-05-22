@@ -31,4 +31,4 @@ The trainer allows targeting specific material imbalances:
 - **Real-time Evaluation**: Backend monitors if the user maintains the winning advantage. Any significant evaluation drop results in a failed attempt.
 
 ---
-*Back to: [Game Modes Overview](./04_GameModes_Overview.md) | Next Section: [4.5 Opening Sparring](./04_6_Open_Sparring.md)*
+*Back to: [Game Modes Overview](./04_GameModes_Overview.md) | Next Section: [4.5 Study! (Repertoire)](./04_5_Repertoire.md)*
