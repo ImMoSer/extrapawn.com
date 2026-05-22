@@ -7,6 +7,7 @@ import { parseFen } from 'chessops/fen'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { soundService } from '@/shared/lib/sound.service'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
 
@@ -75,6 +76,22 @@ export const useGameStore = defineStore('game', () => {
 
     if (currentStrategy.value) {
       currentStrategy.value.onGameOver?.(status)
+    }
+  }
+
+  function undoLastUserMove() {
+    logger.info('[GameStore] Undoing last user move (Takeback).')
+    pgnService.undoLastMove()
+    boardStore.syncBoardWithPgn()
+    
+    // If the game was GAMEOVER because of a wrong move, taking it back puts us in PLAYING again.
+    if (gamePhase.value === 'GAMEOVER') {
+      gamePhase.value = 'PLAYING'
+      isGameActive.value = true
+    }
+
+    if (currentStrategy.value?.onUserMoveUndone) {
+      currentStrategy.value.onUserMoveUndone()
     }
   }
 
@@ -249,6 +266,7 @@ export const useGameStore = defineStore('game', () => {
     currentStrategy,
     startWithStrategy,
     handleUserMove,
+    undoLastUserMove,
     setGamePhase,
     handleGameResignation,
     resetGame,

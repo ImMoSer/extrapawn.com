@@ -20,7 +20,6 @@ export interface CoachFeedbackResponse {
     user_last_move_tts?: string
     user_last_move_chat?: string
     coach_next_move_uci: string
-    coach_next_move_idea: string
   }
 }
 
@@ -37,6 +36,13 @@ export interface SessionStartResponse {
     chat: string
   }
   output?: string
+}
+
+export interface CoachAnswerResponse {
+  coach_answer?: {
+    tts?: string
+    chat?: string
+  }
 }
 
 export const useCoachStore = defineStore('coach', () => {
@@ -81,11 +87,15 @@ export const useCoachStore = defineStore('coach', () => {
   const isMentorLoading = ref(false)
   const isMentorSpeaking = ref(false)
   let mentorSessionId = 0
-  const coachHistory = ref<{ fen: string; message: string }[]>([])
 
   // State for Chat Coach
   const chatSessionId = ref('')
-  const chatMessages = ref<{ sender: 'user' | 'coach'; text: string; timestamp: Date }[]>([])
+  const chatMessages = ref<{
+    sender: 'user' | 'coach' | 'referee'
+    text: string
+    timestamp: Date
+    type?: string
+  }[]>([])
   const isChatLoading = ref(false)
   const sessionPuzzle = ref<Record<string, unknown> | null>(null)
 
@@ -97,8 +107,27 @@ export const useCoachStore = defineStore('coach', () => {
     logger.info('[CoachStore] New chat session initialized:', chatSessionId.value)
   }
 
+  function addRefereeMessage(text: string, type: 'startGame' | 'userMove' | 'coachMove' | 'system' = 'system') {
+    chatMessages.value.push({
+      sender: 'referee',
+      text,
+      timestamp: new Date(),
+      type
+    })
+  }
+
+  function addCoachMessage(text: string, type: 'answerQuestion' | 'welcomeMessage' | 'coachFeedback' | 'coachHint' = 'coachHint') {
+    chatMessages.value.push({
+      sender: 'coach',
+      text,
+      timestamp: new Date(),
+      type,
+    })
+  }
+
   const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
   const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
+  const isTTSEnabled = ref(localStorage.getItem('coachTTSEnabled') === 'true')
 
   function setPreferredVoiceURI(uri: string) {
     preferredVoiceURI.value = uri
@@ -108,6 +137,11 @@ export const useCoachStore = defineStore('coach', () => {
   function setPreferredLanguage(lang: string) {
     preferredLanguage.value = lang
     localStorage.setItem('coachLanguage', lang)
+  }
+
+  function setIsTTSEnabled(enabled: boolean) {
+    isTTSEnabled.value = enabled
+    localStorage.setItem('coachTTSEnabled', String(enabled))
   }
 
   // State for "Last Move"
@@ -122,7 +156,6 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
-      coachHistory.value = []
       mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
@@ -144,7 +177,6 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
-      coachHistory.value = []
       mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
@@ -217,12 +249,16 @@ export const useCoachStore = defineStore('coach', () => {
         setTimeout(async () => {
           const takeback = await promptTakeback(quality)
           if (takeback) {
-            pgnService.undoLastMove() // Entfernt den Zug aus der Historie
-            boardStore.syncBoardWithPgn() // Setzt die visuelle Anzeige zurück
-            gameStore.setGamePhase('PLAYING')
             boardStore.setCoachShapes([])
+            gameStore.undoLastUserMove()
           } else {
-            // Bot soll doch ziehen
+            // Bot soll doch ziehen bzw. Spiel im Playout-Modus beenden
+            boardStore.setCoachShapes([])
+            
+            if (gameStore.currentStrategy?.forcePlayoutMode) {
+              gameStore.currentStrategy.forcePlayoutMode()
+            }
+            
             gameStore.setGamePhase('PLAYING')
             await gameStore.triggerBotMove()
           }
@@ -367,7 +403,6 @@ export const useCoachStore = defineStore('coach', () => {
     (newFen) => {
       if (newFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
         mentorCache.value.clear()
-        coachHistory.value = []
       }
 
       if (!isCoachEnabled.value) return
@@ -444,13 +479,30 @@ export const useCoachStore = defineStore('coach', () => {
       formattedBookPath = formatted.join(' ')
     }
 
-    const isChatActive = !!chatSessionId.value
-    const history = isChatActive
-      ? chatMessages.value.map(m => ({
-          fen: boardStore.fen,
-          message: `${m.sender === 'user' ? 'User' : 'Coach'}: ${m.text}`
-        }))
-      : coachHistory.value
+    const history = chatMessages.value.map(m => {
+          if (m.sender === 'referee') {
+            return {
+              role: 'referee' as const,
+              type: m.type || 'system',
+              notation: m.type === 'startGame' ? m.text : undefined,
+              move: (m.type === 'userMove' || m.type === 'coachMove') ? m.text : undefined,
+              text: m.type === 'system' ? m.text : undefined
+            }
+          } else if (m.sender === 'coach') {
+            return {
+              role: 'coach' as const,
+              type: m.type || 'coachMessage',
+              text: m.text
+            }
+          } else {
+            return {
+              role: 'user' as const,
+              type: 'userQuestion',
+              text: m.text
+            }
+          }
+        })
+
 
     const basePayload = {
       ...extractLlmPayload(currentExplanation.value, {
@@ -472,7 +524,7 @@ export const useCoachStore = defineStore('coach', () => {
           forwardMoves: []
         },
         userColor: boardStore.orientation,
-        coachHistory: history,
+        session_history: history,
         session_id: chatSessionId.value || undefined,
         session_puzzle: sessionPuzzle.value || undefined,
         question: query
@@ -486,7 +538,14 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  async function askMentor() {
+  async function fetchCoachExplanation(skipChat = false): Promise<void> {
+    const authStore = useAuthStore()
+    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
+    if (!isKing) {
+      logger.warn('[CoachStore] fetchCoachExplanation blocked: User is not King.')
+      return
+    }
+
     if (!currentExplanation.value || !currentExplanation.value.llm_payload) {
       logger.warn('[CoachStore] No LLM payload available to send to mentor.')
       return
@@ -499,21 +558,22 @@ export const useCoachStore = defineStore('coach', () => {
     if (mentorCache.value.has(currentFen)) {
       logger.info('[CoachStore] Replaying cached Mentor response for current position.')
       const cachedMsg = mentorCache.value.get(currentFen)!
-      if (coachHistory.value[coachHistory.value.length - 1]?.fen !== currentFen) {
-        coachHistory.value.push({ fen: currentFen, message: cachedMsg })
+      if (!skipChat) {
+        addCoachMessage(cachedMsg, 'coachHint')
       }
       await playMentorResponse(cachedMsg)
       return
     }
 
+    isMentorLoading.value = true
     const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
     if (!backendApiUrl) {
       logger.error('[CoachStore] VITE_BACKEND_API_URL not defined in .env')
+      isMentorLoading.value = false
       return
     }
 
     try {
-      isMentorLoading.value = true
       const fullPayload = buildMentorPayload()
 
       logger.info('[CoachStore] Sending payload to secure backend mentor proxy...', fullPayload)
@@ -530,27 +590,34 @@ export const useCoachStore = defineStore('coach', () => {
         throw new Error(`Webhook failed with status ${response.status}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as CoachExplanationResponse
 
-      if (data && data.output) {
-        // Cache the response
-        mentorCache.value.set(currentFen, data.output)
-        // Add to history
-        if (coachHistory.value[coachHistory.value.length - 1]?.fen !== currentFen) {
-          coachHistory.value.push({ fen: currentFen, message: data.output })
+      if (data && data.coach_explained) {
+        const exp = data.coach_explained
+        if (exp.chat) {
+          addCoachMessage(exp.chat, 'coachHint')
+          // Cache the response
+          mentorCache.value.set(currentFen, exp.chat)
         }
-        logger.info('[CoachStore] Mentor successfully received the payload and cached the response.')
-        await playMentorResponse(data.output)
+        if (exp.tts) {
+          await playMentorResponse(exp.tts)
+        }
       }
-
     } catch (error) {
-      logger.error('[CoachStore] Failed to send payload to Mentor:', error)
+      logger.error('[CoachStore] Failed to fetch coach explanation:', error)
     } finally {
       isMentorLoading.value = false
     }
   }
 
   async function sendChatMessage(query?: string) {
+    const authStore = useAuthStore()
+    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
+    if (!isKing) {
+      addCoachMessage('Der Chat-Mentor steht nur King-Abonnenten zur Verfügung.', 'answerQuestion')
+      return
+    }
+
     if (query) {
       chatMessages.value.push({
         sender: 'user',
@@ -578,41 +645,43 @@ export const useCoachStore = defineStore('coach', () => {
         throw new Error(`Server returned status ${response.status}`)
       }
 
-      const data = await response.json() as SessionStartResponse
+      const data = await response.json() as SessionStartResponse & CoachAnswerResponse
       if (data && data.session_start) {
         const start = data.session_start
         if (start.chat) {
-          chatMessages.value.push({
-            sender: 'coach',
-            text: start.chat,
-            timestamp: new Date(),
-          })
+          addCoachMessage(start.chat, 'welcomeMessage')
         }
         if (start.tts) {
           await playMentorResponse(start.tts)
         }
+      } else if (data && data.coach_answer) {
+        const ans = data.coach_answer
+        if (ans.chat) {
+          addCoachMessage(ans.chat, 'answerQuestion')
+        }
+        if (ans.tts) {
+          await playMentorResponse(ans.tts)
+        }
       } else if (data && data.output) {
-        chatMessages.value.push({
-          sender: 'coach',
-          text: data.output,
-          timestamp: new Date(),
-        })
+        addCoachMessage(data.output, 'answerQuestion')
       } else {
         throw new Error('Empty response from LLM')
       }
     } catch (err: unknown) {
       logger.error('[CoachStore] Chat communication error:', err)
-      chatMessages.value.push({
-        sender: 'coach',
-        text: `Entschuldigung, ich konnte keine Verbindung herstellen. Details: ${err instanceof Error ? err.message : String(err)}`,
-        timestamp: new Date(),
-      })
+      addCoachMessage(`Entschuldigung, ich konnte keine Verbindung herstellen. Details: ${err instanceof Error ? err.message : String(err)}`, 'answerQuestion')
     } finally {
       isChatLoading.value = false
     }
   }
 
   async function fetchCoachFeedback(): Promise<CoachFeedbackResponse> {
+    const authStore = useAuthStore()
+    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
+    if (!isKing) {
+      return {}
+    }
+
     isChatLoading.value = true
     const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
 
@@ -640,42 +709,6 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  async function fetchCoachExplanation(): Promise<CoachExplanationResponse> {
-    isChatLoading.value = true
-    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
-
-    try {
-      const fullPayload = buildMentorPayload()
-      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(fullPayload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`)
-      }
-
-      return await response.json() as CoachExplanationResponse
-    } catch (err: unknown) {
-      logger.error('[CoachStore] Error fetching coach explanation:', err)
-      throw err
-    } finally {
-      isChatLoading.value = false
-    }
-  }
-
-  function addCoachMessage(text: string) {
-    chatMessages.value.push({
-      sender: 'coach',
-      text,
-      timestamp: new Date(),
-    })
-  }
-
   async function playMentorResponse(output: string) {
     const shouldClear = output.trim().startsWith('[clear]')
     stopMentor(shouldClear) // Cancel any ongoing mentor session
@@ -683,9 +716,9 @@ export const useCoachStore = defineStore('coach', () => {
     const currentId = ++mentorSessionId
     isMentorSpeaking.value = true
 
-    if ('speechSynthesis' in window) {
-      const parts = parseMentorActions(output)
+    const parts = parseMentorActions(output)
 
+    if (isTTSEnabled.value && 'speechSynthesis' in window) {
       // Determine language and voice
       const firstText = parts.find(p => p.type === 'text')?.content || output
       let lang = 'en-US'
@@ -720,12 +753,23 @@ export const useCoachStore = defineStore('coach', () => {
           executeMentorAction(part.content)
         }
       }
-
-      if (currentId === mentorSessionId) {
-        isMentorSpeaking.value = false
-      }
     } else {
-      logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
+      // If TTS is disabled, we still execute the visual actions immediately
+      for (const part of parts) {
+        if (currentId !== mentorSessionId) break
+        if (part.type === 'action') {
+          executeMentorAction(part.content)
+        }
+      }
+      if (!isTTSEnabled.value) {
+        logger.info('[CoachStore] TTS is disabled, skipping voice output.')
+      } else {
+        logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
+      }
+    }
+
+    if (currentId === mentorSessionId) {
+      isMentorSpeaking.value = false
     }
   }
 
@@ -870,17 +914,19 @@ export const useCoachStore = defineStore('coach', () => {
     toggleCoach,
     setCoachEnabled,
     explainTopMove,
-    askMentor,
     initChatSession,
     sendChatMessage,
     fetchCoachFeedback,
     fetchCoachExplanation,
     addCoachMessage,
+    addRefereeMessage,
     playMentorResponse,
     preferredVoiceURI,
     preferredLanguage,
+    isTTSEnabled,
     setPreferredVoiceURI,
     setPreferredLanguage,
+    setIsTTSEnabled,
     stopMentor,
     hasCachedMentorResponse,
     showVisuals,

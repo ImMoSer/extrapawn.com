@@ -2,6 +2,7 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import {
   gameplayService,
   useGameStore,
+  useBoardStore,
   type GameStatusInfo,
   type IGameCoreApi,
   type IGameplayStrategy,
@@ -28,7 +29,7 @@ export interface EndgamePuzzle {
   puzzle_id: string
   initial_fen: string
   first_move?: 'bot' | 'user'
-  game_modus: 'finish_him' | 'theory_endings' | 'practical_chess'
+  game_modus: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics'
   tactical_solution?: string
   winner?: 'white' | 'black'
   category?: string
@@ -42,7 +43,7 @@ export interface EndgamePuzzle {
 }
 
 export interface EndgameParams {
-  mode?: 'finish_him' | 'theory_endings' | 'practical_chess'
+  mode?: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics'
   theme?: string
   difficulty?: string
   category?: string
@@ -100,6 +101,28 @@ export const useEndgameStore = defineStore('endgames', () => {
     gameStore.startWithStrategy(fen, createEndgameStrategy(dummyPuzzle, color), color, false)
   }
 
+  function startGameFromPuzzle(puzzle: EndgamePuzzle) {
+    isProcessingGameOver.value = false
+    isWaitingForColorSelection.value = false
+
+    gameStore.setGamePhase('LOADING')
+    activePuzzle.value = puzzle
+
+    if (puzzle.game_modus === 'practical_chess' && puzzle.category === 'materialEquality') {
+      isWaitingForColorSelection.value = true
+      currentUserColor.value = 'white'
+      puzzle.userSelectedColor = false
+      gameStore.startWithStrategy(puzzle.initial_fen, createEndgameStrategy(puzzle, 'white'), 'white')
+      return
+    }
+
+    const humanColor = determineHumanColor(puzzle)
+    currentUserColor.value = humanColor
+
+    gameStore.startWithStrategy(puzzle.initial_fen, createEndgameStrategy(puzzle, humanColor), humanColor, false)
+    feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+  }
+
   function reset() {
     activePuzzle.value = null
     feedbackMessage.value = t('features.finishHim.feedback.pressNext')
@@ -116,6 +139,11 @@ export const useEndgameStore = defineStore('endgames', () => {
     const scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
     let currentScenarioIndex = 0
     let isPlayoutMode = scenarioMoves.length === 0
+    
+    // State backups for takebacks
+    let prevScenarioIndex = 0
+    let prevPlayoutMode = isPlayoutMode
+    let isForcedPlayout = false
 
     return {
       config: {
@@ -140,15 +168,59 @@ export const useEndgameStore = defineStore('endgames', () => {
       },
 
       onUserMoveExecuted(uciMove: string) {
+        prevScenarioIndex = currentScenarioIndex
+        prevPlayoutMode = isPlayoutMode
+
         if (isPlayoutMode) return
 
         const expectedMove = scenarioMoves[currentScenarioIndex]
         if (uciMove === expectedMove) {
           currentScenarioIndex++
+          
+          if (puzzle.game_modus === 'tactics' && currentScenarioIndex >= scenarioMoves.length) {
+            _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
+            setTimeout(() => {
+              loadNewPuzzle('tactics', activeParams.value)
+            }, 1000)
+          }
         } else {
+          if (puzzle.game_modus === 'tactics') {
+            useBoardStore().setAnalysisMode(true)
+            _handleGameOverUnified(puzzle, false, { winner: undefined, reason: 'resign' }, humanColor)
+            return
+          }
           isPlayoutMode = true
           currentScenarioIndex = scenarioMoves.length
           soundService.playSound('game_play_out_start')
+        }
+      },
+
+      onUserMoveUndone() {
+        currentScenarioIndex = prevScenarioIndex
+        isPlayoutMode = prevPlayoutMode
+        isProcessingGameOver.value = false
+        useBoardStore().setAnalysisMode(false)
+        isForcedPlayout = false
+        logger.info(`[EndgameStrategy] Reverted to index ${currentScenarioIndex}, playout: ${isPlayoutMode}`)
+      },
+
+      forcePlayoutMode() {
+        isForcedPlayout = true
+        isPlayoutMode = true
+        currentScenarioIndex = scenarioMoves.length
+        useBoardStore().setAnalysisMode(false)
+        isProcessingGameOver.value = false
+        gameStore.setGamePhase('PLAYING')
+        soundService.playSound('game_play_out_start')
+        logger.info('[EndgameStrategy] Forced playout mode by coach.')
+      },
+
+      async onBotMoveExecuted(uciMove: string) {
+        if (puzzle.game_modus === 'tactics' && !isForcedPlayout && currentScenarioIndex >= scenarioMoves.length) {
+          _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
+          setTimeout(() => {
+            loadNewPuzzle('tactics', activeParams.value)
+          }, 1000)
         }
       },
 
@@ -158,6 +230,8 @@ export const useEndgameStore = defineStore('endgames', () => {
           currentScenarioIndex++
           return move
         }
+
+        if (puzzle.game_modus === 'tactics' && !isForcedPlayout) return null;
 
         try {
           return await gameplayService.getBestMove(gameStore.botEngineId, fen)
@@ -258,7 +332,7 @@ export const useEndgameStore = defineStore('endgames', () => {
     }
   }
 
-  async function loadNewPuzzle(mode: 'finish_him' | 'theory_endings' | 'practical_chess', queryParams: Partial<EndgameParams> = {}) {
+  async function loadNewPuzzle(mode: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics', queryParams: Partial<EndgameParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
 
@@ -293,6 +367,9 @@ export const useEndgameStore = defineStore('endgames', () => {
           puzzle = await apiClient<EndgamePuzzle>(`/practical-chess/${category}/puzzle?difficulty=${mergedParams.difficulty ?? 'Novice'}`)
         }
         if (puzzle) puzzle.game_modus = 'practical_chess'
+      } else if (mode === 'tactics') {
+        puzzle = await apiClient<EndgamePuzzle>(`/tactics/start?theme=${mergedParams.theme ?? 'fork'}&difficulty=${mergedParams.difficulty ?? 'Novice'}`)
+        if (puzzle) puzzle.game_modus = 'tactics'
       }
 
       if (!puzzle) throw new Error('Puzzle data is null')
@@ -436,6 +513,7 @@ export const useEndgameStore = defineStore('endgames', () => {
 
     initialize,
     loadNewPuzzle,
+    startGameFromPuzzle,
     startYouMoveGame,
     startPlayoutFromFen,
     handleRestart,

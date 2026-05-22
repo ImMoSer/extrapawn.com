@@ -140,3 +140,11 @@ export interface CoachBookInfo {
   forwardMoves?: { san: string; name: string | null }[]
 }
 
+export interface CoachHistoryItem {
+  role: 'user' | 'coach' | 'referee'
+  type: string
+  text?: string
+  notation?: string
+  move?: string
+}
+

@@ -6,7 +6,7 @@
 
 
 
-import type { CoachExplanation, CoachLastMoveAnalysis, CoachBookInfo } from './coach.types';
+import type { CoachExplanation, CoachLastMoveAnalysis, CoachBookInfo, CoachHistoryItem } from './coach.types';
 import { Chess } from 'chess.js';
 
 /**
@@ -76,7 +76,7 @@ export function extractLlmPayload(
     consequence?: string | null;
     book?: CoachBookInfo | null;
     userColor?: 'white' | 'black';
-    coachHistory?: { fen: string; message: string }[];
+    session_history?: CoachHistoryItem[];
     session_id?: string;
     question?: string;
     session_puzzle?: Record<string, unknown> | null;
@@ -98,7 +98,7 @@ export function extractLlmPayload(
     coach_color: userColor === 'black' ? 'white' : 'black',
 
     // Past Coach Context for history / conversational context
-    coach_history: extra?.coachHistory || [],
+    session_history: extra?.session_history || [],
 
     // Engine evaluation and verdict
     eval_cp: blob.eval_cp,

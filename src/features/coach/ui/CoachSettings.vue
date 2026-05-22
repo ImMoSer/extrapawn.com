@@ -14,6 +14,60 @@
     <div v-if="open" class="settings-dropdown">
       <div class="settings-title">Engine settings</div>
 
+      <!-- King Only Mentor Settings -->
+      <template v-if="isKing">
+        <!-- Language -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <label for="setting-lang">Mentor Language</label>
+          </div>
+          <select
+            id="setting-lang"
+            class="setting-select"
+            :value="coachStore.preferredLanguage"
+            @change="handleLanguageChange"
+          >
+            <option value="EN">English</option>
+            <option value="DE">Deutsch</option>
+            <option value="RU">Русский</option>
+          </select>
+        </div>
+
+        <!-- TTS Toggle -->
+        <div class="setting-group" v-if="hasSpeechSynthesis">
+          <div class="setting-header">
+            <label for="setting-tts">Enable Mentor Voice (TTS)</label>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+            <span class="setting-desc" style="margin-top: 0;">Lead Chess Mentor speaks insights</span>
+            <input
+              id="setting-tts"
+              type="checkbox"
+              :checked="coachStore.isTTSEnabled"
+              @change="handleTTSToggle"
+            />
+          </div>
+        </div>
+
+        <!-- Voice -->
+        <div class="setting-group" v-if="hasSpeechSynthesis && coachStore.isTTSEnabled">
+          <div class="setting-header">
+            <label for="setting-voice">Mentor Voice (TTS)</label>
+          </div>
+          <select
+            id="setting-voice"
+            class="setting-select"
+            :value="coachStore.preferredVoiceURI"
+            @change="handleVoiceChange"
+          >
+            <option value="">Default (Auto-detect)</option>
+            <option v-for="voice in filteredVoices" :key="voice.voiceURI" :value="voice.voiceURI">
+              {{ voice.name }}
+            </option>
+          </select>
+        </div>
+      </template>
+
       <!-- Server Engine Switch -->
       <div class="setting-group">
         <div class="setting-header">
@@ -28,41 +82,6 @@
             @change="handleServerToggle"
           />
         </div>
-      </div>
-
-      <!-- Language -->
-      <div class="setting-group">
-        <div class="setting-header">
-          <label for="setting-lang">Mentor Language</label>
-        </div>
-        <select
-          id="setting-lang"
-          class="setting-select"
-          :value="coachStore.preferredLanguage"
-          @change="handleLanguageChange"
-        >
-          <option value="EN">English</option>
-          <option value="DE">Deutsch</option>
-          <option value="RU">Русский</option>
-        </select>
-      </div>
-
-      <!-- Voice -->
-      <div class="setting-group" v-if="hasSpeechSynthesis">
-        <div class="setting-header">
-          <label for="setting-voice">Mentor Voice (TTS)</label>
-        </div>
-        <select
-          id="setting-voice"
-          class="setting-select"
-          :value="coachStore.preferredVoiceURI"
-          @change="handleVoiceChange"
-        >
-          <option value="">Default (Auto-detect)</option>
-          <option v-for="voice in filteredVoices" :key="voice.voiceURI" :value="voice.voiceURI">
-            {{ voice.name }}
-          </option>
-        </select>
       </div>
 
       <!-- Depth -->
@@ -148,6 +167,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useCoachStore } from '@/features/coach/model/coach.store'
+import { useAuthStore } from '@/entities/user'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
@@ -169,6 +189,12 @@ const threads = ref(defaults.threads)
 const maxThreads = computed(() => Math.max(1, navigator.hardwareConcurrency || 4))
 const wrapRef = ref<HTMLElement | null>(null)
 const coachStore = useCoachStore()
+const authStore = useAuthStore()
+
+const isKing = computed(() => {
+  return authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
+})
+
 const availableVoices = ref<SpeechSynthesisVoice[]>([])
 const hasSpeechSynthesis = typeof window !== 'undefined' && 'speechSynthesis' in window
 
@@ -190,6 +216,11 @@ watch(() => coachStore.preferredLanguage, () => {
 const handleLanguageChange = (event: Event) => {
   const target = event.target as HTMLSelectElement
   coachStore.setPreferredLanguage(target.value)
+}
+
+const handleTTSToggle = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  coachStore.setIsTTSEnabled(target.checked)
 }
 
 const handleVoiceChange = (event: Event) => {

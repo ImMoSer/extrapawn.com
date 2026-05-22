@@ -7,7 +7,7 @@
           v-if="coachStore.currentExplanation && isKing"
           class="mentor-btn"
           :class="{ 'is-speaking': coachStore.isMentorSpeaking }"
-          @click="coachStore.isMentorSpeaking ? coachStore.stopMentor() : coachStore.askMentor()"
+          @click="coachStore.isMentorSpeaking ? coachStore.stopMentor() : coachStore.fetchCoachExplanation(coachStore.hasCachedMentorResponse)"
           :disabled="coachStore.isMentorLoading"
           :title="coachStore.isMentorSpeaking ? 'Stop mentor' : coachStore.hasCachedMentorResponse ? 'Repeat mentor insight' : 'Ask the Lead Chess Mentor for a deep insight'"
         >
@@ -22,7 +22,7 @@
           </template>
           <template v-else>
             <n-icon size="14"><SparklesOutline /></n-icon>
-            <span>Mentor</span>
+            <span>Hint</span>
           </template>
         </button>
         <CoachSettings @change="onSettingsChange" />
@@ -40,8 +40,8 @@
       </div>
     </div>
 
-    <!-- Tab Switcher -->
-    <div class="tab-switcher">
+    <!-- Tab Switcher (Only for King) -->
+    <div v-if="isKing" class="tab-switcher">
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'ANALYSIS' }"
@@ -82,18 +82,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { SparklesOutline, StopOutline, PlayOutline, EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
-import { NIcon } from 'naive-ui'
-import { useCoachStore } from '../model/coach.store'
 import { useAuthStore } from '@/entities/user'
-import CoachSettings from './CoachSettings.vue'
+import { EyeOffOutline, EyeOutline, PlayOutline, SparklesOutline, StopOutline } from '@vicons/ionicons5'
+import { NIcon } from 'naive-ui'
+import { computed, ref } from 'vue'
+import { useCoachStore } from '../model/coach.store'
+import CoachBook from './CoachBook.vue'
+import CoachChat from './CoachChat.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
-import CoachBook from './CoachBook.vue'
-import CoachTopMoves from './CoachTopMoves.vue'
+import CoachSettings from './CoachSettings.vue'
 import CoachTakebackModal from './CoachTakebackModal.vue'
-import CoachChat from './CoachChat.vue'
+import CoachTopMoves from './CoachTopMoves.vue'
 
 const coachStore = useCoachStore()
 const authStore = useAuthStore()

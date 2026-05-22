@@ -59,13 +59,20 @@ onMounted(() => {
               v-for="(msg, idx) in coachStore.chatMessages"
               :key="idx"
               class="msg-bubble-wrapper"
-              :class="msg.sender"
+              :class="[msg.sender, msg.type]"
             >
               <div class="msg-bubble">
-                <div class="msg-header">
+                <div v-if="msg.sender !== 'referee'" class="msg-header">
                   {{ msg.sender === 'coach' ? 'Coach' : 'Du' }}
                 </div>
-                <div class="msg-text">{{ msg.text }}</div>
+                <div class="msg-text">
+                  <template v-if="msg.sender === 'referee'">
+                    <span class="referee-prefix">Referee:</span> {{ msg.text }}
+                  </template>
+                  <template v-else>
+                    {{ msg.text }}
+                  </template>
+                </div>
               </div>
             </div>
             <div v-if="coachStore.isChatLoading" class="chat-loading-indicator">
@@ -139,6 +146,14 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
+.msg-bubble-wrapper.referee {
+  justify-content: flex-start;
+}
+
+.msg-bubble-wrapper.referee.userMove {
+  justify-content: flex-end;
+}
+
 .msg-bubble {
   max-width: 85%;
   border-radius: 12px;
@@ -160,6 +175,28 @@ onMounted(() => {
   border: 1px solid rgba(157, 78, 221, 0.4);
   color: #e0b0ff;
   border-top-right-radius: 2px;
+}
+
+.referee .msg-bubble {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.4); /* Default red border */
+  color: #a9b7c6;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.referee.userMove .msg-bubble {
+  border-color: rgba(0, 242, 255, 0.4); /* Blue border for user moves */
+}
+
+.referee-prefix {
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-right: 4px;
+  opacity: 0.7;
 }
 
 .msg-header {

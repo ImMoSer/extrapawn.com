@@ -7,11 +7,13 @@ import {
   useMessage,
 } from 'naive-ui'
 
-import { useBoardStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
 import { useCoachStore, CoachSidebar } from '@/features/coach'
 import { useAnalysisStore, AnalysisPanel } from '@/features/analysis'
+import { useEndgameStore, type EndgamePuzzle } from '@/features/endgames'
 import { ControlPanel, GameLayout, useControlsStore } from '@/widgets/game-layout'
-import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { useGameStore, useBoardStore } from '@/entities/game'
 import { apiClient } from '@/shared/api/client'
 import TrainingsSidebar from './TrainingsSidebar.vue'
 
@@ -33,6 +35,18 @@ type LearningPuzzle = {
   game_modus?: string
 }
 
+function formatMoveWithNumber(node: PgnNode): string {
+  if (!node.fenBefore) return node.san || node.uci
+  const parts = node.fenBefore.split(' ')
+  const turn = parts[1]
+  const fullmove = parts[5] || '1'
+  if (turn === 'w') {
+    return `${fullmove}. ${node.san || node.uci}`
+  } else {
+    return `${fullmove}... ${node.san || node.uci}`
+  }
+}
+
 // State
 const { t } = useI18n()
 const message = useMessage()
@@ -40,6 +54,13 @@ const boardStore = useBoardStore()
 const coachStore = useCoachStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
+const authStore = useAuthStore()
+const gameStore = useGameStore()
+const endgameStore = useEndgameStore()
+
+const isKing = computed(() => {
+  return authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
+})
 
 const categoryBadgeText = computed(() => {
   if (!currentPuzzle.value) return ''
@@ -116,6 +137,7 @@ async function waitForAnalysis() {
 
 // Watcher for board moves to reply as bot using n8n sparring loop
 watch(() => boardStore.boardSyncCounter, async () => {
+  if (!isKing.value) return // For Non-King users, EndgameStrategy automatically handles bot responses
   if (isBotPlaying) return
   if (!currentPuzzle.value) return
 
@@ -125,20 +147,25 @@ watch(() => boardStore.boardSyncCounter, async () => {
 
   // If it is the bot's turn to respond:
   if (isBotTurn(L)) {
+    const currentNode = pgnService.getCurrentNode()
+    if (currentNode) {
+      coachStore.addRefereeMessage(formatMoveWithNumber(currentNode), 'userMove')
+    }
+
     isBotPlaying = true
     
     try {
       // 1. Wait for Stockfish analysis of the user's move to complete
       await waitForAnalysis()
 
-      // 2. Call backend for coach_fitback
+      // Full Coach Experience for Kings
       const feedback = await coachStore.fetchCoachFeedback()
       if (feedback?.coach_fitback) {
         const fb = feedback.coach_fitback
         
         // Step 1: Add user's move feedback to the chat
         if (fb.user_last_move_chat) {
-          coachStore.addCoachMessage(fb.user_last_move_chat)
+          coachStore.addCoachMessage(fb.user_last_move_chat, 'coachFeedback')
         }
 
         // Step 1b: Speak user's move feedback
@@ -149,29 +176,9 @@ watch(() => boardStore.boardSyncCounter, async () => {
         // Step 2: Play the bot's move directly on the board
         if (fb.coach_next_move_uci) {
           boardStore.applyUciMove(fb.coach_next_move_uci)
-        }
-        
-        // Step 3: Add the bot's move explanation/idea to the chat
-        if (fb.coach_next_move_idea) {
-          coachStore.addCoachMessage(fb.coach_next_move_idea)
-        }
-        
-        // 3. Wait for Stockfish analysis of the resulting FEN to complete
-        await waitForAnalysis()
-        
-        // 4. Call backend for coach_explained
-        const explanation = await coachStore.fetchCoachExplanation()
-        if (explanation?.coach_explained) {
-          const exp = explanation.coach_explained
-          
-          // Step 4: Add coach explanation of the new position to the chat
-          if (exp.chat) {
-            coachStore.addCoachMessage(exp.chat)
-          }
-          
-          // Step 5: Read out the TTS explanation via the speech synthesis engine
-          if (exp.tts) {
-            coachStore.playMentorResponse(exp.tts)
+          const botNode = pgnService.getCurrentNode()
+          if (botNode) {
+            coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
           }
         }
       }
@@ -203,47 +210,65 @@ const determineOrientation = (puzzle: LearningPuzzle): 'white' | 'black' => {
 async function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: string }) {
   currentPuzzle.value = payload.puzzle
   currentSource.value = payload.source
-  const orientation = determineOrientation(payload.puzzle)
 
-  // 1. Setup board WITHOUT triggering automatic analysis immediately if possible
-  // We temporarily disable coach to avoid the watch(boardStore.fen) trigger
-  coachStore.setCoachEnabled(false)
+  if (!isKing.value) {
+    // Non-King Fallback: Delegate gameplay entirely to the endgame store
+    boardStore.setAnalysisMode(false)
+    coachStore.setCoachEnabled(false)
+    endgameStore.startGameFromPuzzle(payload.puzzle as unknown as EndgamePuzzle)
+    
+    // Maintain coach as a passive observer
+    coachStore.initChatSession(payload.puzzle)
+    coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
+    coachStore.setCoachEnabled(true)
+  } else {
+    // King Logic: Use n8n sparring loop
+    const orientation = determineOrientation(payload.puzzle)
 
-  boardStore.resetBoardState()
-  boardStore.setAnalysisMode(true)
-  boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
+    // 1. Setup board WITHOUT triggering automatic analysis immediately if possible
+    coachStore.setCoachEnabled(false)
 
-  // 2. Execute Bot Move if applicable BEFORE starting the session
-  if (payload.puzzle.tactical_solution) {
+    boardStore.resetBoardState()
+    boardStore.setAnalysisMode(true)
+    boardStore.setupPosition(payload.puzzle.initial_fen, orientation)
 
-    const moves = payload.puzzle.tactical_solution.split(' ').filter(Boolean)
-    if (moves.length > 0 && isBotTurn(0)) {
-      isBotPlaying = true
-      // Apply move immediately for the internal state
-      const firstMove = moves[0]
-      if (firstMove) {
-        boardStore.applyUciMove(firstMove)
-      }
-      isBotPlaying = false
-    }
+    // 2. Prepare Coach Session
+    coachStore.initChatSession(payload.puzzle)
+    coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
+    coachStore.setCoachEnabled(true)
+
+    // 3. Handle First Move Strategy
+    gameStore.setGamePhase('IDLE')
+    const unwatch = watch(
+      [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
+      async ([isAnalyzing, explanation]) => {
+        if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
+          unwatch()
+          // First, greet the user
+          await coachStore.sendChatMessage()
+          
+          // Now activate the game so the sparring loop (boardSyncCounter watcher) can respond
+          gameStore.setGamePhase('PLAYING')
+          
+          if (isBotTurn(0)) {
+             // We manually trigger the first feedback for the bot
+             const feedback = await coachStore.fetchCoachFeedback()
+             if (feedback?.coach_fitback) {
+               const fb = feedback.coach_fitback
+               if (fb.user_last_move_chat) coachStore.addCoachMessage(fb.user_last_move_chat, 'coachFeedback')
+               if (fb.user_last_move_tts) await coachStore.playMentorResponse(fb.user_last_move_tts)
+               if (fb.coach_next_move_uci) {
+                 boardStore.applyUciMove(fb.coach_next_move_uci)
+                 const botNode = pgnService.getCurrentNode()
+                 if (botNode) coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
+               }
+             }
+          }
+        }
+      },
+      { immediate: true }
+    )
   }
-
-  // 3. Now enable Coach and trigger analysis for the CORRECT position
-  coachStore.setCoachEnabled(true)
-  coachStore.initChatSession(payload.puzzle)
-
-  // 4. Wait for the analysis of the final position to complete before greeting
-  // We use a watch on isAnalyzing that checks if currentExplanation is ready
-  const unwatch = watch(
-    [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
-    ([isAnalyzing, explanation]) => {
-      if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
-        coachStore.sendChatMessage() 
-        unwatch()
-      }
-    },
-    { immediate: true }
-  )
 
   // Configure Control Panel
   controlsStore.setControls({

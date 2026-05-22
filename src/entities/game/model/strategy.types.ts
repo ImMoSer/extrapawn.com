@@ -37,6 +37,17 @@ export interface IGameplayStrategy {
   onUserMoveExecuted?: (uciMove: string, fen: string) => void | Promise<void>
 
   /**
+   * Вызывается когда происходит Takeback (возврат хода),
+   * позволяет стратегии откатить свой внутренний стейт.
+   */
+  onUserMoveUndone?: () => void
+
+  /**
+   * Форсирует переход в режим игры против движка (Playout).
+   */
+  forcePlayoutMode?: () => void
+
+  /**
    * Делегирует ответственность за генерацию ответного хода Стратегии.
    * Может использовать Stockfish, Mozer, API, Сценарий.
    */
