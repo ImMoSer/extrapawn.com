@@ -26,7 +26,7 @@ export interface IGameplayStrategy {
 
   /**
    * Вызывается ДО реального применения хода на доске и в истории.
-   * Позволяет отклонить ход (например, если он 'не по теории' в Diamond Hunter).
+   * Позволяет отклонить ход (например, если он 'не по теории').
    * Если возвращает false, ход игнорируется ядром.
    */
   validateUserMove?: (uciMove: string, fen: string) => boolean | Promise<boolean>

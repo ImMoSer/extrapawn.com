@@ -35,12 +35,7 @@ Test your preparation in a realistic tournament environment.
 - **Personality Types**: Choose between **Master** (theoretical), **Hustler** (statistical), or **Swindler** (poisonous traps).
 - **Playout Transition**: Seamlessly transition from the opening to advantage realization against Maia AI.
 
-### 💎 DIAMOND HUNTER — Brilliancy Trainer
-Learn to punish typical mistakes and secure "Brilliant" achievements.
-- **Hunt & Secure**: Find the "Diamond" move (`!!`), refute the bot's blunder, and **replay the entire line from memory** to lock in the knowledge.
-- **Gravity Map Guidance**: Visualize tactical tension with real-time arrow-based mapping.
 
----
 
 ## 🎮 Training Ecosystem
 

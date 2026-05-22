@@ -75,7 +75,7 @@ const progressPercent = computed(() => {
       <n-space vertical :size="24" style="width: 100%">
         <div class="header">
           <n-h1 class="title" style="color: var(--color-success, #63e2b7); margin: 0">
-            {{ t('features.diamondHunter.header.bookEnded') }}
+            {{ t('features.openingSparring.header.bookEnded') }}
           </n-h1>
           <n-text depth="3" class="subtitle"> Session Summary </n-text>
         </div>
@@ -148,7 +148,7 @@ const progressPercent = computed(() => {
           <!-- Engine Selection for Playout -->
           <div class="section">
             <n-text class="section-label">{{
-              t('features.diamondHunter.settings.engineHint', 'Playout Engine')
+              t('features.openingSparring.settings.engineHint', 'Playout Engine')
             }}</n-text>
             <div class="engine-selector-wrapper">
               <slot name="engine-selector" />
@@ -203,7 +203,7 @@ const progressPercent = computed(() => {
               <template #icon
                 ><n-icon><RefreshOutline /></n-icon
               ></template>
-              {{ t('features.diamondHunter.header.newSession') }}
+              {{ t('features.openingSparring.header.newSession') }}
             </n-button>
           </n-space>
         </div>

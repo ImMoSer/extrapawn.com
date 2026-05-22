@@ -254,7 +254,7 @@ export const useOpeningSparringStore = defineStore('openingSparring', () => {
     () => theoryStore.currentFen,
     (fen) => {
       if (fen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-        openingName.value = t('features.diamondHunter.settings.startPosition')
+        openingName.value = t('features.openingSparring.settings.startPosition')
         currentEco.value = ''
         return
       }

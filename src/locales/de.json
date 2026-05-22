@@ -23,11 +23,7 @@
       "description": "Hochintensives, dynamisches Schachtaktik-Training mit Glicko-2-Rating und tiefer Fehleranalyse.",
       "keywords": "Schachtaktik-Trainer, dynamische Puzzles, Blitz-Taktik"
     },
-    "diamondHunter": {
-      "title": "Diamond Hunter — Falle gestellt",
-      "description": "Finde versteckte Juwelen in deiner Eröffnung. Meistere die Bestrafung typischer Eröffnungsfehler.",
-      "keywords": "Eröffnungsfallen, Eröffnungsfehler, Diamond Hunter Schach"
-    },
+
     "theoryEndings": {
       "title": "Theoretische Endspiele",
       "description": "Übe klassische Endspielpositionen bis zur Perfektion. Rette Remis und zerstöre die Hoffnungen deiner Gegner."
@@ -125,7 +121,7 @@
     "finishHim": "Finish Him",
     "theoryEndgames": "Theoretische",
     "practicalChess": "Practische",
-    "diamondHunter": "Brilliante",
+
     "repertoire": "Repertoire",
     "openingSparring": "Sparring"
   },
@@ -1036,16 +1032,8 @@
         "autoLoad": "AutoNext"
       }
     },
-    "diamondHunter": {
-      "status": {
-        "idle": "BEREIT",
-        "hunting": "SUCHE...",
-        "punish": "FEHLER BESTRAFEN!",
-        "secure": "DIAMANT SICHERN!",
-        "found": "DIAMANT GEFUNDEN!"
-      },
+    "openingSparring": {
       "header": {
-        "searching": "Theorie wird gesucht...",
         "bookEnded": "Buch-Ende",
         "deviation": "Abweichung",
         "accuracy": "Genauigkeit",
@@ -1101,7 +1089,7 @@
   },
   "nav": {
     "home": "Startseite",
-    "diamondHunter": "Brilliante",
+
     "openingExam": "Sparring",
     "openingSparring": "Sparring",
     "learningCoach": "Lern Coach",
@@ -1302,10 +1290,7 @@
         "title": "OPENING SPARRING — Eröffnungssimulator",
         "text": "Simuliere reale Turniereröffnungen. Unser Bot zieht basierend auf Live-Spielerstatistiken (Lichess 1000–2200+) mit anpassbarer Variabilität. Wähle zwischen den Charakteren Master, Hustler oder Swindler. Verfeinere danach die Realisierung gegen die Maia-KI."
       },
-      "diamondHunter": {
-        "title": "DIAMOND HUNTER — Fehler-Jäger",
-        "text": "Lerne, typische Fehler zu bestrafen. Ein Zwei-Phasen-System: Erst Jagd mit Hinweisen bis zum Patzer, dann obligatorische Reproduktion der gesamten Variante aus dem Gedächtnis. Verwandle die Fehler anderer in deine gelernten Siege."
-      },
+
       "tornado": {
         "title": "TORNADO — Taktischer Sturm",
         "text": "Adaptiver Taktiktrainer basierend auf Glicko-2. Keine Fehlerlimits, kein langweiliges Aufwärmen – hohes Schwierigkeitsniveau ab der ersten Minute. 15 thematische Vektoren und ein spezieller Modus zur Bearbeitung deiner Fehler."
@@ -1418,7 +1403,7 @@
       "tornado": "Tornado",
       "leaderboards": "Bestenliste",
       "club": "Club",
-      "diamondHunter": "Brillanten",
+
       "openingSparring": "Sparring",
       "learningCoach": "Coach",
       "repertoire": "Studium",

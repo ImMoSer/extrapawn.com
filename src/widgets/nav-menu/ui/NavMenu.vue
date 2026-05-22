@@ -2,7 +2,6 @@
 import {
   CashOutline,
   ChatbubbleEllipsesOutline,
-  DiamondOutline,
   FlashOutline,
   HammerOutline,
   HomeOutline,
@@ -56,11 +55,6 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.tornado'),
     key: '/tornado',
     icon: renderIcon(ThunderstormOutline),
-  },
-  {
-    label: () => t('nav.diamondHunter'),
-    key: '/diamond-hunter',
-    icon: renderIcon(DiamondOutline),
   },
   {
     label: () => t('nav.openingSparring'),

@@ -3,7 +3,6 @@ import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
   ChatbubbleEllipsesOutline,
-  DiamondOutline,
   FlashOutline,
   HammerOutline,
   LogInOutline,
@@ -49,12 +48,6 @@ const menuItems = [
     icon: ThunderstormOutline,
     labelKey: 'welcome.buttons.tornado',
     color: 'var(--neon-cyan)',
-  },
-  {
-    path: '/diamond-hunter',
-    icon: DiamondOutline,
-    labelKey: 'welcome.buttons.diamondHunter',
-    color: 'var(--neon-lime)',
   },
   {
     path: '/opening-sparring',

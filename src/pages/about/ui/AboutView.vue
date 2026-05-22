@@ -9,7 +9,6 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '2.0.0'
 const modules = [
   'study',
   'openingSparring',
-  'diamondHunter',
   'tornado',
   'finishHim',
   'practicalChess',

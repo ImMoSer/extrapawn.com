@@ -146,21 +146,7 @@ const router = createRouter({
       name: 'bonus',
       component: () => import('@/pages/bonus/ui/BonusView.vue'),
     },
-    {
-      path: '/diamond-hunter/:openingSlug?/:color?',
-      name: 'diamond-hunter',
-      component: () => import('@/pages/diamond-hunter').then((m) => m.DiamondHunterPage),
-      meta: {
-        isGame: true,
-        game: 'opening-training',
-        requiresAuth: true,
-        seo: {
-          titleKey: 'seo.diamondHunter.title',
-          descriptionKey: 'seo.diamondHunter.description',
-          keywordsKey: 'seo.diamondHunter.keywords',
-        },
-      },
-    },
+
     {
       path: '/opening-sparring/:openingSlug?/:color?',
       name: 'opening-sparring',
@@ -173,13 +159,7 @@ const router = createRouter({
       component: () => import('@/pages/learning-coach').then((m) => m.LearningCoachPage),
       meta: { isGame: true, game: 'learning-coach', requiresAuth: true },
     },
-    {
-      path: '/opening-trainer/:openingSlug?/:color?',
-      redirect: (to) => ({
-        name: 'diamond-hunter',
-        params: to.params,
-      }),
-    },
+
     {
       path: '/theory-endings',
       redirect: '/endgames',

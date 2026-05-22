@@ -16,7 +16,6 @@ Every mode is built with the "Grandmaster's Training" in mind:
 | **Tornado** | Speed & Pattern Recognition | Fast Analysis |
 | **Endgames** | Theoretical Knowledge | Theory Database |
 | **Practical** | Calculation & Intuition | Stockfish / Maia |
-| **Diamond Hunter** | Master-level Accuracy ("!!" Search) | Stockfish + BadGyal |
 | **Open Sparring** | Interactive Opening Prep | MozerBook + Commentator |
 | **Study!** | Knowledge & Training | MozerBook / SRS |
 

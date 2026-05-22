@@ -294,39 +294,6 @@ class DatabaseClient {
       CREATE INDEX IF NOT EXISTS idx_node_metadata_chapter_id ON node_metadata(chapter_id)
     `,
     )
-    await this._execRaw(
-      this.userDbId,
-      `
-      CREATE TABLE IF NOT EXISTS diamonds (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        hash         TEXT NOT NULL,
-        fen          TEXT NOT NULL,
-        pgn          TEXT NOT NULL,
-        collected_at INTEGER NOT NULL
-      )
-    `,
-    )
-    await this._execRaw(
-      this.userDbId,
-      `
-      CREATE TABLE IF NOT EXISTS brilliants (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        hash         TEXT NOT NULL,
-        fen          TEXT NOT NULL,
-        pgn          TEXT NOT NULL,
-        collected_at INTEGER NOT NULL
-      )
-    `,
-    )
-    await this._execRaw(
-      this.userDbId,
-      `
-      CREATE TABLE IF NOT EXISTS settings (
-        key   TEXT PRIMARY KEY,
-        value TEXT
-      )
-    `,
-    )
   }
 
   /**

@@ -1,4 +1,4 @@
-# 4.7 Study! (The Grandmaster's Studio)
+# 4.6 Study! (The Grandmaster's Studio)
 
 **Study!** is the analytical heart of the platform. It is a high-performance environment designed for professional opening preparation and tactical deep-dives, combining a flexible study tree with the deep theoretical intelligence of **MozerBook**.
 
@@ -7,7 +7,7 @@ The **Study Manager** acts as the central repository for your chess knowledge, s
 - **Lichess Integration**: Seamlessly link your Lichess account to import your private opening studies. You can also access curated **Community Studies** provided by the `@ExtraPawnCOM` profile.
 - **Manual Construction**: Build your own preparation from scratch, move-by-move.
 - **PGN Intelligence**: Import external PGN files or export your current study lines for use in other software.
-- **AI-Powered Generation**: The [Repertoire Generator](./04_7_Repertoire_Generator_Helper.md) can automatically build entire trees based on Masters' statistics and selectable playstyles (GrossMaster, Master, Hustler).
+- **AI-Powered Generation**: The Repertoire Generator can automatically build entire trees based on Masters' statistics and selectable playstyles (GrossMaster, Master, Hustler).
 
 ## 2. Professional Tree Navigation
 The user interface is optimized for managing vast amounts of theoretical variations:

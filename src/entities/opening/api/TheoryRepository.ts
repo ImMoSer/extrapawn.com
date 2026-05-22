@@ -13,7 +13,7 @@ export interface TheoryStats {
   timestamp: number
 }
 
-export type CacheSource = 'lichess' | 'masters' | 'lichessMasters' | 'mozerBook' | 'diamondGravity'
+export type CacheSource = 'lichess' | 'masters' | 'lichessMasters' | 'mozerBook'
 
 class TheoryRepository {
   private readonly CACHE_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days

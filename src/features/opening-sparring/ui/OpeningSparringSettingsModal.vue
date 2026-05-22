@@ -30,7 +30,7 @@ const majorOpenings = ref<{ name: string; eco?: string; moves: string[]; slug: s
 
 const openingOptions = computed<SelectOption[]>(() => {
   const options: SelectOption[] = [
-    { label: t('features.diamondHunter.settings.startPosition'), value: 'start' },
+    { label: t('features.openingSparring.settings.startPosition'), value: 'start' },
   ]
   majorOpenings.value.forEach((op) => {
     options.push({
@@ -71,20 +71,20 @@ function startSession() {
             {{ t('nav.openingSparring') }}
           </n-h1>
           <n-text depth="3" class="subtitle">
-            {{ t('features.diamondHunter.settings.subtitle') }}
+            {{ t('features.openingSparring.settings.subtitle') }}
           </n-text>
         </div>
 
         <div class="selection-sections">
           <!-- 1. Color Selection -->
           <div class="section">
-            <n-text class="section-label">{{ t('features.diamondHunter.settings.color') }}</n-text>
+            <n-text class="section-label">{{ t('features.openingSparring.settings.color') }}</n-text>
             <n-radio-group v-model:value="selectedColor" size="large" expand>
               <n-radio-button value="white" style="text-align: center">
-                {{ t('features.diamondHunter.settings.white') }}
+                {{ t('features.openingSparring.settings.white') }}
               </n-radio-button>
               <n-radio-button value="black" style="text-align: center">
-                {{ t('features.diamondHunter.settings.black') }}
+                {{ t('features.openingSparring.settings.black') }}
               </n-radio-button>
             </n-radio-group>
           </div>
@@ -92,7 +92,7 @@ function startSession() {
           <!-- 2. Opening Selection -->
           <div class="section">
             <n-text class="section-label">{{
-              t('features.diamondHunter.settings.selectOpening')
+              t('features.openingSparring.settings.selectOpening')
             }}</n-text>
             <n-select v-model:value="selectedOpening" :options="openingOptions" size="large" />
           </div>
@@ -100,14 +100,14 @@ function startSession() {
           <!-- 3. Opponent Source -->
           <div class="section">
             <n-text class="section-label">{{
-              t('features.diamondHunter.settings.opponentSource', 'Opponent Base')
+              t('features.openingSparring.settings.opponentSource', 'Opponent Base')
             }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentSource" size="large" expand>
               <n-radio-button value="master" style="text-align: center">
-                {{ t('features.diamondHunter.settings.masters') }} (2200+)
+                {{ t('features.openingSparring.settings.masters') }} (2200+)
               </n-radio-button>
               <n-radio-button value="lichess" style="text-align: center">
-                {{ t('features.diamondHunter.settings.lichessPlayers') }}
+                {{ t('features.openingSparring.settings.lichessPlayers') }}
               </n-radio-button>
             </n-radio-group>
 
@@ -115,11 +115,11 @@ function startSession() {
               {{
                 openingStore.opponentSource === 'master'
                   ? t(
-                      'features.diamondHunter.settings.masterHint',
+                      'features.openingSparring.settings.masterHint',
                       'Bot plays optimal moves from Master games.',
                     )
                   : t(
-                      'features.diamondHunter.settings.lichessHint',
+                      'features.openingSparring.settings.lichessHint',
                       'Bot simulates human play styles based on selected ratings.',
                     )
               }}
@@ -129,11 +129,11 @@ function startSession() {
           <!-- 3.5 Opponent Character (Only shown if Master Database is selected) -->
           <div v-if="openingStore.opponentSource === 'master'" class="section fade-in">
             <n-text class="section-label">{{
-              t('features.diamondHunter.settings.selectCharacter', 'Master Character Style')
+              t('features.openingSparring.settings.selectCharacter', 'Master Character Style')
             }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentCharacter" size="large" expand>
               <n-radio-button value="none" style="text-align: center">{{
-                t('features.diamondHunter.settings.random', 'Random')
+                t('features.openingSparring.settings.random', 'Random')
               }}</n-radio-button>
               <n-radio-button value="grossmaster" style="text-align: center; color: #4caf50">
                 {{ t('features.study.repertoireGenerator.styles.grossmaster.name') }}
@@ -150,7 +150,7 @@ function startSession() {
               <template v-if="openingStore.opponentCharacter === 'none'">
                 {{
                   t(
-                    'features.diamondHunter.settings.characterDefaultHint',
+                    'features.openingSparring.settings.characterDefaultHint',
                     'Bot plays random top moves based on variability.',
                   )
                 }}
@@ -168,7 +168,7 @@ function startSession() {
           <!-- 4. Opponent Rating (Only shown if Lichess is selected) -->
           <div v-if="openingStore.opponentSource === 'lichess'" class="section fade-in">
             <n-text class="section-label">{{
-              t('features.diamondHunter.settings.selectRatings', 'Lichess Rating Level')
+              t('features.openingSparring.settings.selectRatings', 'Lichess Rating Level')
             }}</n-text>
             <n-radio-group v-model:value="openingStore.opponentRatingRange" size="large" expand>
               <n-radio-button value="1000-1499" style="text-align: center"
@@ -192,7 +192,7 @@ function startSession() {
           >
             <n-space align="center" justify="space-between">
               <n-text class="section-label">{{
-                t('features.diamondHunter.settings.variability', {
+                t('features.openingSparring.settings.variability', {
                   value: openingStore.variability,
                 })
               }}</n-text>
@@ -202,14 +202,14 @@ function startSession() {
             </n-space>
             <n-slider v-model:value="openingStore.variability" :min="3" :max="7" :step="1" />
             <n-text depth="3" class="hint-text">
-              {{ t('features.diamondHunter.settings.variabilityHint') }}
+              {{ t('features.openingSparring.settings.variabilityHint') }}
             </n-text>
           </div>
         </div>
 
         <div class="actions">
           <n-button type="primary" size="large" block class="start-btn" @click="startSession">
-            {{ t('features.diamondHunter.settings.startSession') }}
+            {{ t('features.openingSparring.settings.startSession') }}
           </n-button>
         </div>
       </n-space>

@@ -372,8 +372,7 @@ export interface ActivityPeriodStats {
   theory: ActivityModeStats
   'practical-chess': ActivityModeStats
   rep_generator: ActivityModeStats
-  'diamond-hunter': ActivityModeStats
-  'opening-sparring': ActivityModeStats
+  'opening-sparring': ActivityModeStats,
   'study-reply'?: ActivityModeStats
   speedrun?: ActivityModeStats
 }

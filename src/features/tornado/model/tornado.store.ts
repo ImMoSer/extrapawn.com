@@ -331,7 +331,7 @@ export const useTornadoStore = defineStore('tornado', () => {
       },
 
       validateUserMove() {
-        // Ошибочные ходы в Торнадо не отбрасываются доской (как в Diamond),
+        // Ошибочные ходы в Торнадо не отбрасываются доской,
         // они просто мгновенно фейлят весь пазл. Значит pre-validation всегда true.
         return true
       },
