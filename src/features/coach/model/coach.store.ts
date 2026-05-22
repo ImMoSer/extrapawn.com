@@ -329,10 +329,10 @@ export const useCoachStore = defineStore('coach', () => {
     // We need the FEN *before* the move was played.
     const prevFen = lastNode.parent.fenAfter
 
-    lastMoveAnalysis.value = { loading: true, san: lastNode.san }
+    lastMoveAnalysis.value = { loading: true, san: lastNode.san, fen: prevFen }
     try {
       const r = await explainMoveAt(prevFen, lastNode.uci)
-      lastMoveAnalysis.value = { ...r, loading: false }
+      lastMoveAnalysis.value = { ...r, loading: false, fen: prevFen }
     } catch {
       lastMoveAnalysis.value = null
     }

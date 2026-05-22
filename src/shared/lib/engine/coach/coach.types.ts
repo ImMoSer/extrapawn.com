@@ -9,6 +9,7 @@ export interface CoachTopMove {
   rank: number
   uci: string
   san: string
+  tts?: string
   score: number
   mate: number | null
   eval_pawns: number
@@ -31,7 +32,7 @@ export interface CoachTopMove {
     is_best_move: boolean
     winRateLoss?: number
   }
-  pvLine?: { san: string; tagline?: string }[]
+  pvLine?: { san: string; tts?: string; tagline?: string }[]
 }
 
 export interface CoachVisualCommands {
@@ -85,14 +86,26 @@ export interface CoachExplanation {
     eval_cp: number
     eval_mate: number | null
     depth: number
-    moves: { san: string; uci: string }[]
+    moves: {
+      san: string
+      uci: string
+      tts?: string
+      role?: string
+      motifs?: string[]
+      headline?: string
+      to?: string
+      from?: string
+    }[]
     key_squares: string[]
     theme: string | null
     description: string
+    tts_string?: string
     zwischenzug?: Record<string, unknown>
   }
   engine_top_moves: CoachTopMove[]
   visual_commands: CoachVisualCommands
+  tactics?: Record<string, unknown>
+  endgame?: Record<string, unknown>
   llm_payload: Record<string, unknown>
   summary_text: string
   concrete_facts?: { text: string; side?: string; importance?: number }[]
@@ -101,12 +114,15 @@ export interface CoachExplanation {
 export interface CoachLastMoveAnalysis {
   loading?: boolean
   san: string
+  tts?: string
+  fen?: string // The FEN BEFORE the move was played
   quality?: string
   summary?: string
   details?: string
   motifs?: string[]
   bestMove?: string
   bestMoveSan?: string
+  best_move_tts?: string
   eval_cp?: number
   winRateLoss?: number
   is_best_move?: boolean
