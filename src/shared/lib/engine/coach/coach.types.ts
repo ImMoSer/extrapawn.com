@@ -106,7 +106,6 @@ export interface CoachExplanation {
   visual_commands: CoachVisualCommands
   tactics?: Record<string, unknown>
   endgame?: Record<string, unknown>
-  llm_payload: Record<string, unknown>
   summary_text: string
   concrete_facts?: { text: string; side?: string; importance?: number }[]
 }

@@ -12,7 +12,7 @@ import { useCoachStore, CoachSidebar } from '@/features/coach'
 import { useAnalysisStore, AnalysisPanel } from '@/features/analysis'
 import { useEndgameStore, type EndgamePuzzle } from '@/features/endgames'
 import { ControlPanel, GameLayout, useControlsStore } from '@/widgets/game-layout'
-import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { useGameStore, useBoardStore } from '@/entities/game'
 import { apiClient } from '@/shared/api/client'
 import TrainingsSidebar from './TrainingsSidebar.vue'
@@ -33,18 +33,6 @@ type LearningPuzzle = {
   sub_category?: string
   themes?: string[]
   game_modus?: string
-}
-
-function formatMoveWithNumber(node: PgnNode): string {
-  if (!node.fenBefore) return node.san || node.uci
-  const parts = node.fenBefore.split(' ')
-  const turn = parts[1]
-  const fullmove = parts[5] || '1'
-  if (turn === 'w') {
-    return `${fullmove}. ${node.san || node.uci}`
-  } else {
-    return `${fullmove}... ${node.san || node.uci}`
-  }
 }
 
 // State
@@ -156,39 +144,17 @@ watch(() => boardStore.boardSyncCounter, async () => {
   prevPathLength = L
 
   if (wasUserMove) {
-    const currentNode = pgnService.getCurrentNode()
-    if (currentNode) {
-      coachStore.addRefereeMessage(formatMoveWithNumber(currentNode), 'userMove')
-    }
-
     try {
       // 1. Wait for Stockfish analysis of the user's move to complete
       await waitForAnalysis()
 
-      // 2. Fetch coach feedback for King users (chat and TTS only)
-      const feedback = await coachStore.fetchCoachFeedback()
-      if (feedback?.coach_fitback) {
-        const fb = feedback.coach_fitback
-        
-        // Add user's move feedback to the chat
-        if (fb.user_last_move_chat) {
-          coachStore.addCoachMessage(fb.user_last_move_chat, 'coachFeedback')
-        }
-
-        // Speak user's move feedback
-        if (fb.user_last_move_tts) {
-          await coachStore.playMentorResponse(fb.user_last_move_tts)
-        }
-      }
+      // The LLM feedback fetching has been removed.
     } catch (err) {
-      console.error('[LearningCoachView] Sparring feedback cycle failed:', err)
+      console.error('[LearningCoachView] Sparring analysis wait failed:', err)
     }
   } else {
     // It was a bot move
-    const botNode = pgnService.getCurrentNode()
-    if (botNode) {
-      coachStore.addRefereeMessage(formatMoveWithNumber(botNode), 'coachMove')
-    }
+    // Removed referee message
   }
 })
 
@@ -202,26 +168,12 @@ async function handlePositionLoaded(payload: { puzzle: LearningPuzzle; source: s
   coachStore.setCoachEnabled(false)
   endgameStore.startGameFromPuzzle(payload.puzzle as unknown as EndgamePuzzle)
   
-  coachStore.initChatSession(payload.puzzle)
-  coachStore.addRefereeMessage(payload.puzzle.initial_fen, 'startGame')
   coachStore.setCoachEnabled(true)
 
   // Reset prevPathLength for tracking moves
   prevPathLength = 0
 
-  if (isKing.value) {
-    // Start-of-puzzle greeting watch for King users
-    const unwatch = watch(
-      [() => coachStore.isAnalyzing, () => coachStore.currentExplanation],
-      async ([isAnalyzing, explanation]) => {
-        if (!isAnalyzing && explanation && explanation.fen === boardStore.fen) {
-          unwatch()
-          await coachStore.sendChatMessage()
-        }
-      },
-      { immediate: true }
-    )
-  }
+  // The King specific greeting watch has been removed
 }
 
 // Watchers for game phases and UI controls

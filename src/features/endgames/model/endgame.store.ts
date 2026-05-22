@@ -219,7 +219,7 @@ export const useEndgameStore = defineStore('endgames', () => {
               if (coachStore.showVisuals && explanation?.visual_commands) {
                 const commands = Object.values(explanation.visual_commands).flat().join(';')
                 if (commands) {
-                  coachStore.executeMentorAction(commands)
+                  coachStore.executeVisualCommands(commands)
                 } else {
                   useBoardStore().setCoachShapes([])
                 }

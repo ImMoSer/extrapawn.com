@@ -24,7 +24,6 @@ import { Chess } from 'chess.js'
 import { explainPosition, analyzeMove, isReady as wasmReady } from './analyzer-rs'
 import { explainMove } from './explainer'
 import { getSideToMove } from './chess'
-import { extractLlmPayload } from './llm-bridge'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 // The plan walker needs enough breadth to compare alternative continuations
@@ -416,10 +415,6 @@ export async function buildFullExplanation(fen, opts = {}) {
     keySquares,
     bestMoveUci
   )
-
-  // ── LLM Bridge ──────────────────────────────────────────────────────
-  // Extract a token-efficient DTO for the LLM mentor.
-  staticBlob.llm_payload = extractLlmPayload(staticBlob)
 
   return staticBlob
 }

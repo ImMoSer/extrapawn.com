@@ -1,49 +1,16 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { setEngineContext, getPieceCount, fetchTablebaseMoves } from '@/shared/lib/engine/coach/engine'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
-import { extractLlmPayload } from '@/shared/lib/engine/coach/llm-bridge'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
-import { useCoachBookStore } from '../model/coach-book.store'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-
-export interface CoachFeedbackResponse {
-  coach_fitback?: {
-    user_last_move_tts?: string
-    user_last_move_chat?: string
-    coach_next_move_uci: string
-  }
-}
-
-export interface CoachExplanationResponse {
-  coach_explained?: {
-    tts: string
-    chat: string
-  }
-}
-
-export interface SessionStartResponse {
-  session_start?: {
-    tts: string
-    chat: string
-  }
-  output?: string
-}
-
-export interface CoachAnswerResponse {
-  coach_answer?: {
-    tts?: string
-    chat?: string
-  }
-}
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
@@ -64,10 +31,95 @@ export const useCoachStore = defineStore('coach', () => {
     if (showVisuals.value && currentExplanation.value?.visual_commands) {
       const commands = Object.values(currentExplanation.value.visual_commands).flat().join(';')
       if (commands) {
-        executeMentorAction(commands)
+        executeVisualCommands(commands)
       }
     } else if (!showVisuals.value) {
       boardStore.setCoachShapes([])
+    }
+  }
+
+  function executeVisualCommands(actionStr: string) {
+    if (!actionStr) return
+
+    const subActions = actionStr.split(';')
+    const allShapes: DrawShape[] = []
+
+    // Chessground standard brushes + safety (11 colors)
+    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove']
+
+    for (const sub of subActions) {
+      if (!sub.trim()) continue
+
+      // Remove any brackets to prevent matching issues, then split
+      const cleanSub = sub.replace(/[\[\]]/g, '').trim()
+      const parts = cleanSub.split(':')
+      const cmd = parts[0]?.trim()
+      const data = parts[1]?.trim()
+
+      let brush = parts[2]?.trim() || 'green'
+
+      // Validation & Debugging
+      if (!VALID_BRUSHES.includes(brush)) {
+        logger.warn(`[CoachStore] Unknown brush detected: "${brush}" in command "${sub}". Falling back to green.`)
+        brush = 'green'
+      }
+
+      // Map standard brushes to thin coach-specific brushes
+      const coachBrush = brush === 'bestmove' ? 'bestmove' : `coach${brush}`
+
+      if (cmd === 'clear') {
+        boardStore.setCoachShapes([])
+        return
+      }
+
+      if (!data) continue
+
+      if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
+        const squares = data.split('->')
+        for (let i = 0; i < squares.length - 1; i++) {
+          const orig = squares[i]?.trim()
+          const dest = squares[i + 1]?.trim()
+
+          // Coordinate validation (must be e.g. "e4")
+          if (orig && dest && orig.length === 2 && dest.length === 2) {
+            allShapes.push({
+              orig: orig as Key,
+              dest: dest as Key,
+              brush: coachBrush,
+              modifiers: { lineWidth: 3 }
+            })
+          } else {
+            logger.warn(`[CoachStore] Invalid coordinates for route: "${orig}" -> "${dest}"`)
+          }
+        }
+      } else if (cmd === 'mark') {
+        const squares = data.split(',')
+        squares.forEach(sq => {
+          const cleanSq = sq.trim()
+          if (cleanSq && cleanSq.length === 2) {
+            allShapes.push({
+              orig: cleanSq as Key,
+              brush: coachBrush
+            })
+          } else {
+            logger.warn(`[CoachStore] Invalid coordinate for mark: "${cleanSq}"`)
+          }
+        })
+      }
+    }
+
+    if (allShapes.length > 0) {
+      // Sort shapes by color priority so the highest priority renders on top.
+      const COLOR_PRIORITY: Record<string, number> = {
+        coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
+      }
+      allShapes.sort((a, b) => {
+        const pA = COLOR_PRIORITY[a.brush as string] ?? -1
+        const pB = COLOR_PRIORITY[b.brush as string] ?? -1
+        return pA - pB
+      })
+
+      boardStore.setCoachShapes(allShapes)
     }
   }
 
@@ -82,67 +134,6 @@ export const useCoachStore = defineStore('coach', () => {
     wdl: 'win' | 'loss'
   } | null>(null)
 
-  // State for Mentor
-  const isMentorLoading = ref(false)
-  const isMentorSpeaking = ref(false)
-  let mentorSessionId = 0
-
-  // State for Chat Coach
-  const chatSessionId = ref('')
-  const chatMessages = ref<{
-    sender: 'user' | 'coach' | 'referee'
-    text: string
-    timestamp: Date
-    type?: string
-  }[]>([])
-  const isChatLoading = ref(false)
-  const sessionPuzzle = ref<Record<string, unknown> | null>(null)
-
-  function initChatSession(puzzle?: Record<string, unknown>) {
-    chatSessionId.value = window.crypto.randomUUID()
-    chatMessages.value = []
-    isChatLoading.value = false
-    sessionPuzzle.value = puzzle || null
-    logger.info('[CoachStore] New chat session initialized:', chatSessionId.value)
-  }
-
-  function addRefereeMessage(text: string, type: 'startGame' | 'userMove' | 'coachMove' | 'system' = 'system') {
-    chatMessages.value.push({
-      sender: 'referee',
-      text,
-      timestamp: new Date(),
-      type
-    })
-  }
-
-  function addCoachMessage(text: string, type: 'answerQuestion' | 'welcomeMessage' | 'coachFeedback' | 'coachHint' = 'coachHint') {
-    chatMessages.value.push({
-      sender: 'coach',
-      text,
-      timestamp: new Date(),
-      type,
-    })
-  }
-
-  const preferredVoiceURI = ref<string>(localStorage.getItem('coachVoiceURI') || '')
-  const preferredLanguage = ref<string>(localStorage.getItem('coachLanguage') || 'EN')
-  const isTTSEnabled = ref(localStorage.getItem('coachTTSEnabled') === 'true')
-
-  function setPreferredVoiceURI(uri: string) {
-    preferredVoiceURI.value = uri
-    localStorage.setItem('coachVoiceURI', uri)
-  }
-
-  function setPreferredLanguage(lang: string) {
-    preferredLanguage.value = lang
-    localStorage.setItem('coachLanguage', lang)
-  }
-
-  function setIsTTSEnabled(enabled: boolean) {
-    isTTSEnabled.value = enabled
-    localStorage.setItem('coachTTSEnabled', String(enabled))
-  }
-
   // State for "Last Move"
   const lastMoveAnalysis = ref<CoachLastMoveAnalysis | null>(null)
 
@@ -155,7 +146,6 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
-      mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -176,7 +166,6 @@ export const useCoachStore = defineStore('coach', () => {
       topMoves.value = []
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
-      mentorCache.value.clear()
     } else {
       if (analysisEngineStore.isAnalysisActive) {
         logger.info('[CoachStore] Stopping deep analysis to start coach.')
@@ -223,7 +212,7 @@ export const useCoachStore = defineStore('coach', () => {
       if (showVisuals.value && explanation?.visual_commands) {
         const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
-          executeMentorAction(commands)
+          executeVisualCommands(commands)
         } else {
           boardStore.setCoachShapes([])
         }
@@ -340,10 +329,6 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (newFen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-        mentorCache.value.clear()
-      }
-
       if (!isCoachEnabled.value) return
 
       const isUserTurn = boardStore.turn === boardStore.orientation
@@ -363,13 +348,6 @@ export const useCoachStore = defineStore('coach', () => {
       triggerAnalysis(newFen)
     },
   )
-
-  // Mentor Caching
-  const mentorCache = ref(new Map<string, string>())
-  const hasCachedMentorResponse = computed(() => {
-    const payload = currentExplanation.value?.llm_payload
-    return !!payload?.fen && mentorCache.value.has(payload.fen as string)
-  })
 
   // Watch deep analysis and disable coach if analysis starts
   watch(
@@ -393,452 +371,9 @@ export const useCoachStore = defineStore('coach', () => {
     })
   })
 
-  function buildMentorPayload(query?: string) {
-    if (!currentExplanation.value) {
-      throw new Error('No analysis context available.')
-    }
-
-    const authStore = useAuthStore()
-    const bookStore = useCoachBookStore()
-    const wikiInfo = bookStore.currentWikiInfo
-
-    let formattedBookPath = ''
-    if (wikiInfo?.canonicalSanPath) {
-      const formatted: string[] = []
-      for (let i = 0; i < wikiInfo.canonicalSanPath.length; i++) {
-        const move = wikiInfo.canonicalSanPath[i]
-        if (!move) continue
-        if (i % 2 === 0) {
-          formatted.push(`${Math.floor(i / 2) + 1}. ${move}`)
-        } else {
-          formatted.push(move)
-        }
-      }
-      formattedBookPath = formatted.join(' ')
-    }
-
-    const history = chatMessages.value.map(m => {
-          if (m.sender === 'referee') {
-            return {
-              role: 'referee' as const,
-              type: m.type || 'system',
-              notation: m.type === 'startGame' ? m.text : undefined,
-              move: (m.type === 'userMove' || m.type === 'coachMove') ? m.text : undefined,
-              text: m.type === 'system' ? m.text : undefined
-            }
-          } else if (m.sender === 'coach') {
-            return {
-              role: 'coach' as const,
-              type: m.type || 'coachMessage',
-              text: m.text
-            }
-          } else {
-            return {
-              role: 'user' as const,
-              type: 'userQuestion',
-              text: m.text
-            }
-          }
-        })
-
-
-    const basePayload = {
-      ...extractLlmPayload(currentExplanation.value, {
-        lastMove: lastMoveAnalysis.value || undefined,
-        consequence: lastMoveConsequence.value,
-        book: wikiInfo ? {
-          name: wikiInfo.name,
-          eco: wikiInfo.eco,
-          canonicalPathSan: formattedBookPath,
-          isOutOfBook: bookStore.isOutOfBook,
-          wikibooksUrl: wikiInfo.wikibooksUrl,
-          wikibooksContent: wikiInfo.wikibooksContent,
-          forwardMoves: wikiInfo.forwardMoves.map(m => ({ san: m.san, name: m.name }))
-        } : {
-          name: 'Unknown Opening',
-          eco: '-',
-          canonicalPathSan: '',
-          isOutOfBook: bookStore.isOutOfBook,
-          forwardMoves: []
-        },
-        userColor: boardStore.orientation,
-        session_history: history,
-        session_id: chatSessionId.value || undefined,
-        session_puzzle: sessionPuzzle.value || undefined,
-        question: query
-      }),
-      language: preferredLanguage.value,
-    }
-
-    return {
-      payload: basePayload,
-      profile: authStore.userProfile,
-    }
-  }
-
-  async function fetchCoachExplanation(skipChat = false): Promise<void> {
-    const authStore = useAuthStore()
-    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
-    if (!isKing) {
-      logger.warn('[CoachStore] fetchCoachExplanation blocked: User is not King.')
-      return
-    }
-
-    if (!currentExplanation.value || !currentExplanation.value.llm_payload) {
-      logger.warn('[CoachStore] No LLM payload available to send to mentor.')
-      return
-    }
-
-    const currentFen = currentExplanation.value.fen
-    if (!currentFen) return
-
-    // Check Cache
-    if (mentorCache.value.has(currentFen)) {
-      logger.info('[CoachStore] Replaying cached Mentor response for current position.')
-      const cachedMsg = mentorCache.value.get(currentFen)!
-      if (!skipChat) {
-        addCoachMessage(cachedMsg, 'coachHint')
-      }
-      await playMentorResponse(cachedMsg)
-      return
-    }
-
-    isMentorLoading.value = true
-    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
-    if (!backendApiUrl) {
-      logger.error('[CoachStore] VITE_BACKEND_API_URL not defined in .env')
-      isMentorLoading.value = false
-      return
-    }
-
-    try {
-      const fullPayload = buildMentorPayload()
-
-      logger.info('[CoachStore] Sending payload to secure backend mentor proxy...', fullPayload)
-      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(fullPayload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Webhook failed with status ${response.status}`)
-      }
-
-      const data = await response.json() as CoachExplanationResponse
-
-      if (data && data.coach_explained) {
-        const exp = data.coach_explained
-        if (exp.chat) {
-          addCoachMessage(exp.chat, 'coachHint')
-          // Cache the response
-          mentorCache.value.set(currentFen, exp.chat)
-        }
-        if (exp.tts) {
-          await playMentorResponse(exp.tts)
-        }
-      }
-    } catch (error) {
-      logger.error('[CoachStore] Failed to fetch coach explanation:', error)
-    } finally {
-      isMentorLoading.value = false
-    }
-  }
-
-  async function sendChatMessage(query?: string) {
-    const authStore = useAuthStore()
-    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
-    if (!isKing) {
-      addCoachMessage('Der Chat-Mentor steht nur King-Abonnenten zur Verfügung.', 'answerQuestion')
-      return
-    }
-
-    if (query) {
-      chatMessages.value.push({
-        sender: 'user',
-        text: query,
-        timestamp: new Date(),
-      })
-    }
-
-    isChatLoading.value = true
-    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
-
-    try {
-      const fullPayload = buildMentorPayload(query)
-
-      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(fullPayload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`)
-      }
-
-      const data = await response.json() as SessionStartResponse & CoachAnswerResponse
-      if (data && data.session_start) {
-        const start = data.session_start
-        if (start.chat) {
-          addCoachMessage(start.chat, 'welcomeMessage')
-        }
-        if (start.tts) {
-          await playMentorResponse(start.tts)
-        }
-      } else if (data && data.coach_answer) {
-        const ans = data.coach_answer
-        if (ans.chat) {
-          addCoachMessage(ans.chat, 'answerQuestion')
-        }
-        if (ans.tts) {
-          await playMentorResponse(ans.tts)
-        }
-      } else if (data && data.output) {
-        addCoachMessage(data.output, 'answerQuestion')
-      } else {
-        throw new Error('Empty response from LLM')
-      }
-    } catch (err: unknown) {
-      logger.error('[CoachStore] Chat communication error:', err)
-      addCoachMessage(`Entschuldigung, ich konnte keine Verbindung herstellen. Details: ${err instanceof Error ? err.message : String(err)}`, 'answerQuestion')
-    } finally {
-      isChatLoading.value = false
-    }
-  }
-
-  async function fetchCoachFeedback(): Promise<CoachFeedbackResponse> {
-    const authStore = useAuthStore()
-    const isKing = authStore.userProfile?.subscriptionTier === 'King' || authStore.userProfile?.activeTier === 'King'
-    if (!isKing) {
-      return {}
-    }
-
-    isChatLoading.value = true
-    const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL
-
-    try {
-      const fullPayload = buildMentorPayload()
-      const response = await fetch(`${backendApiUrl}/coach/mentor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(fullPayload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`)
-      }
-
-      return await response.json() as CoachFeedbackResponse
-    } catch (err: unknown) {
-      logger.error('[CoachStore] Error fetching coach feedback:', err)
-      throw err
-    } finally {
-      isChatLoading.value = false
-    }
-  }
-
-  async function playMentorResponse(output: string) {
-    const shouldClear = output.trim().startsWith('[clear]')
-    stopMentor(shouldClear) // Cancel any ongoing mentor session
-
-    const currentId = ++mentorSessionId
-    isMentorSpeaking.value = true
-
-    const parts = parseMentorActions(output)
-
-    if (isTTSEnabled.value && 'speechSynthesis' in window) {
-      // Determine language and voice
-      const firstText = parts.find(p => p.type === 'text')?.content || output
-      let lang = 'en-US'
-      if (/[А-Яа-яЁё]/.test(firstText)) lang = 'ru-RU'
-      else if (/[ÄäÖöÜüß]/.test(firstText)) lang = 'de-DE'
-
-      const voices = window.speechSynthesis.getVoices()
-      let voice = preferredVoiceURI.value ? voices.find(v => v.voiceURI === preferredVoiceURI.value) : null
-      if (!voice) {
-        voice = voices.find(v => v.lang === lang && v.name.includes('Google')) || voices.find(v => v.lang === lang)
-      }
-
-      // Play sequence
-      for (const part of parts) {
-        if (currentId !== mentorSessionId) break
-
-        if (part.type === 'text') {
-          const text = part.content.trim()
-          if (!text) continue
-
-          await new Promise<void>((resolve) => {
-            const utterance = new SpeechSynthesisUtterance(text)
-            utterance.lang = lang
-            if (voice) utterance.voice = voice
-
-            utterance.onend = () => resolve()
-            utterance.onerror = () => resolve()
-
-            window.speechSynthesis.speak(utterance)
-          })
-        } else {
-          executeMentorAction(part.content)
-        }
-      }
-    } else {
-      // If TTS is disabled, we still execute the visual actions immediately
-      for (const part of parts) {
-        if (currentId !== mentorSessionId) break
-        if (part.type === 'action') {
-          executeMentorAction(part.content)
-        }
-      }
-      if (!isTTSEnabled.value) {
-        logger.info('[CoachStore] TTS is disabled, skipping voice output.')
-      } else {
-        logger.warn('[CoachStore] Web Speech API is not supported in this browser.')
-      }
-    }
-
-    if (currentId === mentorSessionId) {
-      isMentorSpeaking.value = false
-    }
-  }
-
-  function stopMentor(clearShapes = true) {
-    mentorSessionId++
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-    }
-    if (clearShapes) {
-      boardStore.setCoachShapes([])
-    }
-    isMentorSpeaking.value = false
-  }
-
-  function parseMentorActions(text: string) {
-    const parts: { type: 'text' | 'action'; content: string }[] = []
-    const regex = /\[([^\]]+)\]/g
-    let lastIndex = 0
-    let match
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ type: 'text', content: text.substring(lastIndex, match.index) })
-      }
-      if (match[1]) {
-        parts.push({ type: 'action', content: match[1] })
-      }
-      lastIndex = regex.lastIndex
-    }
-
-    if (lastIndex < text.length) {
-      parts.push({ type: 'text', content: text.substring(lastIndex) })
-    }
-
-    return parts
-  }
-
-  function executeMentorAction(actionStr: string) {
-    if (!actionStr) return
-
-    const subActions = actionStr.split(';')
-    const allShapes: DrawShape[] = []
-
-    // Chessground standard brushes + safety (11 colors)
-    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove']
-
-    for (const sub of subActions) {
-      if (!sub.trim()) continue
-
-      // Remove any brackets to prevent matching issues, then split
-      const cleanSub = sub.replace(/[\[\]]/g, '').trim()
-      const parts = cleanSub.split(':')
-      const cmd = parts[0]?.trim()
-      const data = parts[1]?.trim()
-
-      let brush = parts[2]?.trim() || 'green'
-
-      // Validation & Debugging
-      if (!VALID_BRUSHES.includes(brush)) {
-        logger.warn(`[CoachStore] Unknown brush detected: "${brush}" in command "${sub}". Falling back to green.`)
-        brush = 'green'
-      }
-
-      // Map standard brushes to thin coach-specific brushes
-      const coachBrush = brush === 'bestmove' ? 'bestmove' : `coach${brush}`
-
-      if (cmd === 'clear') {
-        boardStore.setCoachShapes([])
-        return
-      }
-
-      if (!data) continue
-
-      if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
-        const squares = data.split('->')
-        for (let i = 0; i < squares.length - 1; i++) {
-          const orig = squares[i]?.trim()
-          const dest = squares[i + 1]?.trim()
-
-          // Coordinate validation (must be e.g. "e4")
-          if (orig && dest && orig.length === 2 && dest.length === 2) {
-            allShapes.push({
-              orig: orig as Key,
-              dest: dest as Key,
-              brush: coachBrush,
-              modifiers: { lineWidth: 3 }
-            })
-          } else {
-            logger.warn(`[CoachStore] Invalid coordinates for route: "${orig}" -> "${dest}"`)
-          }
-        }
-      } else if (cmd === 'mark') {
-        const squares = data.split(',')
-        squares.forEach(sq => {
-          const cleanSq = sq.trim()
-          if (cleanSq && cleanSq.length === 2) {
-            allShapes.push({
-              orig: cleanSq as Key,
-              brush: coachBrush
-            })
-          } else {
-            logger.warn(`[CoachStore] Invalid coordinate for mark: "${cleanSq}"`)
-          }
-        })
-      }
-    }
-
-    if (allShapes.length > 0) {
-      // Sort shapes by color priority so the highest priority renders on top.
-      const COLOR_PRIORITY: Record<string, number> = {
-        coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
-      }
-      allShapes.sort((a, b) => {
-        const pA = COLOR_PRIORITY[a.brush as string] ?? -1
-        const pB = COLOR_PRIORITY[b.brush as string] ?? -1
-        return pA - pB
-      })
-
-      boardStore.setCoachShapes(allShapes)
-    }
-  }
-
   return {
     isCoachEnabled,
     isAnalyzing,
-    isMentorLoading,
-    isMentorSpeaking,
-    chatSessionId,
-    chatMessages,
-    isChatLoading,
-    sessionPuzzle,
     currentExplanation,
     previousExplanation,
     topMoves,
@@ -852,24 +387,9 @@ export const useCoachStore = defineStore('coach', () => {
     toggleCoach,
     setCoachEnabled,
     explainTopMove,
-    initChatSession,
-    sendChatMessage,
-    fetchCoachFeedback,
-    fetchCoachExplanation,
-    addCoachMessage,
-    addRefereeMessage,
-    playMentorResponse,
-    preferredVoiceURI,
-    preferredLanguage,
-    isTTSEnabled,
-    setPreferredVoiceURI,
-    setPreferredLanguage,
-    setIsTTSEnabled,
-    stopMentor,
-    hasCachedMentorResponse,
     showVisuals,
     toggleVisuals,
-    executeMentorAction,
+    executeVisualCommands,
     takebackModalVisible,
     takebackQuality,
     resolveTakeback,
