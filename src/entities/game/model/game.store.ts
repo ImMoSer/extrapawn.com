@@ -111,20 +111,7 @@ export const useGameStore = defineStore('game', () => {
         if (currentStrategy.value.onBotMoveExecuted) {
           await currentStrategy.value.onBotMoveExecuted(uci, boardStore.fen)
         }
-
-        // After bot move, check if we have a premove to execute
-        await _tryExecutePremove()
       }
-    }
-  }
-
-  async function _tryExecutePremove() {
-    if (boardStore.queuedPremove && gamePhase.value === 'PLAYING') {
-      const pm = boardStore.queuedPremove
-      logger.info(`[GameStore] Consuming queued premove: ${pm.orig}-${pm.dest}`)
-      // Clear BEFORE executing to avoid potential loops or state mess
-      boardStore.clearPremove()
-      await handleUserMove(pm.orig, pm.dest)
     }
   }
 
@@ -178,9 +165,6 @@ export const useGameStore = defineStore('game', () => {
       const isBotTurn = setup.turn !== humanPlayerColor
       if (isBotTurn) {
         triggerBotMove(strategy.config?.initialBotDelayMs)
-      } else {
-        // If it's human turn at start, check if they already set a premove (unlikely but possible)
-        _tryExecutePremove()
       }
     } catch (error) {
       logger.error('[GameStore] Invalid FEN provided for startWithStrategy:', fen, error)

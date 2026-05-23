@@ -1,6 +1,6 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
-import { useEndgameStore } from '@/features/endgames'
+import { useWorkoutStore } from '@/features/workout'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { watch } from 'vue'
@@ -10,7 +10,6 @@ import { useAuthStore } from '@/entities/user'
 import { useStudyStore } from '@/features/study'
 
 import { AboutPage } from '@/pages/about'
-import { FinishHimPage } from '@/pages/finish-him'
 import { LegalPage } from '@/pages/legal'
 import { PricingPage } from '@/pages/pricing'
 import { RecordsPagePage as RecordsPage } from '@/pages/records-page'
@@ -35,37 +34,23 @@ const router = createRouter({
     },
     {
       path: '/endgames',
-      name: 'endgames-selection',
-      component: () => import('@/pages/endgames/ui/EndgamesSelectionPage.vue'),
-      meta: {
-        requiresAuth: true,
-        seo: {
-          titleKey: 'seo.endgames.title',
-          descriptionKey: 'seo.endgames.description',
-        },
-      },
+      redirect: '/workout',
     },
     {
       path: '/finish-him',
       redirect: '/endgames',
     },
     {
-      path: '/finish-him/play',
-      name: 'finish-him-play',
-      component: FinishHimPage,
-      meta: { isGame: true, requiresAuth: true, game: 'finish-him' },
+      path: '/workout/:type?/:puzzleId?',
+      name: 'workout',
+      component: () => import('@/pages/workout/ui/WorkOut.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'workout' },
     },
     {
-      path: '/finish-him/playout/:color/:fen',
-      name: 'finish-him-playout',
-      component: FinishHimPage,
-      meta: { isGame: true, requiresAuth: true, game: 'finish-him' },
-    },
-    {
-      path: '/finish-him/:puzzleId',
-      name: 'finish-him-puzzle',
-      component: FinishHimPage,
-      meta: { isGame: true, requiresAuth: true, game: 'finish-him' },
+      path: '/workout/playout/:color/:fen',
+      name: 'workout-playout',
+      component: () => import('@/pages/workout/ui/WorkOut.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'workout' },
     },
     {
       path: '/user-cabinet/:id?',
@@ -118,26 +103,11 @@ const router = createRouter({
     },
     {
       path: '/learning-coach',
-      name: 'learning-coach',
-      component: () => import('@/pages/learning-coach').then((m) => m.LearningCoachPage),
-      meta: { isGame: true, game: 'learning-coach', requiresAuth: true },
+      redirect: '/workout',
     },
-
     {
       path: '/theory-endings',
       redirect: '/endgames',
-    },
-    {
-      path: '/theory-endings/play/:type?/:puzzleId?',
-      name: 'theory-endings-play',
-      component: () => import('@/pages/theory-ending').then((m) => m.TheoryEndingPage),
-      meta: { isGame: true, requiresAuth: true, game: 'theory' },
-    },
-    {
-      path: '/theory-endings/:type(win|draw)/:puzzleId',
-      name: 'theory-endings-puzzle',
-      component: () => import('@/pages/theory-ending').then((m) => m.TheoryEndingPage),
-      meta: { isGame: true, requiresAuth: true, game: 'theory' },
     },
     {
       path: '/study/:studyId?/:chapterId?',
@@ -160,18 +130,6 @@ const router = createRouter({
     {
       path: '/practical-chess',
       redirect: '/endgames',
-    },
-    {
-      path: '/practical-chess/play/:id?',
-      name: 'practical-chess-play',
-      component: () => import('@/pages/practical-chess').then((m) => m.PracticalChessPage),
-      meta: { isGame: true, requiresAuth: true, game: 'practical-chess' },
-    },
-    {
-      path: '/practical-chess/:id',
-      name: 'practical-chess-puzzle',
-      component: () => import('@/pages/practical-chess').then((m) => m.PracticalChessPage),
-      meta: { isGame: true, requiresAuth: true, game: 'practical-chess' },
     },
     {
       path: '/:pathMatch(.*)*',
@@ -268,18 +226,8 @@ router.afterEach(async (to, from) => {
   const toBaseRoute = String(to.name)
   const t = i18n.global.t
 
-  if (fromBaseRoute === 'finish-him' && toBaseRoute !== 'finish-him') {
-    useEndgameStore().reset()
-  } else if (
-    fromBaseRoute?.startsWith('theory-endings') &&
-    !toBaseRoute?.startsWith('theory-endings')
-  ) {
-    useEndgameStore().reset()
-  } else if (
-    fromBaseRoute?.startsWith('practical-chess') &&
-    !toBaseRoute?.startsWith('practical-chess')
-  ) {
-    useEndgameStore().reset()
+  if (fromBaseRoute?.startsWith('workout') && !toBaseRoute?.startsWith('workout')) {
+    useWorkoutStore().reset()
   }
 
   // Update SEO Meta Tags with translations

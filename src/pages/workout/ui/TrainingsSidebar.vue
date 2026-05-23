@@ -1,6 +1,5 @@
 <!-- src/pages/learning-coach/ui/TrainingsSidebar.vue -->
 <script setup lang="ts">
-import { apiClient } from '@/shared/api/client'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
   FINISH_HIM_CATEGORIES,
@@ -23,37 +22,10 @@ import {
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-// Types
-type LearningPuzzle = {
-  puzzle_id: string
-  initial_fen: string
-  weak_side?: string
-  winner?: string
-  first_move?: string
-  difficulty: string
-  rating?: number
-  tactical_rating?: number
-  engm_rating?: number
-  tactical_solution?: string
-  category?: string
-  sub_category?: string
-  themes?: string[]
-  game_modus?: string
-}
-
-// Props & Emits
-interface Props {
-  isLoading: boolean
-}
-
-defineProps<Props>()
-
 const emit = defineEmits<{
-  (e: 'positionLoaded', payload: { puzzle: LearningPuzzle; source: string }): void
-  (e: 'update:isLoading', val: boolean): void
+  (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
 }>()
 
-// State
 const { t } = useI18n()
 const message = useMessage()
 
@@ -205,56 +177,38 @@ watch(selectedEndgameMode, (newMode) => {
 })
 
 // Unified Load Functions
-async function loadEndgame() {
-  emit('update:isLoading', true)
-  const type = selectedEndgameMode.value
-  let endpoint = ''
+function loadEndgame() {
+  const mode = selectedEndgameMode.value
+  let type = ''
   let source = ''
 
-  if (type === 'THEORETICAL') {
-    endpoint = `/play-puzzle/start?puzzle_type=theory_endings&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
+  if (mode === 'THEORETICAL') {
+    type = 'theory_endings'
     source = t('features.learningCoach.modes.theory')
-  } else if (type === 'PRACTICAL') {
-    endpoint = `/play-puzzle/start?puzzle_type=practical_chess&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
+  } else if (mode === 'PRACTICAL') {
+    type = 'practical_chess'
     source = t('features.learningCoach.modes.practical')
   } else {
-    endpoint = `/play-puzzle/start?puzzle_type=finish_him&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
+    type = 'finish_him'
     source = t('features.learningCoach.modes.goto')
   }
 
-  try {
-    const data = await apiClient<LearningPuzzle>(endpoint)
-    if (data && data.initial_fen) {
-      emit('positionLoaded', { puzzle: data, source })
-    } else {
-      throw new Error('Invalid response structure')
-    }
-  } catch (err) {
-    console.error('Failed to load puzzle:', err)
-    message.error(t('features.finishHim.feedback.loadFailed', 'Stellung konnte nicht geladen werden.'))
-  } finally {
-    emit('update:isLoading', false)
-  }
+  emit('loadRequested', {
+    type,
+    category: selectedEndgameTheme.value,
+    difficulty: selectedDifficulty.value,
+    source,
+  })
 }
 
-async function loadTactics() {
-  emit('update:isLoading', true)
+function loadTactics() {
   const source = t('features.learningCoach.tabs.tactic')
-  const endpoint = `/play-puzzle/start?puzzle_type=tactics&difficulty=${selectedDifficulty.value}&category=${selectedTacticsTheme.value}`
-
-  try {
-    const data = await apiClient<LearningPuzzle>(endpoint)
-    if (data && data.initial_fen) {
-      emit('positionLoaded', { puzzle: data, source })
-    } else {
-      throw new Error('Invalid response structure')
-    }
-  } catch (err) {
-    console.error('Failed to load tactics:', err)
-    message.error(t('features.finishHim.feedback.loadFailed', 'Stellung konnte nicht geladen werden.'))
-  } finally {
-    emit('update:isLoading', false)
-  }
+  emit('loadRequested', {
+    type: 'tactics',
+    category: selectedTacticsTheme.value,
+    difficulty: selectedDifficulty.value,
+    source,
+  })
 }
 
 function handleOpeningClick(name: string) {

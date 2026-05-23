@@ -1,0 +1,412 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { parseFen } from 'chessops/fen'
+import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
+
+import {
+  useGameStore,
+  useBoardStore,
+  gameplayService,
+  type GameStatusInfo,
+  type IGameplayStrategy,
+} from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
+import { useAnalysisEngineStore } from '@/entities/analysis'
+import { soundService } from '@/shared/lib/sound.service'
+import { useUiStore } from '@/shared/ui/model/ui.store'
+import { apiClient } from '@/shared/api/client'
+import i18n from '@/shared/config/i18n'
+import logger from '@/shared/lib/logger'
+import type { PlayPuzzleType } from '@/shared/types/api.types'
+// eslint-disable-next-line boundaries/element-types, boundaries/entry-point
+import { useEndgamesMutations } from '@/features/endgames/api/endgames.queries'
+import type { TopInfoDisplay } from '@/entities/puzzle'
+
+const t = i18n.global.t
+
+export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
+
+export interface WorkoutPuzzle {
+  puzzle_id: string
+  puzzle_type: string
+  category: string
+  sub_category?: string
+  difficulty: string
+  rating?: number | string
+  strategy: PuzzleStrategyType
+  first_move: 'bot' | 'user'
+  initial_fen: string
+  tactical_solution?: string
+  puzzle_fen?: string
+  // UI Specific overrides
+  userSelectedColor?: boolean
+}
+
+export interface WorkoutParams {
+  type?: string
+  category?: string
+  difficulty?: string
+  puzzleId?: string
+}
+
+function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
+  const setup = parseFen(puzzle.initial_fen).unwrap()
+  const isBotFirst = puzzle.first_move === 'bot'
+  return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
+}
+
+export const useWorkoutStore = defineStore('workout', () => {
+  const gameStore = useGameStore()
+  const boardStore = useBoardStore()
+  const authStore = useAuthStore()
+  const uiStore = useUiStore()
+  const analysisStore = useAnalysisEngineStore()
+  const router = useRouter()
+
+  // TODO: We will need a dedicated mutation for unified results later, using endgames for now if it fits or generic API call.
+  const { playPuzzleResultMutation } = useEndgamesMutations()
+
+  const activePuzzle = ref<WorkoutPuzzle | null>(null)
+  const activeParams = ref<WorkoutParams>({})
+  
+  const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
+  const isProcessingGameOver = ref(false)
+  const isWaitingForColorSelection = ref(false)
+  const currentUserColor = ref<ChessgroundColor>('white')
+
+  const gamePhase = computed(() => gameStore.gamePhase)
+  const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
+
+  function initialize() {
+    soundService.playSound('app_game_entry')
+  }
+
+  function createPuzzleStrategy(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black'): IGameplayStrategy {
+    const isPlayoutModeOnly = puzzle.strategy === 'playOutOnly'
+    const scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
+    
+    let scenarioIndex = 0
+    let isPlayoutMode = isPlayoutModeOnly
+    
+    // Backups for takebacks
+    let prevScenarioIndex = 0
+    let prevPlayoutMode = isPlayoutMode
+
+    return {
+      config: {
+        initialBotDelayMs: 300, // Or conditional based on puzzle type
+        botDelayMs: 50,
+      },
+
+      onGameStart() {
+        // Pre-flight check for color selection if needed (e.g. material equality logic if migrated here)
+      },
+
+      checkWinCondition(currentState: GameStatusInfo): boolean {
+        const outcome = currentState.outcome
+        if (!outcome || outcome.reason === 'resign') return false
+
+        const isScenarioComplete = scenarioIndex >= scenarioMoves.length
+
+        if (puzzle.strategy === 'scenarioOnly') {
+          return isScenarioComplete
+        }
+
+        if (puzzle.strategy === 'playOutOnly' || puzzle.strategy === 'scenarioPlus') {
+          return outcome.reason === 'checkmate' && outcome.winner === humanColor
+        }
+        
+        return false
+      },
+
+      async onUserMoveExecuted(uciMove: string) {
+        prevScenarioIndex = scenarioIndex
+        prevPlayoutMode = isPlayoutMode
+
+        if (!isPlayoutMode) {
+          const expectedMove = scenarioMoves[scenarioIndex]
+          if (uciMove === expectedMove) {
+            scenarioIndex++
+
+            if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
+               _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
+               setTimeout(() => {
+                 loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
+               }, 1000)
+            }
+          } else {
+            // Deviances
+            if (puzzle.strategy === 'scenarioOnly') {
+               boardStore.setAnalysisMode(true)
+               _handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
+               return
+            }
+            
+            if (puzzle.strategy === 'scenarioPlus') {
+               isPlayoutMode = true
+               scenarioIndex = scenarioMoves.length // exhaust scenario
+               soundService.playSound('game_play_out_start')
+               window.$message?.warning('Deviation! Continuing against the engine.')
+            }
+          }
+        }
+      },
+
+      onUserMoveUndone() {
+        scenarioIndex = prevScenarioIndex
+        isPlayoutMode = prevPlayoutMode
+        isProcessingGameOver.value = false
+        boardStore.setAnalysisMode(false)
+        logger.info(`[WorkoutStrategy] Reverted to index ${scenarioIndex}, playout: ${isPlayoutMode}`)
+      },
+
+      async onBotMoveExecuted() {
+        if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
+          _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
+          setTimeout(() => {
+            loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
+          }, 1000)
+        }
+      },
+
+      requestBotMove: async (fen: string) => {
+        if (!isPlayoutMode && scenarioIndex < scenarioMoves.length) {
+          const move = scenarioMoves[scenarioIndex] || null
+          scenarioIndex++
+          return move
+        }
+
+        if (puzzle.strategy === 'scenarioOnly') return null;
+
+        try {
+          return await gameplayService.getBestMove(gameStore.botEngineId, fen)
+        } catch (error) {
+          logger.error('[WorkoutStrategy] Engine failed to generate move.', error)
+          return null
+        }
+      },
+
+      onGameOver(status: GameStatusInfo) {
+        const isWin = this.checkWinCondition!(status)
+        if (status.outcome) {
+          _handleGameOver(puzzle, isWin, status.outcome, humanColor)
+        }
+      },
+    }
+  }
+
+  async function _handleGameOver(
+    puzzle: WorkoutPuzzle,
+    isWin: boolean,
+    outcome: NonNullable<GameStatusInfo['outcome']>,
+    humanColor: 'white' | 'black',
+  ) {
+    if (isProcessingGameOver.value) return
+    isProcessingGameOver.value = true
+
+    gameStore.setGamePhase('GAMEOVER')
+    analysisStore.setPlayerColor(humanColor) // Always set analysis color on game over
+
+    if (isWin) {
+      feedbackMessage.value = t('features.finishHim.feedback.win')
+    } else {
+      const reason = outcome.reason
+      if (reason === 'stalemate') {
+        feedbackMessage.value = t('features.gameplay.gameOver.stalemate')
+      } else if (reason === 'resign' || reason === 'wrong_move') {
+        feedbackMessage.value = t('features.finishHim.feedback.loss')
+      } else {
+        feedbackMessage.value = t('features.finishHim.feedback.loss')
+      }
+    }
+
+    try {
+      // TODO: Adapt this when backend payload changes to unified Workout endpoint.
+      // Using existing mutation for now.
+      const response = await playPuzzleResultMutation.mutateAsync({
+        puzzleId: puzzle.puzzle_id,
+        wasCorrect: isWin,
+        puzzleType: puzzle.puzzle_type as PlayPuzzleType,
+        category: puzzle.category || '',
+        difficulty: (puzzle.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
+      })
+
+      if (response) {
+         if (response.ratingDelta !== undefined) {
+          const delta = response.ratingDelta
+          const sign = delta >= 0 ? '+' : ''
+          const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
+
+          if (delta >= 0) {
+            window.$message?.success(msg)
+          } else {
+            window.$message?.error(msg)
+          }
+        }
+        if (response.userStatsUpdate) {
+          authStore.updateUserStats(response.userStatsUpdate)
+        } else {
+          await authStore.checkSession()
+        }
+      }
+    } catch (error) {
+      logger.error('[WorkoutStore] Failed to submit results:', error)
+    }
+  }
+
+  async function loadNewPuzzle(type: string, queryParams: Partial<WorkoutParams> = {}) {
+    isProcessingGameOver.value = false
+    isWaitingForColorSelection.value = false
+    gameStore.setGamePhase('LOADING')
+    feedbackMessage.value = t('common.actions.loading')
+
+    const mergedParams = { ...activeParams.value, ...queryParams, type }
+    activeParams.value = mergedParams
+
+    try {
+      const category = mergedParams.category || 'fork'
+      const difficulty = mergedParams.difficulty || 'Novice'
+      
+      // TODO: the actual backend URL might need to be adjusted.
+      // Assuming for now the backend handles `puzzle_type` routing internally via `/play-puzzle/start`
+      const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
+
+      const puzzle = await apiClient<WorkoutPuzzle>(url)
+      if (!puzzle) throw new Error('Puzzle data is null')
+
+      // Mapping legacy API response to new Workout format (Temporary until backend updates)
+      const mappedPuzzle: WorkoutPuzzle = {
+        ...puzzle,
+        puzzle_type: type,
+        strategy: puzzle.strategy || (type === 'tactics' ? 'scenarioOnly' : (type === 'finish_him' ? 'playOutOnly' : 'scenarioPlus'))
+      }
+
+      activePuzzle.value = mappedPuzzle
+      
+      const humanColor = determineHumanColor(mappedPuzzle)
+      currentUserColor.value = humanColor
+
+      gameStore.startWithStrategy(mappedPuzzle.initial_fen, createPuzzleStrategy(mappedPuzzle, humanColor), humanColor, false)
+      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+    } catch (error) {
+       const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
+       if (!handled) {
+          logger.error('[WorkoutStore] Failed to load puzzle:', error)
+          feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
+          gameStore.setGamePhase('IDLE')
+          router.push('/') // Fallback
+       }
+    }
+  }
+
+  function startPlayoutFromFen(fen: string, color: 'white' | 'black') {
+    isProcessingGameOver.value = false
+    gameStore.setGamePhase('LOADING')
+    feedbackMessage.value = t('features.finishHim.feedback.yourTurnPlayout')
+
+    const dummyPuzzle: WorkoutPuzzle = { 
+        puzzle_id: 'custom', 
+        puzzle_type: 'custom', 
+        category: 'custom',
+        difficulty: 'custom',
+        strategy: 'playOutOnly',
+        first_move: 'user', // doesn't matter much here
+        initial_fen: fen 
+    }
+    gameStore.startWithStrategy(fen, createPuzzleStrategy(dummyPuzzle, color), color, false)
+  }
+
+  function startYouMoveGame(color: 'white' | 'black') {
+      if (!activePuzzle.value) return
+      isWaitingForColorSelection.value = false
+      currentUserColor.value = color
+      activePuzzle.value.userSelectedColor = true
+  
+      let fen = activePuzzle.value.initial_fen
+      const parts = fen.split(' ')
+      parts[1] = color === 'black' ? 'b' : 'w'
+      fen = parts.join(' ')
+  
+      soundService.playSound('game_you_move')
+      gameStore.startWithStrategy(fen, createPuzzleStrategy(activePuzzle.value, color), color)
+  }
+
+  async function handleRestart() {
+    if (gameStore.isGameActive) {
+      const confirmed = await uiStore.showConfirmation(
+        t('features.gameplay.confirmExit.title'),
+        t('features.gameplay.confirmExit.message'),
+      )
+      if (confirmed === 'confirm') {
+        gameStore.handleGameResignation()
+        if (activePuzzle.value) {
+          await loadNewPuzzle(activePuzzle.value.puzzle_type, { puzzleId: activePuzzle.value.puzzle_id, ...activeParams.value })
+        }
+      }
+    } else if (activePuzzle.value) {
+      await loadNewPuzzle(activePuzzle.value.puzzle_type, { puzzleId: activePuzzle.value.puzzle_id, ...activeParams.value })
+    }
+  }
+
+  async function handleExit() {
+    if (gameStore.isGameActive) {
+      const confirmed = await uiStore.showConfirmation(
+        t('features.gameplay.confirmExit.title'),
+        t('features.gameplay.confirmExit.message'),
+      )
+      if (confirmed === 'confirm') {
+        gameStore.handleGameResignation()
+      } else {
+        return
+      }
+    }
+    await gameStore.resetGame()
+    router.push('/') // Navigate home or a dashboard
+  }
+
+  function reset() {
+    activePuzzle.value = null
+    feedbackMessage.value = t('features.finishHim.feedback.pressNext')
+    isProcessingGameOver.value = false
+    isWaitingForColorSelection.value = false
+  }
+
+  return {
+    gamePhase,
+    activePuzzle,
+    feedbackMessage,
+    isWaitingForColorSelection,
+    activeParams,
+    fenFinal,
+    topInfoDisplay: computed<TopInfoDisplay>(() => {
+      const puzzle = activePuzzle.value
+      if (!puzzle) return { title: '', badges: [], stats: [] }
+
+      const title = (puzzle.category ? t(`chess.themes.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
+      const badges = [{ text: puzzle.puzzle_type.toUpperCase() }]
+      if (puzzle.difficulty) {
+         badges.push({ text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() })
+      }
+
+      const stats = []
+      if (puzzle.rating) {
+        stats.push({ value: puzzle.rating, label: t('features.userCabinet.analyticsTable.rating') })
+      }
+
+      return {
+        title,
+        secondaryText: puzzle.sub_category ? t(`chess.subThemes.${puzzle.sub_category}`) : undefined,
+        badges,
+        stats,
+      }
+    }),
+    initialize,
+    loadNewPuzzle,
+    startYouMoveGame,
+    startPlayoutFromFen,
+    handleRestart,
+    handleExit,
+    reset,
+  }
+})

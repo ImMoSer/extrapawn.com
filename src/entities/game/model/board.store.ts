@@ -57,7 +57,6 @@ export const useBoardStore = defineStore('board', () => {
   const coachShapes = ref<DrawShape[]>([])
   const autoShapes = computed(() => coachShapes.value)
   const isAnalysisModeActive = ref(false)
-  const queuedPremove = ref<{ orig: Key; dest: Key } | null>(null)
   const lastNag = ref<NagMarker | null>(null)
 
   const isGameOver = computed(() => {
@@ -374,18 +373,6 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
-  function setPremove(orig: Key, dest: Key) {
-    logger.info(`[BoardStore] Setting queued premove: ${orig}-${dest}`)
-    queuedPremove.value = { orig, dest }
-  }
-
-  function clearPremove() {
-    if (queuedPremove.value) {
-      logger.info('[BoardStore] Clearing queued premove')
-      queuedPremove.value = null
-    }
-  }
-
   function flipBoard() {
     orientation.value = orientation.value === 'white' ? 'black' : 'white'
   }
@@ -541,15 +528,12 @@ export const useBoardStore = defineStore('board', () => {
     isAnalysisModeActive,
     playGameStatusSounds,
     boardSyncCounter,
-    queuedPremove,
     setupPosition,
     applyUciMove,
     handleUserMove,
     handleAnalysisMove,
     completePromotion,
     cancelPromotion,
-    setPremove,
-    clearPremove,
     flipBoard,
     getGameStatus,
     setDrawableShapes,

@@ -133,8 +133,6 @@ onUnmounted(() => {
               :board-sync-counter="boardStore.boardSyncCounter"
               :can-edit="canUserEdit"
               @user-move="handleUserMove"
-              @set-premove="({ orig, dest }) => boardStore.setPremove(orig, dest)"
-              @unset-premove="() => boardStore.clearPremove()"
               @complete-promotion="boardStore.completePromotion"
               @wheel-navigate="handleBoardWheel"
               @shapes-change="(shapes) => boardStore.setDrawableShapes(shapes)"
