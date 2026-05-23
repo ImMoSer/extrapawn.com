@@ -939,8 +939,7 @@
   },
   "nav": {
     "home": "Home",
-    "learningCoach": "Coach",
-    "endgames": "Endgames",
+    "workout": "Training",
     "speedrun": "Speedrun",
     "leaderboards": "LeaderBoards",
     "userCabinet": "Cabinet",
@@ -951,8 +950,7 @@
     "login": "Login",
     "logout": "Logout",
     "loginWithLichess": "Login with Lichess"
-  },
-  "legal": {
+  },  "legal": {
     "title": "Legal Information",
     "precedence": "This translation is provided for information purposes only. In the event of any discrepancies or conflicts between this English version and the German original, the German version shall prevail and be legally binding.",
     "tabs": {
@@ -1233,14 +1231,10 @@
     "titleV2": "Select a Game Mode",
     "slogan": "Consistency is the key to mastery.",
     "buttons": {
-      "finishHim": "GoTo",
-      "theoryEndgames": "Theoretical",
-      "practicalChess": "Practical",
-      "leaderboards": "Leaderboards",
+      "training": "Training",
+      "leaderboards": "LeaderBoards",
       "club": "Club",
-      "learningCoach": "Coach",
-      "repertoire": "Study",
-      "endgames": "Endgames"
+      "repertoire": "Study"
     },
     "loginPrompt": "Or log in to access all features:"
   },

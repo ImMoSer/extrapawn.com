@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NText, NButton, NIcon } from 'naive-ui'
 import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
-import { useWorkoutStore } from '@/features/workout'
+import { useWorkoutStore, GuessColorSelection } from '@/features/workout'
 import TrainingsSidebar from './TrainingsSidebar.vue'
 
 const { t } = useI18n()
@@ -21,7 +21,7 @@ function handleLoadRequested(payload: { type: string; category: string; difficul
   })
 }
 
-const showColorSelection = computed(() => workoutStore.isWaitingForColorSelection)
+const showColorGuess = computed(() => workoutStore.isWaitingForColorGuess)
 
 const activePuzzleTitle = computed(() => {
    return workoutStore.topInfoDisplay.title
@@ -30,8 +30,23 @@ const badges = computed(() => {
    return workoutStore.topInfoDisplay.badges
 })
 
+watch(() => workoutStore.isWaitingForColorGuess, (isWaiting) => {
+  if (isWaiting) {
+    coachStore.setCoachEnabled(false)
+  } else {
+    // We could re-enable it here, but let's be careful not to override user preference if they toggled it off.
+    // However, the mandate says we enable it once guessed correctly.
+    coachStore.setCoachEnabled(true)
+  }
+})
+
 onMounted(() => {
-  coachStore.setCoachEnabled(true)
+  // If we are starting fresh and waiting for guess, coach should be off.
+  if (workoutStore.isWaitingForColorGuess) {
+    coachStore.setCoachEnabled(false)
+  } else {
+    coachStore.setCoachEnabled(true)
+  }
 })
 
 onUnmounted(() => {
@@ -64,32 +79,7 @@ onUnmounted(() => {
     </template>
 
     <template #center-column>
-      <div v-if="showColorSelection" class="color-selection-overlay">
-        <div class="color-selection-panel">
-          <div class="panel-header">
-            <h3>{{ t('features.practicalChess.selectColor') }}</h3>
-          </div>
-          <div class="panel-content">
-            <p>{{ t('features.practicalChess.whichColorIsBetter') }}</p>
-            <div class="color-buttons">
-              <n-button
-                class="color-btn white-btn"
-                @click="workoutStore.startYouMoveGame('white')"
-              >
-                {{ t('features.practicalChess.white') }}
-              </n-button>
-              <n-button
-                class="color-btn black-btn"
-                @click="workoutStore.startYouMoveGame('black')"
-              >
-                {{ t('features.practicalChess.black') }}
-              </n-button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-       <div v-else-if="workoutStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
+       <div v-if="workoutStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
         <div class="result-overlay">
           <n-icon
             size="64"
@@ -100,7 +90,6 @@ onUnmounted(() => {
           </n-icon>
           <n-text class="result-text">{{ workoutStore.feedbackMessage }}</n-text>
           
-          <!-- TODO: add buttons for NEXT puzzle etc -->
           <n-button 
             type="primary" 
             size="large" 
@@ -115,7 +104,7 @@ onUnmounted(() => {
 
     <template #controls>
       <div class="controls-panel">
-          <!-- TODO: Move controls -->
+          <GuessColorSelection v-if="showColorGuess" />
       </div>
     </template>
 
@@ -178,7 +167,7 @@ onUnmounted(() => {
   box-shadow: 0 0 10px rgba(157, 78, 221, 0.15);
 }
 
-.color-selection-overlay, .result-overlay-container {
+.result-overlay-container {
   position: absolute;
   top: 0;
   left: 0;
@@ -191,62 +180,6 @@ onUnmounted(() => {
   align-items: center;
   z-index: 100;
   border-radius: 4px;
-}
-
-.color-selection-panel {
-  background: var(--color-surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-.panel-header h3 {
-  margin: 0 0 16px 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.5rem;
-  color: #fff;
-  text-align: center;
-}
-
-.panel-content p {
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-bottom: 24px;
-  font-size: 1.1rem;
-}
-
-.color-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-}
-
-.color-btn {
-  flex: 1;
-  height: 48px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 8px;
-}
-
-.white-btn {
-  background: #f0f0f0;
-  color: #1a1a1a;
-}
-.white-btn:hover {
-  background: #ffffff;
-}
-
-.black-btn {
-  background: #2a2a2a;
-  color: #f0f0f0;
-  border: 1px solid #404040;
-}
-.black-btn:hover {
-  background: #3a3a3a;
 }
 
 .result-overlay {
@@ -272,6 +205,12 @@ onUnmounted(() => {
 
 .icon-success { color: #4caf50; }
 .icon-error { color: #f44336; }
+
+.controls-panel {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
 
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.9); }

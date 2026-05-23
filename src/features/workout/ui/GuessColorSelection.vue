@@ -1,21 +1,27 @@
-<!-- src/features/practical-chess/ui/YouMoveSelection.vue -->
+<!-- src/features/workout/ui/GuessColorSelection.vue -->
 <script setup lang="ts">
-import { useEndgameStore } from '@/features/endgames'
+import { useWorkoutStore } from '@/features/workout'
+import { useI18n } from 'vue-i18n'
 
-const endgameStore = useEndgameStore()
+const workoutStore = useWorkoutStore()
+const { t } = useI18n()
 
 const handleSelection = (color: 'white' | 'black') => {
-  endgameStore.startYouMoveGame(color)
+  workoutStore.guessColor(color)
 }
 </script>
 
 <template>
   <div class="you-move-bar">
-    <button class="side-btn black" @click="handleSelection('black')">BLACK</button>
+    <button class="side-btn black" @click="handleSelection('black')">
+      {{ t('features.practicalChess.black').toUpperCase() }}
+    </button>
 
-    <div class="center-text">CHOOSE SIDE</div>
+    <div class="center-text">{{ t('features.practicalChess.selectColor').toUpperCase() }}</div>
 
-    <button class="side-btn white" @click="handleSelection('white')">WHITE</button>
+    <button class="side-btn white" @click="handleSelection('white')">
+      {{ t('features.practicalChess.white').toUpperCase() }}
+    </button>
   </div>
 </template>
 

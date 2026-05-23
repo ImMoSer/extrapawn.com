@@ -16,10 +16,9 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
+import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
-// eslint-disable-next-line boundaries/element-types, boundaries/entry-point
-import { useEndgamesMutations } from '@/features/endgames/api/endgames.queries'
 import type { TopInfoDisplay } from '@/entities/puzzle'
 
 const t = i18n.global.t
@@ -63,14 +62,12 @@ export const useWorkoutStore = defineStore('workout', () => {
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
 
-  // TODO: We will need a dedicated mutation for unified results later, using endgames for now if it fits or generic API call.
-  const { playPuzzleResultMutation } = useEndgamesMutations()
-
   const activePuzzle = ref<WorkoutPuzzle | null>(null)
   const activeParams = ref<WorkoutParams>({})
   
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
+  const isWaitingForColorGuess = ref(false)
   const isWaitingForColorSelection = ref(false)
   const currentUserColor = ref<ChessgroundColor>('white')
 
@@ -81,6 +78,37 @@ export const useWorkoutStore = defineStore('workout', () => {
     soundService.playSound('app_game_entry')
   }
 
+  async function guessColor(guessedColor: 'white' | 'black') {
+    if (!activePuzzle.value) return
+    
+    const correctColor = determineHumanColor(activePuzzle.value)
+    
+    if (guessedColor === correctColor) {
+      isWaitingForColorGuess.value = false
+      currentUserColor.value = correctColor
+      
+      // Start the game for real
+      gameStore.startWithStrategy(
+        activePuzzle.value.initial_fen, 
+        createPuzzleStrategy(activePuzzle.value, correctColor), 
+        correctColor, 
+        false
+      )
+      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      soundService.playSound('game_you_move')
+    } else {
+      // Wrong guess - instant game over
+      isWaitingForColorGuess.value = false
+      _handleGameOver(
+        activePuzzle.value, 
+        false, 
+        { winner: guessedColor === 'white' ? 'black' : 'white', reason: 'wrong_move' }, 
+        guessedColor
+      )
+      window.$message?.error('Wrong color! Game Over.')
+    }
+  }
+
   function createPuzzleStrategy(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black'): IGameplayStrategy {
     const isPlayoutModeOnly = puzzle.strategy === 'playOutOnly'
     const scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
@@ -88,42 +116,33 @@ export const useWorkoutStore = defineStore('workout', () => {
     let scenarioIndex = 0
     let isPlayoutMode = isPlayoutModeOnly
     
-    // Backups for takebacks
     let prevScenarioIndex = 0
     let prevPlayoutMode = isPlayoutMode
 
     return {
       config: {
-        initialBotDelayMs: 300, // Or conditional based on puzzle type
+        initialBotDelayMs: 300,
         botDelayMs: 50,
       },
 
-      onGameStart() {
-        // Pre-flight check for color selection if needed (e.g. material equality logic if migrated here)
-      },
+      onGameStart() {},
 
       checkWinCondition(currentState: GameStatusInfo): boolean {
         const outcome = currentState.outcome
         if (!outcome || outcome.reason === 'resign') return false
 
-        // A checkmate by the human is ALWAYS a win, regardless of strategy
         if (outcome.reason === 'checkmate' && outcome.winner === humanColor) {
-          logger.info(`[WorkoutStrategy] checkWinCondition (checkmate): isWin=true, humanColor=${humanColor}`)
           return true
         }
 
         const isScenarioComplete = scenarioIndex >= scenarioMoves.length
 
         if (puzzle.strategy === 'scenarioOnly') {
-          const isWin = isScenarioComplete
-          logger.info(`[WorkoutStrategy] checkWinCondition (scenarioOnly): isWin=${isWin}, scenarioIndex=${scenarioIndex}/${scenarioMoves.length}`)
-          return isWin
+          return isScenarioComplete
         }
 
         if (puzzle.strategy === 'playOutOnly' || puzzle.strategy === 'scenarioPlus') {
-          const isWin = outcome.reason === 'checkmate' && outcome.winner === humanColor
-          logger.info(`[WorkoutStrategy] checkWinCondition (playOut): isWin=${isWin}, reason=${outcome.reason}, winner=${outcome.winner}, humanColor=${humanColor}`)
-          return isWin
+          return outcome.reason === 'checkmate' && outcome.winner === humanColor
         }
         
         return false
@@ -139,16 +158,13 @@ export const useWorkoutStore = defineStore('workout', () => {
             scenarioIndex++
 
             if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
-               logger.info(`[WorkoutStrategy] Scenario complete on user move.`)
                _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
                setTimeout(() => {
                  loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
                }, 1000)
             }
           } else {
-            // Deviances
             if (puzzle.strategy === 'scenarioOnly') {
-               logger.info(`[WorkoutStrategy] Wrong move in scenarioOnly: ${uciMove} vs ${expectedMove}`)
                boardStore.setAnalysisMode(true)
                _handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
                return
@@ -156,7 +172,7 @@ export const useWorkoutStore = defineStore('workout', () => {
             
             if (puzzle.strategy === 'scenarioPlus') {
                isPlayoutMode = true
-               scenarioIndex = scenarioMoves.length // exhaust scenario
+               scenarioIndex = scenarioMoves.length
                soundService.playSound('game_play_out_start')
                window.$message?.warning('Deviation! Continuing against the engine.')
             }
@@ -169,12 +185,10 @@ export const useWorkoutStore = defineStore('workout', () => {
         isPlayoutMode = prevPlayoutMode
         isProcessingGameOver.value = false
         boardStore.setAnalysisMode(false)
-        logger.info(`[WorkoutStrategy] Reverted to index ${scenarioIndex}, playout: ${isPlayoutMode}`)
       },
 
       async onBotMoveExecuted() {
         if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
-          logger.info(`[WorkoutStrategy] Scenario complete on bot move.`)
           _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
           setTimeout(() => {
             loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
@@ -201,7 +215,6 @@ export const useWorkoutStore = defineStore('workout', () => {
 
       onGameOver(status: GameStatusInfo) {
         const isWin = this.checkWinCondition!(status)
-        logger.info(`[WorkoutStrategy] onGameOver: isWin=${isWin}, status=`, status)
         if (status.outcome) {
           _handleGameOver(puzzle, isWin, status.outcome, humanColor)
         }
@@ -219,7 +232,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     isProcessingGameOver.value = true
 
     gameStore.setGamePhase('GAMEOVER')
-    analysisStore.setPlayerColor(humanColor) // Always set analysis color on game over
+    analysisStore.setPlayerColor(humanColor)
 
     if (isWin) {
       feedbackMessage.value = t('features.finishHim.feedback.win')
@@ -235,9 +248,16 @@ export const useWorkoutStore = defineStore('workout', () => {
     }
 
     try {
-      const response = await playPuzzleResultMutation.mutateAsync({
+      // Result submission logic moved directly here since queries were deleted
+      const resultDto = {
         wasCorrect: isWin,
-        puzzle: puzzle,
+        puzzle_id: puzzle.puzzle_id,
+        puzzle_type: puzzle.puzzle_type
+      }
+
+      const response = await apiClient<GameResultResponse>('/play-puzzle/result', {
+        method: 'POST',
+        body: JSON.stringify(resultDto),
       })
 
       if (response) {
@@ -276,14 +296,11 @@ export const useWorkoutStore = defineStore('workout', () => {
       const category = mergedParams.category || 'fork'
       const difficulty = mergedParams.difficulty || 'Novice'
       
-      // TODO: the actual backend URL might need to be adjusted.
-      // Assuming for now the backend handles `puzzle_type` routing internally via `/play-puzzle/start`
       const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
       const puzzle = await apiClient<WorkoutPuzzle>(url)
       if (!puzzle) throw new Error('Puzzle data is null')
 
-      // Mapping legacy API response to new Workout format (Temporary until backend updates)
       const mappedPuzzle: WorkoutPuzzle = {
         ...puzzle,
         puzzle_type: type,
@@ -294,16 +311,20 @@ export const useWorkoutStore = defineStore('workout', () => {
       
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
+      isWaitingForColorGuess.value = true
+      
+      gameStore.setGamePhase('IDLE')
+      boardStore.setupPosition(mappedPuzzle.initial_fen)
+      boardStore.orientation = 'white'
 
-      gameStore.startWithStrategy(mappedPuzzle.initial_fen, createPuzzleStrategy(mappedPuzzle, humanColor), humanColor, false)
-      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      feedbackMessage.value = 'Guess which side you are playing!'
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
           logger.error('[WorkoutStore] Failed to load puzzle:', error)
           feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
           gameStore.setGamePhase('IDLE')
-          router.push('/') // Fallback
+          router.push('/')
        }
     }
   }
@@ -319,7 +340,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         category: 'custom',
         difficulty: 'custom',
         strategy: 'playOutOnly',
-        first_move: 'user', // doesn't matter much here
+        first_move: 'user',
         initial_fen: fen 
     }
     gameStore.startWithStrategy(fen, createPuzzleStrategy(dummyPuzzle, color), color, false)
@@ -370,7 +391,7 @@ export const useWorkoutStore = defineStore('workout', () => {
       }
     }
     await gameStore.resetGame()
-    router.push('/') // Navigate home or a dashboard
+    router.push('/')
   }
 
   function reset() {
@@ -378,6 +399,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     feedbackMessage.value = t('features.finishHim.feedback.pressNext')
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
+    isWaitingForColorGuess.value = false
   }
 
   return {
@@ -385,6 +407,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     activePuzzle,
     feedbackMessage,
     isWaitingForColorSelection,
+    isWaitingForColorGuess,
     activeParams,
     fenFinal,
     topInfoDisplay: computed<TopInfoDisplay>(() => {
@@ -411,6 +434,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     }),
     initialize,
     loadNewPuzzle,
+    guessColor,
     startYouMoveGame,
     startPlayoutFromFen,
     handleRestart,

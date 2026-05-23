@@ -939,8 +939,7 @@
   },
   "nav": {
     "home": "Startseite",
-    "learningCoach": "Lern Coach",
-    "endgames": "Endspiele",
+    "workout": "Training",
     "speedrun": "Speedrun",
     "leaderboards": "Bestenliste",
     "userCabinet": "Kabinett",
@@ -951,8 +950,7 @@
     "login": "Anmelden",
     "logout": "Abmelden",
     "loginWithLichess": "Mit Lichess anmelden"
-  },
-  "legal": {
+  },  "legal": {
     "title": "Rechtliche Informationen",
     "precedence": "Diese Übersetzung dient nur zur Information. Bei Abweichungen zwischen dieser Version und dem deutschen Original ist die deutsche Fassung maßgebend und rechtlich bindend.",
     "tabs": {
@@ -1233,14 +1231,10 @@
     "titleV2": "Wähle einen Modus",
     "slogan": "Übung macht den Meister!",
     "buttons": {
-      "finishHim": "Übergang",
-      "theoryEndgames": "Theoretische",
-      "practicalChess": "Practische",
+      "training": "Training",
       "leaderboards": "Bestenliste",
       "club": "Club",
-      "learningCoach": "Coach",
-      "repertoire": "Studium",
-      "endgames": "Endspiele"
+      "repertoire": "Studium"
     },
     "loginPrompt": "Oder melde dich an, um alle Funktionen zu nutzen:"
   },

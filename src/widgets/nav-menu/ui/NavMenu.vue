@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   CashOutline,
-  ChatbubbleEllipsesOutline,
   HammerOutline,
   HomeOutline,
   InformationCircleOutline,
@@ -45,14 +44,9 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('nav.endgames'),
-    key: '/endgames',
+    label: () => t('nav.workout', 'Training'),
+    key: '/workout',
     icon: renderIcon(HammerOutline),
-  },
-  {
-    label: () => t('nav.learningCoach'),
-    key: '/learning-coach',
-    icon: renderIcon(ChatbubbleEllipsesOutline),
   },
   {
     label: () => t('nav.repertoire'),

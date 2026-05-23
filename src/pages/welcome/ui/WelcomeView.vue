@@ -2,7 +2,6 @@
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
-  ChatbubbleEllipsesOutline,
   HammerOutline,
   LogInOutline,
   PersonOutline,
@@ -36,16 +35,10 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   {
-    path: '/endgames',
+    path: '/workout',
     icon: HammerOutline,
-    labelKey: 'welcome.buttons.endgames',
+    labelKey: 'welcome.buttons.training',
     color: 'var(--neon-pink)',
-  },
-  {
-    path: '/learning-coach',
-    icon: ChatbubbleEllipsesOutline,
-    labelKey: 'welcome.buttons.learningCoach',
-    color: 'var(--neon-purple)',
   },
   {
     path: '/study',
