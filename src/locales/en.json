@@ -18,11 +18,6 @@
       "description": "Convert your winning advantage against human-like AI resistance. Learn to finish off your opponents.",
       "keywords": "chess realization, maia chess, endgame conversion"
     },
-    "tornado": {
-      "title": "Tornado Tactics",
-      "description": "High-intensity dynamic chess tactics training with Glicko-2 rating and deep error analysis.",
-      "keywords": "chess tactics trainer, dynamic puzzles, blitz tactics"
-    },
     "theoryEndings": {
       "title": "Theoretical Endings",
       "description": "Practice classic endgame positions to perfection. Save draws and break your opponent's hopes."
@@ -116,7 +111,6 @@
     }
   },
   "gameModes": {
-    "tornado": "Tornado",
     "finishHim": "Finish Him",
     "theoryEndgames": "Endgames",
     "practicalChess": "Practical",
@@ -515,7 +509,6 @@
         "puzzlesSolved": "1 Puzzle Solved | {count} Puzzles Solved",
         "skillEarned": "Skill Today",
         "finishHimRatingLabel": "FinishHim Rating",
-        "tornadoTitle": "Tornado Ratings",
         "bestRatingsTitle": "Best Ratings",
         "global": {
           "title": "Activity"
@@ -530,7 +523,6 @@
         },
         "modes": {
           "all": "Mode",
-          "tornado": "Tornado",
           "finishHim": "Finish Him",
           "theory": "Theory",
           "theoryWin": "Theory (Win)",
@@ -560,7 +552,6 @@
       },
       "detailedAnalytics": {
         "title": "Detailed Analytics",
-        "tornadoStats": "Tornado Themes Analysis",
         "bestScore": "Best Score"
       },
       "analyticsTable": {
@@ -896,7 +887,6 @@
         "topFinishHim": "Finish Him",
         "overallSkill": "Overall Skill",
         "skillStreak": "+100 everyday",
-        "skillStreakMega": "Tornado +300 Every Day",
         "topToday": "Top Today",
         "finishHimLeaderboard": "Finish Him",
         "theoryLeaderboard": "Theoretical",
@@ -945,96 +935,12 @@
       "restart": "Restart",
       "resign": "Resign",
       "share": "Share"
-    },
-    "tornado": {
-      "modes": {
-        "bullet": "Bullet (1+1)",
-        "blitz": "Blitz (3+2)",
-        "rapid": "Rapid (5+3)",
-        "classic": "Classic (10+5)"
-      },
-      "selection": {
-        "title": "Select a game mode"
-      },
-      "feedback": {
-        "selectMode": "Select a mode to begin.",
-        "loadingFirstPuzzle": "Loading the first puzzle...",
-        "yourTurn": "Your turn.",
-        "loadingFailed": "Failed to get the next puzzle.",
-        "startFailed": "Failed to start the session.",
-        "sessionEnded": "Session ended. Your final rating: {rating}",
-        "getReady": "Press 'Play Button' to start.",
-        "loadFailed": "Failed to load puzzle.",
-        "wrongMove": "Wrong move!",
-        "success": "Puzzle solved!",
-        "wrongMoveAnalysis": "Wrong move! Analysis is now active."
-      },
-      "sessionEnd": {
-        "title": "Session ended",
-        "message": "Your final rating: {rating}",
-        "stats": "Rating: {rating} | Solved: {solved}/{total} | Theme: {theme}",
-        "newSession": "New session",
-        "exit": "Exit",
-        "mistakes": "Mistakes"
-      },
-      "mistakes": {
-        "title": "Work on mistakes",
-        "info": {
-          "rating": "Rating",
-          "theme": "Theme",
-          "id": "ID"
-        },
-        "feedback": {
-          "selectPuzzle": "Select a puzzle to start.",
-          "yourTurn": "Your turn. Try again!",
-          "solved": "Great! The puzzle is solved correctly.",
-          "wrongMove": "Incorrect. Try to analyze the position.",
-          "allSolved": "Congratulations! All mistakes are corrected.",
-          "noMistakes": "No mistakes in the last session!",
-          "loadFailed": "Failed to load mistakes from local storage."
-        },
-        "ui": {
-          "analysisButton": "Analysis",
-          "nextButton": "Next",
-          "exitButton": "Exit",
-          "restartButton": "Restart"
-        },
-        "exit": {
-          "title": "Exit mode",
-          "message": "Are you sure you want to exit? The list of unsolved puzzles will be cleared."
-        }
-      },
-      "leaderboard": {
-        "highScore": "Records"
-      },
-      "ui": {
-        "ratingLabel": "Rating",
-        "themeLabel": "Theme"
-      },
-      "stats": {
-        "title": "Your Ratings",
-        "globalRating": "Global Rating",
-        "theme": "Theme",
-        "rating": "Rating",
-        "progress": "Progress",
-        "rate": "Success"
-      },
-      "controls": {
-        "levelTitle": "Difficulty",
-        "levels": {
-          "easy": "Easy",
-          "normal": "Normal",
-          "hard": "Hard"
-        },
-        "autoLoad": "AutoNext"
-      }
     }
   },
   "nav": {
     "home": "Home",
     "learningCoach": "Coach",
     "endgames": "Endgames",
-    "tornado": "Tornado",
     "speedrun": "Speedrun",
     "leaderboards": "LeaderBoards",
     "userCabinet": "Cabinet",
@@ -1226,10 +1132,6 @@
         "title": "STUDY — Analytical Laboratory",
         "text": "An interactive tool for building and **actively memorizing** your opening repertoire. 1-click generator based on elite statistics (MozerBook), visual trees, and hardcore training modes like Speedrun and Reply Training. Full Lichess Study synchronization."
       },
-      "tornado": {
-        "title": "TORNADO — Tactical Storm",
-        "text": "Adaptive tactical trainer based on Glicko-2. No error limits, no boring warm-ups — high-level difficulty from the first minute. 15 thematic vectors and a dedicated mode for fixing your mistakes."
-      },
       "finishHim": {
         "title": "FINISH HIM — Art of Realization",
         "text": "Two-phase trainer: first a tactical strike, then mandatory realization of the advantage against human-like Maia AI (1900-2400). Master the skill of coldly finishing off won positions."
@@ -1334,7 +1236,6 @@
       "finishHim": "GoTo",
       "theoryEndgames": "Theoretical",
       "practicalChess": "Practical",
-      "tornado": "Tornado",
       "leaderboards": "Leaderboards",
       "club": "Club",
       "learningCoach": "Coach",

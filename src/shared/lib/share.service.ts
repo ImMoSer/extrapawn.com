@@ -4,7 +4,7 @@ import logger from '@/shared/lib/logger'
 import type { Color as ChessgroundColor, EngineId } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 
-type ShareMode = 'finish-him' | 'tornado' | 'theory-endings' | 'practical-chess'
+type ShareMode = 'finish-him' | 'theory-endings' | 'practical-chess'
 
 class ShareServiceController {
   /**

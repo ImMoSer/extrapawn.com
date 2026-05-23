@@ -7,7 +7,6 @@ import {
   LogInOutline,
   PersonOutline,
   SchoolOutline,
-  ThunderstormOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { storeToRefs } from 'pinia'
@@ -41,12 +40,6 @@ const menuItems = [
     icon: HammerOutline,
     labelKey: 'welcome.buttons.endgames',
     color: 'var(--neon-pink)',
-  },
-  {
-    path: '/tornado',
-    icon: ThunderstormOutline,
-    labelKey: 'welcome.buttons.tornado',
-    color: 'var(--neon-cyan)',
   },
   {
     path: '/learning-coach',

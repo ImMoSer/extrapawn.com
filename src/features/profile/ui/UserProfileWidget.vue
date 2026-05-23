@@ -1,13 +1,11 @@
 <!-- src/components/UserStats.vue -->
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
-import type { TornadoMode } from '@/shared/types/api.types'
-import { LockClosedOutline, RibbonOutline, WalletOutline } from '@vicons/ionicons5'
+import { LockClosedOutline, WalletOutline } from '@vicons/ionicons5'
 import {
   NAvatar,
   NButton,
   NCard,
-  NDivider,
   NIcon,
   NNumberAnimation,
   NSpace,
@@ -18,30 +16,14 @@ import {
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 
 const authStore = useAuthStore()
 const { userProfile, isAuthenticated } = storeToRefs(authStore)
 const { t } = useI18n()
-const route = useRoute()
 
 const handleLogin = () => {
   authStore.login()
 }
-
-const tornadoMode = computed(() => {
-  if (route.name === 'tornado' && route.params.mode) {
-    return route.params.mode as TornadoMode
-  }
-  return null
-})
-
-const tornadoHighScore = computed(() => {
-  if (userProfile.value?.tornadoHighScores && tornadoMode.value) {
-    return userProfile.value.tornadoHighScores[tornadoMode.value]
-  }
-  return null
-})
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
@@ -114,22 +96,6 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
               </template>
             </n-statistic>
           </n-space>
-
-          <template v-if="tornadoMode && tornadoHighScore !== null">
-            <n-divider class="mini-divider" />
-
-            <!-- Dynamic Rating (if applicable) -->
-            <div class="dynamic-rating-row">
-              <n-statistic :label="`${t('features.tornado.leaderboard.highScore')} (${tornadoMode})`">
-                <template #prefix>
-                  <n-icon color="#f0a020">
-                    <RibbonOutline />
-                  </n-icon>
-                </template>
-                {{ tornadoHighScore }}
-              </n-statistic>
-            </div>
-          </template>
         </n-space>
       </n-card>
     </div>
@@ -171,70 +137,10 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
   letter-spacing: 0.5px;
 }
 
-.mini-divider {
-  margin: 4px 0 !important;
-  opacity: 0.3;
-}
-
-.activity-section {
-  margin-top: 4px;
-}
-
-.activity-header {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.reset-timer {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  font-weight: 600;
-}
-
-.mb-4 {
-  margin-bottom: 6px;
-}
-
-.total-value {
-  font-size: 1.3rem;
-  font-weight: 900;
-  font-family: monospace;
-}
-
 .limit-text {
   font-size: 0.9rem;
   color: var(--color-text-muted);
   font-weight: bold;
-}
-
-.mini-stat-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  padding: 8px 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--color-border-hover);
-    transform: translateY(-2px);
-  }
-
-  .mode-icon {
-    font-size: 1.2rem;
-    margin-bottom: 4px;
-  }
-
-  .mode-count {
-    font-weight: 800;
-    font-size: 1rem;
-    font-family: monospace;
-  }
 }
 
 .login-card {

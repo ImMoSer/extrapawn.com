@@ -180,7 +180,6 @@ const subscriptionTiers = computed(() => {
 
 const gameCosts = computed(() => {
   return [
-    { name: t('nav.tornado'), icon: '🌪️', cost: 10 },
     { name: t('nav.theoryEndgames'), icon: '📚', cost: 5 },
     { name: t('nav.practicalChess'), icon: '♟️', cost: 5 },
     { name: t('nav.finishHim'), icon: '🎯', cost: 10 },

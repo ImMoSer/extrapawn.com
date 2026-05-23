@@ -18,11 +18,6 @@
       "description": "Verwerte deinen Gewinnvorteil gegen menschenähnliche KI-Resistenz. Lerne, deine Gegner eiskalt zu besiegen.",
       "keywords": "Vorteilsverwertung, Maia Chess, Endspieltechnik"
     },
-    "tornado": {
-      "title": "Tornado Taktik",
-      "description": "Hochintensives, dynamisches Schachtaktik-Training mit Glicko-2-Rating und tiefer Fehleranalyse.",
-      "keywords": "Schachtaktik-Trainer, dynamische Puzzles, Blitz-Taktik"
-    },
     "theoryEndings": {
       "title": "Theoretische Endspiele",
       "description": "Übe klassische Endspielpositionen bis zur Perfektion. Rette Remis und zerstöre die Hoffnungen deiner Gegner."
@@ -116,7 +111,6 @@
     }
   },
   "gameModes": {
-    "tornado": "Tornado",
     "finishHim": "Finish Him",
     "theoryEndgames": "Theoretische",
     "practicalChess": "Practische",
@@ -515,7 +509,6 @@
         "puzzlesSolved": "1 Aufgabe gelöst | {count} Aufgaben gelöst",
         "skillEarned": "Skill heute",
         "finishHimRatingLabel": "FinishHim Rating",
-        "tornadoTitle": "Tornado Ratings",
         "bestRatingsTitle": "Beste Ratings",
         "global": {
           "title": "Aktivitäten"
@@ -530,7 +523,6 @@
         },
         "modes": {
           "all": "Modus",
-          "tornado": "Tornado",
           "finishHim": "Finish Him",
           "theory": "Theorie",
           "theoryWin": "Theorie (Sieg)",
@@ -560,7 +552,6 @@
       },
       "detailedAnalytics": {
         "title": "Detaillierte Analyse",
-        "tornadoStats": "Tornado Themen Analyse",
         "bestScore": "Bestwert"
       },
       "analyticsTable": {
@@ -896,7 +887,6 @@
         "topFinishHim": "Finish Him",
         "overallSkill": "Gesamt-Skill",
         "skillStreak": "+100 jeden Tag",
-        "skillStreakMega": "Tornado +300 täglich",
         "topToday": "Top heute",
         "finishHimLeaderboard": "Finish Him",
         "theoryLeaderboard": "Theoretisch",
@@ -945,96 +935,12 @@
       "restart": "Neustart",
       "resign": "Aufgeben",
       "share": "Teilen"
-    },
-    "tornado": {
-      "modes": {
-        "bullet": "Bullet (1+1)",
-        "blitz": "Blitz (3+2)",
-        "rapid": "Rapid (5+3)",
-        "classic": "Classic (10+5)"
-      },
-      "selection": {
-        "title": "Wähle einen Modus"
-      },
-      "feedback": {
-        "selectMode": "Wähle einen Modus zum Starten.",
-        "loadingFirstPuzzle": "Erste Aufgabe wird geladen...",
-        "yourTurn": "Du bist am Zug.",
-        "loadingFailed": "Nächste Aufgabe konnte nicht geladen werden.",
-        "startFailed": "Session konnte nicht gestartet werden.",
-        "sessionEnded": "Session beendet. Dein Rating: {rating}",
-        "getReady": "Drücke 'Spielen' zum Starten.",
-        "loadFailed": "Laden fehlgeschlagen.",
-        "wrongMove": "Falscher Zug!",
-        "success": "Aufgabe gelöst!",
-        "wrongMoveAnalysis": "Falscher Zug! Analyse ist jetzt aktiv."
-      },
-      "sessionEnd": {
-        "title": "Session beendet",
-        "message": "Dein finales Rating: {rating}",
-        "stats": "Rating: {rating} | Gelöst: {solved}/{total} | Thema: {theme}",
-        "newSession": "Neue Session",
-        "exit": "Beenden",
-        "mistakes": "Fehler"
-      },
-      "mistakes": {
-        "title": "Fehleranalyse",
-        "info": {
-          "rating": "Rating",
-          "theme": "Thema",
-          "id": "ID"
-        },
-        "feedback": {
-          "selectPuzzle": "Wähle eine Aufgabe zum Starten.",
-          "yourTurn": "Du bist dran. Versuche es erneut!",
-          "solved": "Super! Richtig gelöst.",
-          "wrongMove": "Falsch. Versuche die Stellung zu analysieren.",
-          "allSolved": "Glückwunsch! Alle Fehler korrigiert.",
-          "noMistakes": "Keine Fehler in der letzten Session!",
-          "loadFailed": "Fehler konnten nicht geladen werden."
-        },
-        "ui": {
-          "analysisButton": "Analyse",
-          "nextButton": "Weiter",
-          "exitButton": "Beenden",
-          "restartButton": "Neustart"
-        },
-        "exit": {
-          "title": "Modus verlassen",
-          "message": "Bist du sicher? Die Liste der Fehler wird gelöscht."
-        }
-      },
-      "leaderboard": {
-        "highScore": "Rekorde"
-      },
-      "ui": {
-        "ratingLabel": "Rating",
-        "themeLabel": "Thema"
-      },
-      "stats": {
-        "title": "Deine Ratings",
-        "globalRating": "Gesamt-Rating",
-        "theme": "Thema",
-        "rating": "Rating",
-        "progress": "Fortschritt",
-        "rate": "Erfolg"
-      },
-      "controls": {
-        "levelTitle": "Schwierigkeit",
-        "levels": {
-          "easy": "Leicht",
-          "normal": "Normal",
-          "hard": "Schwer"
-        },
-        "autoLoad": "AutoNext"
-      }
     }
   },
   "nav": {
     "home": "Startseite",
     "learningCoach": "Lern Coach",
     "endgames": "Endspiele",
-    "tornado": "Tornado",
     "speedrun": "Speedrun",
     "leaderboards": "Bestenliste",
     "userCabinet": "Kabinett",
@@ -1166,7 +1072,7 @@
         "dataParagraphs": [
           "Spielstatistiken, Analysen und KI-Auswertungen sind vom Anbieter berechnete und vorgehaltene Plattformdaten. Der Anbieter behält sich vor, diese Daten im Rahmen der Weiterentwicklung jederzeit zu ändern, zurückzusetzen oder zu löschen. Hieraus entstehen keine Ansprüche des Nutzers. Die originären Partiedaten des Nutzers verbleiben ausschließlich bei Lichess; der Nutzer ist für die Sicherung dieser Daten selbst verantwortlich."
         ],
-        "liabilityTitle": "6. Haftung",
+        "liabilityTitle": "6. Liability",
         "liabilityParagraphs": [
           "(1) Der Anbieter haftet unbeschränkt bei Vorsatz oder grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper oder Gesundheit.",
           "(2) Bei leichter Fahrlässigkeit haftet der Anbieter nur bei Verletzung einer wesentlichen Vertragspflicht (Kardinalpflicht). In diesem Fall ist die Haftung auf den bei Vertragsschluss vorhersehbaren, typischen Schaden begrenzt."
@@ -1179,9 +1085,9 @@
         "lawParagraphs": [
           "Es gilt das Recht der Bundesrepublik Deutschland. Gegenüber Verbrauchern gilt dies nur, soweit keine zwingenden Vorschriften des Rechts des Staates, in dem der Verbraucher seinen gewöhnlichen Aufenthalt hat, entgegenstehen."
         ],
-        "finalTitle": "9. Schlussbestimmungen",
+        "finalTitle": "9. Final Provisions",
         "finalParagraphs": [
-          "Sollten einzelne Bestimmungen dieser AGB unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt."
+          "Should individual provisions of these T&C be or become invalid, the validity of the remaining provisions remains unaffected."
         ]
       }
     }
@@ -1224,11 +1130,7 @@
     "modules": {
       "study": {
         "title": "STUDY — Analytisches Labor",
-        "text": "Ein interaktives Tool zum Aufbau und **aktiven Einprägen** deines Eröffnungsrepertoires. 1-Klick-Generator basierend auf Elite-Statistiken (MozerBook), visuelle Variantenbäume und Hardcore-Trainingsmodi wie Speedrun und Reply Training. Volle Lichess-Synchronisation."
-      },
-      "tornado": {
-        "title": "TORNADO — Taktischer Sturm",
-        "text": "Adaptiver Taktiktrainer basierend auf Glicko-2. Keine Fehlerlimits, kein langweiliges Aufwärmen – hohes Schwierigkeitsniveau ab der ersten Minute. 15 thematische Vektoren und ein spezieller Modus zur Bearbeitung deiner Fehler."
+        "text": "Ein interaktives Tool zum Aufbau und **aktiven Einprägen** deines Eröffnungsrepertoires. 1-Klick-Generator basierend auf Elite-Statistiken (MozerBook), visuelle Varianten bäume und Hardcore-Trainingsmodi wie Speedrun und Reply Training. Volle Lichess-Synchronisation."
       },
       "finishHim": {
         "title": "FINISH HIM — Die Kunst der Realisierung",
@@ -1334,7 +1236,6 @@
       "finishHim": "Übergang",
       "theoryEndgames": "Theoretische",
       "practicalChess": "Practische",
-      "tornado": "Tornado",
       "leaderboards": "Bestenliste",
       "club": "Club",
       "learningCoach": "Coach",

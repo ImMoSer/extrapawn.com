@@ -5,74 +5,6 @@ export type EngineId = 'SF_2200' | 'maia-1900' | 'maia-2200' | 'maia-2400'
 
 export type Color = 'white' | 'black'
 
-// --- TORNADO MODE ---
-export type TornadoMode = 'bullet' | 'blitz' | 'rapid' | 'classic'
-
-export const TORNADO_THEMES = [
-  'fork',
-  'kingAttack',
-  'sacrifice',
-  'pin',
-  'discoveredAttack',
-  'advancedPawn',
-  'attraction',
-  'deflection',
-  'defensiveMove',
-  'quietMove',
-  'hangingPiece',
-  'skewer',
-  'trappedPiece',
-  'intermezzo',
-  'clearance',
-  'capturingDefender',
-  'zugzwang',
-  'backRankMate',
-  'interference',
-  'xRayAttack',
-] as const
-
-export type TornadoTheme = (typeof TORNADO_THEMES)[number]
-
-export type TacticsTheme = (typeof TORNADO_THEMES)[number]
-export type TacticsDifficulty = 'Novice' | 'Pro' | 'Master'
-
-export interface TornadoSessionResult {
-  puzzleId: string
-  puzzleRating: number
-  puzzleThemes: string[]
-  isCorrect: boolean
-}
-
-export interface TornadoEndSessionDto {
-  sessionId: string
-  finalScore: number
-  results: TornadoSessionResult[]
-}
-
-export interface TornadoStartResponse {
-  puzzles: TornadoPuzzle[]
-  sessionId: string
-  sessionRating: number
-  sessionTheme?: string
-  userStatsUpdate?: UserStatsUpdate
-}
-
-export interface TornadoRecord {
-  id: string
-  userId: string
-  username: string
-  mode: TornadoMode
-  highScore: number
-  achievedAt: string
-}
-
-export interface TornadoEndResponse {
-  record: TornadoRecord
-  userStatsUpdate?: UserStatsUpdate
-}
-
-// --- END TORNADO --
-
 // --- FINISH HIM MODE ---
 
 export const FINISH_HIM_THEMES = [
@@ -165,20 +97,6 @@ export interface FinishHimLeaderboardEntry {
   puzzle_id: string
   subscriptionTier?: string
 }
-
-export interface TornadoPuzzle {
-  puzzle_id: string
-  initial_fen: string
-  tactical_solution: string
-  tactical_rating: number
-  difficulty: string
-  themes: string[]
-  puzzle_fen?: string
-  game_modus?: string
-  first_move?: string
-}
-
-export type TacticsPuzzle = TornadoPuzzle
 
 export interface FinishHimPuzzle {
   puzzle_id: string
@@ -321,7 +239,6 @@ interface WorktableLeaderboards {
   finishHimLeaderboard?: UnifiedLeaderboardResponse
   theoryLeaderboard?: UnifiedLeaderboardResponse
   practicalLeaderboard?: UnifiedLeaderboardResponse
-  tornadoLeaderboard?: UnifiedLeaderboardResponse
   strategicLeaderboard?: UnifiedLeaderboardResponse
   overallLeaderboard?: UnifiedLeaderboardResponse
 }
@@ -347,7 +264,6 @@ export interface LeaderboardResponse {
 export interface LeaderboardApiResponse extends WorktableLeaderboards {
   overallSkillLeaderboard: LeaderboardResponse
   skillStreakLeaderboard: SolveStreakLeaderboardEntry[]
-  skillStreakMegaLeaderboard: SolveStreakLeaderboardEntry[]
   topTodayLeaderboard: LeaderboardResponse
 }
 
@@ -368,7 +284,6 @@ export interface ActivityModeStats {
 
 export interface ActivityPeriodStats {
   finish_him: ActivityModeStats
-  tornado: ActivityModeStats
   theory: ActivityModeStats
   'practical-chess': ActivityModeStats
   rep_generator: ActivityModeStats
@@ -425,7 +340,6 @@ interface LichessUserProfile {
 
 interface PuzzlesSolvedToday {
   finish_him: number
-  tornado: number
   theory: number
   'practical-chess': number
   tacticalTrainer?: number
@@ -444,15 +358,8 @@ export interface UserStatsUpdate {
   spentToday?: number
   today_activity?: TodayActivity
   finish_him?: GameModeProfileDto
-  tornado?: GameModeProfileDto
   theory?: GameModeProfileDto
   practical?: GameModeProfileDto
-  tornadoHighScores?: {
-    blitz?: number
-    rapid?: number
-    bullet?: number
-    classic?: number
-  }
 }
 
 export interface GameResultResponse {
@@ -484,12 +391,6 @@ export interface UserSessionProfile extends LichessUserProfile {
   training_status?: 'N' | 'P' | 'M'
   current_streak?: number
   total_plans_mastered?: number
-  tornadoHighScores?: {
-    blitz?: number
-    rapid?: number
-    bullet?: number
-    classic?: number
-  }
 }
 
 export interface AuthState {
@@ -526,23 +427,16 @@ export interface UserProfileStatEntry {
 export interface UserProfileStatsDto {
   user: UserMeta
   stats: UserProfileStatEntry[]
-  tornadoHighScores: {
-    bullet: number
-    blitz: number
-    rapid: number
-    classic: number
-  }
 }
 
 export interface FrontendProfileStats {
-  tornado: GameModeProfileDto
   finish_him: GameModeProfileDto
   theory: GameModeProfileDto
   practical: GameModeProfileDto
 }
 
 export interface GameLaunchOptions {
-  mode: 'theory' | 'finish_him' | 'practical' | 'tornado'
+  mode: 'theory' | 'finish_him' | 'practical'
   theme: string
   difficulty: string
   subMode: string

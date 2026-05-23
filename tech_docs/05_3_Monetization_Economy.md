@@ -7,7 +7,6 @@ The platform operates on a unique "Active-First" economic model. While providing
 **PawnCoins** are the primary virtual currency used to interact with high-intensity features.
 
 - **Costs per Unit**:
-  - **Tornado**: 10 PawnCoins per session.
   - **Theory Endgames / Practical Chess**: 5 PawnCoins per attempt.
   - **Finish Him**: 10 PawnCoins per attempt (reflects the high computational cost of the playout engine).
   - **Study Generator**: 50 PawnCoins per generation.

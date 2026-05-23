@@ -56,7 +56,6 @@ const aggregateActivity = (
 ): ActivityPeriodStats => {
   const result: ActivityPeriodStats = {
     finish_him: { puzzles_requested: 0, puzzles_solved: 0 },
-    tornado: { puzzles_requested: 0, puzzles_solved: 0 },
     theory: { puzzles_requested: 0, puzzles_solved: 0 },
     'practical-chess': { puzzles_requested: 0, puzzles_solved: 0 },
     rep_generator: { puzzles_requested: 0, puzzles_solved: 0 },
@@ -99,7 +98,6 @@ const chartOption = computed(() => {
 
   const modes = [
     { key: 'theory', name: t('nav.theoryEndgames'), cost: 5, color: '#9b59b6' },
-    { key: 'tornado', name: t('nav.tornado'), cost: 10, color: '#f39c12' },
     { key: 'finish_him', name: t('nav.finishHim'), cost: 10, color: '#42b883' },
     { key: 'practical-chess', name: t('nav.practicalChess'), cost: 5, color: '#3498db' },
     {

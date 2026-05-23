@@ -59,7 +59,6 @@ const gameModeScores = computed(() => {
   
   const ratings = {
     'finish_him': baseRating,
-    'tornado': baseRating,
     'practical-chess': baseRating,
     'theory': baseRating,
   }
@@ -78,17 +77,6 @@ const gameModeScores = computed(() => {
         }
       }
     }
-
-    // Special check for tornadoHighScores if present
-    if (props.profileStats.tornadoHighScores) {
-      const scores = Object.values(props.profileStats.tornadoHighScores)
-      if (scores.length > 0) {
-        const maxHighScore = Math.max(...scores)
-        if (maxHighScore > ratings['tornado']) {
-          ratings['tornado'] = maxHighScore
-        }
-      }
-    }
   }
 
   return [
@@ -98,13 +86,6 @@ const gameModeScores = computed(() => {
       icon: '🎯',
       color: 'var(--color-accent-success)',
       rating: ratings['finish_him'],
-    },
-    {
-      key: 'tornado',
-      label: t('features.userCabinet.stats.modes.tornado'),
-      icon: '🌪️',
-      color: 'var(--color-accent-primary)',
-      rating: ratings['tornado'],
     },
     {
       key: 'practical-chess',
@@ -210,7 +191,7 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
       </div>
 
       <!-- Right: Best Ratings (taking remaining space) -->
-      <div class="tornado-ratings-section">
+      <div class="ratings-section">
         <div class="section-title">{{ t('features.userCabinet.stats.bestRatingsTitle') }}</div>
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <n-grid-item v-for="stat in gameModeScores" :key="stat.key">

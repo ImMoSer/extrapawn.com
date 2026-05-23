@@ -26,4 +26,4 @@ Unlike standard trainers that force you to play against a merciless Stockfish, *
 To eliminate "winning position anxiety" by providing a safe environment to practice converting advantages against the strongest possible defense.
 
 ---
-*Back to: [Game Modes Overview](./04_GameModes_Overview.md) | Next Section: [4.2 Tornado](./04_2_Tornado.md)*
+*Back to: [Game Modes Overview](./04_GameModes_Overview.md)*

@@ -7,7 +7,6 @@ import {
   InformationCircleOutline,
   PersonOutline,
   SchoolOutline,
-  ThunderstormOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
@@ -49,11 +48,6 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.endgames'),
     key: '/endgames',
     icon: renderIcon(HammerOutline),
-  },
-  {
-    label: () => t('nav.tornado'),
-    key: '/tornado',
-    icon: renderIcon(ThunderstormOutline),
   },
   {
     label: () => t('nav.learningCoach'),

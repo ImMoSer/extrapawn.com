@@ -8,15 +8,14 @@ At the top of the cabinet, the system displays the user's standing within the pl
   - **Pawn** (Free/Standard)
   - **Knight**, **Bishop**, **Rook**, **Queen**, **King** (Premium Tiers)
 - **FanCoins Dashboard**: Real-time tracking of the user's secondary currency, used for premium analysis and unlocking specialized content.
-- **Tornado High Scores**: A dedicated section for "Personal Bests" in the high-speed **Tornado** mode, separated by time controls: Bullet, Blitz, Rapid, and Classic.
 
 ## 2. Activity Statistics
-The activity engine tracks engagement across the three primary training pillars: **Advantage** (Tactics), **Tornado** (Speed), and **Theory** (Openings).
+The activity engine tracks engagement across the primary training pillars: **Advantage** (Tactics) and **Theory** (Openings).
 - **Timeframe Filtering**: Switch between Daily, Weekly, and Monthly views to identify trends in training volume.
 - **Comparative Analysis**: Visualize which areas of the game are receiving the most focus and where intensity needs to be increased.
 
 ## 3. Tactical Fingerprint (Nightingale Rose Charts)
-For the [Tornado](../04_2_Tornado.md) and [Advantage](../04_1_Finish_Him.md) modes, the cabinet provides a "Nightingale Rose" diagram. This chart visualizes the user's tactical DNA across dozens of themes (e.g., Pins, Skewers, Trapped Pieces, X-Ray Attacks).
+For the [Advantage](../04_1_Finish_Him.md) mode, the cabinet provides a "Nightingale Rose" diagram. This chart visualizes the user's tactical DNA across dozens of themes (e.g., Pins, Skewers, Trapped Pieces, X-Ray Attacks).
 
 - **Rating vs. Accuracy**: Toggle the diagram to show either the estimated **Rating** for a specific theme or the raw **Accuracy** (success rate).
 - **Mode Isolation**: Filter charts by time control (e.g., see your "Blitz Pins" vs "Bullet Pins").

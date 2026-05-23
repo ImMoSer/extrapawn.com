@@ -48,7 +48,6 @@ const { t } = useI18n()
 
 const skillModes = [
   { key: 'finish_him', nameKey: 'gameModes.finishHim', color: '#42b883' }, // Green
-  { key: 'tornado', nameKey: 'features.userCabinet.stats.modes.tornado', color: '#f39c12' }, // Orange
   { key: 'theory', nameKey: 'features.userCabinet.stats.modes.theory', color: '#9b59b6' }, // Purple
   { key: 'practical', nameKey: 'features.userCabinet.stats.modes.practical', color: '#3498db' }, // Blue
 ] as const

@@ -13,7 +13,6 @@ Every mode is built with the "Grandmaster's Training" in mind:
 | Mode | Focus | Engine Primary |
 | :--- | :--- | :--- |
 | **Finish Him** | Conversion & Endgame Technique | SF 18 / Maia / BadGyal |
-| **Tornado** | Speed & Pattern Recognition | Fast Analysis |
 | **Endgames** | Theoretical Knowledge | Theory Database |
 | **Practical** | Calculation & Intuition | Stockfish / Maia |
 | **Study!** | Knowledge & Training | MozerBook / SRS |

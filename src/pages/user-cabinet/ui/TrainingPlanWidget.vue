@@ -104,7 +104,6 @@ const mapModeForLauncher = (mode: string) => {
   if (mode === 'THEORY_ENDING') return 'theory'
   if (mode === 'PRACTICAL_CHESS') return 'practical'
   if (mode === 'FINISH_HIM') return 'finish_him'
-  if (mode === 'TORNADO') return 'tornado'
   return mode
 }
 
@@ -123,16 +122,14 @@ const getModeLabel = (mode: string) => {
     THEORY_ENDING: 'gameModes.theoryEndgames',
     PRACTICAL_CHESS: 'gameModes.practicalChess',
     FINISH_HIM: 'gameModes.finishHim',
-    TORNADO: 'gameModes.tornado',
   }
   const key = modeMap[mode] || mode
   return t(key)
 }
 
 const getThemeLabel = (mode: string, theme: string) => {
-  const isTornado = mode === 'TORNADO'
   const finalTheme = theme === 'rook' ? 'rookPawn' : theme
-  const i18nKey = isTornado ? `chess.tactics.${finalTheme}` : `chess.themes.${finalTheme}`
+  const i18nKey = `chess.themes.${finalTheme}`
   return t(i18nKey)
 }
 
@@ -190,8 +187,7 @@ const columns = computed<DataTableColumns<TrainingPlanRow>>(() => [
               mode: mapModeForLauncher(row.mode) as
                 | 'theory'
                 | 'practical'
-                | 'finish_him'
-                | 'tornado',
+                | 'finish_him',
               subMode: row.sub_mode,
               theme: row.theme === 'rook' ? 'rookPawn' : row.theme,
               difficulty: currentPlanLevel.value,
@@ -384,8 +380,7 @@ const visibleTableData = computed(() => {
                         mode: mapModeForLauncher(row.mode) as
                           | 'theory'
                           | 'practical'
-                          | 'finish_him'
-                          | 'tornado',
+                          | 'finish_him',
                         subMode: row.sub_mode,
                         theme: row.theme === 'rook' ? 'rookPawn' : row.theme,
                         difficulty: currentPlanLevel,

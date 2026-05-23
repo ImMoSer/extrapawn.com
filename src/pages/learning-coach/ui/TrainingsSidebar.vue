@@ -1,27 +1,27 @@
 <!-- src/pages/learning-coach/ui/TrainingsSidebar.vue -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { apiClient } from '@/shared/api/client'
+import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
+import {
+  FINISH_HIM_THEMES,
+  PRACTICAL_CHESS_CATEGORIES,
+  THEORY_ENDING_CATEGORIES,
+} from '@/shared/types/api.types'
+import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
+import { SchoolOutline } from '@vicons/ionicons5'
 import {
   NButton,
   NCollapse,
   NCollapseItem,
   NIcon,
-  NRadioGroup,
   NRadioButton,
-  NText,
+  NRadioGroup,
   NScrollbar,
+  NText,
   useMessage,
 } from 'naive-ui'
-import { SchoolOutline } from '@vicons/ionicons5'
-import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
-import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
-import { apiClient } from '@/shared/api/client'
-import {
-  FINISH_HIM_THEMES,
-  THEORY_ENDING_CATEGORIES,
-  PRACTICAL_CHESS_CATEGORIES,
-} from '@/shared/types/api.types'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Types
 type LearningPuzzle = {
@@ -46,7 +46,7 @@ interface Props {
   isLoading: boolean
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'positionLoaded', payload: { puzzle: LearningPuzzle; source: string }): void
@@ -350,7 +350,7 @@ function handleOpeningClick(name: string) {
               <VisualRadioGroup
                 v-model:value="selectedTacticsTheme"
                 :options="tacticsOptions"
-                :columns="2"
+                :columns="3"
                 @update:value="loadTactics"
               />
             </div>

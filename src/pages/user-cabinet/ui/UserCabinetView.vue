@@ -11,7 +11,7 @@ import {
   generateRandomDetailedStats,
   generateRandomUserProfile,
 } from '@/shared/lib/statsRandomizer'
-import type { FinishHimDifficulty, TornadoMode, UserProfileStatsDto } from '@/shared/types/api.types'
+import type { FinishHimDifficulty, UserProfileStatsDto } from '@/shared/types/api.types'
 import {
   NAlert,
   NButton,
@@ -139,22 +139,7 @@ const displayStats = computed<UserProfileStatsDto | null>(() => {
           puzzles_failed: 1,
           rating: baseRating + 50,
         },
-        {
-          game_mode: 'tornado',
-          sub_mode: 'mix',
-          theme: 'mix',
-          difficulty: 'mix',
-          puzzles_solved: 15,
-          puzzles_failed: 4,
-          rating: baseRating + 150,
-        },
       ],
-      tornadoHighScores: {
-        bullet: baseRating - 50,
-        blitz: baseRating + 150,
-        rapid: baseRating + 20,
-        classic: baseRating,
-      },
     }
   }
   return detailedStatsData.value || null
@@ -168,16 +153,10 @@ const error = computed(() => {
   return null
 })
 
-const selectedTornadoMode = ref<TornadoMode>('blitz')
 const selectedFinishHimMode = ref<FinishHimDifficulty>('Novice')
 const selectedTheoryWinMode = ref<FinishHimDifficulty>('Novice')
 const selectedTheoryDrawMode = ref<FinishHimDifficulty>('Novice')
 const selectedPracticalMode = ref<FinishHimDifficulty>('Novice')
-
-const currentTornadoThemes = computed(() => {
-  if (!detailedStats.value?.tornado?.modes) return []
-  return detailedStats.value.tornado.modes[selectedTornadoMode.value]?.mix || []
-})
 
 const currentFinishHimThemes = computed(() => {
   if (!detailedStats.value?.finish_him?.modes?.win) return []
@@ -277,16 +256,6 @@ const handleManageSubscription = async () => {
 
         <div class="charts-grid">
           <ThemeRoseChart
-            v-if="detailedStats && detailedStats.tornado"
-            v-model:activeMode="selectedTornadoMode"
-            mode="tornado"
-            :modes="['bullet', 'blitz', 'rapid', 'classic']"
-            :themes="currentTornadoThemes"
-            :title="t('features.userCabinet.stats.modes.tornado')"
-            @improve="launchGame"
-          />
-
-          <ThemeRoseChart
             v-if="detailedStats && detailedStats.finish_him"
             v-model:activeMode="selectedFinishHimMode"
             mode="finish_him"
@@ -296,9 +265,7 @@ const handleManageSubscription = async () => {
             :title="t('features.userCabinet.stats.modes.finishHim')"
             @improve="launchGame"
           />
-        </div>
 
-        <div class="charts-grid">
           <ThemeRoseChart
             v-if="detailedStats && detailedStats.theory"
             v-model:activeMode="selectedTheoryWinMode"
@@ -309,7 +276,9 @@ const handleManageSubscription = async () => {
             :title="t('features.userCabinet.stats.modes.theoryWin')"
             @improve="launchGame"
           />
+        </div>
 
+        <div class="charts-grid">
           <ThemeRoseChart
             v-if="detailedStats && detailedStats.theory"
             v-model:activeMode="selectedTheoryDrawMode"
@@ -320,9 +289,7 @@ const handleManageSubscription = async () => {
             :title="t('features.userCabinet.stats.modes.theoryDraw')"
             @improve="launchGame"
           />
-        </div>
 
-        <div class="charts-grid">
           <ThemeRoseChart
             v-if="detailedStats && detailedStats.practical"
             v-model:activeMode="selectedPracticalMode"
@@ -333,7 +300,9 @@ const handleManageSubscription = async () => {
             :title="t('features.userCabinet.stats.modes.practical')"
             @improve="launchGame"
           />
+        </div>
 
+        <div class="charts-grid">
           <ActivityChart
             :stats="personalActivityStats"
             :is-loading="isExample ? false : isActivityPending"

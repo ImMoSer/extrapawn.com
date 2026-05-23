@@ -8,7 +8,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
 import { useStudyStore } from '@/features/study'
-import { useTornadoStore } from '@/features/tornado'
 
 import { AboutPage } from '@/pages/about'
 import { FinishHimPage } from '@/pages/finish-him'
@@ -18,8 +17,6 @@ import { RecordsPagePage as RecordsPage } from '@/pages/records-page'
 import { WelcomePage } from '@/pages/welcome'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 
-import { TornadoPage } from '@/pages/tornado'
-import { TornadoMistakesPage } from '@/pages/tornado-mistakes'
 import { UserCabinetPage } from '@/pages/user-cabinet'
 
 const router = createRouter({
@@ -69,32 +66,6 @@ const router = createRouter({
       name: 'finish-him-puzzle',
       component: FinishHimPage,
       meta: { isGame: true, requiresAuth: true, game: 'finish-him' },
-    },
-    {
-      path: '/tornado',
-      name: 'tornado-selection',
-      component: () => import('@/pages/tornado/ui/TornadoSelectionPage.vue'),
-      meta: {
-        requiresAuth: true,
-        gameMode: 'tornado',
-        seo: {
-          titleKey: 'seo.tornado.title',
-          descriptionKey: 'seo.tornado.description',
-          keywordsKey: 'seo.tornado.keywords',
-        },
-      },
-    },
-    {
-      path: '/tornado/:mode',
-      name: 'tornado',
-      component: TornadoPage,
-      meta: { isGame: true, requiresAuth: true, game: 'tornado' },
-    },
-    {
-      path: '/tornado/mistakes',
-      name: 'tornado-mistakes',
-      component: TornadoMistakesPage,
-      meta: { requiresAuth: true },
     },
     {
       path: '/user-cabinet/:id?',
@@ -270,9 +241,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {
-    const isTornadoToMistakes = from.name === 'tornado' && to.name === 'tornado-mistakes'
-
-    if (gameStore.isGameActive && !isTornadoToMistakes) {
+    if (gameStore.isGameActive) {
       const userConfirmed = await uiStore.showConfirmation(
         t('features.gameplay.confirmExit.title'),
         t('features.gameplay.confirmExit.message'),
@@ -299,13 +268,8 @@ router.afterEach(async (to, from) => {
   const toBaseRoute = String(to.name)
   const t = i18n.global.t
 
-  // Исключение для перехода из режима "Торнадо" на страницу ошибок "Торнадо"
-  const isTornadoToMistakes = fromBaseRoute === 'tornado' && toBaseRoute === 'tornado-mistakes'
-
   if (fromBaseRoute === 'finish-him' && toBaseRoute !== 'finish-him') {
     useEndgameStore().reset()
-  } else if (fromBaseRoute === 'tornado' && toBaseRoute !== 'tornado' && !isTornadoToMistakes) {
-    useTornadoStore().reset()
   } else if (
     fromBaseRoute?.startsWith('theory-endings') &&
     !toBaseRoute?.startsWith('theory-endings')

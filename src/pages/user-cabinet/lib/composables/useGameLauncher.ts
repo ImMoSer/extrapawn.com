@@ -2,7 +2,6 @@ import { useEndgameStore } from '@/features/endgames'
 import type {
   GameLaunchOptions,
   TheoryEndingType,
-  TornadoMode,
 } from '@/shared/types/api.types'
 import { useRouter } from 'vue-router'
 
@@ -51,18 +50,6 @@ export function useGameLauncher() {
       endgameStore.setParams({ difficulty: targetDiff, category: theme })
 
       router.push({ name: 'practical-chess-play' })
-      return
-    }
-
-    // 4. TORNADO
-    if (mode === 'tornado') {
-      const targetMode = (subMode || 'blitz') as TornadoMode
-
-      router.push({
-        name: 'tornado',
-        params: { mode: targetMode },
-        query: theme ? { theme } : {},
-      })
       return
     }
 

@@ -6,12 +6,10 @@ interface Props {
   title: string
   subtitle?: string
   accentType?: 'primary' | 'warning' | 'error' | 'success' | 'info'
-  isTornado?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   accentType: 'primary',
-  isTornado: false,
 })
 
 const emit = defineEmits<{
@@ -25,10 +23,9 @@ const accentColorVar = computed(() => `var(--color-${props.accentType})`)
   <div class="selection-container">
     <n-card class="glass selection-card" :bordered="false" content-style="padding: 12px">
       <n-space vertical :size="24" style="width: 100%">
-        <div class="header" :class="{ 'tornado-header': isTornado }">
+        <div class="header">
           <n-h1
             class="title"
-            :class="{ 'tornado-title': isTornado }"
             :style="{ color: accentColorVar, margin: 0 }"
           >
             <slot name="title">{{ title }}</slot>

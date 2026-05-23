@@ -2,7 +2,6 @@ import {
   FINISH_HIM_THEMES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
-  TORNADO_THEMES,
   type FrontendProfileStats,
   type LeaderboardApiResponse,
   type PersonalActivityStatsResponse,
@@ -60,16 +59,9 @@ export function generateRandomUserProfile(): UserSessionProfile {
     base_puzzle_rating: baseRating,
     subscriptionTier: randomTier,
     TierExpire: null,
-    tornadoHighScores: {
-      bullet: getRandomInt(1500, 2500),
-      blitz: getRandomInt(1500, 2500),
-      rapid: getRandomInt(1500, 2500),
-      classic: getRandomInt(1500, 2500),
-    },
     validatedAt: Date.now(),
     today_activity: {
       puzzles_solved_today: {
-        tornado: getRandomInt(0, 50),
         finish_him: getRandomInt(0, 20),
         theory: getRandomInt(0, 15),
         'practical-chess': getRandomInt(0, 10),
@@ -84,8 +76,8 @@ export function generateRandomActivityStats(): PersonalActivityStatsResponse {
   const activities: ActivityHistoryEntry[] = []
 
   const generatePeriod = (daysBack: number, count: number) => {
-    const modes = ['tornado', 'finish_him', 'theory', 'practical-chess']
-    const subModes = ['win', 'draw', 'bullet', 'blitz']
+    const modes = ['finish_him', 'theory', 'practical-chess']
+    const subModes = ['win', 'draw']
     const themes = ['pawn', 'fork', 'pin', 'endgame']
 
     for (let i = 0; i < count; i++) {
@@ -142,20 +134,6 @@ export function generateRandomDetailedStats(baseRating: number = 1500): Frontend
   })
 
   return {
-    tornado: {
-      highScores: {
-        bullet: getRandomInt(20, 70),
-        blitz: getRandomInt(20, 70),
-        rapid: getRandomInt(20, 70),
-        classic: getRandomInt(20, 70),
-      },
-      modes: {
-        bullet: { mix: applyVariety(TORNADO_THEMES) },
-        blitz: { mix: applyVariety(TORNADO_THEMES) },
-        rapid: { mix: applyVariety(TORNADO_THEMES) },
-        classic: { mix: applyVariety(TORNADO_THEMES) },
-      },
-    },
     finish_him: {
       modes: {
         win: theoryModes(FINISH_HIM_THEMES),
@@ -236,19 +214,16 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
     const items = Array.from({ length: 15 }, (_, i) => {
       const score = {
         finish_him: getRandomInt(100, 2000),
-        tornado: getRandomInt(100, 2000),
         theory: getRandomInt(100, 2000),
         practical: getRandomInt(100, 2000),
       }
       const solved = {
         finish_him: Math.floor(score.finish_him / 5),
-        tornado: score.tornado,
         theory: Math.floor(score.theory / 3),
         practical: Math.floor(score.practical / 5),
       }
       const failed = {
         finish_him: getRandomInt(0, 10),
-        tornado: getRandomInt(0, 10),
         theory: getRandomInt(0, 10),
         practical: getRandomInt(0, 10),
       }
@@ -279,7 +254,6 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
 
       const modes = {
         finish_him: Math.floor(baseSolved * 0.2),
-        tornado: Math.floor(baseSolved * 0.4),
         theory: Math.floor(baseSolved * 0.2),
         'practical-chess': Math.floor(baseSolved * 0.2),
       }
@@ -299,12 +273,6 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
   }
 
   return {
-    tornadoLeaderboard: genThematic([
-      'tornado_bullet',
-      'tornado_blitz',
-      'tornado_rapid',
-      'tornado_classic',
-    ]),
     strategicLeaderboard: genThematic(['theory', 'practical-chess', 'finish_him']),
     overallLeaderboard: genThematic(['overall']),
     finishHimLeaderboard: genThematic(['Novice', 'Pro', 'Master']),
@@ -315,7 +283,6 @@ export function generateRandomHallOfFame(): LeaderboardApiResponse {
       entries: genOverallOld(),
     },
     skillStreakLeaderboard: genStreaks(),
-    skillStreakMegaLeaderboard: genStreaks(),
     topTodayLeaderboard: {
       period: 'heute',
       entries: genOverallOld(),

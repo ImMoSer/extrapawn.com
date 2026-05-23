@@ -2,7 +2,6 @@ import {
   FINISH_HIM_THEMES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
-  TORNADO_THEMES,
   type FrontendProfileStats,
   type GameModeProfileDto,
   type UserProfileStatsDto,
@@ -69,15 +68,6 @@ export function normalizeProfileStats(
   const statsArray = apiStats?.stats || []
 
   return {
-    tornado: normalizeGameMode(
-      statsArray,
-      'tornado',
-      ['bullet', 'blitz', 'rapid', 'classic'],
-      ['mix'],
-      TORNADO_THEMES,
-      baseRating,
-      apiStats?.tornadoHighScores as Record<string, number> | undefined,
-    ),
     finish_him: normalizeGameMode(
       statsArray,
       'finish_him',
@@ -124,13 +114,6 @@ export function generateExampleStats(baseRating: number = 1500): FrontendProfile
   }
 
   let s = 13
-
-  // Tornado
-  if (!stats.tornado.highScores) stats.tornado.highScores = {}
-  for (const mode of ['bullet', 'blitz', 'rapid', 'classic'] as const) {
-    applyVariety(stats.tornado.modes[mode]?.['mix'], s++)
-    stats.tornado.highScores[mode] = Math.floor(baseRating / 30) + (s % 15)
-  }
 
   // Finish Him
   for (const diff of ['Novice', 'Pro', 'Master'] as const) {

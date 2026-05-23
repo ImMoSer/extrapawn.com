@@ -35,7 +35,6 @@ Your interactive command center for repertoire building.
 
 | Module | Focus | Engine & Intelligence |
 | :--- | :--- | :--- |
-| **🌪️ Tornado** | Tactical Storm | Adaptive Glicko-2 trainer with 15 thematic vectors. |
 | **⚔️ Finish Him** | Art of Realization | Master the skill of coldly finishing off won positions vs Maia. |
 | **♟️ Practical** | Real-game Scenarios | Converting extra pawns and positional intuition training. |
 | **📖 Theoretical** | Book Master | Master classic endgame positions against provocative engines. |

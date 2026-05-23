@@ -207,9 +207,6 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.tornadoLeaderboard .card-title {
-  color: var(--neon-orange);
-}
 .finishHimLeaderboard .card-title {
   color: var(--neon-purple);
 }

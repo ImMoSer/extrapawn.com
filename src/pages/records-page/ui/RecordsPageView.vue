@@ -42,14 +42,6 @@ const strategicTabs = computed(() => [
   { id: 'finish_him', name: t('features.leaderboards.titles.topFinishHim'), icon: '' },
 ])
 
-const tornadoTabs = computed(() => [
-  { id: 'tornado_bullet', name: t('features.leaderboards.table.bullet'), icon: '' },
-  { id: 'tornado_blitz', name: t('features.leaderboards.table.blitz'), icon: '' },
-  { id: 'tornado_rapid', name: t('features.leaderboards.table.rapid'), icon: '' },
-  { id: 'tornado_classic', name: t('features.leaderboards.table.classic'), icon: '' },
-])
-
-// Merged Data logic for Hall of Fame (stays as is, but we'll use example data if needed)
 const exampleData = computed(() => (isExample.value ? generateRandomHallOfFame() : null))
 
 const isLoading = computed(() => {
@@ -93,7 +85,7 @@ const isLoading = computed(() => {
           :data="isExample ? exampleData?.overallLeaderboard : dashboardData"
           :tabs="[{ id: 'overall', name: t('common.global', 'Global'), icon: '' }]"
           :is-loading="isDashboardLoading"
-          color-class="tornadoLeaderboard"
+          color-class="topToday"
         />
       </section>
 
@@ -101,15 +93,6 @@ const isLoading = computed(() => {
       <section class="records-section">
         <h2 class="section-divider">{{ t('features.leaderboards.sections.competitive') }}</h2>
         <div class="section-grid">
-          <!-- Tornado Leaderboard -->
-          <TimedModeLeaderboardTable
-            :title="t('nav.tornado')"
-            :data="isExample ? exampleData?.tornadoLeaderboard : dashboardData"
-            :tabs="tornadoTabs"
-            :is-loading="isDashboardLoading"
-            color-class="tornadoLeaderboard"
-          />
-
           <!-- Strategic Mastery -->
           <TimedModeLeaderboardTable
             :title="t('features.leaderboards.sections.strategic')"

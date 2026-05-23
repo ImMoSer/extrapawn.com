@@ -15,7 +15,6 @@ const LEADERBOARD_KEYS = {
   combined: () => [...LEADERBOARD_KEYS.all, 'combined'] as const,
   overallSkill: () => [...LEADERBOARD_KEYS.all, 'overall-skill'] as const,
   topToday: () => [...LEADERBOARD_KEYS.all, 'top-today'] as const,
-  tornado: () => [...LEADERBOARD_KEYS.all, 'tornado'] as const,
   finishHim: () => [...LEADERBOARD_KEYS.all, 'finish-him'] as const,
   practical: () => [...LEADERBOARD_KEYS.all, 'practical-chess'] as const,
   theory: () => [...LEADERBOARD_KEYS.all, 'theory'] as const,
@@ -82,18 +81,6 @@ export const useTopTodayLeaderboardQuery = (enabled: boolean = true) => {
     queryFn: () => apiClient<LeaderboardResponse>('/leaderboards/top-today'),
     enabled,
     staleTime: 60 * 1000, // Top Today updates more frequently
-  })
-}
-
-/**
- * Fetch Tornado Leaderboards (4 modes)
- */
-export const useTornadoLeaderboardsQuery = (enabled: boolean = true) => {
-  return useQuery<UnifiedLeaderboardResponse, Error>({
-    queryKey: LEADERBOARD_KEYS.tornado(),
-    queryFn: () => apiClient<UnifiedLeaderboardResponse>('/leaderboards/tornado'),
-    enabled,
-    staleTime: 60 * 1000,
   })
 }
 
