@@ -160,7 +160,9 @@ export const useEndgameStore = defineStore('endgames', () => {
       checkWinCondition(currentState: GameStatusInfo): boolean {
         const outcome = currentState.outcome
         if (!outcome || outcome.reason === 'resign') return false
-        return outcome.reason === 'checkmate' && outcome.winner === humanColor
+        const isWin = outcome.reason === 'checkmate' && outcome.winner === humanColor
+        logger.info(`[EndgameStrategy] checkWinCondition: isWin=${isWin}, reason=${outcome.reason}, winner=${outcome.winner}, humanColor=${humanColor}`)
+        return isWin
       },
 
       async onUserMoveExecuted(uciMove: string) {
@@ -173,6 +175,7 @@ export const useEndgameStore = defineStore('endgames', () => {
             currentScenarioIndex++
 
             if (puzzle.game_modus === 'tactics' && currentScenarioIndex >= scenarioMoves.length) {
+              logger.info(`[EndgameStrategy] Tactics scenario complete on user move.`)
               _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
               setTimeout(() => {
                 loadNewPuzzle('tactics', activeParams.value)
@@ -181,6 +184,7 @@ export const useEndgameStore = defineStore('endgames', () => {
           } else {
             // Wrong move in scenario
             if (puzzle.game_modus === 'tactics') {
+              logger.info(`[EndgameStrategy] Wrong move in tactics scenario: ${uciMove} vs ${expectedMove}`)
               useBoardStore().setAnalysisMode(true)
               _handleGameOverUnified(puzzle, false, { winner: undefined, reason: 'resign' }, humanColor)
               return
@@ -202,6 +206,7 @@ export const useEndgameStore = defineStore('endgames', () => {
 
       async onBotMoveExecuted() {
         if (puzzle.game_modus === 'tactics' && currentScenarioIndex >= scenarioMoves.length) {
+          logger.info(`[EndgameStrategy] Tactics scenario complete on bot move.`)
           _handleGameOverUnified(puzzle, true, { winner: humanColor, reason: 'checkmate' }, humanColor)
           setTimeout(() => {
             loadNewPuzzle('tactics', activeParams.value)
@@ -228,6 +233,7 @@ export const useEndgameStore = defineStore('endgames', () => {
 
       onGameOver(status: GameStatusInfo) {
         const isWin = this.checkWinCondition!(status)
+        logger.info(`[EndgameStrategy] onGameOver: isWin=${isWin}, winner=${status.outcome?.winner}, humanColor=${humanColor}, reason=${status.outcome?.reason}`)
         if (status.outcome) {
           _handleGameOverUnified(puzzle, isWin, status.outcome, humanColor)
         }
@@ -265,11 +271,8 @@ export const useEndgameStore = defineStore('endgames', () => {
 
     try {
       const response = await playPuzzleResultMutation.mutateAsync({
-        puzzleId: puzzle.puzzle_id,
         wasCorrect: isWin,
-        puzzleType: puzzle.game_modus,
-        category: puzzle.category || '',
-        difficulty: (puzzle.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
+        puzzle: puzzle,
       })
 
       if (response) {

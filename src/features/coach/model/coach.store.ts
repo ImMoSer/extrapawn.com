@@ -147,10 +147,6 @@ export const useCoachStore = defineStore('coach', () => {
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
     } else {
-      if (analysisEngineStore.isAnalysisActive) {
-        logger.info('[CoachStore] Stopping deep analysis to start coach.')
-        analysisEngineStore.stopAnalysis()
-      }
       triggerAnalysis(boardStore.fen)
     }
   }
@@ -167,10 +163,6 @@ export const useCoachStore = defineStore('coach', () => {
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
     } else {
-      if (analysisEngineStore.isAnalysisActive) {
-        logger.info('[CoachStore] Stopping deep analysis to start coach.')
-        analysisEngineStore.stopAnalysis()
-      }
       triggerAnalysis(boardStore.fen)
     }
   }
@@ -317,13 +309,14 @@ export const useCoachStore = defineStore('coach', () => {
     },
   )
 
-  // Watch deep analysis and disable coach if analysis starts
+  // Watch deep analysis and handle potential resource management if needed, 
+  // but do not disable the coach automatically as per "no restrictions" policy.
   watch(
     () => analysisEngineStore.isAnalysisActive,
     (isActive) => {
       if (isActive && isCoachEnabled.value) {
-        logger.info('[CoachStore] Toggling off Coach because deep analysis started.')
-        setCoachEnabled(false)
+        logger.info('[CoachStore] Deep analysis active alongside Coach.')
+        // We keep the coach enabled. Both can run in parallel if resources allow.
       }
     },
   )

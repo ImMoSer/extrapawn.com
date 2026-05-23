@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { computed, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NText, NButton, NIcon } from 'naive-ui'
 import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 
 import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebar } from '@/features/coach'
+import { CoachSidebar, useCoachStore } from '@/features/coach'
 import { useWorkoutStore } from '@/features/workout'
 import TrainingsSidebar from './TrainingsSidebar.vue'
 
 const { t } = useI18n()
 const workoutStore = useWorkoutStore()
+const coachStore = useCoachStore()
 
 // Handle position load callback from Sidebar
 function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string }) {
@@ -27,6 +28,10 @@ const activePuzzleTitle = computed(() => {
 })
 const badges = computed(() => {
    return workoutStore.topInfoDisplay.badges
+})
+
+onMounted(() => {
+  coachStore.setCoachEnabled(true)
 })
 
 onUnmounted(() => {
@@ -58,7 +63,7 @@ onUnmounted(() => {
       </div>
     </template>
 
-    <template #board-overlay>
+    <template #center-column>
       <div v-if="showColorSelection" class="color-selection-overlay">
         <div class="color-selection-panel">
           <div class="panel-header">

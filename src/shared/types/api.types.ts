@@ -106,11 +106,8 @@ export type TacticsDifficulty = 'Novice' | 'Pro' | 'Master';
 export type PlayPuzzleType = 'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings';
 
 export interface PlayPuzzleResultDto {
-  puzzleId: string;
   wasCorrect: boolean;
-  puzzleType: PlayPuzzleType;
-  category: string;
-  difficulty: PlayPuzzleDifficulty;
+  puzzle: object; // Full puzzle object as received from /start
 }
 
 export type PlayPuzzleDifficulty = 'Novice' | 'Pro' | 'Master';

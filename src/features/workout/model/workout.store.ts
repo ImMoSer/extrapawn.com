@@ -18,7 +18,6 @@ import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
-import type { PlayPuzzleType } from '@/shared/types/api.types'
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point
 import { useEndgamesMutations } from '@/features/endgames/api/endgames.queries'
 import type { TopInfoDisplay } from '@/entities/puzzle'
@@ -107,14 +106,24 @@ export const useWorkoutStore = defineStore('workout', () => {
         const outcome = currentState.outcome
         if (!outcome || outcome.reason === 'resign') return false
 
+        // A checkmate by the human is ALWAYS a win, regardless of strategy
+        if (outcome.reason === 'checkmate' && outcome.winner === humanColor) {
+          logger.info(`[WorkoutStrategy] checkWinCondition (checkmate): isWin=true, humanColor=${humanColor}`)
+          return true
+        }
+
         const isScenarioComplete = scenarioIndex >= scenarioMoves.length
 
         if (puzzle.strategy === 'scenarioOnly') {
-          return isScenarioComplete
+          const isWin = isScenarioComplete
+          logger.info(`[WorkoutStrategy] checkWinCondition (scenarioOnly): isWin=${isWin}, scenarioIndex=${scenarioIndex}/${scenarioMoves.length}`)
+          return isWin
         }
 
         if (puzzle.strategy === 'playOutOnly' || puzzle.strategy === 'scenarioPlus') {
-          return outcome.reason === 'checkmate' && outcome.winner === humanColor
+          const isWin = outcome.reason === 'checkmate' && outcome.winner === humanColor
+          logger.info(`[WorkoutStrategy] checkWinCondition (playOut): isWin=${isWin}, reason=${outcome.reason}, winner=${outcome.winner}, humanColor=${humanColor}`)
+          return isWin
         }
         
         return false
@@ -130,6 +139,7 @@ export const useWorkoutStore = defineStore('workout', () => {
             scenarioIndex++
 
             if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
+               logger.info(`[WorkoutStrategy] Scenario complete on user move.`)
                _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
                setTimeout(() => {
                  loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
@@ -138,6 +148,7 @@ export const useWorkoutStore = defineStore('workout', () => {
           } else {
             // Deviances
             if (puzzle.strategy === 'scenarioOnly') {
+               logger.info(`[WorkoutStrategy] Wrong move in scenarioOnly: ${uciMove} vs ${expectedMove}`)
                boardStore.setAnalysisMode(true)
                _handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
                return
@@ -163,6 +174,7 @@ export const useWorkoutStore = defineStore('workout', () => {
 
       async onBotMoveExecuted() {
         if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
+          logger.info(`[WorkoutStrategy] Scenario complete on bot move.`)
           _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
           setTimeout(() => {
             loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
@@ -189,6 +201,7 @@ export const useWorkoutStore = defineStore('workout', () => {
 
       onGameOver(status: GameStatusInfo) {
         const isWin = this.checkWinCondition!(status)
+        logger.info(`[WorkoutStrategy] onGameOver: isWin=${isWin}, status=`, status)
         if (status.outcome) {
           _handleGameOver(puzzle, isWin, status.outcome, humanColor)
         }
@@ -222,14 +235,9 @@ export const useWorkoutStore = defineStore('workout', () => {
     }
 
     try {
-      // TODO: Adapt this when backend payload changes to unified Workout endpoint.
-      // Using existing mutation for now.
       const response = await playPuzzleResultMutation.mutateAsync({
-        puzzleId: puzzle.puzzle_id,
         wasCorrect: isWin,
-        puzzleType: puzzle.puzzle_type as PlayPuzzleType,
-        category: puzzle.category || '',
-        difficulty: (puzzle.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
+        puzzle: puzzle,
       })
 
       if (response) {
