@@ -100,7 +100,7 @@ onMounted(async () => {
   // Automatically load the first puzzle on mount
   isLoading.value = true
   try {
-    const data = await apiClient<LearningPuzzle>('/finish-him/start?theme=pawn&difficulty=Novice')
+    const data = await apiClient<LearningPuzzle>('/play-puzzle/start?puzzle_type=finish_him&difficulty=Novice&category=pawn')
     if (data && data.initial_fen) {
       handlePositionLoaded({ 
         puzzle: data, 

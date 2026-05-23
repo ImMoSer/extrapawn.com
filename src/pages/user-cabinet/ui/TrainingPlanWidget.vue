@@ -22,6 +22,7 @@ import {
   useMessage,
   type DataTableColumns,
 } from 'naive-ui'
+import type { PlayPuzzleType } from '@/shared/types/api.types'
 import { computed, h, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
@@ -100,11 +101,12 @@ const handleRequestPlan = () => {
   })
 }
 
-const mapModeForLauncher = (mode: string) => {
-  if (mode === 'THEORY_ENDING') return 'theory'
-  if (mode === 'PRACTICAL_CHESS') return 'practical'
+const mapModeForLauncher = (mode: string): PlayPuzzleType => {
+  if (mode === 'THEORY_ENDING') return 'theory_endings'
+  if (mode === 'PRACTICAL_CHESS') return 'practical_chess'
   if (mode === 'FINISH_HIM') return 'finish_him'
-  return mode
+  if (mode === 'TACTICS') return 'tactics'
+  return mode as PlayPuzzleType
 }
 
 interface TrainingPlanRow {
@@ -184,10 +186,7 @@ const columns = computed<DataTableColumns<TrainingPlanRow>>(() => [
           disabled: row.is_done || isCompleted.value,
           onClick: () =>
             launchGame({
-              mode: mapModeForLauncher(row.mode) as
-                | 'theory'
-                | 'practical'
-                | 'finish_him',
+              mode: mapModeForLauncher(row.mode),
               subMode: row.sub_mode,
               theme: row.theme === 'rook' ? 'rookPawn' : row.theme,
               difficulty: currentPlanLevel.value,
@@ -377,10 +376,7 @@ const visibleTableData = computed(() => {
                     :disabled="row.is_done || isCompleted"
                     @click="
                       launchGame({
-                        mode: mapModeForLauncher(row.mode) as
-                          | 'theory'
-                          | 'practical'
-                          | 'finish_him',
+                        mode: mapModeForLauncher(row.mode),
                         subMode: row.sub_mode,
                         theme: row.theme === 'rook' ? 'rookPawn' : row.theme,
                         difficulty: currentPlanLevel,

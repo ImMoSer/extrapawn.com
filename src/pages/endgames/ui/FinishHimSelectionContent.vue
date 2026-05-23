@@ -2,7 +2,7 @@
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { useEndgameStore } from '@/features/endgames'
 import { NRadioGroup, NRadioButton, NText } from 'naive-ui'
-import { type FinishHimDifficulty, type FinishHimTheme } from '@/shared/types/api.types'
+import { type FinishHimDifficulty, type FinishHimCategory } from '@/shared/types/api.types'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, computed } from 'vue'
@@ -14,9 +14,9 @@ const endgameStore = useEndgameStore()
 
 const difficultyLevels = ['Novice', 'Pro', 'Master'] as const
 const selectedDifficulty = ref<string>('Novice')
-const selectedCategory = ref<FinishHimTheme>('pawn')
+const selectedCategory = ref<FinishHimCategory>('pawn')
 
-const categories: FinishHimTheme[] = [
+const categories: FinishHimCategory[] = [
   'pawn',
   'knight',
   'bishop',

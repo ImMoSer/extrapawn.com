@@ -5,33 +5,22 @@ import { useAnalysisStore } from '@/features/analysis'
 import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
-import { computed, onMounted, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
 import { YouMoveSelection } from '@/features/endgames'
-import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { UserProfileWidget } from '@/features/profile'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
-import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
-import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
-import { useAuthStore } from '@/entities/user'
-import type {
-  GameLaunchOptions,
-  PracticalChessDifficulty,
-  PracticalChessCategory,
-} from '@/shared/types/api.types'
 
-const { t } = useI18n()
 const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
 const smartHintStore = useSmartHintStore()
-const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -40,33 +29,6 @@ const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   subMode: 'win',
   theme: endgameStore.activeParams.category || '',
 }))
-
-const { data: detailedStatsData } = useDetailedStatsQuery()
-
-const normalizedStats = computed(() => {
-  const baseRating = authStore.userProfile?.base_puzzle_rating || 1000
-  return normalizeProfileStats(detailedStatsData.value || null, baseRating)
-})
-
-const currentPracticalThemes = computed(() => {
-  if (!normalizedStats.value?.practical?.modes?.win) return []
-  return (
-    normalizedStats.value.practical.modes.win[endgameStore.activeParams.difficulty || 'Novice'] || []
-  )
-})
-
-const handleImprove = (options: GameLaunchOptions) => {
-  if (options.mode === 'practical') {
-    if (!options.theme || !options.difficulty) {
-      throw new Error('[PracticalChessView] handleImprove was called with missing options!')
-    }
-    endgameStore.setParams({
-      difficulty: options.difficulty as PracticalChessDifficulty,
-      category: options.theme as PracticalChessCategory,
-    })
-    endgameStore.loadNewPuzzle('practical_chess')
-  }
-}
 
 onMounted(() => {
   const id = route.params.id as string
@@ -173,15 +135,6 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.practical"
-            :activeMode="endgameStore.activeParams.difficulty || 'Novice'"
-            mode="practical"
-            subMode="win"
-            :themes="currentPracticalThemes"
-            :title="t('features.userCabinet.stats.modes.practical')"
-            @improve="handleImprove"
-          />
           <SidebarLeaderboard
             game-mode="practical"
             sub-mode="win"

@@ -11,7 +11,7 @@ import {
   generateRandomDetailedStats,
   generateRandomUserProfile,
 } from '@/shared/lib/statsRandomizer'
-import type { FinishHimDifficulty, UserProfileStatsDto } from '@/shared/types/api.types'
+import type { UserProfileStatsDto } from '@/shared/types/api.types'
 import {
   NAlert,
   NButton,
@@ -101,45 +101,15 @@ const detailedStats = computed(() => {
   const baseRating = displayProfile.value?.base_puzzle_rating || 1000
   return normalizeProfileStats(stats || null, baseRating)
 })
-
 const displayStats = computed<UserProfileStatsDto | null>(() => {
   if (isExample.value) {
-    const baseRating = displayProfile.value?.base_puzzle_rating || 1500
     return {
       user: {
         id: 'example_user',
         username: displayProfile.value?.username || 'ExampleUser',
         tier: displayProfile.value?.subscriptionTier || 'Pawn',
       },
-      stats: [
-        {
-          game_mode: 'finish_him',
-          sub_mode: 'win',
-          theme: 'mix',
-          difficulty: 'Novice',
-          puzzles_solved: 5,
-          puzzles_failed: 2,
-          rating: baseRating + 120,
-        },
-        {
-          game_mode: 'theory',
-          sub_mode: 'win',
-          theme: 'mix',
-          difficulty: 'Novice',
-          puzzles_solved: 8,
-          puzzles_failed: 3,
-          rating: baseRating + 80,
-        },
-        {
-          game_mode: 'practical-chess',
-          sub_mode: 'win',
-          theme: 'mix',
-          difficulty: 'Novice',
-          puzzles_solved: 3,
-          puzzles_failed: 1,
-          rating: baseRating + 50,
-        },
-      ],
+      stats: [],
     }
   }
   return detailedStatsData.value || null
@@ -151,31 +121,6 @@ const error = computed(() => {
   if (isActivityError.value) return activityError.value?.message
   if (isDetailedStatsError.value) return detailedError.value?.message
   return null
-})
-
-const selectedFinishHimMode = ref<FinishHimDifficulty>('Novice')
-const selectedTheoryWinMode = ref<FinishHimDifficulty>('Novice')
-const selectedTheoryDrawMode = ref<FinishHimDifficulty>('Novice')
-const selectedPracticalMode = ref<FinishHimDifficulty>('Novice')
-
-const currentFinishHimThemes = computed(() => {
-  if (!detailedStats.value?.finish_him?.modes?.win) return []
-  return detailedStats.value.finish_him.modes.win[selectedFinishHimMode.value] || []
-})
-
-const currentTheoryWinThemes = computed(() => {
-  if (!detailedStats.value?.theory?.modes?.win) return []
-  return detailedStats.value.theory.modes.win[selectedTheoryWinMode.value] || []
-})
-
-const currentTheoryDrawThemes = computed(() => {
-  if (!detailedStats.value?.theory?.modes?.draw) return []
-  return detailedStats.value.theory.modes.draw[selectedTheoryDrawMode.value] || []
-})
-
-const currentPracticalThemes = computed(() => {
-  if (!detailedStats.value?.practical?.modes?.win) return []
-  return detailedStats.value.practical.modes.win[selectedPracticalMode.value] || []
 })
 
 const handleRedeem = async () => {
@@ -254,50 +199,11 @@ const handleManageSubscription = async () => {
           @reactivate="handleManageSubscription"
         />
 
-        <div class="charts-grid">
+        <div class="charts-grid-unified">
           <ThemeRoseChart
-            v-if="detailedStats && detailedStats.finish_him"
-            v-model:activeMode="selectedFinishHimMode"
-            mode="finish_him"
-            subMode="win"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentFinishHimThemes"
-            :title="t('features.userCabinet.stats.modes.finishHim')"
-            @improve="launchGame"
-          />
-
-          <ThemeRoseChart
-            v-if="detailedStats && detailedStats.theory"
-            v-model:activeMode="selectedTheoryWinMode"
-            mode="theory"
-            subMode="win"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentTheoryWinThemes"
-            :title="t('features.userCabinet.stats.modes.theoryWin')"
-            @improve="launchGame"
-          />
-        </div>
-
-        <div class="charts-grid">
-          <ThemeRoseChart
-            v-if="detailedStats && detailedStats.theory"
-            v-model:activeMode="selectedTheoryDrawMode"
-            mode="theory"
-            subMode="draw"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentTheoryDrawThemes"
-            :title="t('features.userCabinet.stats.modes.theoryDraw')"
-            @improve="launchGame"
-          />
-
-          <ThemeRoseChart
-            v-if="detailedStats && detailedStats.practical"
-            v-model:activeMode="selectedPracticalMode"
-            mode="practical"
-            subMode="win"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentPracticalThemes"
-            :title="t('features.userCabinet.stats.modes.practical')"
+            v-if="detailedStats"
+            :stats="detailedStats"
+            :title="t('features.userCabinet.stats.title')"
             @improve="launchGame"
           />
         </div>
@@ -414,6 +320,11 @@ const handleManageSubscription = async () => {
   padding: 24px;
   max-width: 1400px;
   margin: 20px auto;
+}
+
+.charts-grid-unified {
+  display: block;
+  width: 100%;
 }
 
 .charts-grid {

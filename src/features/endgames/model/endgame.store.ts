@@ -11,7 +11,6 @@ import { type TopInfoDisplay } from '@/entities/puzzle'
 import { useAuthStore } from '@/entities/user'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
-import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
@@ -21,7 +20,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEndgamesMutations } from '../api/endgames.queries'
-import type { GameResultResponse } from '@/shared/types/api.types'
+import type { PlayPuzzleType } from '@/shared/types/api.types'
 
 const t = i18n.global.t
 
@@ -29,25 +28,23 @@ export interface EndgamePuzzle {
   puzzle_id: string
   initial_fen: string
   first_move?: 'bot' | 'user'
-  game_modus: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics'
+  game_modus: PlayPuzzleType
   tactical_solution?: string
   winner?: 'white' | 'black'
   category?: string
   sub_category?: string
   difficulty?: string
-  tactical_rating?: number | string
   rating?: number | string
-  engm_rating?: number | string
   puzzle_fen?: string
   userSelectedColor?: boolean
 }
 
 export interface EndgameParams {
-  mode?: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics'
-  theme?: string
+  mode?: PlayPuzzleType
+  theme?: string // legacy mapping to category
   difficulty?: string
   category?: string
-  type?: string
+  type?: string // theory endings win/draw
   puzzleId?: string
 }
 
@@ -71,7 +68,7 @@ export const useEndgameStore = defineStore('endgames', () => {
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
 
-  const { finishHimMutation, practicalMutation, theoryMutation } = useEndgamesMutations()
+  const { playPuzzleResultMutation } = useEndgamesMutations()
 
   const activePuzzle = ref<EndgamePuzzle | null>(null)
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
@@ -266,33 +263,14 @@ export const useEndgameStore = defineStore('endgames', () => {
       }
     }
 
-    const commonDto = {
-      puzzleId: puzzle.puzzle_id,
-      wasCorrect: isWin,
-      pgn_moves: pgnService.getCurrentPgnString(),
-      initial_fen: puzzle.initial_fen,
-      user_color: humanColor,
-    }
-
     try {
-      let response: GameResultResponse | undefined
-      switch (puzzle.game_modus) {
-        case 'finish_him':
-          response = await finishHimMutation.mutateAsync(commonDto)
-          break
-        case 'practical_chess':
-          response = await practicalMutation.mutateAsync({
-            category: puzzle.category || '',
-            dto: commonDto,
-          })
-          break
-        case 'theory_endings':
-          response = await theoryMutation.mutateAsync({
-            puzzleId: puzzle.puzzle_id,
-            wasCorrect: isWin,
-          })
-          break
-      }
+      const response = await playPuzzleResultMutation.mutateAsync({
+        puzzleId: puzzle.puzzle_id,
+        wasCorrect: isWin,
+        puzzleType: puzzle.game_modus,
+        category: puzzle.category || '',
+        difficulty: (puzzle.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
+      })
 
       if (response) {
         if (response.attempts && response.attempts > 1) {
@@ -320,7 +298,7 @@ export const useEndgameStore = defineStore('endgames', () => {
     }
   }
 
-  async function loadNewPuzzle(mode: 'finish_him' | 'theory_endings' | 'practical_chess' | 'tactics', queryParams: Partial<EndgameParams> = {}) {
+  async function loadNewPuzzle(mode: PlayPuzzleType, queryParams: Partial<EndgameParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
 
@@ -331,37 +309,20 @@ export const useEndgameStore = defineStore('endgames', () => {
     activeParams.value = mergedParams
 
     try {
-      let puzzle: EndgamePuzzle | undefined
-
-      if (mode === 'finish_him') {
-        if (mergedParams.puzzleId) {
-          puzzle = await apiClient<EndgamePuzzle>(`/finish-him/PuzzleId/${mergedParams.puzzleId}`)
-        } else {
-          puzzle = await apiClient<EndgamePuzzle>(`/finish-him/start?theme=${mergedParams.theme ?? 'auto'}&difficulty=${mergedParams.difficulty ?? 'Novice'}`)
-        }
-        if (puzzle) puzzle.game_modus = 'finish_him'
-      } else if (mode === 'theory_endings') {
-        if (mergedParams.puzzleId && mergedParams.type) {
-          puzzle = await apiClient<EndgamePuzzle>(`/theory-endings/puzzle/${mergedParams.type}/${mergedParams.puzzleId}`)
-        } else {
-          puzzle = await apiClient<EndgamePuzzle>(`/theory-endings/puzzle?mode=${mergedParams.type}&difficulty=${mergedParams.difficulty}&category=${mergedParams.category}`)
-        }
-        if (puzzle) puzzle.game_modus = 'theory_endings'
-      } else if (mode === 'practical_chess') {
-        if (mergedParams.puzzleId) {
-          puzzle = await apiClient<EndgamePuzzle>(`/practical-chess/puzzle/${mergedParams.puzzleId}`)
-        } else {
-          const category = mergedParams.category ?? 'extraPawn'
-          puzzle = await apiClient<EndgamePuzzle>(`/practical-chess/${category}/puzzle?difficulty=${mergedParams.difficulty ?? 'Novice'}`)
-        }
-        if (puzzle) puzzle.game_modus = 'practical_chess'
-      } else if (mode === 'tactics') {
-        puzzle = await apiClient<EndgamePuzzle>(`/tactics/start?theme=${mergedParams.theme ?? 'fork'}&difficulty=${mergedParams.difficulty ?? 'Novice'}`)
-        if (puzzle) puzzle.game_modus = 'tactics'
+      const category = mergedParams.category || mergedParams.theme || (mode === 'tactics' ? 'fork' : 'pawn')
+      const difficulty = mergedParams.difficulty || 'Novice'
+      
+      const url = `/play-puzzle/start?puzzle_type=${mode}&difficulty=${difficulty}&category=${category}`
+      if (mergedParams.puzzleId) {
+        // Backend handles puzzle selection, but if we need a specific one, we'd need another endpoint or logic.
+        // For now, let's stick to the start endpoint.
       }
+
+      const puzzle = await apiClient<EndgamePuzzle>(url)
 
       if (!puzzle) throw new Error('Puzzle data is null')
 
+      puzzle.game_modus = mode
       activePuzzle.value = puzzle
       activeParams.value = { ...activeParams.value, ...queryParams, mode }
 
@@ -477,14 +438,15 @@ export const useEndgameStore = defineStore('endgames', () => {
         title = t(`chess.themes.${puzzle.category}`).toUpperCase()
         badges.push({ text: 'PRACTICAL' })
         badges.push({ text: t(`common.difficulties.level_${puzzle.difficulty?.toLowerCase() || 'novice'}`).toUpperCase() })
+      } else if (puzzle.game_modus === 'tactics') {
+        title = t(`chess.tactics.${puzzle.category}`).toUpperCase()
+        badges.push({ text: 'TACTICS' })
+        badges.push({ text: t(`common.difficulties.level_${puzzle.difficulty?.toLowerCase() || 'novice'}`).toUpperCase() })
       }
 
       const stats = []
-      if (puzzle.rating || puzzle.tactical_rating) {
-        stats.push({ value: puzzle.tactical_rating || puzzle.rating || '?', label: t('features.puzzleInfo.tacticalRating') || 'Rating' })
-      }
-      if (puzzle.engm_rating) {
-        stats.push({ value: puzzle.engm_rating, label: 'ENgm' })
+      if (puzzle.rating) {
+        stats.push({ value: puzzle.rating, label: t('features.userCabinet.analyticsTable.rating') })
       }
 
       return {

@@ -5,92 +5,34 @@ import { useAnalysisStore } from '@/features/analysis'
 import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
-import { computed, onMounted, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-
-import type {
-  TheoryEndingType,
-  GameLaunchOptions,
-  TheoryEndingDifficulty,
-  TheoryEndingCategory,
-} from '@/shared/types/api.types'
 
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
-import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { UserProfileWidget } from '@/features/profile'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
-import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
-import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
-import { useAuthStore } from '@/entities/user'
 
-const { t } = useI18n()
 const endgameStore = useEndgameStore()
 const gameStore = useGameStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
 const smartHintStore = useSmartHintStore()
-const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'THEORY_ENDING',
-  subMode: endgameStore.activeParams.type || 'win',
+  subMode: 'win',
   theme: endgameStore.activeParams.category || '',
 }))
 
-const { data: detailedStatsData } = useDetailedStatsQuery()
-
-const normalizedStats = computed(() => {
-  const baseRating = authStore.userProfile?.base_puzzle_rating || 1000
-  return normalizeProfileStats(detailedStatsData.value || null, baseRating)
-})
-
-const currentTheoryThemes = computed(() => {
-  const diff = endgameStore.activeParams.difficulty || 'Novice'
-  if (!normalizedStats.value?.theory?.modes?.win) return []
-  return normalizedStats.value.theory.modes.win[diff] || []
-})
-
-const currentTheoryMode = computed(() => {
-  return 'theory' as const
-})
-
-const currentTheorySubMode = computed(() => {
-  return 'win' as const
-})
-
-const currentTheoryTitle = computed(() => {
-  return t('features.userCabinet.stats.modes.theory')
-})
-
-const handleImprove = (options: GameLaunchOptions) => {
-  if (options.mode === 'theory') {
-    if (!options.theme || !options.difficulty) {
-      throw new Error('[TheoryEndingView] handleImprove was called with missing options!')
-    }
-    const targetType = 'win'
-    endgameStore.setParams({
-      type: targetType,
-      difficulty: options.difficulty as TheoryEndingDifficulty,
-      category: options.theme as TheoryEndingCategory,
-    })
-    endgameStore.loadNewPuzzle('theory_endings')
-  }
-}
-
 onMounted(() => {
-  const type = route.params.type as TheoryEndingType
   const puzzleId = route.params.puzzleId as string
 
-  if (!type && !endgameStore.activeParams.type) {
-    router.push('/theory-endings')
-    return
-  }
-  endgameStore.loadNewPuzzle('theory_endings', { type, puzzleId })
+  endgameStore.loadNewPuzzle('theory_endings', { puzzleId })
 })
 
 onBeforeRouteLeave(() => {
@@ -200,18 +142,9 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.theory"
-            :activeMode="endgameStore.activeParams.difficulty || 'Novice'"
-            :mode="currentTheoryMode"
-            :subMode="currentTheorySubMode"
-            :themes="currentTheoryThemes"
-            :title="currentTheoryTitle"
-            @improve="handleImprove"
-          />
           <SidebarLeaderboard
             game-mode="theory"
-            :sub-mode="endgameStore.activeParams.type || 'win'"
+            sub-mode="win"
             :theme="endgameStore.activeParams.category || ''"
             :difficulty="endgameStore.activeParams.difficulty || 'Novice'"
           />

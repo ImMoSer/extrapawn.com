@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
 import { useEndgameStore } from '@/features/endgames'
-import { FINISH_HIM_THEMES } from '@/shared/types/api.types'
+import { FINISH_HIM_CATEGORIES } from '@/shared/types/api.types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,7 +16,7 @@ const { t } = useI18n()
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const availableThemes: string[] = ['auto', ...FINISH_HIM_THEMES]
+const availableThemes: string[] = ['auto', ...FINISH_HIM_CATEGORIES]
 
 const selectedThemeName = computed(() => {
   const theme = activeParams.value.theme || 'auto'

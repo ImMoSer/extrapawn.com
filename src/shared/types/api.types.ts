@@ -7,21 +7,19 @@ export type Color = 'white' | 'black'
 
 // --- FINISH HIM MODE ---
 
-export const FINISH_HIM_THEMES = [
+export const FINISH_HIM_CATEGORIES = [
+  'bishop',
+  'expert',
+  'knight',
+  'knightBishop',
   'pawn',
   'queen',
-  'bishop',
-  'knight',
+  'queenPieces',
   'rookPawn',
   'rookPieces',
-  'queenPieces',
-  'knightBishop',
-  'expert',
-] as const
-
-export type FinishHimTheme = (typeof FINISH_HIM_THEMES)[number]
-
-export type FinishHimDifficulty = 'Novice' | 'Pro' | 'Master'
+] as const;
+export type FinishHimCategory = (typeof FINISH_HIM_CATEGORIES)[number];
+export type FinishHimDifficulty = 'Novice' | 'Pro' | 'Master';
 
 export interface FinishHimResultDto {
   puzzleId: string
@@ -41,13 +39,10 @@ export const THEORY_ENDING_CATEGORIES = [
   'queen',
   'rookPawn',
   'rookPieces',
-] as const
+] as const;
+export type TheoryEndingCategory = (typeof THEORY_ENDING_CATEGORIES)[number];
+export type TheoryEndingDifficulty = 'Novice' | 'Pro' | 'Master';
 
-export type TheoryEndingCategory = (typeof THEORY_ENDING_CATEGORIES)[number]
-
-export type TheoryEndingDifficulty = 'Novice' | 'Pro' | 'Master'
-
-export type TheoryEndingType = 'win' | 'draw'
 export interface TheoryEndingResultDto {
   puzzleId: string
   wasCorrect: boolean
@@ -57,20 +52,19 @@ export interface TheoryEndingResultDto {
 
 // --- PRACTICAL CHESS MODE ---
 export const PRACTICAL_CHESS_CATEGORIES = [
-  'extraPawn',
-  'materialEquality',
-  'exchange',
-  'rookPawn',
-  'pawn',
-  'knightBishop',
   'bishop',
+  'extraPawn',
   'knight',
+  'knightBishop',
+  'materialEquality',
+  'pawn',
   'queen',
-] as const
-
-export type PracticalChessCategory = (typeof PRACTICAL_CHESS_CATEGORIES)[number]
-
-export type PracticalChessDifficulty = 'Novice' | 'Pro' | 'Master'
+  'rookPawn',
+  'rookPieces',
+] as const;
+export type PracticalChessCategory =
+  (typeof PRACTICAL_CHESS_CATEGORIES)[number];
+export type PracticalChessDifficulty = 'Novice' | 'Pro' | 'Master';
 export interface PracticalChessResultDto {
   puzzleId: string
   wasCorrect: boolean
@@ -80,6 +74,47 @@ export interface PracticalChessResultDto {
 }
 
 // --- END PRACTICAL CHESS ---
+
+// --- TACTICS MODE ---
+export const TACTICS_CATEGORIES = [
+  'advancedPawn',
+  'attraction',
+  'backRankMate',
+  'capturingDefender',
+  'clearance',
+  'defensiveMove',
+  'deflection',
+  'discoveredAttack',
+  'fork',
+  'hangingPiece',
+  'interference',
+  'intermezzo',
+  'kingAttack',
+  'pin',
+  'quietMove',
+  'sacrifice',
+  'skewer',
+  'trappedPiece',
+  'xRayAttack',
+  'zugzwang',
+] as const;
+export type TacticsCategory = (typeof TACTICS_CATEGORIES)[number];
+export type TacticsDifficulty = 'Novice' | 'Pro' | 'Master';
+// --- END TACTICS MODE ---
+
+// --- UNIFIED PLAY PUZZLE API ---
+export type PlayPuzzleType = 'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings';
+
+export interface PlayPuzzleResultDto {
+  puzzleId: string;
+  wasCorrect: boolean;
+  puzzleType: PlayPuzzleType;
+  category: string;
+  difficulty: PlayPuzzleDifficulty;
+}
+
+export type PlayPuzzleDifficulty = 'Novice' | 'Pro' | 'Master';
+// --- END UNIFIED PLAY PUZZLE API ---
 
 export interface PuzzleResultEntry {
   username: string
@@ -166,7 +201,7 @@ export interface GamePuzzle {
   endgame_results?: PuzzleResultEntry[]
   Themes_PG?: string[]
   themes?: string[]
-  engm_type?: FinishHimTheme | null
+  engm_type?: string | null
   difficulty_level?: string | null
   engmRating?: number
   EngmThemes_PG?: string
@@ -403,7 +438,7 @@ export interface AuthState {
 // --- Типы для детальной статистики в кабинете пользователя ---
 
 export interface ThemeStatDto {
-  theme: string
+  category: string
   success: number
   requested: number
   rating: number
@@ -417,7 +452,7 @@ export interface GameModeProfileDto {
 export interface UserProfileStatEntry {
   game_mode: string
   sub_mode: string
-  theme: string
+  category: string
   difficulty: string
   puzzles_solved: number
   puzzles_failed: number
@@ -431,12 +466,13 @@ export interface UserProfileStatsDto {
 
 export interface FrontendProfileStats {
   finish_him: GameModeProfileDto
-  theory: GameModeProfileDto
-  practical: GameModeProfileDto
+  theory_endings: GameModeProfileDto
+  practical_chess: GameModeProfileDto
+  tactics: GameModeProfileDto
 }
 
 export interface GameLaunchOptions {
-  mode: 'theory' | 'finish_him' | 'practical'
+  mode: PlayPuzzleType
   theme: string
   difficulty: string
   subMode: string

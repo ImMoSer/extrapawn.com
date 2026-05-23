@@ -6,19 +6,14 @@ import { useEndgameStore } from '@/features/endgames'
 import { useSmartHintStore } from '@/features/smart-hint'
 import { shareService } from '@/shared/lib/share.service'
 import ChessboardPreview from '@/shared/ui/board-preview/ChessboardPreview.vue'
-import { computed, onMounted, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { onMounted, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
-import { useAuthStore } from '@/entities/user'
 import { AnalysisPanel } from '@/features/analysis'
 import { SidebarLeaderboard } from '@/features/leaderboards'
-import { ThemeRoseChart, UserProfileWidget } from '@/features/profile'
+import { UserProfileWidget } from '@/features/profile'
 import { useActivePlanMatch } from '@/pages/user-cabinet/lib/composables/useActivePlanMatch'
 import TrainingPlanWidget from '@/pages/user-cabinet/ui/TrainingPlanWidget.vue'
-import { useDetailedStatsQuery } from '@/shared/api/queries/userCabinet.queries'
-import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
-import type { FinishHimDifficulty, GameLaunchOptions } from '@/shared/types/api.types'
 import { ControlPanel, GameLayout, TopInfoPanel, useControlsStore } from '@/widgets/game-layout'
 
 const endgameStore = useEndgameStore()
@@ -27,39 +22,14 @@ const boardStore = useBoardStore()
 const controlsStore = useControlsStore()
 const analysisStore = useAnalysisStore()
 const smartHintStore = useSmartHintStore()
-const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
 
 const { isTaskInActivePlan, activeTaskKey } = useActivePlanMatch(() => ({
   mode: 'FINISH_HIM',
   subMode: 'win',
-  theme: endgameStore.activeParams.theme || '',
+  theme: endgameStore.activeParams.category || '',
 }))
-
-const { data: detailedStatsData } = useDetailedStatsQuery()
-
-const normalizedStats = computed(() => {
-  const baseRating = authStore.userProfile?.base_puzzle_rating || 1000
-  return normalizeProfileStats(detailedStatsData.value || null, baseRating)
-})
-
-const currentFinishHimThemes = computed(() => {
-  if (!normalizedStats.value?.finish_him?.modes?.win) return []
-  return normalizedStats.value.finish_him.modes.win[endgameStore.activeParams.difficulty || 'Novice'] || []
-})
-
-const handleImprove = (options: GameLaunchOptions) => {
-  if (options.mode === 'finish_him') {
-    if (!options.subMode) {
-      throw new Error('[FinishHimView] handleImprove was called without a subMode (difficulty)!')
-    }
-
-    endgameStore.setParams({ theme: options.theme, difficulty: options.difficulty as FinishHimDifficulty })
-    endgameStore.loadNewPuzzle('finish_him')
-  }
-}
 
 onMounted(() => {
   endgameStore.initialize()
@@ -169,16 +139,6 @@ watch(
           <TrainingPlanWidget compact :active-task-key="activeTaskKey" />
         </template>
         <template v-else>
-          <ThemeRoseChart
-            v-if="normalizedStats && normalizedStats.finish_him"
-            v-model:activeMode="endgameStore.activeParams.difficulty"
-            mode="finish_him"
-            subMode="win"
-            :modes="['Novice', 'Pro', 'Master']"
-            :themes="currentFinishHimThemes"
-            :title="t('features.userCabinet.stats.modes.finishHim')"
-            @improve="handleImprove"
-          />
           <SidebarLeaderboard
             game-mode="finish_him"
             sub-mode="win"

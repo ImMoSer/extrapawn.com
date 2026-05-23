@@ -1,7 +1,8 @@
 import {
-  FINISH_HIM_THEMES,
+  FINISH_HIM_CATEGORIES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
+  TACTICS_CATEGORIES,
   type FrontendProfileStats,
   type LeaderboardApiResponse,
   type PersonalActivityStatsResponse,
@@ -116,14 +117,14 @@ export function generateRandomActivityStats(): PersonalActivityStatsResponse {
  * Generiert detaillierte Statistiken mit hoher Streuung für die RoseCharts.
  */
 export function generateRandomDetailedStats(baseRating: number = 1500): FrontendProfileStats {
-  const applyVariety = (themes: readonly string[]) => {
-    return themes.map((theme) => {
+  const applyVariety = (categories: readonly string[]) => {
+    return categories.map((category) => {
       // Big spread: -400 to +600 from base
       const rating = baseRating + getRandomInt(-400, 600)
       const requested = getRandomInt(10, 200)
       // Success rate between 40% and 98%
       const success = Math.floor(requested * (getRandomInt(40, 98) / 100))
-      return { theme, rating, success, requested }
+      return { category, rating, success, requested }
     })
   }
 
@@ -136,18 +137,22 @@ export function generateRandomDetailedStats(baseRating: number = 1500): Frontend
   return {
     finish_him: {
       modes: {
-        win: theoryModes(FINISH_HIM_THEMES),
+        win: theoryModes(FINISH_HIM_CATEGORIES),
       },
     },
-    theory: {
+    theory_endings: {
       modes: {
         win: theoryModes(THEORY_ENDING_CATEGORIES),
-        draw: theoryModes(THEORY_ENDING_CATEGORIES),
       },
     },
-    practical: {
+    practical_chess: {
       modes: {
         win: theoryModes(PRACTICAL_CHESS_CATEGORIES),
+      },
+    },
+    tactics: {
+      modes: {
+        win: theoryModes(TACTICS_CATEGORIES),
       },
     },
   }

@@ -3,7 +3,7 @@
 import { apiClient } from '@/shared/api/client'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
-  FINISH_HIM_THEMES,
+  FINISH_HIM_CATEGORIES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
@@ -175,7 +175,7 @@ const endgameThemeOptions = computed(() => {
   } else if (selectedEndgameMode.value === 'PRACTICAL') {
     list = PRACTICAL_CHESS_CATEGORIES
   } else {
-    list = FINISH_HIM_THEMES
+    list = FINISH_HIM_CATEGORIES
   }
 
   return list.map((theme) => ({
@@ -200,7 +200,7 @@ watch(selectedEndgameMode, (newMode) => {
   } else if (newMode === 'PRACTICAL') {
     selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
   } else {
-    selectedEndgameTheme.value = FINISH_HIM_THEMES[0] || 'pawn'
+    selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
   }
 })
 
@@ -212,13 +212,13 @@ async function loadEndgame() {
   let source = ''
 
   if (type === 'THEORETICAL') {
-    endpoint = `/theory-endings/puzzle?mode=win&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
+    endpoint = `/play-puzzle/start?puzzle_type=theory_endings&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
     source = t('features.learningCoach.modes.theory')
   } else if (type === 'PRACTICAL') {
-    endpoint = `/practical-chess/${selectedEndgameTheme.value}/puzzle?difficulty=${selectedDifficulty.value}`
+    endpoint = `/play-puzzle/start?puzzle_type=practical_chess&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
     source = t('features.learningCoach.modes.practical')
   } else {
-    endpoint = `/finish-him/start?theme=${selectedEndgameTheme.value}&difficulty=${selectedDifficulty.value}`
+    endpoint = `/play-puzzle/start?puzzle_type=finish_him&difficulty=${selectedDifficulty.value}&category=${selectedEndgameTheme.value}`
     source = t('features.learningCoach.modes.goto')
   }
 
@@ -240,7 +240,7 @@ async function loadEndgame() {
 async function loadTactics() {
   emit('update:isLoading', true)
   const source = t('features.learningCoach.tabs.tactic')
-  const endpoint = `/tactics/start?theme=${selectedTacticsTheme.value}&difficulty=${selectedDifficulty.value}`
+  const endpoint = `/play-puzzle/start?puzzle_type=tactics&difficulty=${selectedDifficulty.value}&category=${selectedTacticsTheme.value}`
 
   try {
     const data = await apiClient<LearningPuzzle>(endpoint)

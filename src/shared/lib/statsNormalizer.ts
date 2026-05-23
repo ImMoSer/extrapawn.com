@@ -1,7 +1,8 @@
 import {
-  FINISH_HIM_THEMES,
+  FINISH_HIM_CATEGORIES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
+  TACTICS_CATEGORIES,
   type FrontendProfileStats,
   type GameModeProfileDto,
   type UserProfileStatsDto,
@@ -14,9 +15,10 @@ const BASE_REQUESTED = 2
 function normalizeGameMode(
   statsArray: UserProfileStatEntry[],
   gameMode: string,
+  subModeFilter: string | null,
   subModes: readonly string[],
   difficulties: readonly string[],
-  themes: readonly string[],
+  categories: readonly string[],
   baseRating: number,
   highScores?: Record<string, number>,
 ): GameModeProfileDto {
@@ -27,24 +29,24 @@ function normalizeGameMode(
     for (const diff of difficulties) {
       modes[subMode][diff] = []
 
-      for (const theme of themes) {
+      for (const cat of categories) {
         const existing = statsArray.find(
           (s) =>
             s.game_mode === gameMode &&
-            s.sub_mode === subMode &&
+            (subModeFilter === null || s.sub_mode === subModeFilter) &&
             s.difficulty === diff &&
-            s.theme === theme,
+            s.category === cat,
         )
         if (existing) {
           modes[subMode][diff].push({
-            theme,
+            category: cat,
             rating: existing.rating || baseRating,
             success: existing.puzzles_solved + BASE_SUCCESS,
             requested: existing.puzzles_solved + existing.puzzles_failed + BASE_REQUESTED,
           })
         } else {
           modes[subMode][diff].push({
-            theme,
+            category: cat,
             rating: baseRating,
             success: BASE_SUCCESS,
             requested: BASE_REQUESTED,
@@ -70,26 +72,38 @@ export function normalizeProfileStats(
   return {
     finish_him: normalizeGameMode(
       statsArray,
+      'playPuzzle',
       'finish_him',
       ['win'],
       ['Novice', 'Pro', 'Master'],
-      FINISH_HIM_THEMES,
+      FINISH_HIM_CATEGORIES,
       baseRating,
     ),
-    theory: normalizeGameMode(
+    theory_endings: normalizeGameMode(
       statsArray,
-      'theory',
-      ['win', 'draw'],
+      'playPuzzle',
+      'theory_endings',
+      ['win'],
       ['Novice', 'Pro', 'Master'],
       THEORY_ENDING_CATEGORIES,
       baseRating,
     ),
-    practical: normalizeGameMode(
+    practical_chess: normalizeGameMode(
       statsArray,
-      'practical-chess',
+      'playPuzzle',
+      'practical_chess',
       ['win'],
       ['Novice', 'Pro', 'Master'],
       PRACTICAL_CHESS_CATEGORIES,
+      baseRating,
+    ),
+    tactics: normalizeGameMode(
+      statsArray,
+      'playPuzzle',
+      'tactics',
+      ['win'],
+      ['Novice', 'Pro', 'Master'],
+      TACTICS_CATEGORIES,
       baseRating,
     ),
   }
@@ -99,7 +113,7 @@ export function generateExampleStats(baseRating: number = 1500): FrontendProfile
   const stats = normalizeProfileStats(null, baseRating)
 
   const applyVariety = (
-    items: { theme: string; rating: number; success: number; requested: number }[] | undefined,
+    items: { category: string; rating: number; success: number; requested: number }[] | undefined,
     seed: number,
   ) => {
     if (!items) return
@@ -121,15 +135,18 @@ export function generateExampleStats(baseRating: number = 1500): FrontendProfile
   }
 
   // Theory
-  for (const subMode of ['win', 'draw'] as const) {
-    for (const diff of ['Novice', 'Pro', 'Master'] as const) {
-      applyVariety(stats.theory.modes[subMode]?.[diff], s++)
-    }
+  for (const diff of ['Novice', 'Pro', 'Master'] as const) {
+    applyVariety(stats.theory_endings.modes['win']?.[diff], s++)
   }
 
   // Practical
   for (const diff of ['Novice', 'Pro', 'Master'] as const) {
-    applyVariety(stats.practical.modes['win']?.[diff], s++)
+    applyVariety(stats.practical_chess.modes['win']?.[diff], s++)
+  }
+
+  // Tactics
+  for (const diff of ['Novice', 'Pro', 'Master'] as const) {
+    applyVariety(stats.tactics.modes['win']?.[diff], s++)
   }
 
   return stats
