@@ -47,14 +47,13 @@ function handleContinuationClick(uci: string) {
 </script>
 
 <template>
-  <div v-if="hasTheory && wikiInfo" class="coach-book">
+  <div v-if="!bookStore.isOutOfBook && hasTheory && wikiInfo" class="coach-book">
     <!-- Header -->
     <div class="book-header">
       <div class="title-section">
         <n-icon size="14" class="icon-book"><BookOutline /></n-icon>
         <span class="opening-name">{{ wikiInfo.name }}</span>
         <span v-if="wikiInfo.eco !== '-'" class="eco-badge">{{ wikiInfo.eco }}</span>
-        <span v-if="bookStore.isOutOfBook" class="out-of-book-badge">Out of Book</span>
       </div>
       <a
         v-if="wikiInfo.wikibooksUrl"
@@ -89,7 +88,7 @@ function handleContinuationClick(uci: string) {
     </div>
 
     <!-- Continuation Moves (Strict forward tree) -->
-    <div v-if="!bookStore.isOutOfBook && wikiInfo.forwardMoves.length > 0" class="continuations-section">
+    <div v-if="wikiInfo.forwardMoves.length > 0" class="continuations-section">
       <button class="expand-btn" @click="isContinuationsExpanded = !isContinuationsExpanded">
         <span class="expand-arrow" :class="{ 'is-expanded': isContinuationsExpanded }">▸</span>
         <span>Theoretical Continuations</span>
@@ -115,11 +114,8 @@ function handleContinuationClick(uci: string) {
         </n-scrollbar>
       </div>
     </div>
-    <div v-else-if="bookStore.isOutOfBook" class="out-of-book-notice">
-      Theory ends here. You have left the opening book.
-    </div>
   </div>
-  <div v-else-if="bookStore.isLoading" class="coach-book-loading">
+  <div v-else-if="!bookStore.isOutOfBook && bookStore.isLoading" class="coach-book-loading">
     <div class="spinner"></div>
     <span>Loading theoretical lines...</span>
   </div>
@@ -362,28 +358,5 @@ function handleContinuationClick(uci: string) {
   font-weight: bold;
   margin-right: 4px;
   flex-shrink: 0;
-}
-
-.out-of-book-badge {
-  font-size: 8px;
-  font-weight: 700;
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  padding: 1px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.out-of-book-notice {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.05);
-  font-size: 11px;
-  color: #71717a;
-  font-style: italic;
 }
 </style>

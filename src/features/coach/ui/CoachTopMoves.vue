@@ -1,5 +1,5 @@
 <template>
-  <div class="coach-top-moves">
+  <div v-if="!showTheory" class="coach-top-moves">
     <div class="next-move-title">Next moves</div>
     <div v-if="topMovesLoading" class="status-msg">Analyzing…</div>
     <div v-else-if="topMoves.length === 0" class="status-msg">No moves</div>
@@ -122,9 +122,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
+import { useCoachBookStore } from '../model/coach-book.store'
 import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
+const bookStore = useCoachBookStore()
+
+const showTheory = computed(() => !bookStore.isOutOfBook && !!bookStore.currentWikiInfo)
+
 const topMovesLoading = computed(() => coachStore.topMovesLoading)
 const topMoves = computed(() => coachStore.topMoves)
 const currentExplanation = computed<CoachExplanation | null>(() => coachStore.currentExplanation)

@@ -789,10 +789,10 @@
     },
     "practicalChess": {
       "youMove": {
-        "title": "DU BIST AM ZUG!",
+        "title": "Wer Steht besser?",
         "subtitle": "Analysiere die Stellung und wähle die Seite, die du spielen möchtest. Eine Seite gewinnt - aber welche?",
-        "playWhite": "Ich spiele Weiß",
-        "playBlack": "Ich spiele Schwarz"
+        "playWhite": "Weiß",
+        "playBlack": "Schwarz"
       },
       "selection": {
         "title": "Praktisches Schach",

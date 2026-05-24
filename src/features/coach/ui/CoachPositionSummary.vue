@@ -159,6 +159,7 @@ const copyJson = () => {
   gap: 4px;
   font-size: 12px;
   line-height: 1.5;
+  display: none;
 }
 
 .fact-item {
