@@ -62,36 +62,11 @@ import { computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
 import QualityIcon from './QualityIcon.vue'
 import type { CoachLastMoveAnalysis } from '@/shared/lib/engine/coach/coach.types'
+import { QUALITY_COLOR, QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
 const lastMoveAnalysis = computed<CoachLastMoveAnalysis | null>(() => coachStore.lastMoveAnalysis)
 const lastMoveConsequence = computed(() => coachStore.lastMoveConsequence as string | null)
-
-const QUALITY_COLOR: Record<string, string> = {
-  brilliant: '#22d3ee',
-  great: '#34d399',
-  best: '#4ade80',
-  excellent: '#86efac',
-  good: '#a7f3d0',
-  neutral: '#a1a1aa',
-  inaccuracy: '#fbbf24',
-  mistake: '#fb923c',
-  blunder: '#ef4444',
-  missed_mate: '#dc2626',
-}
-
-const QUALITY_LABEL: Record<string, string> = {
-  brilliant: 'Brilliant',
-  great: 'Great',
-  best: 'Best',
-  excellent: 'Excellent',
-  good: 'Good',
-  neutral: 'Neutral',
-  inaccuracy: 'Inaccuracy',
-  mistake: 'Mistake',
-  blunder: 'Blunder',
-  missed_mate: 'Missed mate',
-}
 
 const getQualityColor = (q: string) => QUALITY_COLOR[q] || '#a1a1aa'
 const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''

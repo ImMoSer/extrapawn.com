@@ -1,3 +1,29 @@
+export const QUALITY_COLOR: Record<string, string> = {
+  brilliant: '#22d3ee',
+  great: '#34d399',
+  best: '#4ade80',
+  excellent: '#86efac',
+  good: '#a7f3d0',
+  neutral: '#a1a1aa',
+  inaccuracy: '#fbbf24',
+  mistake: '#fb923c',
+  blunder: '#ef4444',
+  missed_mate: '#dc2626',
+}
+
+export const QUALITY_LABEL: Record<string, string> = {
+  brilliant: 'Brilliant',
+  great: 'Great',
+  best: 'Best',
+  excellent: 'Excellent',
+  good: 'Good',
+  neutral: 'Neutral',
+  inaccuracy: 'Inaccuracy',
+  mistake: 'Mistake',
+  blunder: 'Blunder',
+  missed_mate: 'Missed mate',
+}
+
 export interface CoachTheme {
   id: string
   side: 'white' | 'black'

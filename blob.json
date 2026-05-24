@@ -1,0 +1,450 @@
+{
+  "fen": "r1bq1rk1/ppp2pp1/2n1pn1p/8/3P3Q/2PB1N2/P1P3PP/R1B2RK1 w - - 0 11",
+  "side_to_move": "white",
+  "move_number": 11,
+  "phase": "opening",
+  "eval_cp": 375,
+  "eval_pawns": 3.75,
+  "verdict": "Slight edge for White",
+  "eval_breakdown": {
+    "material_cp": -56,
+    "psqt_cp": -29,
+    "mobility_cp": 153,
+    "pawns_cp": -38,
+    "king_safety_cp": 0,
+    "threats_cp": 0,
+    "imbalance_cp": 31
+  },
+  "material": {
+    "white": {
+      "pawns": 6,
+      "knights": 1,
+      "bishops": 2,
+      "rooks": 2,
+      "queens": 1
+    },
+    "black": {
+      "pawns": 7,
+      "knights": 2,
+      "bishops": 1,
+      "rooks": 2,
+      "queens": 1
+    },
+    "material_delta_cp": -90,
+    "bishop_pair_white": true,
+    "bishop_pair_black": false,
+    "same_color_bishops": false,
+    "opposite_color_bishops": false,
+    "minor_pieces_white": 3,
+    "minor_pieces_black": 3,
+    "heavy_pieces_white": 3,
+    "heavy_pieces_black": 3,
+    "summary": "Material is even; White has the bishop pair"
+  },
+  "pawn_structure": {
+    "white": {
+      "islands": 3,
+      "doubled_files": [
+        "c"
+      ],
+      "isolated": [
+        "a2"
+      ],
+      "backward": [],
+      "passed": [],
+      "supported": [
+        "d4"
+      ],
+      "holes": [
+        "a4"
+      ],
+      "majority_side": "queenside",
+      "pawn_chains": 1
+    },
+    "black": {
+      "islands": 2,
+      "doubled_files": [],
+      "isolated": [],
+      "backward": [],
+      "passed": [],
+      "supported": [
+        "e6",
+        "h6"
+      ],
+      "holes": [],
+      "majority_side": "kingside",
+      "pawn_chains": 2
+    },
+    "dark_complex_weak": "black",
+    "iqp_white": false,
+    "iqp_black": false,
+    "hanging_pawns_white": true,
+    "hanging_pawns_black": false,
+    "summary": "White isolated: a2"
+  },
+  "king_safety": {
+    "white": {
+      "king_square": "g1",
+      "castled": true,
+      "castling_rights_kingside": false,
+      "castling_rights_queenside": false,
+      "pawn_shield_score": 66,
+      "attacker_count": 0,
+      "attackers": [],
+      "open_files_to_king": [],
+      "half_open_files_to_king": [
+        "f"
+      ],
+      "weak_diagonals_to_king": [
+        "h1-a8"
+      ],
+      "escape_squares_count": 2,
+      "danger_score": 70
+    },
+    "black": {
+      "king_square": "g8",
+      "castled": true,
+      "castling_rights_kingside": false,
+      "castling_rights_queenside": false,
+      "pawn_shield_score": 66,
+      "attacker_count": 1,
+      "attackers": [
+        {
+          "square": "d3",
+          "role": "bishop"
+        }
+      ],
+      "open_files_to_king": [],
+      "half_open_files_to_king": [],
+      "weak_diagonals_to_king": [
+        "h1-a8"
+      ],
+      "escape_squares_count": 1,
+      "danger_score": 82
+    },
+    "summary": "King safety roughly balanced",
+    "engine_attack_potential": {
+      "attacking_side": "white",
+      "defending_side": "black",
+      "moves_targeting_king": 2,
+      "total_moves": 3,
+      "ratio": 0.6666666666666666,
+      "summary": "Strong attack potential against the black king (2/3 engine moves target the king)"
+    }
+  },
+  "activity": {
+    "white": {
+      "total_mobility": 43,
+      "squares_in_enemy_half": 15,
+      "central_minor_pieces": 0,
+      "outposts": [],
+      "passive_pieces": [
+        "a1"
+      ],
+      "long_diagonals_controlled": []
+    },
+    "black": {
+      "total_mobility": 32,
+      "squares_in_enemy_half": 5,
+      "central_minor_pieces": 0,
+      "outposts": [],
+      "passive_pieces": [
+        "a8",
+        "c8",
+        "f8"
+      ],
+      "long_diagonals_controlled": []
+    },
+    "summary": "White has more piece activity (43 vs 32 squares)"
+  },
+  "line_control": {
+    "open_files": [],
+    "half_open_files_white": [
+      "b",
+      "e",
+      "f"
+    ],
+    "half_open_files_black": [
+      "d"
+    ],
+    "rook_seventh_white": [],
+    "rook_seventh_black": []
+  },
+  "tactics": {
+    "hanging_white": [],
+    "hanging_black": [],
+    "pinned_pieces": []
+  },
+  "endgame": {
+    "is_endgame": false,
+    "is_king_pawn_endgame": false,
+    "key_squares": [],
+    "square_of_pawn": [],
+    "summary": ""
+  },
+  "themes": [
+    {
+      "id": "bishop_pair",
+      "side": "white",
+      "strength": 40,
+      "description": "White has the bishop pair, valuable in open positions"
+    },
+    {
+      "id": "piece_activity",
+      "side": "white",
+      "strength": 44,
+      "description": "White has more active pieces, controlling more squares"
+    },
+    {
+      "id": "space_advantage",
+      "side": "white",
+      "strength": 50,
+      "description": "White controls more space in the enemy half"
+    },
+    {
+      "id": "dark_complex",
+      "side": "white",
+      "strength": 50,
+      "description": "Black's dark squares are weak (no dark-squared bishop, ≥3 pawns on dark squares)"
+    },
+    {
+      "id": "leading_factor",
+      "side": "white",
+      "strength": 50,
+      "description": "Leading factor: Black's dark squares are weak (no dark-squared bishop, ≥3 pawns on dark squares)"
+    },
+    {
+      "id": "engine_attack_potential",
+      "side": "white",
+      "strength": 67,
+      "description": "Strong attack potential against the black king (2/3 engine moves target the king)"
+    },
+    {
+      "id": "engine_plan",
+      "side": "white",
+      "strength": 60,
+      "description": "White maneuvers the bishop from c1 to f6 (via h6)."
+    }
+  ],
+  "concrete_facts": [
+    {
+      "side": "white",
+      "importance": 65,
+      "text": "Black's dark squares are weak"
+    },
+    {
+      "side": "white",
+      "importance": 60,
+      "text": "White has the bishop pair"
+    },
+    {
+      "side": "black",
+      "importance": 50,
+      "text": "White has hanging pawns (no flank support)"
+    },
+    {
+      "side": "black",
+      "importance": 35,
+      "text": "White's pawn on a2 is isolated"
+    },
+    {
+      "side": "white",
+      "importance": 35,
+      "text": "White's pieces have 11 more squares of mobility"
+    },
+    {
+      "side": "white",
+      "importance": 35,
+      "text": "White controls more space in the enemy half"
+    }
+  ],
+  "static_eval_cp": 60,
+  "principal_plan": {
+    "eval_cp": 375,
+    "eval_mate": null,
+    "depth": 12,
+    "moves": [
+      {
+        "uci": "c1h6",
+        "san": "Bxh6",
+        "role": "b",
+        "motifs": [
+          "capture",
+          "pin",
+          "hangs",
+          "develops"
+        ],
+        "headline": "Captures the pawn",
+        "to": "h6",
+        "from": "c1"
+      },
+      {
+        "uci": "g7h6",
+        "san": "gxh6",
+        "role": "p",
+        "motifs": [
+          "capture",
+          "luft",
+          "color_complex_them",
+          "pawn_break",
+          "isolated_pawn",
+          "restricts"
+        ],
+        "headline": "Captures the bishop",
+        "to": "h6",
+        "from": "g7"
+      },
+      {
+        "uci": "h4h6",
+        "san": "Qxh6",
+        "role": "q",
+        "motifs": [
+          "capture",
+          "overloaded",
+          "back_rank_mate_threat",
+          "attacks_king"
+        ],
+        "headline": "Captures the pawn",
+        "to": "h6",
+        "from": "h4"
+      },
+      {
+        "uci": "c6e7",
+        "san": "Ne7",
+        "role": "n",
+        "motifs": [],
+        "headline": null,
+        "to": "e7",
+        "from": "c6"
+      },
+      {
+        "uci": "h6f6",
+        "san": "Qxf6",
+        "role": "q",
+        "motifs": [
+          "capture",
+          "pin",
+          "back_rank_mate_threat",
+          "long_diagonal",
+          "backward_pawn_them",
+          "restricts",
+          "decisive_combination"
+        ],
+        "headline": "Captures the knight",
+        "to": "f6",
+        "from": "h6"
+      }
+    ],
+    "key_squares": [
+      "h6"
+    ],
+    "theme": "capture",
+    "description": "White maneuvers the bishop from c1 to f6 (via h6)."
+  },
+  "engine_top_moves": [
+    {
+      "uci": "c1h6",
+      "san": "Bxh6",
+      "score": 375,
+      "mate": null,
+      "motifs": [
+        "capture",
+        "pin",
+        "hangs",
+        "develops"
+      ],
+      "targetsKing": true,
+      "headline": "Pins the pawn to the rook",
+      "tagline": "Pins the pawn to the rook",
+      "plan_theme": "kingside_attack",
+      "plan_brief": "Builds White's attack on the enemy king",
+      "plan_pv": [
+        "Bxh6",
+        "gxh6",
+        "Qxh6",
+        "Ne7",
+        "Qxf6"
+      ],
+      "character": "Combative",
+      "character_reason": "Creates a sharp threat the opponent must address",
+      "explanation": {
+        "quality": "great",
+        "summary": "A great move — the only move that keeps the advantage.",
+        "details": "Captures the pawn. Pins the pawn against the rook.",
+        "best_move_san": null,
+        "is_best_move": true,
+        "winRateLoss": 0
+      }
+    },
+    {
+      "uci": "c1g5",
+      "san": "Bg5",
+      "score": 226,
+      "mate": null,
+      "motifs": [
+        "pin",
+        "battery",
+        "hangs",
+        "develops"
+      ],
+      "targetsKing": true,
+      "headline": "Pins the knight to the queen",
+      "tagline": "Pins the knight to the queen",
+      "plan_theme": "kingside_attack",
+      "plan_brief": "Builds White's attack on the enemy king",
+      "plan_pv": [
+        "Bg5",
+        "e5",
+        "Rae1",
+        "Qd6",
+        "Bxh6"
+      ],
+      "character": "Combative",
+      "character_reason": "Creates a sharp threat the opponent must address",
+      "explanation": {
+        "quality": "neutral",
+        "summary": "A reasonable move; close alternatives were marginally better.",
+        "details": "Pins the knight against the queen.",
+        "best_move_san": "Bxh6",
+        "is_best_move": false,
+        "winRateLoss": 10.23
+      }
+    },
+    {
+      "uci": "g2g4",
+      "san": "g4",
+      "score": 179,
+      "mate": null,
+      "motifs": [],
+      "targetsKing": false,
+      "headline": null,
+      "tagline": "",
+      "plan_theme": "piece_activity",
+      "plan_brief": "Improves piece activity — better squares for White's pieces",
+      "plan_pv": [
+        "g4",
+        "Nh7",
+        "g5",
+        "f5",
+        "Rf2"
+      ],
+      "character": "Quiet",
+      "character_reason": "No specific tactical or structural feature",
+      "explanation": {
+        "quality": "inaccuracy",
+        "summary": "A slight inaccuracy — better options were available.",
+        "details": "A quiet positional move.",
+        "best_move_san": "Bxh6",
+        "is_best_move": false,
+        "winRateLoss": 14.01
+      }
+    }
+  ],
+  "summary_text": "White has a winning advantage of 3.75 (engine eval +3.75). White to move. Move 11; opening.\nThe leading factor: white controls more space in the enemy half.\nThe score breaks down to: White piece mobility (+1.53); Black pawn structure (-0.38).\nMaterial is roughly even. White holds the bishop pair.\nStrong attack potential against the black king (2/3 engine moves target the king).\nWhite has more piece activity (43 vs 32 squares of mobility). White controls more space in the enemy half.\nWhite has hanging pawns (a c+d or d+e pawn pair without flanking support). Black's dark squares are weak. White isolated: a2.\nWhite maneuvers the bishop from c1 to f6 (via h6). Engine PV: Bxh6 gxh6 Qxh6 Ne7 Qxf6. Key squares: h6.",
+  "visual_commands": {
+    "best_move": "[mark:h6:bestmove;route:c1->h6:bestmove]",
+    "maneuver": "[mark:f6:blue;route:c1->h6->f6:blue]",
+    "key_squares": "[mark:h6:green]",
+    "tactics": "[route:h6->g7->f8:cyan]"
+  }
+}

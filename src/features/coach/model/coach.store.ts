@@ -1,10 +1,11 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore } from '@/entities/game'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { setEngineContext, getPieceCount, fetchTablebaseMoves } from '@/shared/lib/engine/coach/engine'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
+import { fetchTablebaseMoves, getPieceCount, setEngineContext } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -171,8 +172,8 @@ export const useCoachStore = defineStore('coach', () => {
     if (!fen) return
     isAnalyzing.value = true
 
-    fetchTopMoves(fen)
-    fetchLastMoveAnalysis()
+    const topMovesPromise = fetchTopMoves(fen)
+    const lastMovePromise = fetchLastMoveAnalysis()
 
     try {
       previousExplanation.value = currentExplanation.value || previousExplanation.value
@@ -189,10 +190,59 @@ export const useCoachStore = defineStore('coach', () => {
       } else if (!showVisuals.value) {
         boardStore.setCoachShapes([])
       }
+
+      // Finalize and Log
+      await Promise.all([topMovesPromise, lastMovePromise])
+      logFactExtractor()
     } catch {
       logger.error('[CoachStore] Error generating explanation')
     } finally {
       isAnalyzing.value = false
+    }
+  }
+
+  function logFactExtractor() {
+    const analysis = lastMoveAnalysis.value
+    const explanation = currentExplanation.value
+
+    const logObj: {
+      lastMove: Record<string, unknown> | null
+      topMoves: Record<string, unknown>[]
+    } = {
+      lastMove: null,
+      topMoves: []
+    }
+
+    if (analysis && !analysis.loading && analysis.quality) {
+      logObj.lastMove = {
+        move: analysis.san,
+        quality: QUALITY_LABEL[analysis.quality] || analysis.quality,
+        summary: analysis.summary,
+        details: analysis.details,
+        consequence: lastMoveConsequence.value,
+        betterMove: analysis.isBestMove ? null : (analysis.bestMoveSan || null),
+      }
+    }
+
+    if (topMoves.value.length > 0 && explanation?.engine_top_moves) {
+      logObj.topMoves = topMoves.value.slice(0, 3).map(m => {
+        const enriched = explanation.engine_top_moves.find(em => em.san === m.san)
+        return {
+          rank: m.rank,
+          san: m.san,
+          eval: m.isMate ? `M${m.mateIn}` : (m.eval_pawns > 0 ? `+${m.eval_pawns}` : `${m.eval_pawns}`),
+          plan: enriched?.plan_brief || null,
+          tagline: m.tagline || null,
+          quality: enriched?.explanation?.quality ? (QUALITY_LABEL[enriched.explanation.quality] || enriched.explanation.quality) : null,
+          summary: enriched?.explanation?.summary || null,
+          details: enriched?.explanation?.details || null,
+          character: enriched?.character || null,
+        }
+      })
+    }
+
+    if (logObj.lastMove || logObj.topMoves.length > 0) {
+      logger.info('[CoachExplanation]', logObj)
     }
   }
 
@@ -309,7 +359,7 @@ export const useCoachStore = defineStore('coach', () => {
     },
   )
 
-  // Watch deep analysis and handle potential resource management if needed, 
+  // Watch deep analysis and handle potential resource management if needed,
   // but do not disable the coach automatically as per "no restrictions" policy.
   watch(
     () => analysisEngineStore.isAnalysisActive,
@@ -353,5 +403,6 @@ export const useCoachStore = defineStore('coach', () => {
     executeVisualCommands,
     fetchLastMoveAnalysis,
     fetchTopMoves,
+    logFactExtractor,
   }
 })
