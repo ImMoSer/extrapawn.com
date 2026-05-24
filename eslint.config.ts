@@ -16,7 +16,7 @@ export default defineConfigWithVueTs(
     files: ['src/**/*.{ts,mts,tsx,vue}', 'eslint.config.ts', 'vite.config.ts', 'vitest.config.ts'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'public/**', '**/wasm-rs/**']),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'public/**', '**/wasm-rs/**', '*.cjs']),
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,

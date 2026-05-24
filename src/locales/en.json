@@ -220,7 +220,6 @@
     "speedrun": {
       "title": "SPEEDRUN",
       "setupTitle": "Speedrun Setup",
-      "selectEngine": "Select Engine Strength",
       "readyToStart": "Are you ready to start the speedrun? The timer will start immediately for the first chapter.",
       "startBtn": "Start Speedrun",
       "completed": "Run Completed!",

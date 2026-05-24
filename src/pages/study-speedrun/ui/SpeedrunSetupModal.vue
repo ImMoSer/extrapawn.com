@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { NModal, NCard, NButton, NSpace, NText } from 'naive-ui'
-import { EngineSelector } from '@/features/engine'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -43,13 +42,6 @@ function handleCancel() {
       aria-modal="true"
     >
       <NSpace vertical size="large">
-        <div>
-          <NText depth="3">{{ t('features.speedrun.selectEngine') }}</NText>
-          <div style="margin-top: 8px">
-            <EngineSelector />
-          </div>
-        </div>
-
         <NText>
           {{ t('features.speedrun.readyToStart') }}
         </NText>

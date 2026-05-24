@@ -208,6 +208,9 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
 
   async function startSpeedrun(chapters: StudyChapter[]) {
     try {
+      // 0. Set default engine for speedrun
+      gameStore.setBotEngineId('maia-2200')
+
       // 1. Charge PawnCoins on Server
       const response = await apiClient<{ userStatsUpdate: UserStatsUpdate }>('/speedrun/start', {
         method: 'POST',
