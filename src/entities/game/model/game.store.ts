@@ -13,6 +13,7 @@ import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER'
 export const useGameStore = defineStore('game', () => {
+  const boardStore = useBoardStore()
   const gamePhase = ref<GamePhase>('IDLE')
 
   const userMovesCount = ref(0)
@@ -20,8 +21,6 @@ export const useGameStore = defineStore('game', () => {
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const playerColor = ref<ChessgroundColor>('white')
-
-  const boardStore = useBoardStore()
 
   function _playOutcomeSound(status: GameStatusInfo) {
     // Only play if sounds are enabled in strategy config

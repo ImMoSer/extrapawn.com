@@ -10,15 +10,15 @@ import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { SchoolOutline } from '@vicons/ionicons5'
 import {
   NButton,
-  NCollapse,
-  NCollapseItem,
   NIcon,
   NRadioButton,
   NRadioGroup,
   NScrollbar,
   NText,
-  useMessage,
 } from 'naive-ui'
+import { OpeningStatsTable } from '@/features/opening-explorer'
+import { useWorkoutStore, usePlayCoachStore } from '@/features/workout'
+import { useGameStore, useBoardStore } from '@/entities/game'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -27,9 +27,22 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const message = useMessage()
+const workoutStore = useWorkoutStore()
+const gameStore = useGameStore()
+const boardStore = useBoardStore()
+const playCoachStore = usePlayCoachStore()
 
-const activeTab = ref<'WINNING_ENDGAMES' | 'WINNING_TACTICS' | 'WINNING_OPENINGS'>('WINNING_ENDGAMES')
+const activeTab = ref<'WINNING_ENDGAMES' | 'WINNING_TACTICS' | 'PLAY_COACH'>('WINNING_ENDGAMES')
+
+function togglePlayCoach() {
+  if (playCoachStore.isActive) {
+    playCoachStore.stop()
+    gameStore.setGamePhase('IDLE')
+  } else {
+    gameStore.setGamePhase('PLAYING')
+    playCoachStore.start()
+  }
+}
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedEndgameMode = ref<'GOTO' | 'THEORETICAL' | 'PRACTICAL'>('GOTO')
 
@@ -58,52 +71,6 @@ const TACTICS_THEMES = [
   'backRankMate',
   'interference',
   'xRayAttack',
-]
-
-const OPENINGS_WHITE = [
-  'Italian Game',
-  "Queen's Gambit",
-  'London System',
-  'Ruy Lopez',
-  'English Opening',
-  'Scotch Game',
-  "King's Indian Attack",
-  'Vienna Game',
-  'Zukertort Opening',
-  'Four Knights Game',
-  "Bishop's Opening",
-  "King's Gambit",
-  'Alapin Sicilian',
-  'Closed Sicilian',
-  'Grand Prix Attack',
-  'Nimzowitsch-Larsen Attack',
-  'Smith-Morra Gambit',
-  'Blackmar-Diemer Gambit',
-  'Mieses Opening',
-  'Grob Opening',
-]
-
-const OPENINGS_BLACK = [
-  'Sicilian Defense',
-  'Open Game',
-  'French Defense',
-  'Caro-Kann Defense',
-  'Scandinavian Defense',
-  "King's Indian Defense",
-  "Queen's Gambit Declined",
-  'Slav Defense',
-  'Nimzo-Indian Defense',
-  'Pirc Defense',
-  'Gruenfeld Defense',
-  "Queen's Gambit Accepted",
-  'Modern Defense',
-  "Alekhine's Defense",
-  "Queen's Indian Defense",
-  'Philidor Defense',
-  'Scandinavian Defense (Modern Variation)',
-  'Dutch Defense',
-  'Chigorin Defense',
-  'Englund Gambit',
 ]
 
 const TACTICS_ICON_UI: Record<string, string> = {
@@ -176,8 +143,19 @@ watch(selectedEndgameMode, (newMode) => {
   }
 })
 
+watch(activeTab, (newTab) => {
+  if (newTab === 'PLAY_COACH') {
+    workoutStore.reset()
+    gameStore.resetGame()
+    boardStore.setupPosition('start')
+  } else if (playCoachStore.isActive) {
+    playCoachStore.stop()
+  }
+})
+
 // Unified Load Functions
 function loadEndgame() {
+  playCoachStore.stop()
   const mode = selectedEndgameMode.value
   let type = ''
   let source = ''
@@ -202,6 +180,7 @@ function loadEndgame() {
 }
 
 function loadTactics() {
+  playCoachStore.stop()
   const source = t('features.learningCoach.tabs.tactic')
   emit('loadRequested', {
     type: 'tactics',
@@ -209,10 +188,6 @@ function loadTactics() {
     difficulty: selectedDifficulty.value,
     source,
   })
-}
-
-function handleOpeningClick(name: string) {
-  message.info(t('features.learningCoach.openingPlaceholder', { name }, `Eröffnung "${name}" ausgewählt (Placeholder).`))
 }
 </script>
 
@@ -241,11 +216,11 @@ function handleOpeningClick(name: string) {
         {{ t('features.learningCoach.tabs.tactic') }}
       </button>
       <button
-        class="tab-btn btn-opening"
-        :class="{ active: activeTab === 'WINNING_OPENINGS' }"
-        @click="activeTab = 'WINNING_OPENINGS'"
+        class="tab-btn btn-coach"
+        :class="{ active: activeTab === 'PLAY_COACH' }"
+        @click="activeTab = 'PLAY_COACH'"
       >
-        {{ t('features.learningCoach.tabs.opening') }}
+        PlayCoach
       </button>
     </div>
 
@@ -254,7 +229,7 @@ function handleOpeningClick(name: string) {
       <n-scrollbar trigger="hover">
         <div class="tab-content-wrapper">
           <!-- Universal Difficulty Selector -->
-          <div class="form-group difficulty-section">
+          <div v-if="activeTab !== 'PLAY_COACH'" class="form-group difficulty-section">
             <n-text class="input-label">{{ t('features.learningCoach.difficultyLabel') }}</n-text>
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
               <n-radio-button value="Novice">
@@ -310,41 +285,76 @@ function handleOpeningClick(name: string) {
             </div>
           </div>
 
-          <!-- TAB 3: OPENINGS -->
-          <div v-else-if="activeTab === 'WINNING_OPENINGS'" class="tab-panel flex-panel">
-            <n-collapse :default-expanded-names="['white']">
-              <!-- White Openings -->
-              <n-collapse-item title="Weiß Eröffnungen" name="white">
-                <div class="openings-list">
-                  <n-button
-                    v-for="op in OPENINGS_WHITE"
-                    :key="op"
-                    quaternary
-                    block
-                    class="opening-item"
-                    @click="handleOpeningClick(op)"
-                  >
-                    {{ op }}
-                  </n-button>
-                </div>
-              </n-collapse-item>
+          <!-- TAB 4: PLAYCOACH -->
+          <div v-else-if="activeTab === 'PLAY_COACH'" class="tab-panel">
+            <template v-if="!playCoachStore.isActive">
+              <div class="form-group">
+                <n-text class="input-label">Spielstärke</n-text>
+                <n-radio-group
+                  v-model:value="playCoachStore.selectedRange"
+                  size="medium"
+                  expand
+                  class="radio-grp"
+                >
+                  <n-radio-button value="1000-1499">1000-1499</n-radio-button>
+                  <n-radio-button value="1500-1799">1500-1799</n-radio-button>
+                  <n-radio-button value="1800-2200">1800-2200</n-radio-button>
+                </n-radio-group>
+              </div>
 
-              <!-- Black Openings -->
-              <n-collapse-item title="Schwarz Eröffnungen" name="black">
-                <div class="openings-list">
-                  <n-button
-                    v-for="op in OPENINGS_BLACK"
-                    :key="op"
-                    quaternary
-                    block
-                    class="opening-item"
-                    @click="handleOpeningClick(op)"
-                  >
-                    {{ op }}
-                  </n-button>
-                </div>
-              </n-collapse-item>
-            </n-collapse>
+              <div class="form-group" style="margin-top: 12px">
+                <n-text class="input-label">Deine Farbe</n-text>
+                <n-radio-group
+                  v-model:value="playCoachStore.userColor"
+                  size="medium"
+                  expand
+                  class="radio-grp"
+                >
+                  <n-radio-button value="white">White</n-radio-button>
+                  <n-radio-button value="black">Black</n-radio-button>
+                </n-radio-group>
+              </div>
+            </template>
+
+            <div v-else class="active-game-info">
+              <div class="info-row">
+                <span class="label">Spielstärke:</span>
+                <span class="value">{{ playCoachStore.selectedRange }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Deine Farbe:</span>
+                <span class="value">{{ playCoachStore.userColor === 'white' ? 'Weiß' : 'Schwarz' }}</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px">
+              <n-button
+                block
+                strong
+                :type="playCoachStore.isActive ? 'error' : 'primary'"
+                @click="togglePlayCoach"
+              >
+                {{ playCoachStore.isActive ? 'Stop PlayCoach' : 'Start PlayCoach' }}
+              </n-button>
+            </div>
+
+            <div v-if="playCoachStore.isActive" class="coach-stats-section" style="margin-top: 20px">
+              <n-text class="input-label" style="margin-bottom: 8px; display: block"
+                >Lichess Book Statistik</n-text
+              >
+              <OpeningStatsTable
+                v-if="playCoachStore.coachStats"
+                :moves="playCoachStore.coachStats.moves"
+                :isReviewMode="true"
+                :total="playCoachStore.coachStats.summary?.total || 0"
+                :win_p="playCoachStore.coachStats.summary?.win_p || 0"
+                :draw_p="playCoachStore.coachStats.summary?.draw_p || 0"
+                :loss_p="playCoachStore.coachStats.summary?.loss_p || 0"
+                :avg-elo="playCoachStore.coachStats.summary?.avgElo || 0"
+              />
+              <div v-else-if="playCoachStore.isLoading" class="loading-stats">Lade Statistik...</div>
+              <div v-else class="out-of-book-msg">Theory ends here. Maia is now playing.</div>
+            </div>
           </div>
         </div>
       </n-scrollbar>
@@ -430,6 +440,12 @@ function handleOpeningClick(name: string) {
   box-shadow: inset 0 0 0 1px rgba(57, 255, 20, 0.3);
 }
 
+.tab-btn.active.btn-coach {
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffa500;
+  box-shadow: inset 0 0 0 1px rgba(255, 165, 0, 0.3);
+}
+
 .sidebar-scrollable-content {
   flex: 1;
   min-height: 0;
@@ -503,5 +519,48 @@ function handleOpeningClick(name: string) {
 .btn-glow-cyan:hover {
   background: rgba(0, 242, 255, 0.15) !important;
   box-shadow: 0 0 8px rgba(0, 242, 255, 0.4);
+}
+
+.loading-stats,
+.out-of-book-msg {
+  padding: 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.out-of-book-msg {
+  color: var(--color-accent);
+  border-color: rgba(var(--color-accent-rgb), 0.2);
+}
+
+.active-game-info {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.info-row .label {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.info-row .value {
+  color: var(--color-text-primary);
+  font-weight: 700;
 }
 </style>
