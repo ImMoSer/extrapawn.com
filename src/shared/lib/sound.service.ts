@@ -1,116 +1,108 @@
-// src/services/sound.service.ts
+// src/shared/lib/sound.service.ts
 import logger from '@/shared/lib/logger'
 
-// --- НАСТРОЙКИ ---
+// --- SETTINGS ---
 const VOICE_VOLUME_KEY = 'user_voice_volume'
 const BOARD_VOLUME_KEY = 'user_board_volume'
 
-// --- ТИПЫ ---
-type SoundTrack = 'voice' | 'background'
+// --- TYPES ---
+export type SoundTrack = 'voice' | 'background'
 
-// Новые, более семантические имена событий, соответствующие структуре папок
 export type SoundEvent =
   // --- App ---
   | 'app_game_entry'
 
-  // --- BoardStore ---
+  // --- Board Store / Game Mechanics ---
   | 'board_move'
   | 'board_capture'
   | 'board_castle'
   | 'board_promote'
   | 'board_load_position'
-  | 'board_timer_10s'
-  | 'board_timer_8s'
-  | 'board_timer_times_up'
-  | 'board_bot_checks_player' // Голосовой, но инициируется board.store
-  | 'board_check' // Simple check sound (User -> Bot)
-  | 'board_checkmate' // Голосовой, но инициируется board.store
+  | 'board_check'
+  | 'board_bot_checks_player'
+  | 'board_checkmate'
   | 'board_draw_stalemate'
   | 'board_draw_repetition'
   | 'board_draw_fifty_moves'
   | 'board_draw_insufficient_material'
+  | 'board_timer_10s'
+  | 'board_timer_8s'
+  | 'board_timer_times_up'
 
-  // --- GameStore & ModeStores ---
-  | 'game_play_out_start'
+  // --- Game Result / Personal ---
   | 'game_user_won'
   | 'game_user_lost'
+  | 'game_draw'
+
+  // --- Feature Specific ---
+  | 'game_play_out_start'
   | 'game_tacktics_error'
   | 'game_tacktics_success'
+  | 'game_training_error'
   | 'game_you_move'
   | 'game_speedrun_finished'
-  | 'game_training_error'
   | 'blunder'
 
-// --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-// --- ДИНАМИЧЕСКАЯ ЗАГРУЗКА ЗВУКОВЫХ ПУЛОВ ---
+// --- DYNAMIC POOL LOADING ---
+// This uses Vite's glob import to find all mp3 files in the public/sounds folder.
 const soundModules = import.meta.glob('/public/sounds/**/*.mp3')
 const allSoundPaths = Object.keys(soundModules).map((path) => path.replace('/public', ''))
 
+/**
+ * Creates a pool of sound paths based on a prefix.
+ * If the prefix points to a specific file, it returns just that file.
+ * If it points to a directory, it returns all files within that directory (recursively).
+ */
 const createPool = (pathPrefix: string): string[] => {
-  return allSoundPaths.filter((path) => path.startsWith(pathPrefix))
+  // Check if it's a direct file first (to be safe)
+  if (allSoundPaths.includes(pathPrefix)) return [pathPrefix]
+  
+  // Otherwise filter by prefix (folder structure)
+  const pool = allSoundPaths.filter((path) => path.startsWith(pathPrefix))
+  
+  if (pool.length === 0) {
+    logger.warn(`[SoundService] No sounds found for prefix: ${pathPrefix}`)
+  }
+  return pool
 }
 
-// --- ОПРЕДЕЛЕНИЕ ЗВУКОВЫХ СОБЫТИЙ ---
+// --- SOUND DEFINITIONS ---
 const soundDefinitions: Record<SoundEvent, { track: SoundTrack; path: string | string[] }> = {
-  // --- App (вызывается из сторов режимов) ---
+  // --- App ---
   app_game_entry: { track: 'voice', path: createPool('/sounds/app/gameModusEntry') },
 
-  // --- BoardStore ---
+  // --- Board Store ---
   board_move: { track: 'background', path: '/sounds/boarStore/board_move.mp3' },
   board_capture: { track: 'background', path: '/sounds/boarStore/board_capture.mp3' },
   board_castle: { track: 'background', path: '/sounds/boarStore/board_castle.mp3' },
   board_promote: { track: 'background', path: '/sounds/boarStore/board_promote.mp3' },
   board_load_position: { track: 'background', path: '/sounds/boarStore/board_load_position.mp3' },
+  board_check: { track: 'background', path: '/sounds/boarStore/board_check.mp3' },
+  board_bot_checks_player: { track: 'voice', path: createPool('/sounds/boarStore/checks_by_bot') },
+  board_checkmate: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/checkmate') },
+  
+  board_draw_stalemate: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/draw/draw_by_stalemate') },
+  board_draw_repetition: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_repetition.mp3' },
+  board_draw_fifty_moves: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_fifty_moves.mp3' },
+  board_draw_insufficient_material: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_insufficient_material.mp3' },
+
   board_timer_10s: { track: 'background', path: '/sounds/boarStore/timer_10_seconds_left.mp3' },
   board_timer_8s: { track: 'background', path: '/sounds/boarStore/timer_8_seconds_left.mp3' },
   board_timer_times_up: { track: 'background', path: '/sounds/boarStore/timer_times_up.mp3' },
-  board_bot_checks_player: { track: 'voice', path: createPool('/sounds/boarStore/checks_by_bot') },
-  board_check: { track: 'background', path: '/sounds/boarStore/board_check.mp3' },
-  board_checkmate: {
-    track: 'voice',
-    path: createPool('/sounds/boarStore/chessGameResult/checkmate'),
-  },
-  board_draw_stalemate: {
-    track: 'voice',
-    path: createPool('/sounds/boarStore/chessGameResult/draw/draw_by_stalemate'),
-  },
-  board_draw_repetition: {
-    track: 'voice',
-    path: '/sounds/boarStore/chessGameResult/draw/draw_by_repetition.mp3',
-  },
-  board_draw_fifty_moves: {
-    track: 'voice',
-    path: '/sounds/boarStore/chessGameResult/draw/draw_by_fifty_moves.mp3',
-  },
-  board_draw_insufficient_material: {
-    track: 'voice',
-    path: '/sounds/boarStore/chessGameResult/draw/draw_by_insufficient_material.mp3',
-  },
 
-  // --- GameStore & ModeStores ---
-  game_play_out_start: {
-    track: 'voice',
-    path: createPool('/sounds/gameStore/during_game/play_out_start'),
-  },
+  // --- Game Result ---
   game_user_won: { track: 'voice', path: createPool('/sounds/gameStore/after_game/if_user_won') },
   game_user_lost: { track: 'voice', path: createPool('/sounds/gameStore/after_game/if_user_lost') },
+  game_draw: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/draw') },
+
+  // --- Features ---
+  game_play_out_start: { track: 'voice', path: createPool('/sounds/gameStore/during_game/play_out_start') },
   game_tacktics_error: { track: 'background', path: '/sounds/gameStore/TacticksError.mp3' },
-  // --- НАЧАЛО ИЗМЕНЕНИЙ ---
   game_tacktics_success: { track: 'background', path: '/sounds/gameStore/TacticksSuccess.mp3' },
-  game_you_move: {
-    track: 'voice',
-    path: '/sounds/gameStore/during_game/play_out_start/play_out_start_1.mp3',
-  },
-  game_speedrun_finished: {
-    track: 'background',
-    path: createPool('/sounds/gameStore/applaus_backround'),
-  },
   game_training_error: { track: 'background', path: '/sounds/gameStore/ErrorChpock.mp3' },
-  blunder: {
-    track: 'voice',
-    path: '/sounds/gameStore/during_game/play_out_start/play_out_start_2.mp3',
-  },
+  game_you_move: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_1.mp3' },
+  game_speedrun_finished: { track: 'background', path: createPool('/sounds/gameStore/applaus_backround') },
+  blunder: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_2.mp3' },
 }
 
 class SoundServiceController {
@@ -127,6 +119,11 @@ class SoundServiceController {
     this.loadVolumeSettings()
   }
 
+  /**
+   * Plays a sound event. 
+   * 'voice' track events are queued and played sequentially.
+   * 'background' track events are played immediately.
+   */
   public async playSound(event: SoundEvent): Promise<void> {
     const definition = soundDefinitions[event]
     if (!definition) {
@@ -138,7 +135,17 @@ class SoundServiceController {
       this.voiceQueue.push(event)
       this._processVoiceQueue()
     } else {
+      // Background sounds don't need a queue, play them immediately
       this._playAndTrack(event)
+    }
+  }
+
+  /**
+   * Helper to play multiple sounds in a specific sequence.
+   */
+  public async playSequence(events: SoundEvent[]): Promise<void> {
+    for (const event of events) {
+      await this.playSound(event)
     }
   }
 
@@ -147,10 +154,12 @@ class SoundServiceController {
       return
     }
     this.isVoiceTrackBusy = true
+    
     const nextEvent = this.voiceQueue.shift()
     if (nextEvent) {
       await this._playAndTrack(nextEvent)
     }
+    
     this.isVoiceTrackBusy = false
     this._processVoiceQueue()
   }
@@ -161,7 +170,7 @@ class SoundServiceController {
     }
 
     const audio = new Audio(path)
-    audio.preload = 'auto' // Instructs browser to load data if possible
+    audio.preload = 'auto'
     this.audioCache.set(path, audio)
     return audio
   }
@@ -180,7 +189,6 @@ class SoundServiceController {
         return
       }
 
-      // Lazy-load the HTMLAudioElement
       const audio = this._getOrCreateAudio(path)
       const isBackground = definition.track === 'background'
 
@@ -205,9 +213,7 @@ class SoundServiceController {
           message.includes("user didn't interact") ||
           (error as Error).name === 'NotAllowedError'
         ) {
-          logger.info(
-            `[SoundService] Autoplay blocked for sound '${path}'. User interaction required.`,
-          )
+          logger.info(`[SoundService] Autoplay blocked for sound '${path}'. User interaction required.`)
         } else {
           logger.warn(`[SoundService] Error playing sound '${path}':`, message)
         }
@@ -255,7 +261,6 @@ class SoundServiceController {
   }
 
   public async ensureInitialized(): Promise<void> {
-    // No-op for backwards compatibility if called from elsewhere
     return Promise.resolve()
   }
 }

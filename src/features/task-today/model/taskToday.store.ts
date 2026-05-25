@@ -1,5 +1,6 @@
 import {
   useGameStore,
+  GameAudioEngine
 } from '@/entities/game'
 import { soundService } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
@@ -176,6 +177,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   function handlePuzzleFailure() {
     console.log('[TaskToday] Failed! Moving to back of queue...')
+    GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
     if (puzzle) {
       // Mark as failed in results but keep playing it
@@ -198,6 +200,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   function handlePuzzleSuccess(timeNeededMs: number) {
     console.log(`[TaskToday] Success! Time needed: ${timeNeededMs}ms`)
+    GameAudioEngine.playFeatureSuccess()
     stopTimer()
     
     const puzzle = currentPuzzle.value
@@ -225,7 +228,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       if (allDone) {
         isPlaying.value = false
         isFinished.value = true
-        soundService.playSound('game_speedrun_finished')
+        GameAudioEngine.playSpeedrunFinished()
         return
       } else {
         const nextIdx = trainingPlan.value?.tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
@@ -293,6 +296,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       puzzleAttempts.value = {}
       solvedPuzzlesPerTask.value = {}
       
+      soundService.playSound('app_game_entry')
       playCurrentPuzzle()
     } catch (error) {
       console.error('[TaskTodayStore] Failed to start TaskToday:', error)

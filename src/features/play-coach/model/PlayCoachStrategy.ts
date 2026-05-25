@@ -10,7 +10,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
     playGameStatusSounds: true,
   }
 
-  private readonly ENGINE_ID = 'maia-2000'
+  private readonly ENGINE_ID: import('@/shared/types/api.types').EngineId = 'maia-2200'
 
   onGameStart() {
     logger.info('[PlayCoachStrategy] Game started')

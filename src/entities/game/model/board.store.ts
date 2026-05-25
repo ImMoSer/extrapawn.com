@@ -15,6 +15,7 @@ import { isNormal } from 'chessops'
 import { makeUci, parseSquare, parseUci as parseUciMove } from 'chessops/util'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, toRaw } from 'vue'
+import { soundService } from '@/shared/lib/sound.service'
 
 export interface GameEndOutcome {
   winner: ChessopsColor | undefined
@@ -72,6 +73,7 @@ export const useBoardStore = defineStore('board', () => {
       coachShapes.value = []
       lastNag.value = null
       boardSyncCounter.value++
+      soundService.playSound('board_load_position')
     } catch (e) {
       logger.error('[BoardStore] Invalid FEN provided:', newFen, e)
     }
@@ -117,6 +119,11 @@ export const useBoardStore = defineStore('board', () => {
       drawableShapes.value = (currentNode.shapes as DrawShape[]) || []
       coachShapes.value = []
       boardSyncCounter.value++
+      
+      // Play load sound if we just loaded a position (not triggered by a move, though navigating might trigger it).
+      // If we want to strictly emulate old behavior, this might play on every undo/redo. 
+      // This is generally desired.
+      soundService.playSound('board_load_position')
     } catch (e) {
       logger.error('[BoardStore] Error in loadPosition:', newFen, e)
     }

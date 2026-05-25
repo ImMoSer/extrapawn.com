@@ -10,6 +10,7 @@ import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import type { Outcome as ChessopsOutcome } from 'chessops'
 
 import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
+import { GameAudioEngine } from './GameAudioEngine'
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER'
 
@@ -72,6 +73,10 @@ export const useGameStore = defineStore('game', () => {
       isGameActive.value = false
       gamePhase.value = 'GAMEOVER'
 
+      if (gameStatus.outcome) {
+        GameAudioEngine.handleGameOutcome(gameStatus.outcome, playerColor.value)
+      }
+
       if (currentStrategy.value?.onGameOver) {
         currentStrategy.value.onGameOver(gameStatus)
       }
@@ -92,6 +97,10 @@ export const useGameStore = defineStore('game', () => {
 
     gamePhase.value = 'GAMEOVER'
     isGameActive.value = false
+
+    if (status.outcome) {
+      GameAudioEngine.handleGameOutcome(status.outcome, playerColor.value)
+    }
 
     if (currentStrategy.value) {
       currentStrategy.value.onGameOver?.(status)
@@ -140,6 +149,8 @@ export const useGameStore = defineStore('game', () => {
           
           const fenAfter = boardStore.fen
           pgnService.addNode({ san, uci, fenBefore, fenAfter })
+          
+          GameAudioEngine.playMoveSoundFromSan(san, true)
         } else {
           boardStore.applyUciMove(uci)
         }
@@ -291,6 +302,8 @@ export const useGameStore = defineStore('game', () => {
       const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
       const fenAfter = boardStore.fen
       pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
+      
+      GameAudioEngine.playMoveSoundFromSan(san, false)
     }
 
     if (userMovesCount.value === 0) {
