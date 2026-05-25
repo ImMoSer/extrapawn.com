@@ -5,7 +5,7 @@ import type { EngineId } from '@/shared/types/api.types'
 import type { Color as ChessgroundColor, Key } from '@lichess-org/chessground/types'
 import { parseFen } from 'chessops/fen'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { soundService } from '@/shared/lib/sound.service'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 
@@ -20,7 +20,7 @@ export const useGameStore = defineStore('game', () => {
   const isGameActive = ref(false)
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
-  const playerColor = ref<ChessgroundColor>('white')
+  const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
 
   function _playOutcomeSound(status: GameStatusInfo) {
     // Only play if sounds are enabled in strategy config
@@ -140,7 +140,6 @@ export const useGameStore = defineStore('game', () => {
         )
       }
 
-      playerColor.value = userColor
       currentStrategy.value = strategy
 
       const humanPlayerColor = userColor

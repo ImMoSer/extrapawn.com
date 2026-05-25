@@ -4,6 +4,7 @@ import { NInput, NButton, NIcon, NTooltip } from 'naive-ui'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { PlayCoachStrategy } from '@/features/play-coach'
 import { SwapVerticalOutline } from '@vicons/ionicons5'
 import PlayCoachSidebar from './PlayCoachSidebar.vue'
 
@@ -19,26 +20,38 @@ watch(() => boardStore.fen, (newFen) => {
 
 function applyFen() {
   if (localFen.value) {
-    // Keep current orientation when loading FEN
-    boardStore.setupPosition(localFen.value, boardStore.orientation)
+    gameStore.startWithStrategy(
+      localFen.value,
+      new PlayCoachStrategy(),
+      boardStore.orientation,
+      false
+    )
   }
 }
 
 function handleFlip() {
   boardStore.flipBoard()
+  if (boardStore.turn !== boardStore.orientation && gameStore.gamePhase === 'PLAYING') {
+    gameStore.triggerBotMove()
+  }
 }
 
 onMounted(() => {
   coachStore.setCoachEnabled(true)
   boardStore.setAnalysisMode(false)
-  gameStore.setGamePhase('PLAYING')
-  // Ensure we start with white orientation but let coach move if it's black's turn
   boardStore.orientation = 'white'
+  
+  gameStore.startWithStrategy(
+    boardStore.fen,
+    new PlayCoachStrategy(),
+    boardStore.orientation,
+    true
+  )
 })
 
 onUnmounted(() => {
   boardStore.setAnalysisMode(false)
-  gameStore.setGamePhase('IDLE')
+  gameStore.resetGame()
 })
 </script>
 
