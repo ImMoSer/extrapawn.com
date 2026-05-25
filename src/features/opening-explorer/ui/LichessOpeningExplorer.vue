@@ -7,13 +7,21 @@ import { useI18n } from 'vue-i18n'
 import OpeningStatsTable from './OpeningStatsTable.vue'
 import { useOpeningExplorerStore } from '../model/opening-explorer.store'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   blurred?: boolean
-}>()
+  maxMoves?: number
+}>(), {
+  maxMoves: Infinity
+})
 
 const { t } = useI18n()
 const boardStore = useBoardStore()
 const explorerStore = useOpeningExplorerStore()
+
+const displayedMoves = computed(() => {
+  if (!explorerStore.stats) return []
+  return explorerStore.stats.moves.slice(0, props.maxMoves)
+})
 
 const showSettings = ref(false)
 
@@ -104,7 +112,7 @@ function handleSelectMove(uci: string) {
       </div>
       <OpeningStatsTable
         v-if="explorerStore.stats"
-        :moves="explorerStore.stats.moves"
+        :moves="displayedMoves"
         :isReviewMode="true"
         :total="explorerStore.stats.summary?.total || 0"
         :win_p="explorerStore.stats.summary?.win_p || 0"

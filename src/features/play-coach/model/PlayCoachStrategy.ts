@@ -1,20 +1,34 @@
 import type { IGameplayStrategy } from '@/entities/game'
-import { serverEngineService } from '@/shared/lib/engine/ServerEngineService'
+import { enginePlayService } from '@/entities/game'
 import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
 
 export class PlayCoachStrategy implements IGameplayStrategy {
   config = {
     botDelayMs: 400,
+    playGameStatusSounds: true,
   }
 
-  private readonly ENGINE_NAME = 'maia-2200'
+  private readonly ENGINE_ID = 'maia-2200'
+
+  onGameStart() {
+    logger.info('[PlayCoachStrategy] Game started')
+  }
+
+  onDestroy() {
+    logger.info('[PlayCoachStrategy] Strategy destroyed')
+  }
 
   async requestBotMove(fen: string): Promise<string | null> {
     const explorerStore = useOpeningExplorerStore()
 
     // 1. Try Lichess Book from Explorer Store
-    if (explorerStore.stats && explorerStore.stats.moves.length > 0) {
+    // Ensure the stats are for the current FEN to avoid using stale book moves
+    const statsMatchFen = explorerStore.lastFetchedFen && 
+                         explorerStore.lastFetchedFen.split(' ').slice(0, 4).join(' ') === 
+                         fen.split(' ').slice(0, 4).join(' ')
+
+    if (statsMatchFen && explorerStore.stats && explorerStore.stats.moves.length > 0) {
       const topMoves = explorerStore.stats.moves.slice(0, 5)
       const firstMove = topMoves[0]
       if (firstMove) {
@@ -38,15 +52,32 @@ export class PlayCoachStrategy implements IGameplayStrategy {
       }
     }
 
-    // 2. Fallback to Engine (Maia 2200)
-    logger.info(`[PlayCoachStrategy] Book empty. Using engine: ${this.ENGINE_NAME}`)
+    // 2. Fallback to Engine (Maia 2200 via EnginePlayService)
+    logger.info(`[PlayCoachStrategy] Book empty. Using engine: ${this.ENGINE_ID}`)
     
     try {
-      const moveUci = await serverEngineService.getMoveFromServer(fen, this.ENGINE_NAME)
+      const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
       return moveUci
     } catch (err) {
       logger.error('[PlayCoachStrategy] Engine move failed:', err)
       return null
     }
+  }
+
+  onUserMoveUndone() {
+    logger.info('[PlayCoachStrategy] Move undone')
+  }
+
+  forcePlayoutMode() {
+    // Already in playout mode (against engine)
+  }
+
+  onGameOver(status: import('@/entities/game').GameStatusInfo) {
+    logger.info('[PlayCoachStrategy] Game over:', status)
+  }
+
+  checkWinCondition(status: import('@/entities/game').GameStatusInfo): boolean {
+    // Default chess rules
+    return status.isGameOver
   }
 }

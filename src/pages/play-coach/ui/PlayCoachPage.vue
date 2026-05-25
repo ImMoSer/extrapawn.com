@@ -1,55 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { NInput, NButton, NIcon, NTooltip } from 'naive-ui'
 import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebar, useCoachStore } from '@/features/coach'
-import { useBoardStore, useGameStore } from '@/entities/game'
-import { PlayCoachStrategy } from '@/features/play-coach'
-import { SwapVerticalOutline } from '@vicons/ionicons5'
+import { CoachSidebar } from '@/features/coach'
+import { useBoardStore } from '@/entities/game'
+import { usePlayCoachStore } from '@/features/play-coach'
+import { SwapVerticalOutline, RefreshOutline } from '@vicons/ionicons5'
 import PlayCoachSidebar from './PlayCoachSidebar.vue'
 
-const coachStore = useCoachStore()
 const boardStore = useBoardStore()
-const gameStore = useGameStore()
-
-const localFen = ref(boardStore.fen)
+const playCoachStore = usePlayCoachStore()
 
 watch(() => boardStore.fen, (newFen) => {
-  localFen.value = newFen
+  playCoachStore.localFen = newFen
 })
 
-function applyFen() {
-  if (localFen.value) {
-    gameStore.startWithStrategy(
-      localFen.value,
-      new PlayCoachStrategy(),
-      boardStore.orientation,
-      false
-    )
-  }
-}
-
-function handleFlip() {
-  boardStore.flipBoard()
-  if (boardStore.turn !== boardStore.orientation && gameStore.gamePhase === 'PLAYING') {
-    gameStore.triggerBotMove()
-  }
-}
-
 onMounted(() => {
-  coachStore.setCoachEnabled(true)
-  boardStore.orientation = 'white'
-  
-  gameStore.startWithStrategy(
-    boardStore.fen,
-    new PlayCoachStrategy(),
-    boardStore.orientation,
-    true
-  )
+  playCoachStore.initialize()
 })
 
 onUnmounted(() => {
-  gameStore.stop()
+  playCoachStore.terminate()
 })
 </script>
 
@@ -78,7 +49,7 @@ onUnmounted(() => {
               circle 
               secondary 
               size="medium" 
-              @click="handleFlip"
+              @click="playCoachStore.handleFlip"
               class="flip-btn"
             >
               <template #icon>
@@ -89,14 +60,31 @@ onUnmounted(() => {
           Brett drehen (Farbe wechseln)
         </n-tooltip>
 
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <n-button 
+              circle 
+              secondary 
+              size="medium" 
+              @click="playCoachStore.restartGame"
+              class="restart-btn"
+            >
+              <template #icon>
+                <n-icon><RefreshOutline /></n-icon>
+              </template>
+            </n-button>
+          </template>
+          Spiel neu starten
+        </n-tooltip>
+
         <n-input
-          v-model:value="localFen"
+          v-model:value="playCoachStore.localFen"
           placeholder="FEN eingeben (z.B. Eröffnungsposition)"
           size="medium"
           class="fen-input"
-          @keyup.enter="applyFen"
+          @keyup.enter="playCoachStore.applyFen(playCoachStore.localFen)"
         />
-        <n-button type="primary" secondary @click="applyFen">
+        <n-button type="primary" secondary @click="playCoachStore.applyFen(playCoachStore.localFen)">
           Position laden
         </n-button>
       </div>
@@ -152,11 +140,16 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.flip-btn {
+.flip-btn,
+.restart-btn {
   transition: transform 0.3s ease;
 }
 
 .flip-btn:active {
   transform: scale(0.9) rotate(180deg);
+}
+
+.restart-btn:active {
+  transform: scale(0.9) rotate(-90deg);
 }
 </style>

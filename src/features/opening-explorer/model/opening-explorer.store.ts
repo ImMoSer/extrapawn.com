@@ -6,6 +6,7 @@ import logger from '@/shared/lib/logger'
 
 export const useOpeningExplorerStore = defineStore('openingExplorer', () => {
   const stats = ref<LichessOpeningResponse | null>(null)
+  const lastFetchedFen = ref<string | null>(null)
   const isLoading = ref(false)
   const ratingRange = ref<'1000-1499' | '1500-1799' | '1800-2200'>('1800-2200')
 
@@ -15,9 +16,11 @@ export const useOpeningExplorerStore = defineStore('openingExplorer', () => {
       const fen = pgnService.getCurrentNavigatedFen()
       const data = await theoryRepository.getLichessStats(fen, { ratingRange: ratingRange.value })
       stats.value = data
+      lastFetchedFen.value = fen
     } catch (e) {
       logger.error('[OpeningExplorerStore] Failed to fetch stats:', e)
       stats.value = null
+      lastFetchedFen.value = null
     } finally {
       isLoading.value = false
     }
@@ -34,6 +37,7 @@ export const useOpeningExplorerStore = defineStore('openingExplorer', () => {
 
   return {
     stats,
+    lastFetchedFen,
     isLoading,
     ratingRange,
     fetchStats

@@ -15,7 +15,7 @@ import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
     <div class="sidebar-content">
       <div class="active-game-section">
         <div class="coach-stats-section">
-          <LichessOpeningExplorer />
+          <LichessOpeningExplorer :max-moves="10" />
         </div>
 
         <div class="pgn-section" style="margin-top: 20px">
