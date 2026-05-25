@@ -1,5 +1,6 @@
 import type { IGameplayStrategy } from '@/entities/game'
 import { enginePlayService } from '@/entities/game'
+import { theoryRepository } from '@/entities/opening'
 import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
 
@@ -9,7 +10,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
     playGameStatusSounds: true,
   }
 
-  private readonly ENGINE_ID = 'maia-2400'
+  private readonly ENGINE_ID = 'maia-2000'
 
   onGameStart() {
     logger.info('[PlayCoachStrategy] Game started')
@@ -22,38 +23,46 @@ export class PlayCoachStrategy implements IGameplayStrategy {
   async requestBotMove(fen: string): Promise<string | null> {
     const explorerStore = useOpeningExplorerStore()
 
-    // 1. Try Lichess Book from Explorer Store
-    // Ensure the stats are for the current FEN to avoid using stale book moves
-    const statsMatchFen = explorerStore.lastFetchedFen &&
-                         explorerStore.lastFetchedFen.split(' ').slice(0, 4).join(' ') ===
-                         fen.split(' ').slice(0, 4).join(' ')
+    // 1. Try Lichess Book directly from Repository (bypass UI store delay/debounce)
+    try {
+      const stats = await theoryRepository.getLichessStats(
+        fen,
+        { ratingRange: explorerStore.ratingRange },
+        { skipDebounce: true }
+      )
 
-    if (statsMatchFen && explorerStore.stats && explorerStore.stats.moves.length > 0) {
-      const topMoves = explorerStore.stats.moves.slice(0, 5)
-      const firstMove = topMoves[0]
-      if (firstMove) {
-        const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
+      if (stats && stats.moves.length > 0) {
+        // Only use book if there is a significant amount of games or it's early game
+        // For now, follow the user's request: use theory moves from Lichess Players stats
+        const topMoves = stats.moves.slice(0, 5)
+        const firstMove = topMoves[0]
 
-        if (totalPlays > 0) {
-          let random = Math.random() * totalPlays
-          let selectedUci = firstMove.uci
+        if (firstMove) {
+          const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
 
-          for (const move of topMoves) {
-            random -= move.total
-            if (random <= 0) {
-              selectedUci = move.uci
-              break
+          if (totalPlays > 0) {
+            let random = Math.random() * totalPlays
+            let selectedUci = firstMove.uci
+
+            for (const move of topMoves) {
+              random -= move.total
+              if (random <= 0) {
+                selectedUci = move.uci
+                break
+              }
             }
-          }
 
-          logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci}`)
-          return selectedUci
+            logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
+            return selectedUci
+          }
         }
       }
+    } catch (err) {
+      logger.error('[PlayCoachStrategy] Failed to fetch book stats:', err)
     }
 
-    // 2. Fallback to Engine (Maia 2200 via EnginePlayService)
-    logger.info(`[PlayCoachStrategy] Book empty. Using engine: ${this.ENGINE_ID}`)
+    // 2. Fallback to Engine (Maia)
+    logger.info(`[PlayCoachStrategy] Book empty or failed. Using engine: ${this.ENGINE_ID}`)
 
     try {
       const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
