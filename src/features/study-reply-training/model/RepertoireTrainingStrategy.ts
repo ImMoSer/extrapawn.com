@@ -43,7 +43,6 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
 
     if (matchingChild) {
       this.trainingStore.variantStats.correct++
-      pgnService.navigateToNode(matchingChild)
       return true
     } else {
       logger.warn(`[RepertoireTrainingStrategy] Incorrect move: ${uciMove}`)
@@ -71,7 +70,6 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
       const challengeNode = srsService.selectNextChallenge(children)
       if (challengeNode) {
         logger.info(`[RepertoireTrainingStrategy] Bot plays preset: ${challengeNode.uci}`)
-        pgnService.navigateToNode(challengeNode)
         return challengeNode.uci
       }
     }

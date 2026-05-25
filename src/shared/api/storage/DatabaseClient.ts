@@ -252,6 +252,16 @@ class DatabaseClient {
     await this._execRaw(
       this.userDbId,
       `
+      CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT
+      )
+    `,
+    )
+
+    await this._execRaw(
+      this.userDbId,
+      `
       CREATE TABLE IF NOT EXISTS studies (
         id          TEXT PRIMARY KEY,
         title       TEXT NOT NULL,

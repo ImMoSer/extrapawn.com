@@ -144,9 +144,9 @@ export const useGameStore = defineStore('game', () => {
           boardStore.applyUciMove(uci)
         }
 
-        _checkAndHandleGameOver()
+        const isGameOver = _checkAndHandleGameOver()
 
-        if (currentStrategy.value.onBotMoveExecuted) {
+        if (!isGameOver && currentStrategy.value.onBotMoveExecuted) {
           await currentStrategy.value.onBotMoveExecuted(uci, boardStore.fen)
         }
       }
@@ -272,10 +272,21 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
+    const fenBefore = boardStore.fen
+    const positionBefore = boardStore.chessPosition.clone()
+
     const uciMove = await boardStore.handleUserMove({ orig, dest })
 
     if (!uciMove) {
       return
+    }
+
+    // Apply the user move in PGN
+    const chessopsMove = (await import('chessops/util')).parseUci(uciMove)
+    if (chessopsMove) {
+      const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
+      const fenAfter = boardStore.fen
+      pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
     }
 
     if (userMovesCount.value === 0) {
@@ -287,10 +298,10 @@ export const useGameStore = defineStore('game', () => {
 
     const isGameOver = _checkAndHandleGameOver()
 
-    if (strategyAtStart) {
+    if (!isGameOver && strategyAtStart) {
       await strategyAtStart.onUserMoveExecuted?.(uciMove, boardStore.fen)
 
-      if (!isGameOver && currentStrategy.value === strategyAtStart) {
+      if (currentStrategy.value === strategyAtStart) {
         const isBotTurn = boardStore.turn !== playerColor.value
         if (isBotTurn) {
           await triggerBotMove()

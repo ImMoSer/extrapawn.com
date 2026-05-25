@@ -27,7 +27,6 @@ export class StudySpeedrunStrategy implements IGameplayStrategy {
     const matchingChild = children.find((c) => c.uci.startsWith(uciPrefix))
 
     if (matchingChild) {
-      pgnService.navigateToNode(matchingChild)
       return true
     } else {
       // Wrong move -> instant failure, sound: error, load next line
@@ -50,7 +49,6 @@ export class StudySpeedrunStrategy implements IGameplayStrategy {
     if (children.length > 0) {
       const replyNode = children[0]
       if (replyNode) {
-        pgnService.navigateToNode(replyNode)
         return replyNode.uci
       }
     }
