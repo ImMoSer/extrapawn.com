@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSpeedrunStore } from '../model/speedrun.store'
+import { useSpeedrunStore } from '@/features/study-speedrun'
 import { GameLayout } from '@/widgets/game-layout'
 import { NButton, NIcon, NText, NProgress, NList, NListItem, NScrollbar, NThing } from 'naive-ui'
 import { CloseCircleOutline, RefreshOutline as RestartIcon } from '@vicons/ionicons5'

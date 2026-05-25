@@ -7,9 +7,7 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import {
   useGameStore,
   useBoardStore,
-  enginePlayService,
   type GameStatusInfo,
-  type IGameplayStrategy,
 } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { useAnalysisEngineStore } from '@/entities/analysis'
@@ -18,9 +16,9 @@ import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
-import { FreeExplorationStrategy } from '@/features/study'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
+import { WorkoutPuzzleStrategy } from './WorkoutPuzzleStrategy'
 
 const t = i18n.global.t
 
@@ -91,7 +89,7 @@ export const useWorkoutStore = defineStore('workout', () => {
       // Start the game for real
       gameStore.startWithStrategy(
         activePuzzle.value.initial_fen, 
-        createPuzzleStrategy(activePuzzle.value, correctColor), 
+        new WorkoutPuzzleStrategy(activePuzzle.value, correctColor), 
         correctColor, 
         false
       )
@@ -100,7 +98,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     } else {
       // Wrong guess - instant game over
       isWaitingForColorGuess.value = false
-      _handleGameOver(
+      handleGameOver(
         activePuzzle.value, 
         false, 
         { winner: guessedColor === 'white' ? 'black' : 'white', reason: 'wrong_move' }, 
@@ -110,119 +108,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     }
   }
 
-  function createPuzzleStrategy(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black'): IGameplayStrategy {
-    const isPlayoutModeOnly = puzzle.strategy === 'playOutOnly'
-    const scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
-    
-    let scenarioIndex = 0
-    let isPlayoutMode = isPlayoutModeOnly
-    
-    let prevScenarioIndex = 0
-    let prevPlayoutMode = isPlayoutMode
-
-    return {
-      config: {
-        initialBotDelayMs: 300,
-        botDelayMs: 50,
-      },
-
-      onGameStart() {},
-
-      checkWinCondition(currentState: GameStatusInfo): boolean {
-        const outcome = currentState.outcome
-        if (!outcome || outcome.reason === 'resign') return false
-
-        if (outcome.reason === 'checkmate' && outcome.winner === humanColor) {
-          return true
-        }
-
-        const isScenarioComplete = scenarioIndex >= scenarioMoves.length
-
-        if (puzzle.strategy === 'scenarioOnly') {
-          return isScenarioComplete
-        }
-
-        if (puzzle.strategy === 'playOutOnly' || puzzle.strategy === 'scenarioPlus') {
-          return outcome.reason === 'checkmate' && outcome.winner === humanColor
-        }
-        
-        return false
-      },
-
-      async onUserMoveExecuted(uciMove: string) {
-        prevScenarioIndex = scenarioIndex
-        prevPlayoutMode = isPlayoutMode
-
-        if (!isPlayoutMode) {
-          const expectedMove = scenarioMoves[scenarioIndex]
-          if (uciMove === expectedMove) {
-            scenarioIndex++
-
-            if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
-               _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
-               setTimeout(() => {
-                 loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
-               }, 1000)
-            }
-          } else {
-            if (puzzle.strategy === 'scenarioOnly') {
-               _handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
-               gameStore.startWithStrategy(boardStore.fen, new FreeExplorationStrategy(), humanColor, true)
-               return
-            }
-            
-            if (puzzle.strategy === 'scenarioPlus') {
-               isPlayoutMode = true
-               scenarioIndex = scenarioMoves.length
-               soundService.playSound('game_play_out_start')
-               window.$message?.warning('Deviation! Continuing against the engine.')
-            }
-          }
-        }
-      },
-
-      onUserMoveUndone() {
-        scenarioIndex = prevScenarioIndex
-        isPlayoutMode = prevPlayoutMode
-        isProcessingGameOver.value = false
-      },
-
-      async onBotMoveExecuted() {
-        if (puzzle.strategy === 'scenarioOnly' && scenarioIndex >= scenarioMoves.length) {
-          _handleGameOver(puzzle, true, { winner: humanColor, reason: 'scenario_complete' }, humanColor)
-          setTimeout(() => {
-            loadNewPuzzle(puzzle.puzzle_type, activeParams.value)
-          }, 1000)
-        }
-      },
-
-      requestBotMove: async (fen: string) => {
-        if (!isPlayoutMode && scenarioIndex < scenarioMoves.length) {
-          const move = scenarioMoves[scenarioIndex] || null
-          scenarioIndex++
-          return move
-        }
-
-        if (puzzle.strategy === 'scenarioOnly') return null;
-
-        try {
-          return await enginePlayService.getBestMove(gameStore.botEngineId, fen)
-        } catch (error) {
-          logger.error('[WorkoutStrategy] Engine failed to generate move.', error)
-          return null
-        }
-      },
-
-      onGameOver(status: GameStatusInfo) {
-        const isWin = this.checkWinCondition!(status)
-        if (status.outcome) {
-          _handleGameOver(puzzle, isWin, status.outcome, humanColor)
-        }
-      },
-    }
-  }
-
-  async function _handleGameOver(
+  async function handleGameOver(
     puzzle: WorkoutPuzzle,
     isWin: boolean,
     outcome: NonNullable<GameStatusInfo['outcome']>,
@@ -283,6 +169,10 @@ export const useWorkoutStore = defineStore('workout', () => {
     }
   }
 
+  function setProcessingGameOver(value: boolean) {
+    isProcessingGameOver.value = value
+  }
+
   async function loadNewPuzzle(type: string, queryParams: Partial<WorkoutParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -325,7 +215,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         isWaitingForColorGuess.value = false
         gameStore.startWithStrategy(
           mappedPuzzle.initial_fen,
-          createPuzzleStrategy(mappedPuzzle, humanColor),
+          new WorkoutPuzzleStrategy(mappedPuzzle, humanColor),
           humanColor,
           false
         )
@@ -357,7 +247,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         first_move: 'user',
         initial_fen: fen 
     }
-    gameStore.startWithStrategy(fen, createPuzzleStrategy(dummyPuzzle, color), color, false)
+    gameStore.startWithStrategy(fen, new WorkoutPuzzleStrategy(dummyPuzzle, color), color, false)
   }
 
   function startYouMoveGame(color: 'white' | 'black') {
@@ -372,7 +262,7 @@ export const useWorkoutStore = defineStore('workout', () => {
       fen = parts.join(' ')
   
       soundService.playSound('game_you_move')
-      gameStore.startWithStrategy(fen, createPuzzleStrategy(activePuzzle.value, color), color)
+      gameStore.startWithStrategy(fen, new WorkoutPuzzleStrategy(activePuzzle.value, color), color)
   }
 
   async function handleRestart() {
@@ -455,5 +345,8 @@ export const useWorkoutStore = defineStore('workout', () => {
     handleRestart,
     handleExit,
     reset,
+    handleGameOver,
+    setProcessingGameOver,
   }
 })
+

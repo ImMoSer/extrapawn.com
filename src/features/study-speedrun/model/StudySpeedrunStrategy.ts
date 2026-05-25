@@ -1,6 +1,6 @@
 import type { IGameplayStrategy } from '@/entities/game'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
-import { useSpeedrunStore } from './speedrun.store'
+import { useSpeedrunStore } from './study-speedrun.store'
 
 export class StudySpeedrunStrategy implements IGameplayStrategy {
   config = {
