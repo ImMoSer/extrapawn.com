@@ -24,7 +24,7 @@ import { useRouter } from 'vue-router'
  
 import { srsService, useReplyTrainingStore } from '../../study-reply-training'
 import { LichessApiError } from '../api/LichessSyncService'
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { useStudyStore, type StudyChapter, isChapterTrimmed } from '@/entities/study'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import ChapterSettingsModal from './ChapterSettingsModal.vue'
@@ -33,7 +33,7 @@ import { apiClient } from '@/shared/api/client'
 
 const studyStore = useStudyStore()
 const trainingStore = useReplyTrainingStore()
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const uiStore = useUiStore()
 const router = useRouter()
 const message = useMessage()
@@ -177,8 +177,7 @@ onUnmounted(() => {
 function selectChapter(id: string) {
   studyStore.setActiveChapter(id)
   // Ensure start position
-  boardStore.navigatePgn('start')
-  boardStore.syncBoardWithPgn()
+  gameStore.navigatePgn('start')
 }
 
 function handleAddChapter() {

@@ -14,6 +14,8 @@ import type { Role as ChessopsRole } from 'chessops/types'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch, type PropType } from 'vue'
 import { useBoardStore, type PromotionState } from '../model/board.store'
 import PromotionDialog from './PromotionDialog.vue'
+import { soundService } from '@/shared/lib/sound.service'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 const props = defineProps({
   fen: { type: String, required: true },
@@ -292,6 +294,38 @@ watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, 
     animation: { enabled, duration },
   })
 })
+
+// 7. Sound trigger watcher
+watch(
+  () => props.fen,
+  (newFen) => {
+    if (!newFen) return
+
+    const currentNode = pgnService.getCurrentNode()
+    if (currentNode && currentNode.id !== '__ROOT__') {
+      const san = currentNode.san
+      if (san.includes('O-O')) {
+        soundService.playSound('board_castle')
+      } else if (san.includes('x')) {
+        soundService.playSound('board_capture')
+      } else if (san.includes('=')) {
+        soundService.playSound('board_promote')
+      } else {
+        soundService.playSound('board_move')
+      }
+
+      if (props.check || san.includes('+') || san.includes('#')) {
+        if (san.includes('#')) {
+          soundService.playSound('board_checkmate')
+        } else {
+          soundService.playSound('board_check')
+        }
+      }
+    } else {
+      soundService.playSound('board_load_position')
+    }
+  }
+)
 </script>
 
 <template>

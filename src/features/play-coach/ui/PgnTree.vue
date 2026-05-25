@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { NText } from 'naive-ui'
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
 
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 
 const rootNode = computed(() => pgnService.getRootNode())
 
 const handleMoveClick = (node: PgnNode) => {
-  boardStore.navigateToNode(node)
+  gameStore.navigateToNode(node)
 }
 </script>
 

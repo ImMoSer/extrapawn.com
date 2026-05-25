@@ -38,7 +38,6 @@ function handleFlip() {
 
 onMounted(() => {
   coachStore.setCoachEnabled(true)
-  boardStore.setAnalysisMode(false)
   boardStore.orientation = 'white'
   
   gameStore.startWithStrategy(
@@ -50,8 +49,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  boardStore.setAnalysisMode(false)
-  gameStore.resetGame()
+  gameStore.stop()
 })
 </script>
 

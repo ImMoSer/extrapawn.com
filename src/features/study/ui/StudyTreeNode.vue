@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { useStudyStore, isNodeNeedingTrim } from '@/entities/study'
 import type { PgnNode } from '@/shared/lib/pgn/PgnService'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
@@ -19,7 +19,7 @@ const props = withDefaults(
   },
 )
 
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const studyStore = useStudyStore()
 
 const needsTrim = computed(() => {
@@ -61,8 +61,7 @@ const mainlineChild = computed(() => children.value[0])
 const variations = computed(() => children.value.slice(1))
 
 const activateNode = () => {
-  pgnService.navigateToNode(props.node)
-  boardStore.syncBoardWithPgn()
+  gameStore.navigateToNode(props.node)
 }
 
 // --- context menu logic ---
@@ -151,7 +150,7 @@ const handleSelect = (key: string) => {
     pgnService.promoteToMainline(props.node)
   } else if (key === 'delete') {
     pgnService.deleteNode(props.node)
-    boardStore.syncBoardWithPgn()
+    gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
   } else if (key === 'comment') {
     openCommentModal()
   } else if (key.startsWith('nag-')) {

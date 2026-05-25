@@ -96,7 +96,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     // Initialize Engine
     await engineStore.initialize()
-    boardStore.setAnalysisMode(true)
 
     if (startActive) {
       await engineStore.startAnalysis(boardStore.fen)
@@ -169,7 +168,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
     }
 
     boardStore.setDrawableShapes([])
-    boardStore.setAnalysisMode(false)
   }
 
   function setPlayerColor(color: 'white' | 'black' | null) {

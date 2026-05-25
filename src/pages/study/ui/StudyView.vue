@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import { MozerBook } from '@/features/mozer-book'
 import { LichessOpeningExplorer } from '@/features/opening-explorer'
@@ -13,6 +13,7 @@ import {
   StudySidebar,
   StudyTree,
   useStudyStore,
+  FreeExplorationStrategy,
 } from '@/features/study'
 import { useReplyTrainingStore, ReplySessionWindow } from '@/features/study-reply-training'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -28,7 +29,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const dialog = useDialog()
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const studyStore = useStudyStore()
 const analysisStore = useAnalysisStore()
 const trainingStore = useReplyTrainingStore()
@@ -67,7 +68,6 @@ const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
 onMounted(async () => {
   window.addEventListener('beforeunload', beforeUnloadHandler)
   studyStore.isActiveMode = true
-  boardStore.setAnalysisMode(true)
   await analysisStore.showPanel() // Initialize analysis (threads, etc.) and set visible flag for watcher
 
   const routeStudyId = route.params.studyId as string | undefined
@@ -187,24 +187,42 @@ function updateUrl(id: string) {
   })
 }
 
+const startFreeStudy = () => {
+  const chapter = studyStore.activeChapter
+  if (chapter) {
+    const startFen = pgnService.getCurrentNavigatedFen()
+    const color = chapter.color || 'white'
+    gameStore.startWithStrategy(startFen, new FreeExplorationStrategy(), color, true)
+  }
+}
+
 // Watch for active chapter changes to update URL
 watch(
   () => studyStore.activeChapterId,
   (newId) => {
     if (newId) {
       updateUrl(newId)
-      boardStore.syncBoardWithPgn()
-      if (studyStore.activeChapter?.color) {
-        boardStore.orientation = studyStore.activeChapter.color
+      if (!trainingStore.isReplyTrainingActive) {
+        startFreeStudy()
       }
     }
   },
 )
 
+// Restore free study when reply training finishes
+watch(
+  () => trainingStore.isReplyTrainingActive,
+  (isActive) => {
+    if (!isActive) {
+      startFreeStudy()
+    }
+  }
+)
+
 onUnmounted(() => {
   window.removeEventListener('beforeunload', beforeUnloadHandler)
   studyStore.isActiveMode = false
-  boardStore.setAnalysisMode(false)
+  gameStore.stop()
   analysisStore.resetAnalysisState()
 })
 

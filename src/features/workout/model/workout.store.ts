@@ -18,6 +18,7 @@ import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
+import { FreeExplorationStrategy } from '@/features/study'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
 
@@ -165,8 +166,8 @@ export const useWorkoutStore = defineStore('workout', () => {
             }
           } else {
             if (puzzle.strategy === 'scenarioOnly') {
-               boardStore.setAnalysisMode(true)
                _handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
+               gameStore.startWithStrategy(boardStore.fen, new FreeExplorationStrategy(), humanColor, true)
                return
             }
             
@@ -184,7 +185,6 @@ export const useWorkoutStore = defineStore('workout', () => {
         scenarioIndex = prevScenarioIndex
         isPlayoutMode = prevPlayoutMode
         isProcessingGameOver.value = false
-        boardStore.setAnalysisMode(false)
       },
 
       async onBotMoveExecuted() {
@@ -414,6 +414,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
     isWaitingForColorGuess.value = false
+    gameStore.stop()
   }
 
   return {

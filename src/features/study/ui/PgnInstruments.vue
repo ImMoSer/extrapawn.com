@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { useStudyStore } from '@/entities/study'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import {
@@ -20,7 +20,7 @@ import { parseUci as parseUciMove } from 'chessops/util'
 import { NButton, NButtonGroup, NIcon, NInput, useMessage, useDialog } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const studyStore = useStudyStore()
 const message = useMessage()
 const dialog = useDialog()
@@ -54,7 +54,7 @@ const handleRevertStudy = () => {
     negativeText: 'Abbrechen',
     onPositiveClick: () => {
       studyStore.revertActiveChapter()
-      boardStore.syncBoardWithPgn()
+      gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
       message.info('Änderungen verworfen.')
     },
   })
@@ -139,7 +139,7 @@ const toggleNag = (nagValue: number | null) => {
 
 const handleCutAfter = () => {
   pgnService.deleteCurrentNode()
-  boardStore.syncBoardWithPgn()
+  gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
 }
 
 const isMainline = computed(() => {
@@ -232,7 +232,7 @@ const handleCutBefore = () => {
     studyStore.activeChapter.chapter_type = isStartPos ? 'repertoire' : 'speedrun'
   }
 
-  boardStore.syncBoardWithPgn()
+  gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
 }
 </script>
 

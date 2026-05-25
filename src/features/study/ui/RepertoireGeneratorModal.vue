@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import {
   repertoireApiService,
   type RepertoireRequest,
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const studyStore = useStudyStore()
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const uiStore = useUiStore()
 const router = useRouter()
 const message = useMessage()
@@ -103,7 +103,7 @@ async function handleGenerateRepertoire() {
       }
 
       pgnService.mergeSubtree(pgnService.getCurrentNode(), sourceNode)
-      boardStore.syncBoardWithPgn()
+      gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
 
       message.success(
         t('features.study.repertoireGenerator.messages.success', { style: styleLabel }),

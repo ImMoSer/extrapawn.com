@@ -273,7 +273,7 @@ export const usePuzzleSpeedrunStore = defineStore('puzzleSpeedrun', () => {
     isFinished.value = false
     puzzlesToPlay.value = []
     puzzleTimes.value = {}
-    gameStore.setGamePhase('IDLE')
+    gameStore.stop()
   }
 
   function formatMs(ms: number | undefined): string {

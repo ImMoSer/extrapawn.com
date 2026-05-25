@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { computed } from 'vue'
 
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 
 const currentNode = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -17,8 +17,7 @@ const currentCandidates = computed(() => {
 })
 
 const navigateTo = (node: PgnNode) => {
-  pgnService.navigateToNode(node)
-  boardStore.syncBoardWithPgn()
+  gameStore.navigateToNode(node)
 }
 
 const getMoveNumber = (ply: number) => {

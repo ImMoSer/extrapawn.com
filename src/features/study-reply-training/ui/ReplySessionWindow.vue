@@ -6,20 +6,32 @@ import { useI18n } from 'vue-i18n'
 import { useReplyTrainingStore } from '../model/reply-training.store'
 import { useStudyStore } from '@/entities/study'
 import { srsService } from '../lib/SrsService'
-import { trainingController } from '../lib/TrainingController'
+import { RepertoireTrainingStrategy } from '../model/RepertoireTrainingStrategy'
+import { useGameStore } from '@/entities/game'
 
 const { t } = useI18n()
 const trainingStore = useReplyTrainingStore()
 const studyStore = useStudyStore()
 const dialog = useDialog()
+const gameStore = useGameStore()
 
 onMounted(() => {
   trainingStore.resetSession()
-  trainingController.checkOpponentReply()
+  const chapter = studyStore.activeChapter
+  if (chapter) {
+    const userColor = chapter.color || 'white'
+    const startFen = chapter.root.fenAfter || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    gameStore.startWithStrategy(
+      startFen,
+      new RepertoireTrainingStrategy(userColor, startFen),
+      userColor,
+      true
+    )
+  }
 })
 
 onUnmounted(() => {
-  // Logic moved to store-level permissions
+  gameStore.stop()
 })
 
 const activeChapter = computed(() => studyStore.activeChapter)

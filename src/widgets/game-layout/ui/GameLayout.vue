@@ -3,7 +3,6 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useAnalysisStore } from '@/features/analysis'
-import { useReplyTrainingStore, trainingController } from '@/features/study-reply-training'
 import { useThemeStore } from '@/features/settings'
 import type { Key } from '@lichess-org/chessground/types'
 import { storeToRefs } from 'pinia'
@@ -16,7 +15,6 @@ const props = defineProps<{
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
-const trainingStore = useReplyTrainingStore()
 const analysisStore = useAnalysisStore()
 const { analysisLines } = storeToRefs(analysisStore)
 const route = useRoute()
@@ -25,10 +23,10 @@ const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDurat
 
 const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
-// Force analysis mode if we are in study views, to prevent race conditions or store resets
+// Force analysis mode if we are in study views or analysis panel is visible, to prevent race conditions or store resets
 const effectiveAnalysisMode = computed(() => {
   return (
-    boardStore.isAnalysisModeActive ||
+    analysisStore.isPanelVisible ||
     (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
   )
 })
@@ -36,32 +34,15 @@ const effectiveAnalysisMode = computed(() => {
 const canUserEdit = computed(() => true)
 
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
-  let uci: string | null = null
-  if (effectiveAnalysisMode.value) {
-    if (trainingStore.isReplyTrainingActive) {
-      // Check if move is wrong. If wrong, trainingController reverts it and returns true.
-      const isIntercepted = trainingController.handleWrongMoveIntercept(orig, dest)
-      if (isIntercepted) return
-    }
-
-    uci = await boardStore.handleAnalysisMove({ orig, dest })
-
-    if (uci && trainingStore.isReplyTrainingActive) {
-      // Move was correct and mapped directly to PGN. Let trainingController process variation sequence.
-      trainingController.onMoveSuccessfullyApplied()
-    }
-  } else {
-    await gameStore.handleUserMove(orig, dest)
-  }
+  await gameStore.handleUserMove(orig, dest)
 }
 
 const handleBoardWheel = (direction: 'up' | 'down') => {
   if (analysisStore.isAnalysisActive || effectiveAnalysisMode.value) {
-    // Разрешаем скролл и v режиме анализа
     if (direction === 'up') {
-      boardStore.navigatePgn('backward')
+      gameStore.navigatePgn('backward')
     } else {
-      boardStore.navigatePgn('forward')
+      gameStore.navigatePgn('forward')
     }
   }
 }
@@ -76,9 +57,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
     event.preventDefault()
 
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      boardStore.navigatePgn('backward')
+      gameStore.navigatePgn('backward')
     } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      boardStore.navigatePgn('forward')
+      gameStore.navigatePgn('forward')
     }
   }
 }

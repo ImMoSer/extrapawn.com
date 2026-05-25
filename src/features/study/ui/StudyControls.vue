@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import {
   AnalyticsOutline as AnalysisIcon,
@@ -19,12 +19,13 @@ const emit = defineEmits<{
 }>()
 
 const boardStore = useBoardStore()
+const gameStore = useGameStore()
 const message = useMessage()
 const { t } = useI18n()
 
 const handleFlip = () => boardStore.flipBoard()
-const handlePrev = () => boardStore.navigatePgn('backward')
-const handleNext = () => boardStore.navigatePgn('forward')
+const handlePrev = () => gameStore.navigatePgn('backward')
+const handleNext = () => gameStore.navigatePgn('forward')
 
 const handleCopyFen = () => {
   const fen = pgnService.getCurrentNavigatedFen()

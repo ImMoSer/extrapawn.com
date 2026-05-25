@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBoardStore } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
 import type { PgnNode } from '@/shared/lib/pgn/PgnService'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import {
@@ -24,7 +24,7 @@ const props = withDefaults(
 )
 
 const analysisStore = useAnalysisStore()
-const boardStore = useBoardStore()
+const gameStore = useGameStore()
 
 onUnmounted(() => {
   analysisStore.resetAnalysisState()
@@ -47,15 +47,15 @@ const pgnRendererComponent = computed(() => {
 })
 
 const handlePgnMoveClick = (node: PgnNode) => {
-  boardStore.navigateToNode(node)
+  gameStore.navigateToNode(node)
 }
 
 const handlePgnWheelNavigation = (event: WheelEvent) => {
   event.preventDefault()
   if (event.deltaY < 0) {
-    boardStore.navigatePgn('backward', analysisStore.playerColor)
+    gameStore.navigatePgn('backward', analysisStore.playerColor)
   } else {
-    boardStore.navigatePgn('forward', analysisStore.playerColor)
+    gameStore.navigatePgn('forward', analysisStore.playerColor)
   }
 }
 
@@ -122,7 +122,7 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
       <div v-if="isAnalysisActive" class="analysis-header-nav">
         <!-- Navigation -->
         <n-button-group class="nav-group">
-          <n-button quaternary circle @click="boardStore.navigatePgn('start')">
+          <n-button quaternary circle @click="gameStore.navigatePgn('start')">
             <template #icon
               ><n-icon><PlaySkipBackOutline /></n-icon
             ></template>
@@ -130,7 +130,7 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
           <n-button
             quaternary
             circle
-            @click="boardStore.navigatePgn('backward', analysisStore.playerColor)"
+            @click="gameStore.navigatePgn('backward', analysisStore.playerColor)"
           >
             <template #icon
               ><n-icon><ChevronBackOutline /></n-icon
@@ -162,13 +162,13 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
           <n-button
             quaternary
             circle
-            @click="boardStore.navigatePgn('forward', analysisStore.playerColor)"
+            @click="gameStore.navigatePgn('forward', analysisStore.playerColor)"
           >
             <template #icon
               ><n-icon><ChevronForwardOutline /></n-icon
             ></template>
           </n-button>
-          <n-button quaternary circle @click="boardStore.navigatePgn('end')">
+          <n-button quaternary circle @click="gameStore.navigatePgn('end')">
             <template #icon
               ><n-icon><PlaySkipForwardOutline /></n-icon
             ></template>
