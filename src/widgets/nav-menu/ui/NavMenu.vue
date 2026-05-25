@@ -2,6 +2,7 @@
 import {
   CashOutline,
   HammerOutline,
+  HardwareChipOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
@@ -47,6 +48,11 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.workout', 'Training'),
     key: '/workout',
     icon: renderIcon(HammerOutline),
+  },
+  {
+    label: () => t('nav.playCoach', 'Play Coach'),
+    key: '/play-coach',
+    icon: renderIcon(HardwareChipOutline),
   },
   {
     label: () => t('nav.repertoire'),

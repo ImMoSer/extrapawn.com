@@ -14,6 +14,7 @@ import { LegalPage } from '@/pages/legal'
 import { PricingPage } from '@/pages/pricing'
 import { RecordsPagePage as RecordsPage } from '@/pages/records-page'
 import { WelcomePage } from '@/pages/welcome'
+import { PlayCoachPage } from '@/pages/play-coach'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 
 import { UserCabinetPage } from '@/pages/user-cabinet'
@@ -51,6 +52,12 @@ const router = createRouter({
       name: 'workout-playout',
       component: () => import('@/pages/workout/ui/WorkOut.vue'),
       meta: { isGame: true, requiresAuth: true, game: 'workout' },
+    },
+    {
+      path: '/play-coach',
+      name: 'play-coach',
+      component: PlayCoachPage,
+      meta: { isGame: true, requiresAuth: true, game: 'play-coach' },
     },
     {
       path: '/user-cabinet/:id?',

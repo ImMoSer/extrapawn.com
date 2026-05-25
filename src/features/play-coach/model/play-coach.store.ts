@@ -11,38 +11,14 @@ export const usePlayCoachStore = defineStore('playCoach', () => {
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
 
-  const isActive = ref(false)
   const selectedRange = ref<'1000-1499' | '1500-1799' | '1800-2200'>('1000-1499')
   const userColor = ref<'white' | 'black'>('white')
   const coachStats = ref<LichessOpeningResponse | null>(null)
   const isLoading = ref(false)
 
-  const maiaMapping = {
-    '1000-1499': 'maia-1900',
-    '1500-1799': 'maia-1900',
-    '1800-2200': 'maia-2200'
-  }
-
-  async function start() {
-    isActive.value = true
-    const currentFen = boardStore.fen || 'start'
-    boardStore.setupPosition(currentFen, userColor.value)
-    await updateStats()
-    
-    // If it's coach's turn at the start, make a move
-    if (isActive.value && boardStore.turn !== userColor.value) {
-      await makeCoachMove()
-    }
-  }
-
-  function stop() {
-    isActive.value = false
-    coachStats.value = null
-    gameStore.resetGame()
-  }
+  const ENGINE_NAME = 'maia-2200'
 
   async function updateStats() {
-    if (!isActive.value) return
     isLoading.value = true
     try {
       const fen = boardStore.fen
@@ -57,8 +33,6 @@ export const usePlayCoachStore = defineStore('playCoach', () => {
   }
 
   async function makeCoachMove() {
-    if (!isActive.value) return
-
     const fen = boardStore.fen
     
     // 1. Try Lichess Book (Top 5 weighted random)
@@ -87,12 +61,11 @@ export const usePlayCoachStore = defineStore('playCoach', () => {
       }
     }
 
-    // 2. Fallback to Engine (Maia)
-    const engineName = maiaMapping[selectedRange.value]
-    logger.info(`[PlayCoachStore] Book empty. Using engine: ${engineName}`)
+    // 2. Fallback to Engine (Maia 2200)
+    logger.info(`[PlayCoachStore] Book empty. Using engine: ${ENGINE_NAME}`)
     
     try {
-      const moveUci = await serverEngineService.getMoveFromServer(fen, engineName)
+      const moveUci = await serverEngineService.getMoveFromServer(fen, ENGINE_NAME)
       if (moveUci) {
         boardStore.applyUciMove(moveUci)
       }
@@ -103,44 +76,47 @@ export const usePlayCoachStore = defineStore('playCoach', () => {
 
   // Explicit handler for user moves from UI
   async function onUserMove() {
-    if (!isActive.value) return
-    
     await updateStats()
 
     if (boardStore.turn !== userColor.value) {
       // Small delay for realism
       setTimeout(async () => {
-        if (isActive.value && boardStore.turn !== userColor.value) {
+        if (boardStore.turn !== userColor.value) {
           await makeCoachMove()
         }
       }, COACH_MOVE_DELAY)
     }
   }
 
-  // Auto-respond when it's coach's turn
+  // Auto-respond when it's coach's turn or FEN changed (e.g. from PGN navigation)
   watch(() => boardStore.fen, async () => {
-    if (!isActive.value) return
-    
     await updateStats()
 
     if (boardStore.turn !== userColor.value) {
       // Small delay for realism
       setTimeout(async () => {
-        if (isActive.value && boardStore.turn !== userColor.value) {
+        if (boardStore.turn !== userColor.value) {
           await makeCoachMove()
         }
       }, COACH_MOVE_DELAY)
     }
+  }, { immediate: true })
+
+  // Re-update stats when rating range changes
+  watch(selectedRange, () => {
+    updateStats()
   })
 
+  // Initialize game phase
+  gameStore.setGamePhase('PLAYING')
+
   return {
-    isActive,
     selectedRange,
     userColor,
     coachStats,
     isLoading,
-    start,
-    stop,
-    onUserMove
+    onUserMove,
+    updateStats,
+    makeCoachMove
   }
 })

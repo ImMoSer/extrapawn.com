@@ -4,6 +4,7 @@ import { changeLang } from '@/shared/config/i18n'
 import {
   FlashOutline,
   HammerOutline,
+  HardwareChipOutline,
   LogInOutline,
   PersonOutline,
   SchoolOutline,
@@ -40,6 +41,12 @@ const menuItems = [
     icon: HammerOutline,
     labelKey: 'welcome.buttons.training',
     color: 'var(--neon-pink)',
+  },
+  {
+    path: '/play-coach',
+    icon: HardwareChipOutline,
+    labelKey: 'nav.playCoach',
+    color: 'var(--neon-blue, #00f2ff)',
   },
   {
     path: '/study',

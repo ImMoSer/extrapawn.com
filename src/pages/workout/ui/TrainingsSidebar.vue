@@ -14,7 +14,6 @@ import { useI18n } from 'vue-i18n'
 
 import EndgamesTab from './tabs/EndgamesTab.vue'
 import TacticsTab from './tabs/TacticsTab.vue'
-import PlayCoachTab from './tabs/PlayCoachTab.vue'
 
 const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
@@ -54,13 +53,6 @@ function handleLoadRequested(payload: { type: string; category: string; difficul
       >
         {{ t('features.learningCoach.tabs.tactic') }}
       </button>
-      <button
-        class="tab-btn btn-coach"
-        :class="{ active: gameModeStore.activeMode === 'PLAY_COACH' }"
-        @click="gameModeStore.activeMode = 'PLAY_COACH'"
-      >
-        PlayCoach
-      </button>
     </div>
 
     <!-- Sidebar Content -->
@@ -68,7 +60,7 @@ function handleLoadRequested(payload: { type: string; category: string; difficul
       <n-scrollbar trigger="hover">
         <div class="tab-content-wrapper">
           <!-- Universal Difficulty Selector -->
-          <div v-if="gameModeStore.activeMode !== 'PLAY_COACH'" class="form-group difficulty-section">
+          <div class="form-group difficulty-section">
             <n-text class="input-label">{{ t('features.learningCoach.difficultyLabel') }}</n-text>
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
               <n-radio-button value="Novice">
@@ -95,11 +87,6 @@ function handleLoadRequested(payload: { type: string; category: string; difficul
             v-else-if="gameModeStore.activeMode === 'WINNING_TACTICS'"
             :difficulty="selectedDifficulty"
             @load-requested="handleLoadRequested"
-          />
-
-          <!-- TAB 4: PLAYCOACH -->
-          <PlayCoachTab
-            v-else-if="gameModeStore.activeMode === 'PLAY_COACH'"
           />
         </div>
       </n-scrollbar>
