@@ -1,13 +1,12 @@
-<!-- src/features/workout/ui/GuessColorSelection.vue -->
 <script setup lang="ts">
-import { useWorkoutStore } from '@/features/workout'
+import { useEndgamesStore } from '../model/endgames.store'
 import { useI18n } from 'vue-i18n'
 
-const workoutStore = useWorkoutStore()
+const endgamesStore = useEndgamesStore()
 const { t } = useI18n()
 
 const handleSelection = (color: 'white' | 'black') => {
-  workoutStore.guessColor(color)
+  endgamesStore.guessColor(color)
 }
 </script>
 

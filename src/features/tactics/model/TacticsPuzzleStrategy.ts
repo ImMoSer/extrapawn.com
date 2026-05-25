@@ -8,15 +8,15 @@ import {
 import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
 import { FreeExplorationStrategy } from '@/features/study'
-import { useWorkoutStore, type WorkoutPuzzle } from './workout.store'
+import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
 
-export class WorkoutPuzzleStrategy implements IGameplayStrategy {
+export class TacticsPuzzleStrategy implements IGameplayStrategy {
   config = {
     initialBotDelayMs: 300,
     botDelayMs: 50,
   }
 
-  private puzzle: WorkoutPuzzle
+  private puzzle: TacticsPuzzle
   private humanColor: 'white' | 'black'
   private scenarioMoves: string[]
   private scenarioIndex = 0
@@ -26,7 +26,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
   private prevPlayoutMode = false
   private nextPuzzleTimeout: number | null = null
 
-  constructor(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black') {
+  constructor(puzzle: TacticsPuzzle, humanColor: 'white' | 'black') {
     this.puzzle = puzzle
     this.humanColor = humanColor
     this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
@@ -37,7 +37,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
   }
 
   private get store() {
-    return useWorkoutStore()
+    return useTacticsStore()
   }
 
   private get gameStore() {
@@ -137,7 +137,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
     try {
       return await enginePlayService.getBestMove(this.gameStore.botEngineId, fen)
     } catch (error) {
-      logger.error('[WorkoutStrategy] Engine failed to generate move.', error)
+      logger.error('[TacticsStrategy] Engine failed to generate move.', error)
       return null
     }
   }

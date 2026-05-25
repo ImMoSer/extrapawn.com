@@ -37,9 +37,15 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   {
-    path: '/workout',
+    path: '/endgames',
+    icon: SchoolOutline,
+    labelKey: 'features.learningCoach.tabs.endgame',
+    color: 'var(--neon-purple)',
+  },
+  {
+    path: '/tactics',
     icon: HammerOutline,
-    labelKey: 'welcome.buttons.training',
+    labelKey: 'features.learningCoach.tabs.tactic',
     color: 'var(--neon-pink)',
   },
   {

@@ -1,23 +1,24 @@
 // src/widgets/game-layout/model/useTopInfo.ts
 import { type TopInfoDisplay } from '@/entities/puzzle'
-import { useWorkoutStore } from '@/features/workout'
+import { useEndgamesStore } from '@/features/endgames'
+import { useTacticsStore } from '@/features/tactics'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 export function useTopInfo() {
   const route = useRoute()
-  const workoutStore = useWorkoutStore()
+  const endgamesStore = useEndgamesStore()
+  const tacticsStore = useTacticsStore()
 
   const displayInfo = computed<TopInfoDisplay>(() => {
     const routeName = route.name?.toString() || ''
 
-    if (
-      routeName.startsWith('finish-him') ||
-      routeName.startsWith('theory-endings') ||
-      routeName.startsWith('practical-chess') ||
-      routeName.startsWith('workout')
-    ) {
-      return workoutStore.topInfoDisplay
+    if (routeName.startsWith('endgames')) {
+      return endgamesStore.topInfoDisplay
+    }
+    
+    if (routeName.startsWith('tactics')) {
+      return tacticsStore.topInfoDisplay
     }
 
     // Default fallback

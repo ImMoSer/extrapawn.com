@@ -1,6 +1,7 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
-import { useWorkoutStore } from '@/features/workout'
+import { useEndgamesStore } from '@/features/endgames'
+import { useTacticsStore } from '@/features/tactics'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { watch } from 'vue'
@@ -35,7 +36,15 @@ const router = createRouter({
     },
     {
       path: '/endgames',
-      redirect: '/workout',
+      name: 'endgames',
+      component: () => import('@/pages/endgames/ui/Endgames.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'endgames' },
+    },
+    {
+      path: '/tactics',
+      name: 'tactics',
+      component: () => import('@/pages/tactics/ui/Tactics.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'tactics' },
     },
     {
       path: '/finish-him',
@@ -43,15 +52,10 @@ const router = createRouter({
     },
     {
       path: '/workout/:type?/:puzzleId?',
-      name: 'workout',
-      component: () => import('@/pages/workout/ui/WorkOut.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'workout' },
-    },
-    {
-      path: '/workout/playout/:color/:fen',
-      name: 'workout-playout',
-      component: () => import('@/pages/workout/ui/WorkOut.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'workout' },
+      redirect: (to) => {
+        if (to.params.type === 'tactics') return '/tactics'
+        return '/endgames'
+      }
     },
     {
       path: '/play-coach',
@@ -239,8 +243,11 @@ router.afterEach(async (to, from) => {
   const toBaseRoute = String(to.name)
   const t = i18n.global.t
 
-  if (fromBaseRoute?.startsWith('workout') && !toBaseRoute?.startsWith('workout')) {
-    useWorkoutStore().reset()
+  if (fromBaseRoute?.startsWith('endgames') && !toBaseRoute?.startsWith('endgames')) {
+    useEndgamesStore().reset()
+  }
+  if (fromBaseRoute?.startsWith('tactics') && !toBaseRoute?.startsWith('tactics')) {
+    useTacticsStore().reset()
   }
 
   // Update SEO Meta Tags with translations

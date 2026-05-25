@@ -6,43 +6,40 @@ import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
-import { useWorkoutStore, GuessColorSelection } from '@/features/workout'
-import TrainingsSidebar from './TrainingsSidebar.vue'
+import { useTacticsStore, GuessColorSelection } from '@/features/tactics'
+import TacticsSidebar from './TacticsSidebar.vue'
 
 const { t } = useI18n()
-const workoutStore = useWorkoutStore()
+const tacticsStore = useTacticsStore()
 const coachStore = useCoachStore()
 
 // Handle position load callback from Sidebar
 function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string }) {
-  workoutStore.loadNewPuzzle(payload.type, {
+  tacticsStore.loadNewPuzzle(payload.type, {
     category: payload.category,
     difficulty: payload.difficulty
   })
 }
 
-const showColorGuess = computed(() => workoutStore.isWaitingForColorGuess)
+const showColorGuess = computed(() => tacticsStore.isWaitingForColorGuess)
 
 const activePuzzleTitle = computed(() => {
-   return workoutStore.topInfoDisplay.title
+   return tacticsStore.topInfoDisplay.title
 })
 const badges = computed(() => {
-   return workoutStore.topInfoDisplay.badges
+   return tacticsStore.topInfoDisplay.badges
 })
 
-watch(() => workoutStore.isWaitingForColorGuess, (isWaiting) => {
+watch(() => tacticsStore.isWaitingForColorGuess, (isWaiting) => {
   if (isWaiting) {
     coachStore.setCoachEnabled(false)
   } else {
-    // We could re-enable it here, but let's be careful not to override user preference if they toggled it off.
-    // However, the mandate says we enable it once guessed correctly.
     coachStore.setCoachEnabled(true)
   }
 })
 
 onMounted(() => {
-  // If we are starting fresh and waiting for guess, coach should be off.
-  if (workoutStore.isWaitingForColorGuess) {
+  if (tacticsStore.isWaitingForColorGuess) {
     coachStore.setCoachEnabled(false)
   } else {
     coachStore.setCoachEnabled(true)
@@ -50,20 +47,20 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  workoutStore.reset()
+  tacticsStore.reset()
 })
 </script>
 
 <template>
   <GameLayout>
     <template #left-panel>
-      <TrainingsSidebar
+      <TacticsSidebar
         @loadRequested="handleLoadRequested"
       />
     </template>
 
     <template #top-info>
-      <div v-if="workoutStore.activePuzzle" class="learning-top-panel-container">
+      <div v-if="tacticsStore.activePuzzle" class="learning-top-panel-container">
         <div class="learning-top-info">
           <span v-for="badge in badges" :key="badge.text" class="premium-badge category badge-endings">
             {{ badge.text }}
@@ -73,27 +70,27 @@ onUnmounted(() => {
       </div>
       <div v-else class="learning-top-info-placeholder">
         <n-text class="status-indicator select-lesson-prompt">
-          Select a training
+          Select a tactic training
         </n-text>
       </div>
     </template>
 
     <template #center-column>
-       <div v-if="workoutStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
+       <div v-if="tacticsStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
         <div class="result-overlay">
           <n-icon
             size="64"
-            :class="workoutStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'icon-success' : 'icon-error'"
+            :class="tacticsStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'icon-success' : 'icon-error'"
           >
-            <CheckmarkCircle v-if="workoutStore.feedbackMessage === t('features.finishHim.feedback.win')" />
+            <CheckmarkCircle v-if="tacticsStore.feedbackMessage === t('features.finishHim.feedback.win')" />
             <CloseCircle v-else />
           </n-icon>
-          <n-text class="result-text">{{ workoutStore.feedbackMessage }}</n-text>
+          <n-text class="result-text">{{ tacticsStore.feedbackMessage }}</n-text>
           
           <n-button 
             type="primary" 
             size="large" 
-            @click="workoutStore.loadNewPuzzle(workoutStore.activePuzzle?.puzzle_type || 'finish_him', workoutStore.activeParams)"
+            @click="tacticsStore.loadNewPuzzle(tacticsStore.activePuzzle?.puzzle_type || 'tactics', tacticsStore.activeParams)"
             style="margin-top: 1rem;"
           >
             Next Training

@@ -1,4 +1,5 @@
-import { useWorkoutStore } from '@/features/workout'
+import { useEndgamesStore } from '@/features/endgames'
+import { useTacticsStore } from '@/features/tactics'
 import type {
   GameLaunchOptions,
 } from '@/shared/types/api.types'
@@ -6,7 +7,8 @@ import { useRouter } from 'vue-router'
 
 export function useGameLauncher() {
   const router = useRouter()
-  const workoutStore = useWorkoutStore()
+  const endgamesStore = useEndgamesStore()
+  const tacticsStore = useTacticsStore()
 
   const launchGame = (options: GameLaunchOptions) => {
     const { mode, difficulty, theme } = options
@@ -24,29 +26,29 @@ export function useGameLauncher() {
 
     // 1. FINISH HIM
     if (mode === 'finish_him') {
-      workoutStore.loadNewPuzzle('finish_him', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'workout' })
+      endgamesStore.loadNewPuzzle('finish_him', { category: theme, difficulty: targetDiff })
+      router.push({ name: 'endgames' })
       return
     }
 
     // 2. THEORY ENDINGS
     if (mode === 'theory_endings') {
-      workoutStore.loadNewPuzzle('theory_endings', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'workout' })
+      endgamesStore.loadNewPuzzle('theory_endings', { category: theme, difficulty: targetDiff })
+      router.push({ name: 'endgames' })
       return
     }
 
     // 3. PRACTICAL CHESS
     if (mode === 'practical_chess') {
-      workoutStore.loadNewPuzzle('practical_chess', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'workout' })
+      endgamesStore.loadNewPuzzle('practical_chess', { category: theme, difficulty: targetDiff })
+      router.push({ name: 'endgames' })
       return
     }
 
     // 4. TACTICS
     if (mode === 'tactics') {
-      workoutStore.loadNewPuzzle('tactics', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'workout' })
+      tacticsStore.loadNewPuzzle('tactics', { category: theme, difficulty: targetDiff })
+      router.push({ name: 'tactics' })
       return
     }
 

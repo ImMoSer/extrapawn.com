@@ -6,7 +6,6 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 import {
   useGameStore,
-  useBoardStore,
   type GameStatusInfo,
 } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
@@ -18,13 +17,13 @@ import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
-import { WorkoutPuzzleStrategy } from './WorkoutPuzzleStrategy'
+import { TacticsPuzzleStrategy } from './TacticsPuzzleStrategy'
 
 const t = i18n.global.t
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
-export interface WorkoutPuzzle {
+export interface TacticsPuzzle {
   puzzle_id: string
   puzzle_type: string
   category: string
@@ -40,29 +39,28 @@ export interface WorkoutPuzzle {
   userSelectedColor?: boolean
 }
 
-export interface WorkoutParams {
+export interface TacticsParams {
   type?: string
   category?: string
   difficulty?: string
   puzzleId?: string
 }
 
-function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
+function determineHumanColor(puzzle: TacticsPuzzle): 'white' | 'black' {
   const setup = parseFen(puzzle.initial_fen).unwrap()
   const isBotFirst = puzzle.first_move === 'bot'
   return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
 }
 
-export const useWorkoutStore = defineStore('workout', () => {
+export const useTacticsStore = defineStore('tactics', () => {
   const gameStore = useGameStore()
-  const boardStore = useBoardStore()
   const authStore = useAuthStore()
   const uiStore = useUiStore()
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
 
-  const activePuzzle = ref<WorkoutPuzzle | null>(null)
-  const activeParams = ref<WorkoutParams>({})
+  const activePuzzle = ref<TacticsPuzzle | null>(null)
+  const activeParams = ref<TacticsParams>({})
   
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
@@ -89,7 +87,7 @@ export const useWorkoutStore = defineStore('workout', () => {
       // Start the game for real
       gameStore.startWithStrategy(
         activePuzzle.value.initial_fen, 
-        new WorkoutPuzzleStrategy(activePuzzle.value, correctColor), 
+        new TacticsPuzzleStrategy(activePuzzle.value, correctColor), 
         correctColor, 
         false
       )
@@ -109,7 +107,7 @@ export const useWorkoutStore = defineStore('workout', () => {
   }
 
   async function handleGameOver(
-    puzzle: WorkoutPuzzle,
+    puzzle: TacticsPuzzle,
     isWin: boolean,
     outcome: NonNullable<GameStatusInfo['outcome']>,
     humanColor: 'white' | 'black',
@@ -134,7 +132,6 @@ export const useWorkoutStore = defineStore('workout', () => {
     }
 
     try {
-      // Result submission logic moved directly here since queries were deleted
       const resultDto = {
         wasCorrect: isWin,
         puzzle_id: puzzle.puzzle_id,
@@ -165,7 +162,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         }
       }
     } catch (error) {
-      logger.error('[WorkoutStore] Failed to submit results:', error)
+      logger.error('[TacticsStore] Failed to submit results:', error)
     }
   }
 
@@ -173,7 +170,7 @@ export const useWorkoutStore = defineStore('workout', () => {
     isProcessingGameOver.value = value
   }
 
-  async function loadNewPuzzle(type: string, queryParams: Partial<WorkoutParams> = {}) {
+  async function loadNewPuzzle(type: string, queryParams: Partial<TacticsParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
     gameStore.setGamePhase('LOADING')
@@ -188,13 +185,13 @@ export const useWorkoutStore = defineStore('workout', () => {
       
       const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
-      const puzzle = await apiClient<WorkoutPuzzle>(url)
+      const puzzle = await apiClient<TacticsPuzzle>(url)
       if (!puzzle) throw new Error('Puzzle data is null')
 
-      const mappedPuzzle: WorkoutPuzzle = {
+      const mappedPuzzle: TacticsPuzzle = {
         ...puzzle,
         puzzle_type: type,
-        strategy: puzzle.strategy || (type === 'tactics' ? 'scenarioOnly' : (type === 'finish_him' ? 'playOutOnly' : 'scenarioPlus'))
+        strategy: puzzle.strategy || 'scenarioOnly'
       }
 
       activePuzzle.value = mappedPuzzle
@@ -202,67 +199,24 @@ export const useWorkoutStore = defineStore('workout', () => {
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
 
-      // ONLY for practical_chess and materialEquality we show the color guess
-      const isMaterialEqualityGuess = type === 'practical_chess' && mappedPuzzle.category === 'materialEquality'
-
-      if (isMaterialEqualityGuess) {
-        isWaitingForColorGuess.value = true
-        gameStore.setGamePhase('IDLE')
-        boardStore.setupPosition(mappedPuzzle.initial_fen)
-        boardStore.orientation = 'white'
-        feedbackMessage.value = 'Guess which side you are playing!'
-      } else {
-        isWaitingForColorGuess.value = false
-        gameStore.startWithStrategy(
-          mappedPuzzle.initial_fen,
-          new WorkoutPuzzleStrategy(mappedPuzzle, humanColor),
-          humanColor,
-          false
-        )
-        feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
-        soundService.playSound('game_you_move')
-      }
+      isWaitingForColorGuess.value = false
+      gameStore.startWithStrategy(
+        mappedPuzzle.initial_fen,
+        new TacticsPuzzleStrategy(mappedPuzzle, humanColor),
+        humanColor,
+        false
+      )
+      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      soundService.playSound('game_you_move')
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
-          logger.error('[WorkoutStore] Failed to load puzzle:', error)
+          logger.error('[TacticsStore] Failed to load puzzle:', error)
           feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
           gameStore.setGamePhase('IDLE')
           router.push('/')
        }
     }
-  }
-
-  function startPlayoutFromFen(fen: string, color: 'white' | 'black') {
-    isProcessingGameOver.value = false
-    gameStore.setGamePhase('LOADING')
-    feedbackMessage.value = t('features.finishHim.feedback.yourTurnPlayout')
-
-    const dummyPuzzle: WorkoutPuzzle = { 
-        puzzle_id: 'custom', 
-        puzzle_type: 'custom', 
-        category: 'custom',
-        difficulty: 'custom',
-        strategy: 'playOutOnly',
-        first_move: 'user',
-        initial_fen: fen 
-    }
-    gameStore.startWithStrategy(fen, new WorkoutPuzzleStrategy(dummyPuzzle, color), color, false)
-  }
-
-  function startYouMoveGame(color: 'white' | 'black') {
-      if (!activePuzzle.value) return
-      isWaitingForColorSelection.value = false
-      currentUserColor.value = color
-      activePuzzle.value.userSelectedColor = true
-  
-      let fen = activePuzzle.value.initial_fen
-      const parts = fen.split(' ')
-      parts[1] = color === 'black' ? 'b' : 'w'
-      fen = parts.join(' ')
-  
-      soundService.playSound('game_you_move')
-      gameStore.startWithStrategy(fen, new WorkoutPuzzleStrategy(activePuzzle.value, color), color)
   }
 
   async function handleRestart() {
@@ -340,8 +294,6 @@ export const useWorkoutStore = defineStore('workout', () => {
     initialize,
     loadNewPuzzle,
     guessColor,
-    startYouMoveGame,
-    startPlayoutFromFen,
     handleRestart,
     handleExit,
     reset,
@@ -349,4 +301,3 @@ export const useWorkoutStore = defineStore('workout', () => {
     setProcessingGameOver,
   }
 })
-

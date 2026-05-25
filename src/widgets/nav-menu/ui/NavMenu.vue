@@ -2,13 +2,14 @@
 import {
   CashOutline,
   FlashOutline,
-  HammerOutline,
   HardwareChipOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
   SchoolOutline,
   TrophyOutline,
+  ExtensionPuzzleOutline,
+  RibbonOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
 import { computed, h, type Component } from 'vue'
@@ -46,9 +47,14 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('nav.workout', 'Training'),
-    key: '/workout',
-    icon: renderIcon(HammerOutline),
+    label: () => t('features.learningCoach.tabs.endgame', 'Endgames'),
+    key: '/endgames',
+    icon: renderIcon(RibbonOutline),
+  },
+  {
+    label: () => t('features.learningCoach.tabs.tactic', 'Tactics'),
+    key: '/tactics',
+    icon: renderIcon(ExtensionPuzzleOutline),
   },
   {
     label: () => t('features.speedrun.title', 'Task Today'),
