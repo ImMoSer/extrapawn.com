@@ -5,11 +5,11 @@ import logger from '@/shared/lib/logger'
 
 export class PlayCoachStrategy implements IGameplayStrategy {
   config = {
-    botDelayMs: 400,
+    botDelayMs: 100,
     playGameStatusSounds: true,
   }
 
-  private readonly ENGINE_ID = 'maia-2200'
+  private readonly ENGINE_ID = 'maia-2400'
 
   onGameStart() {
     logger.info('[PlayCoachStrategy] Game started')
@@ -24,8 +24,8 @@ export class PlayCoachStrategy implements IGameplayStrategy {
 
     // 1. Try Lichess Book from Explorer Store
     // Ensure the stats are for the current FEN to avoid using stale book moves
-    const statsMatchFen = explorerStore.lastFetchedFen && 
-                         explorerStore.lastFetchedFen.split(' ').slice(0, 4).join(' ') === 
+    const statsMatchFen = explorerStore.lastFetchedFen &&
+                         explorerStore.lastFetchedFen.split(' ').slice(0, 4).join(' ') ===
                          fen.split(' ').slice(0, 4).join(' ')
 
     if (statsMatchFen && explorerStore.stats && explorerStore.stats.moves.length > 0) {
@@ -33,11 +33,11 @@ export class PlayCoachStrategy implements IGameplayStrategy {
       const firstMove = topMoves[0]
       if (firstMove) {
         const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
-        
+
         if (totalPlays > 0) {
           let random = Math.random() * totalPlays
           let selectedUci = firstMove.uci
-          
+
           for (const move of topMoves) {
             random -= move.total
             if (random <= 0) {
@@ -45,7 +45,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
               break
             }
           }
-          
+
           logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci}`)
           return selectedUci
         }
@@ -54,7 +54,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
 
     // 2. Fallback to Engine (Maia 2200 via EnginePlayService)
     logger.info(`[PlayCoachStrategy] Book empty. Using engine: ${this.ENGINE_ID}`)
-    
+
     try {
       const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
       return moveUci
