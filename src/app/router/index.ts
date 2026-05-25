@@ -122,6 +122,12 @@ const router = createRouter({
       meta: { isGame: true, game: 'study', requiresAuth: false },
     },
     {
+      path: '/puzzle-speedrun',
+      name: 'puzzle-speedrun',
+      component: () => import('@/pages/puzzle-speedrun/ui/PuzzleSpeedrunPage.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'puzzle-speedrun' },
+    },
+    {
       path: '/study-speedrun',
       name: 'study-speedrun',
       component: () => import('@/pages/study-speedrun/ui/StudySpeedrunPage.vue'),

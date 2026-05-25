@@ -2,6 +2,7 @@
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
+  FlashOutline,
   HammerOutline,
   LogInOutline,
   PersonOutline,
@@ -51,6 +52,12 @@ const menuItems = [
     icon: PersonOutline,
     labelKey: 'nav.userCabinet',
     color: 'var(--neon-orange)',
+  },
+  {
+    path: '/puzzle-speedrun',
+    icon: FlashOutline,
+    labelKey: 'features.speedrun.title',
+    color: 'var(--neon-cyan)',
   },
   {
     path: '/bonus',
