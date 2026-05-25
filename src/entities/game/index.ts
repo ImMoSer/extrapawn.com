@@ -1,4 +1,4 @@
-export { gameplayService } from './lib/GameplayService'
+export { enginePlayService } from './lib/EnginePlayService'
 export { useBoardStore } from './model/board.store'
 export type { GameEndOutcome } from './model/board.store'
 export * from './model/game.store'

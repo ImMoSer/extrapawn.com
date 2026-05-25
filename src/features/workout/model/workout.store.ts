@@ -7,7 +7,7 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import {
   useGameStore,
   useBoardStore,
-  gameplayService,
+  enginePlayService,
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
@@ -206,7 +206,7 @@ export const useWorkoutStore = defineStore('workout', () => {
         if (puzzle.strategy === 'scenarioOnly') return null;
 
         try {
-          return await gameplayService.getBestMove(gameStore.botEngineId, fen)
+          return await enginePlayService.getBestMove(gameStore.botEngineId, fen)
         } catch (error) {
           logger.error('[WorkoutStrategy] Engine failed to generate move.', error)
           return null

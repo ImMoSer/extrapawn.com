@@ -1,4 +1,4 @@
-// src/services/GameplayService.ts
+// src/entities/game/lib/EnginePlayService.ts
 import { serverEngineService } from '@/shared/lib/engine'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import logger from '@/shared/lib/logger'
@@ -23,41 +23,41 @@ export const engineConfigs: Record<EngineId, EngineConfig> = {
   'maia-2400': { type: 'server', model: 'maia-2400', fallback: true },
 }
 
-class GameplayServiceController {
+class EnginePlayServiceController {
   constructor() {
-    logger.info('[GameplayService] Initialized with new local engine configurations.')
+    logger.info('[EnginePlayService] Initialized with new local engine configurations.')
     // Asynchronously pre-load the engine in the background to avoid delay during first fallback
     coachEngineManager.ensureReady().catch((err) => {
-      logger.warn('[GameplayService] Early engine pre-loading failed.', err)
+      logger.warn('[EnginePlayService] Early engine pre-loading failed.', err)
     })
   }
 
   public async getBestMove(engineId: EngineId, fen: string): Promise<string | null> {
     const config = engineConfigs[engineId]
     if (!config) {
-      logger.error(`[GameplayService] Unknown engineId: ${engineId}.`)
+      logger.error(`[EnginePlayService] Unknown engineId: ${engineId}.`)
       return null
     }
 
     // --- ЛОГИКА ДЛЯ ЛОКАЛЬНЫХ ДВИЖКОВ ---
     if (config.type === 'local' && config.depth !== undefined) {
-      logger.info(`[GameplayService] Using local engine for ${engineId} with depth ${config.depth}`)
+      logger.info(`[EnginePlayService] Using local engine for ${engineId} with depth ${config.depth}`)
       try {
         await coachEngineManager.ensureReady()
         return await coachEngineManager.getBestMoveOnly(fen, { depth: config.depth })
       } catch (error) {
-        logger.error(`[GameplayService] Local engine failed for ${engineId}:`, error)
+        logger.error(`[EnginePlayService] Local engine failed for ${engineId}:`, error)
         return null // В случае ошибки локального движка, ход не будет сделан
       }
     }
 
     // --- ЛОГИКА ДЛЯ СЕРВЕРНОГО ДВИЖКА ---
     if (config.type === 'server' && config.model) {
-      logger.info(`[GameplayService] Using server engine ${engineId} (model: ${config.model})`)
+      logger.info(`[EnginePlayService] Using server engine ${engineId} (model: ${config.model})`)
       return this.getMoveWithFallback(fen, config.model)
     }
 
-    logger.error(`[GameplayService] Invalid configuration for engineId: ${engineId}`)
+    logger.error(`[EnginePlayService] Invalid configuration for engineId: ${engineId}`)
     return null
   }
 
@@ -79,7 +79,7 @@ class GameplayServiceController {
         .then((res) => ({ source: 'A', result: res }))
         .catch((err) => {
           if (err.name === 'AbortError') throw err
-          logger.warn(`[GameplayService] Request A failed:`, err)
+          logger.warn(`[EnginePlayService] Request A failed:`, err)
           throw err
         })
 
@@ -87,7 +87,7 @@ class GameplayServiceController {
       const promiseB = new Promise<{ source: string; result: string | null }>((resolve, reject) => {
         timerB = window.setTimeout(() => {
           logger.info(
-            `[GameplayService] Request A takes >${HEDGE_DELAY_MS}ms. Firing Hedged Request B.`,
+            `[EnginePlayService] Request A takes >${HEDGE_DELAY_MS}ms. Firing Hedged Request B.`,
           )
           serverEngineService
             .getMoveFromServer(fen, modelId, controllerB.signal)
@@ -120,7 +120,7 @@ class GameplayServiceController {
 
       const elapsed = Math.round(performance.now() - startTime)
       logger.info(
-        `[GameplayService] Server engine responded via Request ${winner.source} in ${elapsed}ms.`,
+        `[EnginePlayService] Server engine responded via Request ${winner.source} in ${elapsed}ms.`,
       )
 
       if (timerB) clearTimeout(timerB)
@@ -139,10 +139,13 @@ class GameplayServiceController {
       const errMsg = error instanceof Error ? error.message : String(error)
       if (errMsg === 'HARD_TIMEOUT') {
         logger.warn(
-          `[GameplayService] Server engine hard timeout after ${HARD_TIMEOUT_MS}ms. Falling back.`,
+          `[EnginePlayService] Server engine hard timeout after ${HARD_TIMEOUT_MS}ms. Falling back.`,
         )
       } else {
-        logger.error(`[GameplayService] Both hedged requests failed. Falling back. Error:`, error)
+        logger.error(
+          `[EnginePlayService] Both hedged requests failed. Falling back. Error:`,
+          error,
+        )
       }
 
       await coachEngineManager.ensureReady()
@@ -151,4 +154,4 @@ class GameplayServiceController {
   }
 }
 
-export const gameplayService = new GameplayServiceController()
+export const enginePlayService = new EnginePlayServiceController()

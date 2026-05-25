@@ -50,7 +50,7 @@ export class CoachEngineManager {
   }
 
   /**
-   * Backward compatibility / fallback for GameplayService.
+   * Backward compatibility / fallback for EnginePlayService.
    */
   public async getBestMoveOnly(
     fen: string,

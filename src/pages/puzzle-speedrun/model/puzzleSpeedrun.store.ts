@@ -1,6 +1,6 @@
 import {
   useGameStore,
-  gameplayService,
+  enginePlayService,
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
@@ -163,7 +163,7 @@ export const usePuzzleSpeedrunStore = defineStore('puzzleSpeedrun', () => {
         if (puzzle.strategy === 'scenarioOnly') return null
 
         try {
-          return await gameplayService.getBestMove(gameStore.botEngineId, fen)
+          return await enginePlayService.getBestMove(gameStore.botEngineId, fen)
         } catch (error) {
           logger.error('[PuzzleSpeedrunStrategy] Engine failed to generate move.', error)
           return null

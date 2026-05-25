@@ -1,6 +1,6 @@
 import {
   useGameStore,
-  gameplayService,
+  enginePlayService,
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
@@ -76,7 +76,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
       requestBotMove: async (fen: string) => {
         try {
           console.log('[SpeedrunStrategy] Requesting bot move for FEN:', fen)
-          const move = await gameplayService.getBestMove(gameStore.botEngineId, fen)
+          const move = await enginePlayService.getBestMove(gameStore.botEngineId, fen)
           console.log('[SpeedrunStrategy] Bot move received:', move)
           return move
         } catch (error) {
