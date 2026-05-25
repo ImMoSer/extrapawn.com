@@ -311,13 +311,27 @@ export const useWorkoutStore = defineStore('workout', () => {
       
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
-      isWaitingForColorGuess.value = true
-      
-      gameStore.setGamePhase('IDLE')
-      boardStore.setupPosition(mappedPuzzle.initial_fen)
-      boardStore.orientation = 'white'
 
-      feedbackMessage.value = 'Guess which side you are playing!'
+      // ONLY for practical_chess and materialEquality we show the color guess
+      const isMaterialEqualityGuess = type === 'practical_chess' && mappedPuzzle.category === 'materialEquality'
+
+      if (isMaterialEqualityGuess) {
+        isWaitingForColorGuess.value = true
+        gameStore.setGamePhase('IDLE')
+        boardStore.setupPosition(mappedPuzzle.initial_fen)
+        boardStore.orientation = 'white'
+        feedbackMessage.value = 'Guess which side you are playing!'
+      } else {
+        isWaitingForColorGuess.value = false
+        gameStore.startWithStrategy(
+          mappedPuzzle.initial_fen,
+          createPuzzleStrategy(mappedPuzzle, humanColor),
+          humanColor,
+          false
+        )
+        feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+        soundService.playSound('game_you_move')
+      }
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
