@@ -20,6 +20,10 @@ export class StudySpeedrunStrategy implements IGameplayStrategy {
     this.speedrunStore.startTimer()
   }
 
+  onDestroy(): void {
+    this.speedrunStore.stopTimer()
+  }
+
   async validateUserMove(uciMove: string): Promise<boolean> {
     const uciPrefix = uciMove.slice(0, 4)
     const currentNode = pgnService.getCurrentNode()

@@ -35,6 +35,14 @@ export class PuzzleSpeedrunStrategy implements IGameplayStrategy {
     return useGameStore()
   }
 
+  onGameStart(): void {
+    this.store.startTimer()
+  }
+
+  onDestroy(): void {
+    this.store.stopTimer()
+  }
+
   checkWinCondition(status: GameStatusInfo): boolean {
     const outcome = status.outcome
     if (!outcome || outcome.reason === 'resign') return false

@@ -24,6 +24,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
   
   private prevScenarioIndex = 0
   private prevPlayoutMode = false
+  private nextPuzzleTimeout: number | null = null
 
   constructor(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black') {
     this.puzzle = puzzle
@@ -48,6 +49,13 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
   }
 
   onGameStart() {}
+
+  onDestroy() {
+    if (this.nextPuzzleTimeout) {
+      clearTimeout(this.nextPuzzleTimeout)
+      this.nextPuzzleTimeout = null
+    }
+  }
 
   checkWinCondition(status: GameStatusInfo): boolean {
     const outcome = status.outcome
@@ -81,7 +89,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
 
         if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
            this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
-           setTimeout(() => {
+           this.nextPuzzleTimeout = window.setTimeout(() => {
              this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
            }, 1000)
         }
@@ -111,7 +119,7 @@ export class WorkoutPuzzleStrategy implements IGameplayStrategy {
   async onBotMoveExecuted(): Promise<void> {
     if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
       this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
-      setTimeout(() => {
+      this.nextPuzzleTimeout = window.setTimeout(() => {
         this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
       }, 1000)
     }

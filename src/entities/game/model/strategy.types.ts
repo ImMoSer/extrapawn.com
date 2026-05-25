@@ -62,4 +62,10 @@ export interface IGameplayStrategy {
    * Позволяет переопределить логику победы (например, ничья == победа в Theory Endings).
    */
   checkWinCondition?: (currentState: GameStatusInfo) => boolean
+
+  /**
+   * Вызывается при остановке игры или смене стратегии. 
+   * Используется для очистки таймеров, подписок и т.д.
+   */
+  onDestroy?: () => void
 }

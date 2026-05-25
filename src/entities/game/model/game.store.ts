@@ -171,6 +171,10 @@ export const useGameStore = defineStore('game', () => {
   ) {
     try {
       logger.info('[GameStore] Starting game with Strategy Context.')
+
+      // Cleanup old strategy if exists
+      currentStrategy.value?.onDestroy?.()
+
       const setup = parseFen(fen).unwrap()
 
       if (!userColor) {
@@ -323,6 +327,7 @@ export const useGameStore = defineStore('game', () => {
 
   function stop() {
     logger.info('[GameStore] Stopping game and resetting states.')
+    currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
     gamePhase.value = 'IDLE'
     isGameActive.value = false
@@ -339,6 +344,7 @@ export const useGameStore = defineStore('game', () => {
     boardStore.resetBoardState()
 
     gamePhase.value = 'IDLE'
+    currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
     userMovesCount.value = 0
     isGameActive.value = false

@@ -202,6 +202,8 @@ export const usePuzzleSpeedrunStore = defineStore('puzzleSpeedrun', () => {
     jumpToPuzzle,
     handlePuzzleSuccess,
     handlePuzzleFailure,
+    startTimer,
+    stopTimer,
   }
 })
 
