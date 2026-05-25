@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   CashOutline,
+  FlashOutline,
   HammerOutline,
   HardwareChipOutline,
   HomeOutline,
@@ -48,6 +49,11 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.workout', 'Training'),
     key: '/workout',
     icon: renderIcon(HammerOutline),
+  },
+  {
+    label: () => t('features.speedrun.title', 'Task Today'),
+    key: '/task-today',
+    icon: renderIcon(FlashOutline),
   },
   {
     label: () => t('nav.playCoach', 'Play Coach'),

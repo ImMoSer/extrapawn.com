@@ -6,9 +6,9 @@ import {
 } from '@/entities/game'
 import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
-import { usePuzzleSpeedrunStore, type WorkoutPuzzle } from './puzzleSpeedrun.store'
+import { useTaskTodayStore, type WorkoutPuzzle } from './taskToday.store'
 
-export class PuzzleSpeedrunStrategy implements IGameplayStrategy {
+export class TaskTodayStrategy implements IGameplayStrategy {
   config = {
     initialBotDelayMs: 300,
     botDelayMs: 50,
@@ -28,7 +28,7 @@ export class PuzzleSpeedrunStrategy implements IGameplayStrategy {
   }
 
   private get store() {
-    return usePuzzleSpeedrunStore()
+    return useTaskTodayStore()
   }
 
   private get gameStore() {
@@ -108,7 +108,7 @@ export class PuzzleSpeedrunStrategy implements IGameplayStrategy {
     try {
       return await enginePlayService.getBestMove(this.gameStore.botEngineId, fen)
     } catch (error) {
-      logger.error('[PuzzleSpeedrunStrategy] Engine failed to generate move.', error)
+      logger.error('[TaskTodayStrategy] Engine failed to generate move.', error)
       return null
     }
   }

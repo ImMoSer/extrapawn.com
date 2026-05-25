@@ -61,7 +61,7 @@ const menuItems = [
     color: 'var(--neon-orange)',
   },
   {
-    path: '/puzzle-speedrun',
+    path: '/task-today',
     icon: FlashOutline,
     labelKey: 'features.speedrun.title',
     color: 'var(--neon-cyan)',

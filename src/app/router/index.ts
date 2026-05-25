@@ -129,10 +129,10 @@ const router = createRouter({
       meta: { isGame: true, game: 'study', requiresAuth: false },
     },
     {
-      path: '/puzzle-speedrun',
-      name: 'puzzle-speedrun',
-      component: () => import('@/pages/puzzle-speedrun/ui/PuzzleSpeedrunPage.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'puzzle-speedrun' },
+      path: '/task-today',
+      name: 'task-today',
+      component: () => import('@/pages/task-today/ui/TaskTodayPage.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'task-today' },
     },
     {
       path: '/study-speedrun',
