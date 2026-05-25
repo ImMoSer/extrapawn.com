@@ -44,7 +44,7 @@ const isTaskCompleted = (subMode: string) => {
 
 <template>
   <div class="task-sidebar">
-    <h2 class="sidebar-title">TaskToday</h2>
+    <h2 class="sidebar-title">TaskToday ({{ taskTodayStore.trainingPlan?.level || 'Novice' }})</h2>
 
     <div v-if="taskTodayStore.isFinished" class="finished-state">
       <NText type="success" strong>TRAINING COMPLETED</NText>
@@ -74,10 +74,11 @@ const isTaskCompleted = (subMode: string) => {
             @click="selectTask(index)"
           >
             <div class="task-tab-content">
-              <NText strong class="task-name">{{ task.sub_mode.replace('_', ' ').toUpperCase() }}</NText>
-              <NText depth="3" class="task-status">
-                {{ taskTodayStore.tasksPuzzles[task.sub_mode]?.length || 0 }} left
-              </NText>
+              <div class="task-row">
+                <NText strong class="task-name">{{ task.sub_mode.replace('_', ' ').toUpperCase() }}</NText>
+                <NText depth="3" class="task-themes">({{ task.themes.map(t => t.name).join(', ') }})</NText>
+                <NText depth="3" class="task-status">{{ taskTodayStore.tasksPuzzles[task.sub_mode]?.length || 0 }} left</NText>
+              </div>
             </div>
             <NIcon v-if="taskTodayStore.currentTaskIndex === index"><ChevronForwardOutline /></NIcon>
           </div>
@@ -165,16 +166,33 @@ const isTaskCompleted = (subMode: string) => {
 
 .task-tab-content {
   flex: 1;
+  min-width: 0;
+}
+
+.task-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .task-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.task-themes {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .task-status {
   font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .sidebar-footer {

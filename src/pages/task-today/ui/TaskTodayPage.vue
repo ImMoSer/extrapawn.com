@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTaskTodayStore, type PuzzleResult } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
-import { NText, NList, NListItem, NScrollbar, NThing, NBadge } from 'naive-ui'
+import { NText, NList, NListItem, NScrollbar } from 'naive-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
@@ -108,39 +108,23 @@ onUnmounted(() => {
                 'status-failed': getPuzzleStatus(puzzle.puzzle_id) === 'failed',
                 'status-solved': getPuzzleStatus(puzzle.puzzle_id) === 'solved'
               }"
+              class="puzzle-list-item"
             >
-              <NThing>
-                <template #avatar>
-                  <div class="puzzle-index" :class="{ active: puzzle.isCurrent }">
-                    {{ index + 1 }}
+              <div class="puzzle-row-compact">
+                <div class="puzzle-index" :class="{ active: puzzle.isCurrent }">
+                  {{ index + 1 }}
+                </div>
+                
+                <div class="puzzle-stats-grid">
+                  <span class="stat-rating">R: {{ puzzle.rating || '?' }}</span>
+                  <div class="stat-group">
+                    <span class="stat-attempts" :class="{ 'has-failed': getPuzzleStatus(puzzle.puzzle_id) === 'failed' }">
+                      {{ getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 1 : 0 }}/{{ taskTodayStore.puzzleAttempts[puzzle.puzzle_id] || 0 }}
+                    </span>
+                    <span class="stat-timer">{{ getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? taskTodayStore.formatMs(puzzle.result?.time || 0) : '00:00' }}</span>
                   </div>
-                </template>
-                <template #header>
-                  <span class="puzzle-name" :class="{ active: puzzle.isCurrent }">
-                    {{ puzzle.category }} ({{ puzzle.difficulty }})
-                  </span>
-                </template>
-                <template #header-extra>
-                  <div class="puzzle-meta">
-                    <NBadge 
-                      v-if="taskTodayStore.puzzleAttempts[puzzle.puzzle_id]"
-                      :value="taskTodayStore.puzzleAttempts[puzzle.puzzle_id]" 
-                      :type="getPuzzleStatus(puzzle.puzzle_id) === 'failed' ? 'error' : 'info'"
-                      show-zero
-                    >
-                      <span class="attempts-label">Attempts</span>
-                    </NBadge>
-                    <NText depth="3" class="puzzle-rating">
-                      Rating: {{ puzzle.rating }}
-                    </NText>
-                  </div>
-                </template>
-                <template #description v-if="puzzle.result && puzzle.result.status === 'solved'">
-                  <NText type="success" size="small">
-                    Solved in {{ taskTodayStore.formatMs(puzzle.result.time) }}
-                  </NText>
-                </template>
-              </NThing>
+                </div>
+              </div>
             </NListItem>
           </NList>
         </NScrollbar>
@@ -209,6 +193,17 @@ onUnmounted(() => {
   flex: 1;
 }
 
+.puzzle-list-item {
+  padding: 6px 12px !important;
+}
+
+.puzzle-row-compact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
 .puzzle-index {
   width: 24px;
   height: 24px;
@@ -217,7 +212,8 @@ onUnmounted(() => {
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .puzzle-index.active {
@@ -225,33 +221,44 @@ onUnmounted(() => {
   color: white;
 }
 
-.puzzle-name {
-  font-size: 0.9rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.puzzle-name.active {
-  color: var(--neon-bordeaux);
-  font-weight: bold;
-}
-
-.puzzle-meta {
+.puzzle-stats-grid {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
 }
 
-.attempts-label {
-  font-size: 0.7rem;
-  margin-right: 4px;
-  opacity: 0.8;
+.stat-rating {
+  color: var(--neon-cyan);
+  font-weight: 600;
 }
 
-.puzzle-rating {
-  font-size: 0.75rem;
+.stat-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-attempts {
+  color: var(--color-text-3);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 35px;
+  text-align: center;
+}
+
+.stat-attempts.has-failed {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}
+
+.stat-timer {
+  color: var(--neon-yellow);
+  min-width: 45px;
+  text-align: right;
 }
 
 .active {
