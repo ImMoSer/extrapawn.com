@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { NInput, NButton } from 'naive-ui'
+import { NInput, NButton, NIcon, NTooltip } from 'naive-ui'
 import { GameLayout } from '@/widgets/game-layout'
-import { usePlayCoachStore } from '@/features/play-coach'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
+import { SwapVerticalOutline } from '@vicons/ionicons5'
 import PlayCoachSidebar from './PlayCoachSidebar.vue'
 
-const playCoachStore = usePlayCoachStore()
 const coachStore = useCoachStore()
 const boardStore = useBoardStore()
+const gameStore = useGameStore()
 
 const localFen = ref(boardStore.fen)
 
@@ -19,17 +19,26 @@ watch(() => boardStore.fen, (newFen) => {
 
 function applyFen() {
   if (localFen.value) {
-    boardStore.setupPosition(localFen.value, playCoachStore.userColor)
+    // Keep current orientation when loading FEN
+    boardStore.setupPosition(localFen.value, boardStore.orientation)
   }
+}
+
+function handleFlip() {
+  boardStore.flipBoard()
 }
 
 onMounted(() => {
   coachStore.setCoachEnabled(true)
   boardStore.setAnalysisMode(false)
+  gameStore.setGamePhase('PLAYING')
+  // Ensure we start with white orientation but let coach move if it's black's turn
+  boardStore.orientation = 'white'
 })
 
 onUnmounted(() => {
   boardStore.setAnalysisMode(false)
+  gameStore.setGamePhase('IDLE')
 })
 </script>
 
@@ -52,6 +61,23 @@ onUnmounted(() => {
 
     <template #controls>
       <div class="play-coach-controls">
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <n-button 
+              circle 
+              secondary 
+              size="medium" 
+              @click="handleFlip"
+              class="flip-btn"
+            >
+              <template #icon>
+                <n-icon><SwapVerticalOutline /></n-icon>
+              </template>
+            </n-button>
+          </template>
+          Brett drehen (Farbe wechseln)
+        </n-tooltip>
+
         <n-input
           v-model:value="localFen"
           placeholder="FEN eingeben (z.B. Eröffnungsposition)"
@@ -103,14 +129,23 @@ onUnmounted(() => {
 
 .play-coach-controls {
   display: flex;
+  align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 12px;
 }
 
 .fen-input {
   flex: 1;
+}
+
+.flip-btn {
+  transition: transform 0.3s ease;
+}
+
+.flip-btn:active {
+  transform: scale(0.9) rotate(180deg);
 }
 </style>

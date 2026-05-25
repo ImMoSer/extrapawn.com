@@ -21,7 +21,7 @@ import {
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-// eslint-disable-next-line boundaries/element-types
+ 
 import { srsService, useReplyTrainingStore } from '../../study-reply-training'
 import { LichessApiError } from '../api/LichessSyncService'
 import { useBoardStore } from '@/entities/game'

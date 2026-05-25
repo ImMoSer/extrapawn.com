@@ -90,6 +90,7 @@ export default defineConfigWithVueTs(
               allow: [
                 'shared',
                 'entities',
+                'features',
                 ['features', { featureName: '${from.featureName}' }]
               ]
             },

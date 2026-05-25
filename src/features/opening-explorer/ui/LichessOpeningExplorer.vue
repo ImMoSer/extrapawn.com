@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { useBoardStore } from '@/entities/game'
-import {
-  theoryRepository,
-  type LichessOpeningResponse,
-  type LichessParams,
-} from '@/entities/opening'
-import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import { SettingsOutline, TrophyOutline } from '@vicons/ionicons5'
 import { NButton, NCollapseTransition, NIcon, NRadioButton, NRadioGroup, NText } from 'naive-ui'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OpeningStatsTable from './OpeningStatsTable.vue'
+import { useOpeningExplorerStore } from '../model/opening-explorer.store'
 
 defineProps<{
   blurred?: boolean
@@ -18,72 +13,31 @@ defineProps<{
 
 const { t } = useI18n()
 const boardStore = useBoardStore()
+const explorerStore = useOpeningExplorerStore()
 
 const showSettings = ref(false)
 
-// Local state for all modes when using this component
-const localStats = ref<LichessOpeningResponse | null>(null)
-const localLoading = ref(false)
-const localLichessParams = ref({
-  ratingRange: '1000-1499' as '1000-1499' | '1500-1799' | '1800-2200',
-})
-
-// Computed values that bridge Store vs Local (kept for compatibility, though activeStore is null)
-const stats = computed(() => localStats.value)
-const loading = computed(() => localLoading.value)
-
-const lichessParams = computed(() => localLichessParams.value)
-
 // Pending settings to avoid rate limits
-const pendingLichessParams = ref({ ...lichessParams.value })
+const pendingRatingRange = ref(explorerStore.ratingRange)
 
 const isDirty = computed(() => {
-  return JSON.stringify(pendingLichessParams.value) !== JSON.stringify(lichessParams.value)
+  return pendingRatingRange.value !== explorerStore.ratingRange
 })
 
 watch(showSettings, (val) => {
   if (val) {
-    pendingLichessParams.value = JSON.parse(JSON.stringify(lichessParams.value))
+    pendingRatingRange.value = explorerStore.ratingRange
   }
 })
 
 function applySettings() {
-  updateParams(pendingLichessParams.value)
+  explorerStore.ratingRange = pendingRatingRange.value
+  showSettings.value = false
 }
 
 function handleSelectMove(uci: string) {
   boardStore.applyUciMove(uci)
 }
-
-async function fetchLocalStats() {
-  localLoading.value = true
-  try {
-    const fen = pgnService.getCurrentNavigatedFen()
-    const data = await theoryRepository.getLichessStats(fen, localLichessParams.value)
-    localStats.value = data
-  } catch (e) {
-    console.error('[LichessOpeningExplorer] Failed to fetch stats:', e)
-  } finally {
-    localLoading.value = false
-  }
-}
-
-function updateParams(newParams: LichessParams) {
-  localLichessParams.value = { ...localLichessParams.value, ...newParams }
-  fetchLocalStats()
-}
-
-watch(
-  [pgnTreeVersion, localLichessParams],
-  () => {
-    fetchLocalStats()
-  },
-  { deep: true },
-)
-
-onMounted(() => {
-  fetchLocalStats()
-})
 </script>
 
 <template>
@@ -123,8 +77,7 @@ onMounted(() => {
               Rating Range
             </n-text>
             <n-radio-group
-              :value="pendingLichessParams.ratingRange"
-              @update:value="(v: any) => (pendingLichessParams.ratingRange = v)"
+              v-model:value="pendingRatingRange"
               size="small"
               expand
             >
@@ -144,25 +97,26 @@ onMounted(() => {
     </n-collapse-transition>
 
     <div class="table-container">
-      <div v-if="!stats" class="empty-state">
+      <div v-if="!explorerStore.stats && !explorerStore.isLoading" class="empty-state">
         <n-text depth="3">{{
           t('openingTrainer.noStats', 'No statistics available for this position')
         }}</n-text>
       </div>
       <OpeningStatsTable
-        v-if="stats"
-        :moves="stats.moves"
+        v-if="explorerStore.stats"
+        :moves="explorerStore.stats.moves"
         :isReviewMode="true"
-        :total="stats.summary?.total || 0"
-        :win_p="stats.summary?.win_p || 0"
-        :draw_p="stats.summary?.draw_p || 0"
-        :loss_p="stats.summary?.loss_p || 0"
-        :avg-elo="stats.summary?.avgElo || 0"
+        :total="explorerStore.stats.summary?.total || 0"
+        :win_p="explorerStore.stats.summary?.win_p || 0"
+        :draw_p="explorerStore.stats.summary?.draw_p || 0"
+        :loss_p="explorerStore.stats.summary?.loss_p || 0"
+        :avg-elo="explorerStore.stats.summary?.avgElo || 0"
         @select-move="handleSelectMove"
       />
 
-      <div v-if="!loading && !stats" class="empty-state">
-        <n-text depth="3">No statistics available for this position.</n-text>
+      <div v-if="explorerStore.isLoading" class="loading-state">
+        <div class="spinner-tiny"></div>
+        <n-text depth="3">Lade Statistik...</n-text>
       </div>
     </div>
   </div>

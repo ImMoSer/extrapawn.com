@@ -1,43 +1,25 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import { useBoardStore, useGameStore } from '@/entities/game'
-import { theoryRepository, type LichessOpeningResponse } from '@/entities/opening'
+import { watch } from 'vue'
+import { useBoardStore } from '@/entities/game'
 import { serverEngineService } from '@/shared/lib/engine/ServerEngineService'
+import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
 
-const COACH_MOVE_DELAY = 200
+const COACH_MOVE_DELAY = 400
 
 export const usePlayCoachStore = defineStore('playCoach', () => {
   const boardStore = useBoardStore()
-  const gameStore = useGameStore()
-
-  const selectedRange = ref<'1000-1499' | '1500-1799' | '1800-2200'>('1000-1499')
-  const userColor = ref<'white' | 'black'>('white')
-  const coachStats = ref<LichessOpeningResponse | null>(null)
-  const isLoading = ref(false)
+  const explorerStore = useOpeningExplorerStore()
 
   const ENGINE_NAME = 'maia-2200'
-
-  async function updateStats() {
-    isLoading.value = true
-    try {
-      const fen = boardStore.fen
-      const stats = await theoryRepository.getLichessStats(fen, { ratingRange: selectedRange.value })
-      coachStats.value = stats
-    } catch (err) {
-      logger.error('[PlayCoachStore] Failed to update stats:', err)
-      coachStats.value = null
-    } finally {
-      isLoading.value = false
-    }
-  }
+  let coachTimeout: ReturnType<typeof setTimeout> | null = null
 
   async function makeCoachMove() {
     const fen = boardStore.fen
     
-    // 1. Try Lichess Book (Top 5 weighted random)
-    if (coachStats.value && coachStats.value.moves.length > 0) {
-      const topMoves = coachStats.value.moves.slice(0, 5)
+    // 1. Try Lichess Book from Explorer Store
+    if (explorerStore.stats && explorerStore.stats.moves.length > 0) {
+      const topMoves = explorerStore.stats.moves.slice(0, 5)
       const firstMove = topMoves[0]
       if (!firstMove) return
 
@@ -74,49 +56,29 @@ export const usePlayCoachStore = defineStore('playCoach', () => {
     }
   }
 
-  // Explicit handler for user moves from UI
-  async function onUserMove() {
-    await updateStats()
+  // Auto-respond when it's coach's turn
+  // Coach turn is when current turn != board orientation
+  watch([() => boardStore.fen, () => boardStore.orientation], () => {
+    const isCoachTurn = boardStore.turn !== boardStore.orientation
 
-    if (boardStore.turn !== userColor.value) {
-      // Small delay for realism
-      setTimeout(async () => {
-        if (boardStore.turn !== userColor.value) {
-          await makeCoachMove()
-        }
-      }, COACH_MOVE_DELAY)
+    if (coachTimeout) {
+      clearTimeout(coachTimeout)
+      coachTimeout = null
     }
-  }
 
-  // Auto-respond when it's coach's turn or FEN changed (e.g. from PGN navigation)
-  watch(() => boardStore.fen, async () => {
-    await updateStats()
-
-    if (boardStore.turn !== userColor.value) {
+    if (isCoachTurn && !boardStore.isGameOver) {
       // Small delay for realism
-      setTimeout(async () => {
-        if (boardStore.turn !== userColor.value) {
+      coachTimeout = setTimeout(async () => {
+        // Re-check turn after delay to avoid race conditions
+        if (boardStore.turn !== boardStore.orientation) {
           await makeCoachMove()
         }
+        coachTimeout = null
       }, COACH_MOVE_DELAY)
     }
   }, { immediate: true })
 
-  // Re-update stats when rating range changes
-  watch(selectedRange, () => {
-    updateStats()
-  })
-
-  // Initialize game phase
-  gameStore.setGamePhase('PLAYING')
-
   return {
-    selectedRange,
-    userColor,
-    coachStats,
-    isLoading,
-    onUserMove,
-    updateStats,
     makeCoachMove
   }
 })

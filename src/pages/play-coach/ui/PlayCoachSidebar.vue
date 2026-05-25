@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { NRadioGroup, NRadioButton, NText, NScrollbar } from 'naive-ui'
-import { OpeningStatsTable } from '@/features/opening-explorer'
-import { usePlayCoachStore, PgnTree } from '@/features/play-coach'
+import { NScrollbar, NText } from 'naive-ui'
+import { LichessOpeningExplorer, PgnTree } from '@/features/play-coach'
 import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 
-const playCoachStore = usePlayCoachStore()
-
-const topMoves = computed(() => {
-  return playCoachStore.coachStats?.moves.slice(0, 10) || []
-})
+// Component is now self-contained using OpeningExplorerStore
 </script>
 
 <template>
@@ -19,47 +13,9 @@ const topMoves = computed(() => {
     </div>
 
     <div class="sidebar-content">
-      <div class="form-group">
-        <n-text class="input-label">Lichess Book Statistik (Rating)</n-text>
-        <n-radio-group
-          v-model:value="playCoachStore.selectedRange"
-          size="medium"
-          expand
-          class="radio-grp"
-        >
-          <n-radio-button value="1000-1499">1000-1499</n-radio-button>
-          <n-radio-button value="1500-1799">1500-1799</n-radio-button>
-          <n-radio-button value="1800-2200">1800-2200</n-radio-button>
-        </n-radio-group>
-      </div>
-
-      <div class="form-group" style="margin-top: 12px">
-        <n-text class="input-label">Deine Farbe</n-text>
-        <n-radio-group
-          v-model:value="playCoachStore.userColor"
-          size="medium"
-          expand
-          class="radio-grp"
-        >
-          <n-radio-button value="white">White</n-radio-button>
-          <n-radio-button value="black">Black</n-radio-button>
-        </n-radio-group>
-      </div>
-
       <div class="active-game-section">
         <div class="coach-stats-section">
-          <OpeningStatsTable
-            v-if="playCoachStore.coachStats"
-            :moves="topMoves"
-            :isReviewMode="true"
-            :total="playCoachStore.coachStats.summary?.total || 0"
-            :win_p="playCoachStore.coachStats.summary?.win_p || 0"
-            :draw_p="playCoachStore.coachStats.summary?.draw_p || 0"
-            :loss_p="playCoachStore.coachStats.summary?.loss_p || 0"
-            :avg-elo="playCoachStore.coachStats.summary?.avgElo || 0"
-          />
-          <div v-else-if="playCoachStore.isLoading" class="loading-stats">Lade Statistik...</div>
-          <div v-else class="out-of-book-msg">Theory ends here. Maia is now playing.</div>
+          <LichessOpeningExplorer />
         </div>
 
         <div class="pgn-section" style="margin-top: 20px">
@@ -102,12 +58,22 @@ const topMoves = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
-.form-group {
+.active-game-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.coach-stats-section {
+  flex: 1;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
 }
 
 .input-label {
@@ -116,31 +82,6 @@ const topMoves = computed(() => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);
-}
-
-.radio-grp {
-  width: 100%;
-}
-
-:deep(.n-radio-group .n-radio-button) {
-  flex: 1;
-  text-align: center;
-}
-
-.loading-stats,
-.out-of-book-msg {
-  padding: 20px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.out-of-book-msg {
-  color: var(--color-accent);
-  border-color: rgba(var(--color-accent-rgb), 0.2);
 }
 
 .pgn-container {
