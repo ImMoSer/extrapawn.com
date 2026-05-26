@@ -4,19 +4,17 @@ import { GameLayout } from '@/widgets/game-layout'
 import { NText, NList, NListItem, NScrollbar, NButton, NIcon } from 'naive-ui'
 import { CloseCircleOutline, RefreshOutline as RestartIcon } from '@vicons/ionicons5'
 import { computed, onMounted, onUnmounted } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import TaskSidebar from './TaskSidebar.vue'
 
 const taskTodayStore = useTaskTodayStore()
 const analysisStore = useAnalysisStore()
-const route = useRoute()
 const router = useRouter()
 
 onMounted(() => {
   if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
-    const level = (route.query.level as string) || 'Novice'
-    taskTodayStore.startTaskToday(level)
+    taskTodayStore.startTaskToday()
   }
 })
 

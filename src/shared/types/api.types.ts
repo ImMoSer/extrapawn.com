@@ -223,8 +223,15 @@ export interface PlanStreakLeaderboardEntry {
   id: string
   username: string
   tier: string
-  training_status: string
-  current_streak: number
+  training_status?: string
+  current_streak?: number
+  completed_count?: number
+}
+
+export interface PlanStreakLeaderboardResponse {
+  Novice: PlanStreakLeaderboardEntry[]
+  Pro: PlanStreakLeaderboardEntry[]
+  Master: PlanStreakLeaderboardEntry[]
 }
 
 export interface UnifiedLeaderboardEntry {
@@ -341,9 +348,17 @@ export interface UserMeta {
   tier: string
 }
 
+export interface StatsSummaryEntry {
+  sub_mode: string
+  category: string
+  total_solved: number
+  total_failed: number
+}
+
 export interface PersonalActivityStatsResponse {
   user: UserMeta
   activities: ActivityHistoryEntry[]
+  statsSummary: StatsSummaryEntry[]
 }
 
 export type SubscriptionTier =
@@ -515,6 +530,8 @@ export interface TrainingPlanCurrentResponse {
   date?: string
   plan?: TrainingPlanData
   overall_progress_percent?: number
+  difficulty?: string
+  strategy?: string
 }
 
 export interface TrainingPlanCompleteResponse {

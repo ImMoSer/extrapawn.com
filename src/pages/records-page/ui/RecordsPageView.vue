@@ -64,7 +64,7 @@ const isLoading = computed(() => {
         <div class="section-grid">
           <PlanStreakLeaderboardTable
             title="TrainingPlanStreak"
-            :entries="planStreakResponse || []"
+            :entries="planStreakResponse || { Novice: [], Pro: [], Master: [] }"
             color-class="planStreak"
             :is-loading="isPlanStreakLoading"
           />

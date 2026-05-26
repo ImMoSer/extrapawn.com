@@ -33,6 +33,8 @@ export interface TrainingTask {
 
 export interface TrainingPlan {
   level: string
+  strategy: string
+  date: string
   tasks: TrainingTask[]
 }
 
@@ -180,7 +182,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
     if (puzzle) {
-      // Mark as failed in results but keep playing it
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
         time: 0,
@@ -198,7 +199,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     playCurrentPuzzle()
   }
 
-  function handlePuzzleSuccess(timeNeededMs: number) {
+  async function handlePuzzleSuccess(timeNeededMs: number) {
     console.log(`[TaskToday] Success! Time needed: ${timeNeededMs}ms`)
     GameAudioEngine.playTaskTodaySuccess()
     stopTimer()
@@ -229,6 +230,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         isPlaying.value = false
         isFinished.value = true
         GameAudioEngine.playSpeedrunFinished()
+        await saveCompletedPlan()
         return
       } else {
         const nextIdx = trainingPlan.value?.tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
@@ -241,65 +243,139 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     playCurrentPuzzle()
   }
 
-  async function fetchTrainingPlan(level: string = 'Novice') {
+  async function saveCompletedPlan() {
+    if (!trainingPlan.value) return
+
+    const puzzlesList = Object.keys(completedResults.value).map(puzzleId => {
+      const res = completedResults.value[puzzleId]
+      let sub_mode = ''
+      let category = ''
+      for (const sm of Object.keys(solvedPuzzlesPerTask.value)) {
+        const list = solvedPuzzlesPerTask.value[sm]
+        if (!list) continue
+        const p = list.find(x => x.puzzle_id === puzzleId)
+        if (p) {
+          sub_mode = sm
+          category = p.category
+          break
+        }
+      }
+      return {
+        puzzle_id: puzzleId,
+        sub_mode,
+        category,
+        attempts: res ? res.attempts : 1,
+        solved: res ? res.status === 'solved' : false
+      }
+    })
+
     try {
-      const response = await apiClient<{ plan: { tasks_json: TrainingPlan } }>(
-        `/training-plan/next?level=${level}`,
-      )
-      trainingPlan.value = response.plan.tasks_json
-      return trainingPlan.value
-    } catch (error) {
-      console.error('[TaskTodayStore] Failed to fetch training plan:', error)
-      return null
+      await apiClient('/training-plan/complete', {
+        method: 'POST',
+        body: JSON.stringify({
+          difficulty: trainingPlan.value.level,
+          strategy: trainingPlan.value.strategy,
+          tasks_json: {
+            strategy: trainingPlan.value.strategy,
+            difficulty: trainingPlan.value.level,
+            date: trainingPlan.value.date,
+            puzzles: puzzlesList
+          }
+        })
+      })
+      console.log('[TaskTodayStore] Successfully saved completed training plan to DB.')
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to save completed training plan:', err)
     }
   }
 
-  async function loadPuzzlesForTask(task: TrainingTask) {
-    const theme = task.themes[0]?.name || ''
-    const count = task.themes[0]?.count || 10
-    const level = trainingPlan.value?.level || 'Novice'
-    
+  async function generateAndStartPlan(
+    strategyName: 'Discovery' | 'Hardcore' | 'Warmup',
+    difficulty: 'Novice' | 'Pro' | 'Master',
+    selectedCategories: Record<string, string[]>
+  ) {
     try {
-      const puzzles = await apiClient<WorkoutPuzzle[]>(
-        `/play-puzzle/start?puzzle_type=${task.sub_mode}&difficulty=${level}&category=${theme}&limit=${count}`
-      )
-      tasksPuzzles.value[task.sub_mode] = puzzles
-    } catch (error) {
-      console.error(`[TaskTodayStore] Failed to load puzzles for task ${task.sub_mode}:`, error)
+      gameStore.setBotEngineId('maia-2200')
+      isPlaying.value = false
+      isFinished.value = false
+      
+      const todayStr = new Date().toISOString().split('T')[0] || ''
+      
+      const tasks: TrainingTask[] = []
+      tasksPuzzles.value = {}
+      solvedPuzzlesPerTask.value = {}
+      completedResults.value = {}
+      puzzleAttempts.value = {}
+      
+      const plan: TrainingPlan = {
+        level: difficulty,
+        strategy: strategyName,
+        date: todayStr,
+        tasks: []
+      }
+      
+      // Load puzzles sequentially or concurrently
+      for (const subMode of ['tactics', 'finish_him', 'theory_endings', 'practical_chess']) {
+        const categories = selectedCategories[subMode] || []
+        const limitPerCategory = subMode === 'tactics' ? 33 : 10
+        const allPuzzlesForMode: WorkoutPuzzle[] = []
+        const themes: { name: string; count: number }[] = []
+        
+        for (const cat of categories) {
+          themes.push({ name: cat, count: limitPerCategory })
+          try {
+            const puzzles = await apiClient<WorkoutPuzzle[]>(
+              `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${cat}&limit=${limitPerCategory}`
+            )
+            if (puzzles && puzzles.length > 0) {
+              allPuzzlesForMode.push(...puzzles)
+            }
+          } catch (err) {
+            console.error(`[TaskTodayStore] Failed to fetch puzzles for ${subMode}/${cat}:`, err)
+          }
+        }
+        
+        tasksPuzzles.value[subMode] = allPuzzlesForMode
+        tasks.push({
+          mode: 'playPuzzle',
+          sub_mode: subMode,
+          themes
+        })
+      }
+      
+      plan.tasks = tasks
+      trainingPlan.value = plan
+      currentTaskIndex.value = 0
+      isPlaying.value = true
+      isFinished.value = false
+      
+      saveState()
+      
+      soundService.playSound('app_game_entry')
+      playCurrentPuzzle()
+      
+      return true
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to generate and start plan:', err)
+      return false
     }
   }
 
-  async function startTaskToday(level: string = 'Novice') {
+  async function startTaskToday() {
     try {
       gameStore.setBotEngineId('maia-2200')
 
-      // Check for existing state first
       if (loadState()) {
         console.log('[TaskTodayStore] Resumed existing state for today.')
         if (isPlaying.value && currentPuzzle.value) {
           playCurrentPuzzle()
         }
-        return
+        return true
       }
-      
-      const plan = await fetchTrainingPlan(level)
-      if (!plan) return
-
-      for (const task of plan.tasks) {
-        await loadPuzzlesForTask(task)
-      }
-
-      currentTaskIndex.value = 0
-      isPlaying.value = true
-      isFinished.value = false
-      completedResults.value = {}
-      puzzleAttempts.value = {}
-      solvedPuzzlesPerTask.value = {}
-      
-      soundService.playSound('app_game_entry')
-      playCurrentPuzzle()
+      return false
     } catch (error) {
       console.error('[TaskTodayStore] Failed to start TaskToday:', error)
+      return false
     }
   }
 
@@ -339,6 +415,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     puzzleAttempts,
     formatMs,
     startTaskToday,
+    generateAndStartPlan,
     quitTaskToday,
     handlePuzzleSuccess,
     handlePuzzleFailure,

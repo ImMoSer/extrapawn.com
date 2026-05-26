@@ -1,6 +1,6 @@
 <!-- src/features/leaderboards/ui/PlanStreakLeaderboardTable.vue -->
 <script setup lang="ts">
-import type { PlanStreakLeaderboardEntry } from '@/shared/types/api.types'
+import type { PlanStreakLeaderboardResponse } from '@/shared/types/api.types'
 import { BarChart } from 'echarts/charts'
 import {
   GridComponent,
@@ -13,6 +13,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { computed, onMounted, onUnmounted, ref, type PropType } from 'vue'
 import VChart from 'vue-echarts'
 import { useI18n } from 'vue-i18n'
+import { NTabs, NTabPane, NSpin, NEmpty } from 'naive-ui'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -30,7 +31,7 @@ interface ClickParam {
 const props = defineProps({
   title: { type: String, required: true },
   entries: {
-    type: Array as PropType<PlanStreakLeaderboardEntry[]>,
+    type: Object as PropType<PlanStreakLeaderboardResponse>,
     required: true,
   },
   colorClass: { type: String, required: true },
@@ -39,7 +40,14 @@ const props = defineProps({
 
 const { t } = useI18n()
 
-const STREAK_COLOR = '#9b59b6' // Violet color (Theory)
+const activeTab = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+
+const currentEntries = computed(() => {
+  if (!props.entries) return []
+  return props.entries[activeTab.value] || []
+})
+
+const COMPLETIONS_COLOR = '#9b59b6' // Purple color
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
@@ -74,7 +82,7 @@ onUnmounted(() => {
 })
 
 const chartOption = computed(() => {
-  const displayEntries = [...props.entries].slice(0, 20)
+  const displayEntries = [...currentEntries.value].slice(0, 20)
 
   return {
     backgroundColor: 'transparent',
@@ -106,8 +114,8 @@ const chartOption = computed(() => {
 
         html += `
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: ${STREAK_COLOR}; font-weight: bold;">Streak:</span>
-            <span style="color: #FFF; margin-left: 12px;">${entry.current_streak} 🔥</span>
+            <span style="color: ${COMPLETIONS_COLOR}; font-weight: bold;">Completed:</span>
+            <span style="color: #FFF; margin-left: 12px;">${entry.completed_count || 0} ✅</span>
           </div>`
 
         html += `</div>`
@@ -162,30 +170,30 @@ const chartOption = computed(() => {
     },
     series: [
       {
-        name: 'Streak',
+        name: 'Completed',
         type: 'bar',
         barWidth: isMobile.value ? 17 : 24,
         itemStyle: {
-          color: STREAK_COLOR,
+          color: COMPLETIONS_COLOR,
           borderRadius: [0, 4, 4, 0],
         },
         label: {
           show: true,
           position: 'right',
           distance: 10,
-          color: STREAK_COLOR,
+          color: COMPLETIONS_COLOR,
           fontWeight: 'bold',
           fontSize: isMobile.value ? 10 : 14,
-          formatter: '{c} 🔥',
+          formatter: '{c} ✅',
         },
-        data: displayEntries.map((e) => e.current_streak),
+        data: displayEntries.map((e) => e.completed_count || 0),
       },
     ],
   }
 })
 
 const dynamicHeight = computed(() => {
-  const count = Math.max(props.entries.length, 1)
+  const count = Math.max(currentEntries.value.length, 1)
   const displayCount = Math.min(count, 20)
   const perEntry = isMobile.value ? 32 : 45
   const padding = isMobile.value ? 28 : 40
@@ -195,7 +203,7 @@ const dynamicHeight = computed(() => {
 const onChartClick = (params: unknown) => {
   const p = params as ClickParam
   if (p.componentType === 'yAxis' || p.componentType === 'series') {
-    const entries = [...props.entries].slice(0, 20)
+    const entries = [...currentEntries.value].slice(0, 20)
     const entry = entries[p.dataIndex]
     if (!entry) return
 
@@ -214,15 +222,27 @@ const onChartClick = (params: unknown) => {
       </h3>
     </div>
 
-    <div class="chart-container" :style="{ height: dynamicHeight }">
-      <v-chart
-        v-if="entries.length > 0"
-        class="chart"
-        :option="chartOption"
-        @click="onChartClick"
-        autoresize
-      />
-      <n-empty v-else :description="t('features.userCabinet.stats.noData')" />
+    <div class="modes-container">
+      <div v-if="isLoading" class="loading-wrapper">
+        <NSpin size="large" />
+      </div>
+      <template v-else>
+        <NTabs v-model:value="activeTab" type="segment" animated>
+          <NTabPane name="Novice" tab="Novice" />
+          <NTabPane name="Pro" tab="Pro" />
+          <NTabPane name="Master" tab="Master" />
+        </NTabs>
+        <div class="chart-container" :style="{ height: dynamicHeight }">
+          <v-chart
+            v-if="currentEntries.length > 0"
+            class="chart"
+            :option="chartOption"
+            @click="onChartClick"
+            autoresize
+          />
+          <NEmpty v-else :description="t('features.userCabinet.stats.noData')" />
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -264,11 +284,24 @@ const onChartClick = (params: unknown) => {
   text-transform: uppercase;
 }
 
+.modes-container {
+  padding: 12px;
+}
+
+.loading-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
 .chart-container {
   width: 100%;
   position: relative;
   background-color: rgba(0, 0, 0, 0.1);
   padding: 16px 0;
+  margin-top: 12px;
+  border-radius: 8px;
 }
 
 .chart {

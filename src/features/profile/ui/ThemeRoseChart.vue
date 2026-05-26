@@ -384,7 +384,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
 
 .chart-wrapper {
   width: 100%;
-  height: 600px;
+  height: 85vh;
 }
 
 .chart {

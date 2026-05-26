@@ -1,7 +1,7 @@
 import type {
   LeaderboardApiResponse,
   LeaderboardResponse,
-  PlanStreakLeaderboardEntry,
+  PlanStreakLeaderboardResponse,
   SidebarLeaderboardResponse,
   UnifiedLeaderboardResponse,
 } from '@/shared/types/api.types'
@@ -28,9 +28,9 @@ const LEADERBOARD_KEYS = {
  * Fetch Training Plan Streak Leaderboard
  */
 export const usePlanStreakLeaderboardQuery = (enabled: boolean = true) => {
-  return useQuery<PlanStreakLeaderboardEntry[], Error>({
+  return useQuery<PlanStreakLeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.planStreak(),
-    queryFn: () => apiClient<PlanStreakLeaderboardEntry[]>('/leaderboards/plan-streak'),
+    queryFn: () => apiClient<PlanStreakLeaderboardResponse>('/leaderboards/plan-streak'),
     enabled,
     staleTime: 60 * 1000,
   })

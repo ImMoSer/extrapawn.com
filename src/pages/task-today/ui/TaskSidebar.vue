@@ -2,7 +2,7 @@
 import { useTaskTodayStore } from '@/features/task-today'
 import { NButton, NIcon, NText, NScrollbar, NSpace } from 'naive-ui'
 import { CloseCircleOutline, RefreshOutline as RestartIcon, ChevronForwardOutline } from '@vicons/ionicons5'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
@@ -26,17 +26,6 @@ function selectTask(index: number) {
 
 const tasks = computed(() => taskTodayStore.trainingPlan?.tasks || [])
 
-const isRequesting = ref(false)
-
-async function handleRequestPlan() {
-  isRequesting.value = true
-  try {
-    await taskTodayStore.startTaskToday('Novice')
-  } finally {
-    isRequesting.value = false
-  }
-}
-
 const isTaskCompleted = (subMode: string) => {
   return taskTodayStore.tasksPuzzles[subMode]?.length === 0
 }
@@ -54,9 +43,9 @@ const isTaskCompleted = (subMode: string) => {
     </div>
 
     <div v-else-if="!taskTodayStore.trainingPlan" class="no-plan-state">
-      <NText depth="3">No active training plan</NText>
-      <NButton type="primary" :loading="isRequesting" @click="handleRequestPlan" style="margin-top: 1rem">
-        Request Today's Plan
+      <NText depth="3">{{ t('features.taskToday.noPlan', 'Kein aktiver Trainingsplan') }}</NText>
+      <NButton type="primary" @click="router.push('/user-cabinet')" style="margin-top: 1rem; font-weight: bold;">
+        {{ t('features.taskToday.goToCabinet', 'Zum Cabinet gehen und Plan starten') }}
       </NButton>
     </div>
 

@@ -110,6 +110,20 @@ export function generateRandomActivityStats(): PersonalActivityStatsResponse {
       tier: 'King',
     },
     activities: activities,
+    statsSummary: [
+      { sub_mode: 'finish_him', category: 'bishop', total_solved: 15, total_failed: 2 },
+      { sub_mode: 'finish_him', category: 'expert', total_solved: 5, total_failed: 8 },
+      { sub_mode: 'finish_him', category: 'pawn', total_solved: 25, total_failed: 1 },
+      { sub_mode: 'theory_endings', category: 'bishop', total_solved: 8, total_failed: 4 },
+      { sub_mode: 'theory_endings', category: 'knight', total_solved: 12, total_failed: 10 },
+      { sub_mode: 'theory_endings', category: 'queen', total_solved: 4, total_failed: 2 },
+      { sub_mode: 'practical_chess', category: 'extraPawn', total_solved: 30, total_failed: 5 },
+      { sub_mode: 'practical_chess', category: 'knightBishop', total_solved: 3, total_failed: 8 },
+      { sub_mode: 'practical_chess', category: 'pawn', total_solved: 18, total_failed: 3 },
+      { sub_mode: 'tactics', category: 'fork', total_solved: 50, total_failed: 5 },
+      { sub_mode: 'tactics', category: 'pin', total_solved: 40, total_failed: 8 },
+      { sub_mode: 'tactics', category: 'discoveredAttack', total_solved: 2, total_failed: 12 }
+    ]
   }
 }
 
