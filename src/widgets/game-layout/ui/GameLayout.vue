@@ -1,11 +1,11 @@
 <!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
 import type { Key } from '@lichess-org/chessground/types'
 import { storeToRefs } from 'pinia'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const props = defineProps<{
@@ -124,10 +124,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-        <div class="cb-down-panel">
-          <slot name="controls"></slot>
-        </div>
       </div>
 
       <aside class="right-panel">
@@ -139,6 +135,8 @@ onUnmounted(() => {
 
 <style scoped>
 .game-layout {
+  --top-panel-h: 48px;
+  --board-size: calc(100vh - 20px - var(--top-panel-h) - 4px);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -152,9 +150,8 @@ onUnmounted(() => {
 .layout-main {
   display: grid;
   flex: 1;
-  /* Columns: Left (flex) | Center (Auto/Fit Content) | Right (flex) */
-  /* Using minmax for center to prevent it from disappearing, but ideally it drives the width */
-  grid-template-columns: 2fr auto 3fr;
+  /* Use the calculated board size for the center column to ensure wings get proper space */
+  grid-template-columns: 2fr var(--board-size) 3fr;
   gap: 10px;
   min-height: 0;
   justify-content: center;
@@ -163,39 +160,39 @@ onUnmounted(() => {
 /* --- Center Stage Area --- */
 .center-stage {
   --eval-bar-width: 4px;
-  --board-size: 88vh; /* Single source of truth for board height */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0;
-  min-width: min-content;
-  height: calc(100vh - 20px); /* Adjust for padding */
+  width: var(--board-size);
+  height: calc(100vh - 20px);
 }
 
-.cb-top-panel,
-.cb-down-panel {
+.cb-top-panel {
   width: 100%;
-  flex: 1; /* Space divided equally */
+  height: var(--top-panel-h);
+  flex: 0 0 var(--top-panel-h);
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 20px;
+  padding-bottom: 8px;
 }
 
-/* Board always square, sized by --board-size height on desktop */
+/* Board always square, sized by --board-size */
 .board-section {
   flex: 0 0 var(--board-size);
   height: var(--board-size);
+  width: var(--board-size);
   display: flex;
   align-items: stretch;
-  gap: 0; /* No gaps allowed */
+  gap: 0;
 }
 
 .board-aspect-wrapper {
-  height: 100%; /* Fill parent Height */
-  width: auto;
-  aspect-ratio: 1 / 1; /* Maintain perfect square */
+  height: 100%;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   position: relative;
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
@@ -232,7 +229,7 @@ onUnmounted(() => {
   background-color: var(--color-bg-secondary);
   border-radius: var(--panel-border-radius);
   border: 1px solid var(--color-border-hover);
-  padding: 10px;
+  padding: 0px;
   min-width: 200px;
   display: flex;
   flex-direction: column;
@@ -273,8 +270,6 @@ onUnmounted(() => {
 
   /* Reorder for Mobile: Board/Controls -> Analysis (Right) -> Stats (Left) */
   .center-stage {
-    /* Always reserve space for eval bar exactly */
-    --board-size: calc(100vw - var(--eval-bar-width));
     order: 1;
     width: 100vw;
     height: auto;
@@ -300,22 +295,24 @@ onUnmounted(() => {
     margin-top: 10px;
   }
 
-  .cb-top-panel,
-  .cb-down-panel {
+  .cb-top-panel {
     width: 100%;
     height: 48px;
     flex: 0 0 48px;
+    padding-bottom: 0;
   }
 
   .board-section {
-    height: var(--board-size);
-    flex: 0 0 var(--board-size);
+    /* Always reserve space for eval bar exactly */
+    --board-size-mobile: calc(100vw - var(--eval-bar-width));
+    height: var(--board-size-mobile);
+    flex: 0 0 var(--board-size-mobile);
     justify-content: center;
   }
 
   .board-aspect-wrapper {
-    width: var(--board-size);
-    height: var(--board-size);
+    width: calc(100vw - var(--eval-bar-width));
+    height: calc(100vw - var(--eval-bar-width));
     aspect-ratio: 1 / 1;
     margin: 0;
     flex-shrink: 0;

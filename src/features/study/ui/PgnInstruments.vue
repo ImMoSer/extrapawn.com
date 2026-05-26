@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useGameStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { useStudyStore } from '@/entities/study'
+import { useAnalysisStore } from '@/features/analysis'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import {
   ChatboxEllipsesOutline,
@@ -12,18 +13,34 @@ import {
   DownloadOutline as DownloadIcon,
   CloseOutline as CloseIcon,
   RefreshOutline as RevertIcon,
+  AnalyticsOutline as AnalysisIcon,
+  RefreshOutline as FlipIcon,
+  ChevronForwardOutline as NextIcon,
+  ChevronBackOutline as PrevIcon,
 } from '@vicons/ionicons5'
 import { Chess } from 'chessops/chess'
 import { makeFen, parseFen } from 'chessops/fen'
 import { makeSan } from 'chessops/san'
 import { parseUci as parseUciMove } from 'chessops/util'
-import { NButton, NButtonGroup, NIcon, NInput, useMessage, useDialog } from 'naive-ui'
+import {
+  NButton,
+  NButtonGroup,
+  NIcon,
+  NInput,
+  NSwitch,
+  useMessage,
+  useDialog,
+} from 'naive-ui'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const gameStore = useGameStore()
 const studyStore = useStudyStore()
+const boardStore = useBoardStore()
+const analysisStore = useAnalysisStore()
 const message = useMessage()
 const dialog = useDialog()
+const { t } = useI18n()
 
 const currentNode = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -137,6 +154,16 @@ const toggleNag = (nagValue: number | null) => {
   pgnService.updateNode(currentNode.value, { nag: newValue })
 }
 
+const handleFlip = () => boardStore.flipBoard()
+const handlePrev = () => gameStore.navigatePgn('backward')
+const handleNext = () => gameStore.navigatePgn('forward')
+
+const handleCopyFen = () => {
+  const fen = pgnService.getCurrentNavigatedFen()
+  navigator.clipboard.writeText(fen)
+  message.success(t('common.notifications.fenCopied', 'FEN copied!'))
+}
+
 const handleCutAfter = () => {
   pgnService.deleteCurrentNode()
   gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
@@ -240,6 +267,73 @@ const handleCutBefore = () => {
   <div class="pgn-instruments-container" v-if="currentNode">
     <!-- MAIN ROW -->
     <div class="instruments-main-row">
+      <!-- Navigation -->
+      <n-button
+        circle
+        quaternary
+        size="small"
+        @click="handlePrev"
+        :title="t('common.navigation.prev', 'Previous')"
+      >
+        <template #icon
+          ><n-icon><PrevIcon /></n-icon
+        ></template>
+      </n-button>
+      <n-button
+        circle
+        quaternary
+        size="small"
+        @click="handleNext"
+        :title="t('common.navigation.next', 'Next')"
+      >
+        <template #icon
+          ><n-icon><NextIcon /></n-icon
+        ></template>
+      </n-button>
+
+      <div class="divider"></div>
+
+      <n-button
+        circle
+        quaternary
+        size="small"
+        @click="handleFlip"
+        :title="t('features.board.flip', 'Flip Board')"
+      >
+        <template #icon
+          ><n-icon><FlipIcon /></n-icon
+        ></template>
+      </n-button>
+
+      <n-button
+        quaternary
+        size="small"
+        @click="handleCopyFen"
+        class="text-btn"
+        :title="t('features.board.copyFen', 'Copy FEN')"
+      >
+        FEN
+      </n-button>
+
+      <div class="divider"></div>
+
+      <div class="switch-wrapper" :title="t('features.analysis.engine', 'Engine Analysis')">
+        <n-switch
+          :value="analysisStore.isAnalysisActive"
+          size="small"
+          @update:value="analysisStore.toggleAnalysis()"
+        >
+          <template #checked-icon>
+            <n-icon class="icon-analysis-active"><AnalysisIcon /></n-icon>
+          </template>
+          <template #unchecked-icon>
+            <n-icon><AnalysisIcon /></n-icon>
+          </template>
+        </n-switch>
+      </div>
+
+      <div class="divider"></div>
+
       <!-- Cut Before -->
       <n-button
         size="small"
@@ -512,6 +606,27 @@ const handleCutBefore = () => {
 }
 .nag-tab-btn {
   font-family: 'JetBrains Mono', monospace;
+}
+
+.text-btn {
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.switch-wrapper {
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}
+
+.icon-analysis-active {
+  color: var(--neon-cyan, #00f2ff);
+  filter: drop-shadow(0 0 4px var(--neon-cyan, #00f2ff));
+}
+
+:deep(.n-switch.n-switch--active) {
+  --n-button-box-shadow: 0 0 8px var(--neon-cyan, #00f2ff);
 }
 
 .comment-actions {

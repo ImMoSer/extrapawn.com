@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import { usePlayCoachStore } from '../model/play-coach.store'
+import { NInput, NButton, NIcon, NTooltip, NSpace } from 'naive-ui'
+import { SwapVerticalOutline, RefreshOutline } from '@vicons/ionicons5'
 import PgnTreeNode from './PgnTreeNode.vue'
+
+const playCoachStore = usePlayCoachStore()
 
 const rootNode = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -17,6 +22,64 @@ const rootNode = computed(() => {
     </div>
     <div v-else class="empty-pgn">
       Keine Züge vorhanden
+    </div>
+
+    <div class="play-coach-controls">
+      <n-space vertical :size="12">
+        <n-space justify="center" :size="12">
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button
+                circle
+                secondary
+                size="medium"
+                @click="playCoachStore.handleFlip"
+                class="flip-btn"
+              >
+                <template #icon>
+                  <n-icon><SwapVerticalOutline /></n-icon>
+                </template>
+              </n-button>
+            </template>
+            Brett drehen (Farbe wechseln)
+          </n-tooltip>
+
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button
+                circle
+                secondary
+                size="medium"
+                @click="playCoachStore.restartGame"
+                class="restart-btn"
+              >
+                <template #icon>
+                  <n-icon><RefreshOutline /></n-icon>
+                </template>
+              </n-button>
+            </template>
+            Spiel neu starten
+          </n-tooltip>
+        </n-space>
+
+        <n-space :wrap="false" align="center">
+          <n-input
+            v-model:value="playCoachStore.localFen"
+            placeholder="FEN eingeben"
+            size="small"
+            class="fen-input"
+            @keyup.enter="playCoachStore.applyFen(playCoachStore.localFen)"
+          />
+          <n-button
+            type="primary"
+            secondary
+            size="small"
+            @click="playCoachStore.applyFen(playCoachStore.localFen)"
+          >
+            Laden
+          </n-button>
+        </n-space>
+      </n-space>
     </div>
   </div>
 </template>
@@ -40,5 +103,28 @@ const rootNode = computed(() => {
   color: var(--color-text-muted);
   font-style: italic;
   font-size: 0.9rem;
+}
+
+.play-coach-controls {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fen-input {
+  flex: 1;
+}
+
+.flip-btn,
+.restart-btn {
+  transition: transform 0.3s ease;
+}
+
+.flip-btn:active {
+  transform: scale(0.9) rotate(180deg);
+}
+
+.restart-btn:active {
+  transform: scale(0.9) rotate(-90deg);
 }
 </style>

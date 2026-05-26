@@ -76,32 +76,40 @@ onUnmounted(() => {
     </template>
 
     <template #center-column>
-       <div v-if="endgamesStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
+      <div v-if="showColorGuess" class="guess-color-overlay">
+        <GuessColorSelection />
+      </div>
+      <div v-else-if="endgamesStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
         <div class="result-overlay">
           <n-icon
             size="64"
-            :class="endgamesStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'icon-success' : 'icon-error'"
+            :class="
+              endgamesStore.feedbackMessage === t('features.finishHim.feedback.win')
+                ? 'icon-success'
+                : 'icon-error'
+            "
           >
-            <CheckmarkCircle v-if="endgamesStore.feedbackMessage === t('features.finishHim.feedback.win')" />
+            <CheckmarkCircle
+              v-if="endgamesStore.feedbackMessage === t('features.finishHim.feedback.win')"
+            />
             <CloseCircle v-else />
           </n-icon>
           <n-text class="result-text">{{ endgamesStore.feedbackMessage }}</n-text>
-          
-          <n-button 
-            type="primary" 
-            size="large" 
-            @click="endgamesStore.loadNewPuzzle(endgamesStore.activePuzzle?.puzzle_type || 'finish_him', endgamesStore.activeParams)"
-            style="margin-top: 1rem;"
+
+          <n-button
+            type="primary"
+            size="large"
+            @click="
+              endgamesStore.loadNewPuzzle(
+                endgamesStore.activePuzzle?.puzzle_type || 'finish_him',
+                endgamesStore.activeParams,
+              )
+            "
+            style="margin-top: 1rem"
           >
             Next Training
           </n-button>
         </div>
-      </div>
-    </template>
-
-    <template #controls>
-      <div class="controls-panel">
-          <GuessColorSelection v-if="showColorGuess" />
       </div>
     </template>
 
@@ -112,6 +120,20 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.guess-color-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  border-radius: 4px;
+}
 .learning-top-panel-container {
   display: flex;
   justify-content: space-between;
@@ -200,13 +222,11 @@ onUnmounted(() => {
   text-align: center;
 }
 
-.icon-success { color: #4caf50; }
-.icon-error { color: #f44336; }
-
-.controls-panel {
-  padding: 12px;
-  display: flex;
-  justify-content: center;
+.icon-success {
+  color: #4caf50;
+}
+.icon-error {
+  color: #f44336;
 }
 
 @keyframes scaleIn {

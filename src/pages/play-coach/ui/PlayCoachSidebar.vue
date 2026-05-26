@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { NScrollbar, NText } from 'naive-ui'
-import { LichessOpeningExplorer, PgnTree } from '@/features/play-coach'
-import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import { LichessOpeningExplorer, PgnTree } from '@/features/play-coach';
+import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService';
+import { NScrollbar, NText } from 'naive-ui';
 
 // Component is now self-contained using OpeningExplorerStore
 </script>
@@ -38,7 +38,7 @@ import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 16px;
+  padding: 8px;
   background: var(--color-surface-2);
 }
 

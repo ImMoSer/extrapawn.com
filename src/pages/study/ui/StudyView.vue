@@ -8,7 +8,6 @@ import {
   LichessApiError,
   LichessErrorModal,
   LichessStudyAuthModal,
-  StudyControls,
   StudyHeader,
   StudySidebar,
   StudyTree,
@@ -49,14 +48,6 @@ const explorerMode = ref<'lichess' | 'mozer' | 'study'>('study')
 const showErrorModal = ref(false)
 const errorStatus = ref<number | undefined>(undefined)
 const errorMessage = ref('')
-
-const handleToggleAnalysis = () => {
-  if (analysisStore.isAnalysisActive) {
-    analysisStore.hidePanel()
-  } else {
-    analysisStore.showPanel(true)
-  }
-}
 
 const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
   if (studyStore.cloudLoading) {
@@ -272,13 +263,6 @@ watch(
         <MozerBook v-else-if="explorerMode === 'mozer'" class="explorer-component" />
         <LichessOpeningExplorer v-else class="explorer-component" />
       </div>
-    </template>
-
-    <template #controls>
-      <StudyControls
-        :is-analysis-active="analysisStore.isAnalysisActive"
-        @toggle-analysis="handleToggleAnalysis"
-      />
     </template>
 
     <template #right-panel>
