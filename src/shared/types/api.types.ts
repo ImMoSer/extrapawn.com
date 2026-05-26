@@ -402,6 +402,9 @@ export interface GameResultResponse {
   newRating?: number
   attempts?: number
   info?: string
+  dailyLimit?: number
+  spentToday?: number
+  PawnCoins?: number
   userStatsUpdate?: UserStatsUpdate
 }
 

@@ -139,8 +139,7 @@ export const useEndgamesStore = defineStore('endgames', () => {
     try {
       const resultDto = {
         wasCorrect: isWin,
-        puzzle_id: puzzle.puzzle_id,
-        puzzle_type: puzzle.puzzle_type
+        puzzle: puzzle
       }
 
       const response = await apiClient<GameResultResponse>('/play-puzzle/result', {
@@ -149,7 +148,7 @@ export const useEndgamesStore = defineStore('endgames', () => {
       })
 
       if (response) {
-         if (response.ratingDelta !== undefined) {
+        if (response.ratingDelta !== undefined) {
           const delta = response.ratingDelta
           const sign = delta >= 0 ? '+' : ''
           const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
@@ -160,10 +159,16 @@ export const useEndgamesStore = defineStore('endgames', () => {
             window.$message?.error(msg)
           }
         }
-        if (response.userStatsUpdate) {
+
+        // Handle flat response or nested update
+        if (response.PawnCoins !== undefined) {
+          authStore.updateUserStats({
+            PawnCoins: response.PawnCoins,
+            dailyLimit: response.dailyLimit,
+            spentToday: response.spentToday
+          })
+        } else if (response.userStatsUpdate) {
           authStore.updateUserStats(response.userStatsUpdate)
-        } else {
-          await authStore.checkSession()
         }
       }
     } catch (error) {
