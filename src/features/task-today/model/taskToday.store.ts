@@ -200,7 +200,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   function handlePuzzleSuccess(timeNeededMs: number) {
     console.log(`[TaskToday] Success! Time needed: ${timeNeededMs}ms`)
-    GameAudioEngine.playFeatureSuccess()
+    GameAudioEngine.playTaskTodaySuccess()
     stopTimer()
     
     const puzzle = currentPuzzle.value

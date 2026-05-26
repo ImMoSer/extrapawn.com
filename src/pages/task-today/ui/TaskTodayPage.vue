@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { useTaskTodayStore, type PuzzleResult } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
-import { NText, NList, NListItem, NScrollbar } from 'naive-ui'
+import { NText, NList, NListItem, NScrollbar, NButton, NIcon } from 'naive-ui'
+import { CloseCircleOutline, RefreshOutline as RestartIcon } from '@vicons/ionicons5'
 import { computed, onMounted, onUnmounted } from 'vue'
-import { onBeforeRouteLeave, useRoute } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import TaskSidebar from './TaskSidebar.vue'
 
 const taskTodayStore = useTaskTodayStore()
 const analysisStore = useAnalysisStore()
 const route = useRoute()
+const router = useRouter()
 
 onMounted(() => {
   if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
@@ -21,6 +23,15 @@ onMounted(() => {
 const formattedTime = computed(() => {
   return taskTodayStore.formatMs(taskTodayStore.currentTimeMs)
 })
+
+function handleQuit() {
+  taskTodayStore.quitTaskToday()
+  router.push('/')
+}
+
+function handleRestart() {
+  taskTodayStore.playCurrentPuzzle()
+}
 
 interface DisplayPuzzleItem {
   puzzle_id: string
@@ -81,10 +92,28 @@ onUnmounted(() => {
 
     <template #top-info>
       <div class="top-info-banner" v-if="taskTodayStore.currentPuzzle && !taskTodayStore.isFinished">
-        <div class="target-badge target-win">
-          {{ taskTodayStore.currentPuzzle.puzzle_type.toUpperCase() }}
+        <div class="side-action left">
+          <NButton circle quaternary type="error" size="small" @click="handleQuit">
+            <template #icon>
+              <NIcon><CloseCircleOutline /></NIcon>
+            </template>
+          </NButton>
         </div>
-        <span class="top-timer">{{ formattedTime }}</span>
+
+        <div class="center-meta">
+          <div class="target-badge target-win">
+            {{ taskTodayStore.currentPuzzle.puzzle_type.toUpperCase() }}
+          </div>
+          <span class="top-timer">{{ formattedTime }}</span>
+        </div>
+
+        <div class="side-action right">
+          <NButton circle quaternary type="warning" size="small" @click="handleRestart">
+            <template #icon>
+              <NIcon><RestartIcon /></NIcon>
+            </template>
+          </NButton>
+        </div>
       </div>
     </template>
 
@@ -141,13 +170,33 @@ onUnmounted(() => {
 .top-info-banner {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
+  justify-content: space-between;
+  width: 100%;
   background: rgba(0, 0, 0, 0.4);
-  padding: 8px 24px;
+  padding: 4px 12px;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(8px);
+}
+
+.center-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.side-action {
+  display: flex;
+  align-items: center;
+  min-width: 32px;
+}
+
+.side-action.left {
+  justify-content: flex-start;
+}
+
+.side-action.right {
+  justify-content: flex-end;
 }
 
 .target-badge {

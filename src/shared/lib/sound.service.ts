@@ -41,6 +41,8 @@ export type SoundEvent =
   | 'game_training_error'
   | 'game_you_move'
   | 'game_speedrun_finished'
+  | 'task_today_success'
+  | 'task_today_error'
   | 'blunder'
 
 // --- DYNAMIC POOL LOADING ---
@@ -99,6 +101,8 @@ const soundDefinitions: Record<SoundEvent, { track: SoundTrack; path: string | s
   game_play_out_start: { track: 'voice', path: createPool('/sounds/gameStore/during_game/play_out_start') },
   game_tacktics_error: { track: 'background', path: '/sounds/gameStore/TacticksError.mp3' },
   game_tacktics_success: { track: 'background', path: '/sounds/gameStore/TacticksSuccess.mp3' },
+  task_today_error: { track: 'background', path: '/sounds/gameStore/TacticksError.mp3' },
+  task_today_success: { track: 'background', path: '/sounds/gameStore/TacticksSuccess.mp3' },
   game_training_error: { track: 'background', path: '/sounds/gameStore/ErrorChpock.mp3' },
   game_you_move: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_1.mp3' },
   game_speedrun_finished: { track: 'background', path: createPool('/sounds/gameStore/applaus_backround') },

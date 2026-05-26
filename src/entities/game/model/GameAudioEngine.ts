@@ -78,6 +78,14 @@ class GameAudioEngineController {
     soundService.playSound('game_tacktics_error')
   }
 
+  public playTaskTodaySuccess() {
+    soundService.playSound('task_today_success')
+  }
+
+  public playTaskTodayError() {
+    soundService.playSound('task_today_error')
+  }
+
   public playSpeedrunFinished() {
     soundService.playSound('game_speedrun_finished')
   }
