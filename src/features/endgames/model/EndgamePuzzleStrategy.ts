@@ -1,19 +1,19 @@
 import {
   enginePlayService,
-  useGameStore,
   useBoardStore,
+  useGameStore,
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
-import { soundService } from '@/shared/lib/sound.service'
-import logger from '@/shared/lib/logger'
 import { FreeExplorationStrategy } from '@/features/study'
+import logger from '@/shared/lib/logger'
+import { soundService } from '@/shared/lib/sound.service'
 import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
 
 export class EndgamePuzzleStrategy implements IGameplayStrategy {
   config = {
     initialBotDelayMs: 300,
-    botDelayMs: 50,
+    botDelayMs: 200,
   }
 
   private puzzle: EndgamePuzzle
@@ -21,7 +21,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   private scenarioMoves: string[]
   private scenarioIndex = 0
   private isPlayoutMode: boolean
-  
+
   private prevScenarioIndex = 0
   private prevPlayoutMode = false
   private nextPuzzleTimeout: number | null = null
@@ -31,7 +31,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     this.humanColor = humanColor
     this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
     this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
-    
+
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
   }
@@ -43,7 +43,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   private get gameStore() {
     return useGameStore()
   }
-  
+
   private get boardStore() {
     return useBoardStore()
   }
@@ -74,7 +74,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     if (this.puzzle.strategy === 'playOutOnly' || this.puzzle.strategy === 'scenarioPlus') {
       return outcome.reason === 'checkmate' && outcome.winner === this.humanColor
     }
-    
+
     return false
   }
 
@@ -99,7 +99,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
            this.gameStore.startWithStrategy(this.boardStore.fen, new FreeExplorationStrategy(), this.humanColor, true)
            return
         }
-        
+
         if (this.puzzle.strategy === 'scenarioPlus') {
            this.isPlayoutMode = true
            this.scenarioIndex = this.scenarioMoves.length

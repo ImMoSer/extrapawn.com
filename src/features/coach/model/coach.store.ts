@@ -172,7 +172,11 @@ export const useCoachStore = defineStore('coach', () => {
     if (!fen) return
     isAnalyzing.value = true
 
-    const topMovesPromise = fetchTopMoves(fen)
+    // Rule: TB only for active orientation to reduce load
+    const sideToMove = boardStore.turn // 'white' or 'black'
+    const isUserTurn = sideToMove === boardStore.orientation
+    
+    const topMovesPromise = fetchTopMoves(fen, isUserTurn)
     const lastMovePromise = fetchLastMoveAnalysis()
 
     try {
@@ -246,11 +250,11 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  async function fetchTopMoves(fen: string) {
+  async function fetchTopMoves(fen: string, useTablebase: boolean = true) {
     topMovesLoading.value = true
     tablebaseBestMove.value = null
     try {
-      if (getPieceCount(fen) <= 5) {
+      if (useTablebase && getPieceCount(fen) <= 5) {
         fetchTablebaseMoves(fen).then((moves) => {
           if (moves && moves.length > 0) {
             const bestMove = moves[0]
@@ -349,8 +353,13 @@ export const useCoachStore = defineStore('coach', () => {
     (newFen) => {
       if (!isCoachEnabled.value) return
 
-      // Side-neutral context
-      setEngineContext(true, 'white')
+      // Rule: TB and Engine POV only for active orientation to reduce load
+      const sideToMove = boardStore.turn
+      const userColor = boardStore.orientation
+      const isUserTurn = sideToMove === userColor
+
+      // Set engine context (determines if ServerEngineStrategy fetches TB)
+      setEngineContext(isUserTurn, userColor)
 
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
@@ -358,6 +367,7 @@ export const useCoachStore = defineStore('coach', () => {
       triggerAnalysis(newFen)
     },
   )
+
 
   // Watch deep analysis and handle potential resource management if needed,
   // but do not disable the coach automatically as per "no restrictions" policy.
