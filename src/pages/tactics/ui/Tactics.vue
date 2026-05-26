@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NText, NButton, NIcon } from 'naive-ui'
-import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
+import { NText, NButton, NDivider } from 'naive-ui'
 
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
@@ -39,6 +38,7 @@ watch(() => tacticsStore.isWaitingForColorGuess, (isWaiting) => {
 })
 
 onMounted(() => {
+  tacticsStore.initialize()
   if (tacticsStore.isWaitingForColorGuess) {
     coachStore.setCoachEnabled(false)
   } else {
@@ -66,6 +66,28 @@ onUnmounted(() => {
             {{ badge.text }}
           </span>
           <n-text style="color: white; font-weight: bold; margin-left: 10px;">{{ activePuzzleTitle }}</n-text>
+          
+          <n-divider vertical />
+          
+          <n-text :class="tacticsStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'text-success' : 'text-info'">
+            {{ tacticsStore.feedbackMessage }}
+          </n-text>
+
+          <n-button
+            v-if="tacticsStore.gamePhase === 'GAMEOVER'"
+            type="primary"
+            size="small"
+            secondary
+            @click="
+              tacticsStore.loadNewPuzzle(
+                tacticsStore.activePuzzle?.puzzle_type || 'tactics',
+                tacticsStore.activeParams,
+              )
+            "
+            style="margin-left: 12px"
+          >
+            Next
+          </n-button>
         </div>
       </div>
       <div v-else class="learning-top-info-placeholder">
@@ -78,38 +100,6 @@ onUnmounted(() => {
     <template #center-column>
       <div v-if="showColorGuess" class="guess-color-overlay">
         <GuessColorSelection />
-      </div>
-      <div v-else-if="tacticsStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
-        <div class="result-overlay">
-          <n-icon
-            size="64"
-            :class="
-              tacticsStore.feedbackMessage === t('features.finishHim.feedback.win')
-                ? 'icon-success'
-                : 'icon-error'
-            "
-          >
-            <CheckmarkCircle
-              v-if="tacticsStore.feedbackMessage === t('features.finishHim.feedback.win')"
-            />
-            <CloseCircle v-else />
-          </n-icon>
-          <n-text class="result-text">{{ tacticsStore.feedbackMessage }}</n-text>
-
-          <n-button
-            type="primary"
-            size="large"
-            @click="
-              tacticsStore.loadNewPuzzle(
-                tacticsStore.activePuzzle?.puzzle_type || 'tactics',
-                tacticsStore.activeParams,
-              )
-            "
-            style="margin-top: 1rem"
-          >
-            Next Training
-          </n-button>
-        </div>
       </div>
     </template>
 
@@ -220,6 +210,15 @@ onUnmounted(() => {
   font-weight: 700;
   color: #fff;
   text-align: center;
+}
+
+.text-success {
+  color: #4caf50;
+  font-weight: 600;
+}
+.text-info {
+  color: #c77dff;
+  font-weight: 600;
 }
 
 .icon-success {

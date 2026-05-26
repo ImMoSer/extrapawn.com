@@ -75,6 +75,9 @@ export const useEndgamesStore = defineStore('endgames', () => {
 
   function initialize() {
     soundService.playSound('app_game_entry')
+    if (!activePuzzle.value) {
+      loadNewPuzzle('practical_chess', { category: 'extraPawn', difficulty: 'Novice' })
+    }
   }
 
   async function guessColor(guessedColor: 'white' | 'black') {

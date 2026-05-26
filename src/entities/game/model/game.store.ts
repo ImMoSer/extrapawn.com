@@ -73,7 +73,7 @@ export const useGameStore = defineStore('game', () => {
       isGameActive.value = false
       gamePhase.value = 'GAMEOVER'
 
-      if (gameStatus.outcome) {
+      if (gameStatus.outcome && (currentStrategy.value?.config?.playGameStatusSounds !== false)) {
         GameAudioEngine.handleGameOutcome(gameStatus.outcome, playerColor.value)
       }
 
@@ -98,7 +98,7 @@ export const useGameStore = defineStore('game', () => {
     gamePhase.value = 'GAMEOVER'
     isGameActive.value = false
 
-    if (status.outcome) {
+    if (status.outcome && (currentStrategy.value?.config?.playGameStatusSounds !== false)) {
       GameAudioEngine.handleGameOutcome(status.outcome, playerColor.value)
     }
 

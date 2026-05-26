@@ -73,6 +73,9 @@ export const useTacticsStore = defineStore('tactics', () => {
 
   function initialize() {
     soundService.playSound('app_game_entry')
+    if (!activePuzzle.value) {
+      loadNewPuzzle('tactics', { category: 'kingAttack', difficulty: 'Novice' })
+    }
   }
 
   async function guessColor(guessedColor: 'white' | 'black') {
@@ -92,7 +95,6 @@ export const useTacticsStore = defineStore('tactics', () => {
         false
       )
       feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
-      soundService.playSound('game_you_move')
     } else {
       // Wrong guess - instant game over
       isWaitingForColorGuess.value = false
@@ -170,6 +172,23 @@ export const useTacticsStore = defineStore('tactics', () => {
     isProcessingGameOver.value = value
   }
 
+  function localRestart() {
+    if (!activePuzzle.value) return
+    isProcessingGameOver.value = false
+    gameStore.setGamePhase('PLAYING')
+    
+    const humanColor = determineHumanColor(activePuzzle.value)
+    currentUserColor.value = humanColor
+
+    gameStore.startWithStrategy(
+      activePuzzle.value.initial_fen,
+      new TacticsPuzzleStrategy(activePuzzle.value, humanColor),
+      humanColor,
+      false
+    )
+    feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+  }
+
   async function loadNewPuzzle(type: string, queryParams: Partial<TacticsParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -207,7 +226,6 @@ export const useTacticsStore = defineStore('tactics', () => {
         false
       )
       feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
-      soundService.playSound('game_you_move')
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
@@ -298,6 +316,7 @@ export const useTacticsStore = defineStore('tactics', () => {
     handleExit,
     reset,
     handleGameOver,
+    localRestart,
     setProcessingGameOver,
   }
 })

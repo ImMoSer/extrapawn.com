@@ -39,6 +39,7 @@ watch(() => endgamesStore.isWaitingForColorGuess, (isWaiting) => {
 })
 
 onMounted(() => {
+  endgamesStore.initialize()
   if (endgamesStore.isWaitingForColorGuess) {
     coachStore.setCoachEnabled(false)
   } else {

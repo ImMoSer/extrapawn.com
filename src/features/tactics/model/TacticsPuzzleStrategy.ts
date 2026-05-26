@@ -7,13 +7,13 @@ import {
 } from '@/entities/game'
 import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
-import { FreeExplorationStrategy } from '@/features/study'
 import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
 
 export class TacticsPuzzleStrategy implements IGameplayStrategy {
   config = {
     initialBotDelayMs: 300,
     botDelayMs: 50,
+    playGameStatusSounds: false,
   }
 
   private puzzle: TacticsPuzzle
@@ -87,25 +87,31 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
       if (uciMove === expectedMove) {
         this.scenarioIndex++
 
-        if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
-           this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
-           this.nextPuzzleTimeout = window.setTimeout(() => {
-             this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-           }, 1000)
+        if (this.scenarioIndex >= this.scenarioMoves.length) {
+          soundService.playSound('game_tacktics_success')
+          this.store.handleGameOver(
+            this.puzzle,
+            true,
+            { winner: this.humanColor, reason: 'scenario_complete' },
+            this.humanColor,
+          )
+          this.nextPuzzleTimeout = window.setTimeout(() => {
+            this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+          }, 1500)
         }
       } else {
-        if (this.puzzle.strategy === 'scenarioOnly') {
-           this.store.handleGameOver(this.puzzle, false, { winner: undefined, reason: 'wrong_move' }, this.humanColor)
-           this.gameStore.startWithStrategy(this.boardStore.fen, new FreeExplorationStrategy(), this.humanColor, true)
-           return
-        }
-        
-        if (this.puzzle.strategy === 'scenarioPlus') {
-           this.isPlayoutMode = true
-           this.scenarioIndex = this.scenarioMoves.length
-           soundService.playSound('game_play_out_start')
-           window.$message?.warning('Deviation! Continuing against the engine.')
-        }
+        // Wrong move - auto restart local after delay
+        soundService.playSound('game_tacktics_error')
+        this.store.handleGameOver(
+          this.puzzle,
+          false,
+          { winner: undefined, reason: 'wrong_move' },
+          this.humanColor,
+        )
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.localRestart()
+        }, 1500)
+        return
       }
     }
   }
@@ -114,14 +120,24 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     this.scenarioIndex = this.prevScenarioIndex
     this.isPlayoutMode = this.prevPlayoutMode
     this.store.setProcessingGameOver(false)
+    if (this.nextPuzzleTimeout) {
+      clearTimeout(this.nextPuzzleTimeout)
+      this.nextPuzzleTimeout = null
+    }
   }
 
   async onBotMoveExecuted(): Promise<void> {
-    if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
-      this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
+    if (this.scenarioIndex >= this.scenarioMoves.length) {
+      soundService.playSound('game_tacktics_success')
+      this.store.handleGameOver(
+        this.puzzle,
+        true,
+        { winner: this.humanColor, reason: 'scenario_complete' },
+        this.humanColor,
+      )
       this.nextPuzzleTimeout = window.setTimeout(() => {
         this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-      }, 1000)
+      }, 1500)
     }
   }
 
@@ -146,6 +162,17 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     const isWin = this.checkWinCondition(status)
     if (status.outcome) {
       this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)
+      if (isWin) {
+        soundService.playSound('game_tacktics_success')
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+        }, 1500)
+      } else {
+        soundService.playSound('game_tacktics_error')
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.localRestart()
+        }, 1500)
+      }
     }
   }
 }
