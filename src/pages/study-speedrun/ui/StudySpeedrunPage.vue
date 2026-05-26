@@ -3,12 +3,11 @@ import { useSpeedrunStore } from '@/features/study-speedrun'
 import { GameLayout } from '@/widgets/game-layout'
 import { NButton, NIcon, NText, NProgress, NList, NListItem, NScrollbar, NThing } from 'naive-ui'
 import { CloseCircleOutline, RefreshOutline as RestartIcon } from '@vicons/ionicons5'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
-import { useStudyStore, type StudyChapter } from '@/features/study'
+import { useStudyStore } from '@/features/study'
 import { useI18n } from 'vue-i18n'
-import SpeedrunSetupModal from './SpeedrunSetupModal.vue'
 
 const { t } = useI18n()
 const speedrunStore = useSpeedrunStore()
@@ -17,9 +16,6 @@ const analysisStore = useAnalysisStore()
 const router = useRouter()
 const route = useRoute()
 
-const showSetupModal = ref(false)
-const pendingChapters = ref<StudyChapter[]>([])
-
 onMounted(() => {
   const studyId = route.query.studyId as string
   if (studyId) {
@@ -27,8 +23,7 @@ onMounted(() => {
       (c) => c.studyId === studyId && c.chapter_type === 'speedrun',
     )
     if (chapters.length > 0) {
-      pendingChapters.value = chapters
-      showSetupModal.value = true
+      speedrunStore.startSpeedrun(chapters)
     } else {
       router.push('/study')
     }
@@ -36,14 +31,6 @@ onMounted(() => {
     router.push('/study')
   }
 })
-
-function handleConfirmStart() {
-  speedrunStore.startSpeedrun(pendingChapters.value)
-}
-
-function handleCancelStart() {
-  router.push('/study')
-}
 
 const formattedTime = computed(() => {
   return speedrunStore.formatMs(speedrunStore.currentTimeMs)
@@ -131,7 +118,7 @@ onUnmounted(() => {
             <h3 class="chapter-name">{{ speedrunStore.currentChapter.name }}</h3>
             <NText depth="2" class="target-result"
               >{{ t('features.speedrun.target') }}:
-              {{ speedrunStore.currentChapter.tags.Result || '1-0' }}</NText
+              {{ speedrunStore.currentChapter.tags.Result }}</NText
             >
           </div>
 
@@ -225,12 +212,6 @@ onUnmounted(() => {
       </div>
     </template>
   </GameLayout>
-
-  <SpeedrunSetupModal
-    v-model:show="showSetupModal"
-    @confirm="handleConfirmStart"
-    @cancel="handleCancelStart"
-  />
 </template>
 
 <style scoped>

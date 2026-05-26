@@ -89,7 +89,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
   }
 
   function handleChapterFailure() {
-    console.log('[Speedrun] Failed! Moving to next chapter...')
+    console.log('[Speedrun] Failed! Restarting chapter...')
     soundService.playSound('game_training_error')
 
     const chapter = chaptersToPlay.value[currentChapterIndex.value]
@@ -97,21 +97,7 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
       studyStore.addSpeedrunHistory(chapter.id, [...currentAttemptMoves.value])
     }
 
-    chapterTimes.value[currentChapterIndex.value] = -1
-
-    const nextIndex = chaptersToPlay.value.findIndex(
-      (_, idx) => chapterTimes.value[idx] === undefined,
-    )
-
-    if (nextIndex === -1) {
-      stopTimer()
-      isPlaying.value = false
-      isFinished.value = true
-      soundService.playSound('game_speedrun_finished')
-      return
-    }
-
-    currentChapterIndex.value = nextIndex
+    // Instead of marking failure and moving on, we just restart the current chapter
     playCurrentChapter()
   }
 
