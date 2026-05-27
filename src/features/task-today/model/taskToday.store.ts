@@ -178,7 +178,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     )
   }
 
-  function handlePuzzleFailure() {
+  async function handlePuzzleFailure() {
     console.log('[TaskToday] Failed! Moving to back of queue...')
     GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
@@ -197,6 +197,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         tasksPuzzles.value[activeTask.value!.sub_mode] = puzzles
       }
     }
+    await savePlanProgress()
     playCurrentPuzzle()
   }
 
@@ -225,22 +226,23 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       solvedPuzzlesPerTask.value[subMode].push(solved)
     }
 
+    const allDone = trainingPlan.value?.tasks.every(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
+    if (allDone) {
+      isPlaying.value = false
+      isFinished.value = true
+      GameAudioEngine.playSpeedrunFinished()
+      await saveCompletedPlan()
+      return
+    }
+
     if (currentPuzzles.value.length === 0) {
-      const allDone = trainingPlan.value?.tasks.every(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
-      if (allDone) {
-        isPlaying.value = false
-        isFinished.value = true
-        GameAudioEngine.playSpeedrunFinished()
-        await saveCompletedPlan()
-        return
-      } else {
-        const nextIdx = trainingPlan.value?.tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
-        if (nextIdx !== undefined && nextIdx !== -1) {
-          currentTaskIndex.value = nextIdx
-        }
+      const nextIdx = trainingPlan.value?.tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
+      if (nextIdx !== undefined && nextIdx !== -1) {
+        currentTaskIndex.value = nextIdx
       }
     }
     
+    await savePlanProgress()
     playCurrentPuzzle()
   }
 
@@ -450,6 +452,77 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
+  function pauseTaskToday() {
+    stopTimer()
+    gameStore.stop()
+    isPlaying.value = false
+  }
+
+  async function savePlanProgress() {
+    if (!trainingPlan.value) return
+
+    const puzzlesList: Array<{
+      puzzle_id: string
+      sub_mode: string
+      category: string
+      attempts: number
+      solved: boolean
+      time: number
+    }> = []
+
+    // Add solved puzzles
+    for (const subMode of Object.keys(solvedPuzzlesPerTask.value)) {
+      const list = solvedPuzzlesPerTask.value[subMode] || []
+      for (const p of list) {
+        const res = completedResults.value[p.puzzle_id]
+        puzzlesList.push({
+          puzzle_id: p.puzzle_id,
+          sub_mode: subMode,
+          category: p.category,
+          attempts: res ? res.attempts : 1,
+          solved: true,
+          time: res ? res.time : 0
+        })
+      }
+    }
+
+    // Add remaining puzzles in queue
+    for (const subMode of Object.keys(tasksPuzzles.value)) {
+      const list = tasksPuzzles.value[subMode] || []
+      for (const p of list) {
+        const attempts = puzzleAttempts.value[p.puzzle_id] || 0
+        const res = completedResults.value[p.puzzle_id]
+        puzzlesList.push({
+          puzzle_id: p.puzzle_id,
+          sub_mode: subMode,
+          category: p.category,
+          attempts: attempts,
+          solved: false,
+          time: res ? res.time : 0
+        })
+      }
+    }
+
+    try {
+      await apiClient('/training-plan/progress', {
+        method: 'POST',
+        body: JSON.stringify({
+          difficulty: trainingPlan.value.level,
+          strategy: trainingPlan.value.strategy,
+          tasks_json: {
+            strategy: trainingPlan.value.strategy,
+            difficulty: trainingPlan.value.level,
+            date: trainingPlan.value.date,
+            puzzles: puzzlesList
+          }
+        })
+      })
+      console.log('[TaskTodayStore] Successfully saved plan progress to backend.')
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to save plan progress to backend:', err)
+    }
+  }
+
   function formatMs(ms: number | undefined): string {
     if (ms === undefined) return '--:--.--'
     const totalSeconds = Math.floor(ms / 1000)
@@ -459,7 +532,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`
   }
 
-  async function replayPlan(planData: DailyTrainingPlanEntity | TrainingPlanCurrentResponse) {
+  async function replayPlan(planData: DailyTrainingPlanEntity | TrainingPlanCurrentResponse, forceReplayAll = false) {
     try {
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
@@ -470,50 +543,102 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         throw new Error('Invalid plan data for replay')
       }
 
-      // 1. Prepare batch request
-      const batchRequest = tasks_json.puzzles.map((p: { puzzle_id: string; sub_mode: string }) => ({
+      // Check if we are resuming an active plan or starting fresh
+      const isCompleted = planData.is_completed || ('active' in planData && !planData.active && planData.is_completed)
+      const isResume = !isCompleted && !forceReplayAll
+
+      const solvedPuzzles = isResume ? tasks_json.puzzles.filter(p => p.solved) : []
+      const unsolvedPuzzles = isResume ? tasks_json.puzzles.filter(p => !p.solved) : tasks_json.puzzles
+
+      // 1. Prepare batch request for unsolved puzzles only
+      const batchRequest = unsolvedPuzzles.map((p: { puzzle_id: string; sub_mode: string }) => ({
         puzzle_id: p.puzzle_id,
         puzzle_type: p.sub_mode
       }))
 
-      // 2. Fetch all puzzles in one batch
-      const response = await apiClient<{ puzzles: WorkoutPuzzle[] }>('/play-puzzle/batch', {
-        method: 'POST',
-        body: JSON.stringify(batchRequest)
-      })
-
-      if (!response.puzzles || response.puzzles.length === 0) {
-        throw new Error('Failed to fetch puzzles for replay')
+      let responsePuzzles: WorkoutPuzzle[] = []
+      if (batchRequest.length > 0) {
+        const response = await apiClient<{ puzzles: WorkoutPuzzle[] }>('/play-puzzle/batch', {
+          method: 'POST',
+          body: JSON.stringify(batchRequest)
+        })
+        responsePuzzles = response.puzzles || []
       }
 
-      // 3. Reconstruct tasksPuzzles
+      // 2. Reconstruct tasksPuzzles (only contains unsolved puzzles)
       const puzzlesMap = new Map<string, WorkoutPuzzle[]>()
-      response.puzzles.forEach(p => {
+      responsePuzzles.forEach(p => {
         if (!puzzlesMap.has(p.puzzle_type)) {
           puzzlesMap.set(p.puzzle_type, [])
         }
         puzzlesMap.get(p.puzzle_type)!.push(p)
       })
-
       tasksPuzzles.value = Object.fromEntries(puzzlesMap)
+
+      // 3. Reconstruct solvedPuzzlesPerTask, completedResults, puzzleAttempts
       solvedPuzzlesPerTask.value = {}
       completedResults.value = {}
       puzzleAttempts.value = {}
 
+      if (isResume) {
+        solvedPuzzles.forEach(p => {
+          const subMode = p.sub_mode
+          if (!solvedPuzzlesPerTask.value[subMode]) {
+            solvedPuzzlesPerTask.value[subMode] = []
+          }
+          solvedPuzzlesPerTask.value[subMode].push({
+            puzzle_id: p.puzzle_id,
+            puzzle_type: p.sub_mode,
+            category: p.category,
+            difficulty: tasks_json.difficulty || 'Novice',
+            strategy: 'playOutOnly',
+            first_move: 'user',
+            initial_fen: ''
+          })
+
+          completedResults.value[p.puzzle_id] = {
+            puzzle_id: p.puzzle_id,
+            time: p.time || 0,
+            attempts: p.attempts || 1,
+            status: 'solved'
+          }
+
+          puzzleAttempts.value[p.puzzle_id] = p.attempts || 1
+        })
+
+        unsolvedPuzzles.forEach(p => {
+          if (p.attempts && p.attempts > 0) {
+            puzzleAttempts.value[p.puzzle_id] = p.attempts
+            if (p.time && p.time > 0) {
+              completedResults.value[p.puzzle_id] = {
+                puzzle_id: p.puzzle_id,
+                time: p.time,
+                attempts: p.attempts,
+                status: 'failed'
+              }
+            }
+          }
+        })
+      }
+
       // 4. Reconstruct TrainingPlan structure
       const tasks: TrainingTask[] = []
-      puzzlesMap.forEach((list, subMode) => {
-        // Group by category to find themes
-        const catMap = new Map<string, number>()
-        list.forEach(p => {
-          catMap.set(p.category, (catMap.get(p.category) || 0) + 1)
-        })
-        
-        tasks.push({
-          mode: 'playPuzzle',
-          sub_mode: subMode,
-          themes: Array.from(catMap.entries()).map(([name, count]) => ({ name, count }))
-        })
+      const allSubModes = ['tactics', 'finish_him', 'practical_chess', 'theory_endings']
+      
+      allSubModes.forEach(subMode => {
+        const puzzlesForMode = tasks_json.puzzles.filter(p => p.sub_mode === subMode)
+        if (puzzlesForMode.length > 0) {
+          const catMap = new Map<string, number>()
+          puzzlesForMode.forEach(p => {
+            catMap.set(p.category, (catMap.get(p.category) || 0) + 1)
+          })
+
+          tasks.push({
+            mode: 'playPuzzle',
+            sub_mode: subMode,
+            themes: Array.from(catMap.entries()).map(([name, count]) => ({ name, count }))
+          })
+        }
       })
 
       trainingPlan.value = {
@@ -523,7 +648,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         tasks
       }
       
-      currentTaskIndex.value = 0
+      const nextIdx = tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
+      if (nextIdx !== -1) {
+        currentTaskIndex.value = nextIdx
+      } else {
+        currentTaskIndex.value = 0
+      }
+      
       isPlaying.value = true
       isFinished.value = false
       
@@ -557,6 +688,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     generateAndStartPlan,
     replayPlan,
     quitTaskToday,
+    pauseTaskToday,
+    savePlanProgress,
     handlePuzzleSuccess,
     handlePuzzleFailure,
     startTimer,

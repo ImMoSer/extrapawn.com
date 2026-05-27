@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTaskTodayStore } from '@/features/task-today'
-import { NButton, NIcon, NText, NScrollbar, NSpace } from 'naive-ui'
-import { CloseCircleOutline, RefreshOutline as RestartIcon, ChevronForwardOutline } from '@vicons/ionicons5'
+import { NButton, NIcon, NText, NScrollbar, NSpace, useDialog } from 'naive-ui'
+import { CloseCircleOutline, RefreshOutline as RestartIcon, ChevronForwardOutline, PauseOutline } from '@vicons/ionicons5'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -10,8 +10,39 @@ const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const router = useRouter()
 
-function handleQuit() {
-  taskTodayStore.quitTaskToday()
+const dialog = useDialog()
+
+function handlePause() {
+  dialog.info({
+    title: t('features.taskToday.pauseTitle', 'Training pausieren'),
+    content: t('features.taskToday.pauseContent', 'Dein bisheriger Fortschritt wird in der Cloud gesichert. Du kannst das Training später fortsetzen, auch auf anderen Geräten.'),
+    positiveText: t('features.taskToday.leaveBtn', 'Verlassen'),
+    negativeText: t('features.taskToday.stayBtn', 'Bleiben'),
+    onPositiveClick: async () => {
+      await taskTodayStore.savePlanProgress()
+      taskTodayStore.pauseTaskToday()
+      router.push('/')
+    }
+  })
+}
+
+function handleReset() {
+  dialog.warning({
+    title: 'Training abbrechen',
+    content: 'Bist du sicher, dass du das heutige Training abbrechen und zurücksetzen möchtest? Dein bisheriger Fortschritt auf diesem Schwierigkeitsgrad geht verloren.',
+    positiveText: 'Ja, abbrechen',
+    negativeText: 'Abbrechen',
+    onPositiveClick: () => {
+      taskTodayStore.quitTaskToday()
+      router.push('/')
+    }
+  })
+}
+
+function handleGoToStart() {
+  taskTodayStore.isFinished = false
+  taskTodayStore.isPlaying = false
+  taskTodayStore.trainingPlan = null
   router.push('/')
 }
 
@@ -37,14 +68,14 @@ const isTaskCompleted = (subMode: string) => {
 
     <div v-if="taskTodayStore.isFinished" class="finished-state">
       <NText type="success" strong>TRAINING COMPLETED</NText>
-      <NButton type="primary" @click="handleQuit" style="margin-top: 1rem">
+      <NButton type="primary" @click="handleGoToStart" style="margin-top: 1rem">
         {{ t('common.actions.back') }}
       </NButton>
     </div>
 
     <div v-else-if="!taskTodayStore.trainingPlan" class="no-plan-state">
       <NText depth="3">{{ t('features.taskToday.noPlan', 'Kein aktiver Trainingsplan') }}</NText>
-      <NButton type="primary" @click="handleQuit" style="margin-top: 1rem; font-weight: bold;">
+      <NButton type="primary" @click="handleGoToStart" style="margin-top: 1rem; font-weight: bold;">
         Zum Dashboard gehen
       </NButton>
     </div>
@@ -85,9 +116,14 @@ const isTaskCompleted = (subMode: string) => {
             Restart Puzzle
           </NButton>
 
-          <NButton block type="error" dashed @click="handleQuit">
+          <NButton block type="primary" secondary @click="handlePause">
+            <template #icon><NIcon><PauseOutline /></NIcon></template>
+            Pause Training
+          </NButton>
+
+          <NButton block type="error" dashed @click="handleReset">
             <template #icon><NIcon><CloseCircleOutline /></NIcon></template>
-            Quit Run
+            Reset Plan
           </NButton>
         </NSpace>
       </div>

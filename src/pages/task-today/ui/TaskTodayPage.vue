@@ -11,7 +11,8 @@ import {
   NTag,
   NResult,
   NSpace,
-  useMessage
+  useMessage,
+  useDialog
 } from 'naive-ui'
 import {
   CloseCircleOutline,
@@ -21,6 +22,7 @@ import {
 } from '@vicons/ionicons5'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import { useAuthStore } from '@/entities/user'
 import {
@@ -36,6 +38,8 @@ const analysisStore = useAnalysisStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
+const { t } = useI18n()
 const queryClient = useQueryClient()
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
@@ -239,9 +243,22 @@ const formattedTime = computed(() => {
   return taskTodayStore.formatMs(taskTodayStore.currentTimeMs)
 })
 
-function handleQuit() {
-  taskTodayStore.quitTaskToday()
-  queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
+function handlePause() {
+  dialog.info({
+    title: t('features.taskToday.pauseTitle', 'Training pausieren'),
+    content: t('features.taskToday.pauseContent', 'Dein bisheriger Fortschritt wird in der Cloud gesichert. Du kannst das Training später fortsetzen, auch auf anderen Geräten.'),
+    positiveText: t('features.taskToday.leaveBtn', 'Verlassen'),
+    negativeText: t('features.taskToday.stayBtn', 'Bleiben'),
+    onPositiveClick: async () => {
+      await taskTodayStore.savePlanProgress()
+      taskTodayStore.pauseTaskToday()
+      router.push('/')
+    }
+  })
+}
+
+function handleGoToStart() {
+  handleGoToDashboard()
   router.push('/')
 }
 
@@ -295,7 +312,7 @@ onBeforeRouteLeave(() => {
 onUnmounted(() => {
   analysisStore.hidePanel()
   if (taskTodayStore.isPlaying) {
-    taskTodayStore.quitTaskToday()
+    taskTodayStore.pauseTaskToday()
   }
 })
 </script>
@@ -446,7 +463,7 @@ onUnmounted(() => {
       >
         <template #footer>
           <NSpace justify="center">
-            <NButton type="primary" size="large" @click="handleQuit">
+            <NButton type="primary" size="large" @click="handleGoToStart">
               Zurück zur Startseite
             </NButton>
             <NButton secondary size="large" @click="handleGoToDashboard">
@@ -466,7 +483,7 @@ onUnmounted(() => {
     <template #top-info>
       <div class="top-info-banner" v-if="taskTodayStore.currentPuzzle && !taskTodayStore.isFinished">
         <div class="side-action left">
-          <NButton circle quaternary type="error" size="small" @click="handleQuit">
+          <NButton circle quaternary type="error" size="small" @click="handlePause">
             <template #icon>
               <NIcon><CloseCircleOutline /></NIcon>
             </template>
