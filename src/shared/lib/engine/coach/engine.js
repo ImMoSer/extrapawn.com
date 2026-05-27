@@ -50,14 +50,6 @@ export function setUseServerEngine(val) {
   localStorage.setItem('positional_chess.use_server_coach', String(val))
 }
 
-export let CURRENT_IS_ANALYSIS_MODE = false
-export let CURRENT_USER_COLOR = 'w'
-
-export function setEngineContext(isAnalysisMode, userColor) {
-  CURRENT_IS_ANALYSIS_MODE = isAnalysisMode
-  CURRENT_USER_COLOR = (userColor || 'w').toLowerCase().startsWith('b') ? 'b' : 'w'
-}
-
 // Configurable defaults backed by localStorage.
 function readPref(key, fallback, min, max) {
   try {
@@ -173,10 +165,6 @@ class StockfishEngine {
         this._serverStrategy = new ServerEngineStrategy({
           getPieceCount,
           fetchTablebaseMoves,
-          getEngineContext: () => ({
-            isAnalysisMode: CURRENT_IS_ANALYSIS_MODE,
-            userColor: CURRENT_USER_COLOR,
-          }),
         })
       }
       return this._serverStrategy

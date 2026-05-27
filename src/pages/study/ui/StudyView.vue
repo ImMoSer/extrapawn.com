@@ -14,6 +14,7 @@ import {
   useStudyStore,
   FreeExplorationStrategy,
 } from '@/features/study'
+import { CoachSidebar, useCoachStore } from '@/features/coach'
 import { useReplyTrainingStore, ReplySessionWindow } from '@/features/study-reply-training'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { GameLayout } from '@/widgets/game-layout'
@@ -33,6 +34,7 @@ const studyStore = useStudyStore()
 const analysisStore = useAnalysisStore()
 const trainingStore = useReplyTrainingStore()
 const authStore = useAuthStore()
+const coachStore = useCoachStore()
 
 watch(
   () => [authStore.userProfile?.id, authStore.userProfile?.username] as const,
@@ -43,6 +45,15 @@ watch(
 )
 
 const explorerMode = ref<'lichess' | 'mozer' | 'study'>('study')
+const rightPanelMode = ref<'tree' | 'coach'>('tree')
+
+watch(rightPanelMode, (mode) => {
+  if (mode === 'coach') {
+    coachStore.setCoachEnabled(true)
+  } else {
+    coachStore.setCoachEnabled(false)
+  }
+})
 
 // Error modal state
 const showErrorModal = ref(false)
@@ -268,7 +279,20 @@ watch(
     <template #right-panel>
       <div class="right-panel-content">
         <AnalysisPanel :show-pgn="false" />
-        <StudyTree />
+        <div class="right-panel-tabs">
+          <div class="tab-toggle">
+            <button :class="{ active: rightPanelMode === 'tree' }" @click="rightPanelMode = 'tree'">
+              Tree
+            </button>
+            <button :class="{ active: rightPanelMode === 'coach' }" @click="rightPanelMode = 'coach'">
+              Coach
+            </button>
+          </div>
+          <div class="tab-content">
+            <StudyTree v-if="rightPanelMode === 'tree'" />
+            <CoachSidebar v-else-if="rightPanelMode === 'coach'" />
+          </div>
+        </div>
       </div>
     </template>
   </GameLayout>
@@ -321,6 +345,44 @@ watch(
   flex-direction: column;
   height: 100%;
   gap: 10px;
+}
+
+.right-panel-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tab-toggle {
+  display: flex;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tab-toggle button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-toggle button.active {
+  color: var(--color-accent-primary);
+  border-bottom-color: var(--color-accent-primary);
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.study-tree-container) {

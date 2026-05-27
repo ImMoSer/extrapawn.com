@@ -95,10 +95,9 @@ export class WasmEngineStrategy {
  * Handles Lichess Tablebase fetching for endgames with 5 or fewer pieces.
  */
 export class ServerEngineStrategy {
-  constructor({ getPieceCount, fetchTablebaseMoves, getEngineContext }) {
+  constructor({ getPieceCount, fetchTablebaseMoves }) {
     this.getPieceCount = getPieceCount
     this.fetchTablebaseMoves = fetchTablebaseMoves
-    this.getEngineContext = getEngineContext
   }
 
   init({ onReady }) {
@@ -137,18 +136,10 @@ export class ServerEngineStrategy {
     }
 
     if (this.getPieceCount(job.fen) <= 5) {
-      const sideToMove = job.fen.split(' ')[1]
-      const context = this.getEngineContext()
-      const shouldFetchTB = context.isAnalysisMode || sideToMove === context.userColor
-
-      if (shouldFetchTB) {
-        try {
-          const moves = await this.fetchTablebaseMoves(job.fen)
-          doBackendFetch(moves)
-        } catch {
-          doBackendFetch(null)
-        }
-      } else {
+      try {
+        const moves = await this.fetchTablebaseMoves(job.fen)
+        doBackendFetch(moves)
+      } catch {
         doBackendFetch(null)
       }
     } else {

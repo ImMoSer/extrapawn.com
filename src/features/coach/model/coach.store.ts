@@ -5,7 +5,7 @@ import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/sh
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
-import { fetchTablebaseMoves, getPieceCount, setEngineContext } from '@/shared/lib/engine/coach/engine'
+import { fetchTablebaseMoves, getPieceCount } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -172,11 +172,7 @@ export const useCoachStore = defineStore('coach', () => {
     if (!fen) return
     isAnalyzing.value = true
 
-    // Rule: TB only for active orientation to reduce load
-    const sideToMove = boardStore.turn // 'white' or 'black'
-    const isUserTurn = sideToMove === boardStore.orientation
-    
-    const topMovesPromise = fetchTopMoves(fen, isUserTurn)
+    const topMovesPromise = fetchTopMoves(fen)
     const lastMovePromise = fetchLastMoveAnalysis()
 
     try {
@@ -250,11 +246,11 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  async function fetchTopMoves(fen: string, useTablebase: boolean = true) {
+  async function fetchTopMoves(fen: string) {
     topMovesLoading.value = true
     tablebaseBestMove.value = null
     try {
-      if (useTablebase && getPieceCount(fen) <= 5) {
+      if (getPieceCount(fen) <= 5) {
         fetchTablebaseMoves(fen).then((moves) => {
           if (moves && moves.length > 0) {
             const bestMove = moves[0]
@@ -353,21 +349,12 @@ export const useCoachStore = defineStore('coach', () => {
     (newFen) => {
       if (!isCoachEnabled.value) return
 
-      // Rule: TB and Engine POV only for active orientation to reduce load
-      const sideToMove = boardStore.turn
-      const userColor = boardStore.orientation
-      const isUserTurn = sideToMove === userColor
-
-      // Set engine context (determines if ServerEngineStrategy fetches TB)
-      setEngineContext(isUserTurn, userColor)
-
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
 
       triggerAnalysis(newFen)
     },
   )
-
 
   // Watch deep analysis and handle potential resource management if needed,
   // but do not disable the coach automatically as per "no restrictions" policy.

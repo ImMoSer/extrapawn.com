@@ -16,9 +16,6 @@ declare module '@/shared/lib/engine/coach/engine' {
   export function getEngineDefaults(): { depth: number; multipv: number; threads: number }
   export let USE_SERVER_ENGINE: boolean
   export function setUseServerEngine(val: boolean): void
-  export function setEngineContext(isAnalysisMode: boolean, userColor: string): void
-  export let CURRENT_IS_ANALYSIS_MODE: boolean
-  export let CURRENT_USER_COLOR: string
   export function getPieceCount(fen: string): number
   export interface TablebaseMove {
     san: string

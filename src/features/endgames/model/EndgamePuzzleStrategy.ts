@@ -12,8 +12,8 @@ import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
 
 export class EndgamePuzzleStrategy implements IGameplayStrategy {
   config = {
-    initialBotDelayMs: 300,
-    botDelayMs: 200,
+    initialBotDelayMs: 500,
+    botDelayMs: 3000,
   }
 
   private puzzle: EndgamePuzzle
