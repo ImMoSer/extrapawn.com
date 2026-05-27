@@ -181,6 +181,7 @@ export async function buildFullExplanation(fen, opts = {}) {
       san: result.san,
       role: piece ? piece.type : null, // 'p', 'n', 'b', 'r', 'q', 'k'
       motifs: motifs.map((m) => m.id),
+      raw_motifs: motifs,
       headline,
       to: uci.slice(2, 4),
       from: fromSq,
@@ -406,14 +407,12 @@ export async function buildFullExplanation(fen, opts = {}) {
   }
 
   // ── Visual Commands Generation ──────────────────────────────────────
-  const bestMoveUci = engineRes.moves[0] ? engineRes.moves[0].move : null
   staticBlob.visual_commands = generateVisualCommands(
     staticBlob,
     fen,
     attackingSide,
     planSteps,
-    keySquares,
-    bestMoveUci
+    keySquares
   )
 
   return staticBlob

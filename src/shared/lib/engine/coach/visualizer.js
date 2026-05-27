@@ -1,11 +1,11 @@
-import { analyzeMove } from './analyzer-rs'
-
 /**
  * Centralized Color Design System for Visualizer Marks.
  * Maps semantic chess concepts to Chessground brush color names.
  */
 const COLORS = {
   BEST_MOVE: 'bestmove',
+  NEXT_MOVE: 'paleBlue',
+  LAST_MOVE: 'paleGreen',
   MANEUVER: 'blue',
   DIRECT_TACTIC: 'red',
   TACTIC_GEOMETRY: 'cyan',
@@ -27,13 +27,12 @@ export function generateVisualCommands(
   fen,
   attackingSide,
   planSteps,
-  keySquares,
-  bestMoveUci
+  keySquares
 ) {
   const visual_commands = {}
 
-  // 1. Best Move (Immediate Action)
-  mapBestMove(visual_commands, planSteps)
+  // 1. Best Move (Immediate Action) and Plan Sequence
+  mapPlanSequence(visual_commands, planSteps)
 
   // 1.5 Maneuvers (Piece Journeys)
   mapManeuvers(visual_commands, planSteps, attackingSide)
@@ -51,15 +50,45 @@ export function generateVisualCommands(
   mapStructure(visual_commands, blob, fen)
 
   // 6. Tactics (Precise Geometry from Rust)
-  mapTactics(visual_commands, fen, bestMoveUci)
+  mapTactics(visual_commands, planSteps)
 
   return visual_commands
 }
 
-function mapBestMove(cmds, planSteps) {
-  if (planSteps && planSteps.length > 0 && planSteps[0].from && planSteps[0].to) {
-    const bestMove = planSteps[0]
+function mapPlanSequence(cmds, planSteps) {
+  if (!planSteps || planSteps.length === 0) return
+
+  // 1. Best Move (immediate)
+  const bestMove = planSteps[0]
+  if (bestMove.from && bestMove.to) {
     cmds.best_move = `[mark:${bestMove.to}:${COLORS.BEST_MOVE};route:${bestMove.from}->${bestMove.to}:${COLORS.BEST_MOVE}]`
+  }
+
+  // 2. Next Move (our second move in the plan, index 2)
+  if (planSteps.length > 2) {
+    const nextMove = planSteps[2]
+    if (nextMove.from && nextMove.to) {
+      cmds.next_move = `[mark:${nextMove.to}:${COLORS.NEXT_MOVE};route:${nextMove.from}->${nextMove.to}:${COLORS.NEXT_MOVE}]`
+    }
+  }
+
+  // 3. Last Move (our final move in the plan)
+  // We only want the *last* move if it's ours, and it's > index 2.
+  // Actually, we can just find the last move of the plan sequence that belongs to our side.
+  // Our moves are at even indices: 0, 2, 4, 6...
+  let lastMoveIndex = -1;
+  for (let i = planSteps.length - 1; i >= 0; i--) {
+    if (i % 2 === 0) {
+      lastMoveIndex = i;
+      break;
+    }
+  }
+
+  if (lastMoveIndex > 2) {
+    const lastMove = planSteps[lastMoveIndex]
+    if (lastMove.from && lastMove.to) {
+      cmds.last_move = `[mark:${lastMove.to}:${COLORS.LAST_MOVE};route:${lastMove.from}->${lastMove.to}:${COLORS.LAST_MOVE}]`
+    }
   }
 }
 
@@ -176,73 +205,74 @@ function mapStructure(cmds, blob, fen) {
   }
 }
 
-function mapTactics(cmds, fen, bestMoveUci) {
-  if (!bestMoveUci) return
-
-  const rawRustResult = analyzeMove(fen, bestMoveUci)
-  if (!rawRustResult || !rawRustResult.motifs) return
+function mapTactics(cmds, planSteps) {
+  if (!planSteps || planSteps.length === 0) return
 
   const marks = new Set()
   const arrows = new Set()
   const routes = new Set()
 
-  rawRustResult.motifs.forEach((motif) => {
-    const t = motif.targets || []
-    if (t.length === 0) return
+  planSteps.forEach((step) => {
+    if (!step.raw_motifs) return
 
-    switch (motif.id) {
-      // 1. Lineare Strahlen (Durchschlagende Geometrie)
-      case 'pin':
-      case 'skewer':
-        if (t.length >= 3) routes.add(`[route:${t[0]}->${t[1]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
-        break
-      case 'battery':
-        if (t.length >= 3) routes.add(`[route:${t[1]}->${t[0]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
-        break
-      case 'discovered_check':
-        if (t.length >= 3) arrows.add(`[arrow:${t[0]}->${t[2]}:${COLORS.DIRECT_TACTIC}]`)
-        break
+    step.raw_motifs.forEach((motif) => {
+      const t = motif.targets || []
+      if (t.length === 0) return
 
-      // 2. Direkte Angriffe & Pfeile
-      case 'check':
-      case 'threatens':
-      case 'attacks_pawn':
-        if (t.length >= 2) arrows.add(`[arrow:${t[0]}->${t[1]}:${COLORS.DIRECT_TACTIC}]`)
-        break
-      case 'fork':
-      case 'attacks_king':
-      case 'eyes_king_zone':
-        if (t.length >= 2) {
-          for (let i = 1; i < t.length; i++) {
-            arrows.add(`[arrow:${t[0]}->${t[i]}:${COLORS.DIRECT_TACTIC}]`)
+      switch (motif.id) {
+        // 1. Lineare Strahlen (Durchschlagende Geometrie)
+        case 'pin':
+        case 'skewer':
+          if (t.length >= 3) routes.add(`[route:${t[0]}->${t[1]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
+          break
+        case 'battery':
+          if (t.length >= 3) routes.add(`[route:${t[1]}->${t[0]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
+          break
+        case 'discovered_check':
+          if (t.length >= 3) arrows.add(`[arrow:${t[0]}->${t[2]}:${COLORS.DIRECT_TACTIC}]`)
+          break
+
+        // 2. Direkte Angriffe & Pfeile
+        case 'check':
+        case 'threatens':
+        case 'attacks_pawn':
+          if (t.length >= 2) arrows.add(`[arrow:${t[0]}->${t[1]}:${COLORS.DIRECT_TACTIC}]`)
+          break
+        case 'fork':
+        case 'attacks_king':
+        case 'eyes_king_zone':
+          if (t.length >= 2) {
+            for (let i = 1; i < t.length; i++) {
+              arrows.add(`[arrow:${t[0]}->${t[i]}:${COLORS.DIRECT_TACTIC}]`)
+            }
           }
-        }
-        break
+          break
 
-      // 3. Statische Highlights (Warnungen & Markierungen)
-      case 'creates_threat':
-      case 'traps_piece':
-      case 'removes_defender':
-        marks.add(t[0])
-        break
-
-      // 4. Spezielle & Komplexe Geometrie
-      case 'overloaded':
-        if (t.length >= 2) {
+        // 3. Statische Highlights (Warnungen & Markierungen)
+        case 'creates_threat':
+        case 'traps_piece':
+        case 'removes_defender':
           marks.add(t[0])
-          for (let i = 1; i < t.length; i++) {
-            arrows.add(`[arrow:${t[0]}->${t[i]}:${COLORS.TACTIC_GEOMETRY}]`)
+          break
+
+        // 4. Spezielle & Komplexe Geometrie
+        case 'overloaded':
+          if (t.length >= 2) {
+            marks.add(t[0])
+            for (let i = 1; i < t.length; i++) {
+              arrows.add(`[arrow:${t[0]}->${t[i]}:${COLORS.TACTIC_GEOMETRY}]`)
+            }
           }
-        }
-        break
-      case 'opens_file_for':
-      case 'opens_diagonal_for':
-        if (t.length >= 2) routes.add(`[route:${t[0]}->${t[1]}:${COLORS.TACTIC_GEOMETRY}]`)
-        break
-      case 'defends':
-        if (t.length >= 2) marks.add(t[1]) // Nur das Gedeckte Ziel markieren (über DIRECT_TACTIC)
-        break
-    }
+          break
+        case 'opens_file_for':
+        case 'opens_diagonal_for':
+          if (t.length >= 2) routes.add(`[route:${t[0]}->${t[1]}:${COLORS.TACTIC_GEOMETRY}]`)
+          break
+        case 'defends':
+          if (t.length >= 2) marks.add(t[1]) // Nur das Gedeckte Ziel markieren (über DIRECT_TACTIC)
+          break
+      }
+    })
   })
 
   // Add the gathered shapes to cmds without overriding existing keys
