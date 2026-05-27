@@ -11,8 +11,7 @@ import {
   NTag,
   NResult,
   NSpace,
-  useMessage,
-  useDialog
+  useMessage
 } from 'naive-ui'
 import {
   CloseCircleOutline,
@@ -22,7 +21,6 @@ import {
 } from '@vicons/ionicons5'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import { useAuthStore } from '@/entities/user'
 import {
@@ -38,8 +36,6 @@ const analysisStore = useAnalysisStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
-const { t } = useI18n()
 const queryClient = useQueryClient()
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
@@ -243,18 +239,9 @@ const formattedTime = computed(() => {
   return taskTodayStore.formatMs(taskTodayStore.currentTimeMs)
 })
 
-function handlePause() {
-  dialog.info({
-    title: t('features.taskToday.pauseTitle', 'Training pausieren'),
-    content: t('features.taskToday.pauseContent', 'Dein bisheriger Fortschritt wird in der Cloud gesichert. Du kannst das Training später fortsetzen, auch auf anderen Geräten.'),
-    positiveText: t('features.taskToday.leaveBtn', 'Verlassen'),
-    negativeText: t('features.taskToday.stayBtn', 'Bleiben'),
-    onPositiveClick: async () => {
-      await taskTodayStore.savePlanProgress()
-      taskTodayStore.pauseTaskToday()
-      router.push('/')
-    }
-  })
+function handleExit() {
+  taskTodayStore.pauseTaskToday()
+  router.push('/')
 }
 
 function handleGoToStart() {
@@ -483,7 +470,7 @@ onUnmounted(() => {
     <template #top-info>
       <div class="top-info-banner" v-if="taskTodayStore.currentPuzzle && !taskTodayStore.isFinished">
         <div class="side-action left">
-          <NButton circle quaternary type="error" size="small" @click="handlePause">
+          <NButton circle quaternary type="error" size="small" @click="handleExit">
             <template #icon>
               <NIcon><CloseCircleOutline /></NIcon>
             </template>

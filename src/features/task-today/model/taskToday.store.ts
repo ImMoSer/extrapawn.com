@@ -183,10 +183,11 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
     if (puzzle) {
+      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 1
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
         time: 0,
-        attempts: puzzleAttempts.value[puzzle.puzzle_id] || 1,
+        attempts: attempts,
         status: 'failed'
       }
 
@@ -196,8 +197,16 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzles.push(failed)
         tasksPuzzles.value[activeTask.value!.sub_mode] = puzzles
       }
+
+      await savePlanProgress(
+        puzzle.puzzle_id,
+        activeTask.value!.sub_mode,
+        puzzle.category,
+        'failed',
+        attempts,
+        0
+      )
     }
-    await savePlanProgress()
     playCurrentPuzzle()
   }
 
@@ -208,10 +217,11 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     
     const puzzle = currentPuzzle.value
     if (puzzle) {
+      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 1
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
         time: timeNeededMs,
-        attempts: puzzleAttempts.value[puzzle.puzzle_id] || 1,
+        attempts: attempts,
         status: 'solved'
       }
 
@@ -224,6 +234,15 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         solvedPuzzlesPerTask.value[subMode] = []
       }
       solvedPuzzlesPerTask.value[subMode].push(solved)
+
+      await savePlanProgress(
+        puzzle.puzzle_id,
+        subMode,
+        puzzle.category,
+        'solved',
+        attempts,
+        timeNeededMs
+      )
     }
 
     const allDone = trainingPlan.value?.tasks.every(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
@@ -242,49 +261,18 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       }
     }
     
-    await savePlanProgress()
     playCurrentPuzzle()
   }
 
   async function saveCompletedPlan() {
     if (!trainingPlan.value) return
 
-    const puzzlesList = Object.keys(completedResults.value).map(puzzleId => {
-      const res = completedResults.value[puzzleId]
-      let sub_mode = ''
-      let category = ''
-      for (const sm of Object.keys(solvedPuzzlesPerTask.value)) {
-        const list = solvedPuzzlesPerTask.value[sm]
-        if (!list) continue
-        const p = list.find(x => x.puzzle_id === puzzleId)
-        if (p) {
-          sub_mode = sm
-          category = p.category
-          break
-        }
-      }
-      return {
-        puzzle_id: puzzleId,
-        sub_mode,
-        category,
-        attempts: res ? res.attempts : 1,
-        solved: res ? res.status === 'solved' : false,
-        time: res ? res.time : 0
-      }
-    })
-
     try {
       await apiClient('/training-plan/complete', {
         method: 'POST',
         body: JSON.stringify({
           difficulty: trainingPlan.value.level,
-          strategy: trainingPlan.value.strategy,
-          tasks_json: {
-            strategy: trainingPlan.value.strategy,
-            difficulty: trainingPlan.value.level,
-            date: trainingPlan.value.date,
-            puzzles: puzzlesList
-          }
+          strategy: trainingPlan.value.strategy
         })
       })
       console.log('[TaskTodayStore] Successfully saved completed training plan to DB.')
@@ -458,50 +446,15 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     isPlaying.value = false
   }
 
-  async function savePlanProgress() {
+  async function savePlanProgress(
+    puzzleId: string,
+    subMode: string,
+    category: string,
+    status: 'solved' | 'failed',
+    attempts: number,
+    timeMs: number
+  ) {
     if (!trainingPlan.value) return
-
-    const puzzlesList: Array<{
-      puzzle_id: string
-      sub_mode: string
-      category: string
-      attempts: number
-      solved: boolean
-      time: number
-    }> = []
-
-    // Add solved puzzles
-    for (const subMode of Object.keys(solvedPuzzlesPerTask.value)) {
-      const list = solvedPuzzlesPerTask.value[subMode] || []
-      for (const p of list) {
-        const res = completedResults.value[p.puzzle_id]
-        puzzlesList.push({
-          puzzle_id: p.puzzle_id,
-          sub_mode: subMode,
-          category: p.category,
-          attempts: res ? res.attempts : 1,
-          solved: true,
-          time: res ? res.time : 0
-        })
-      }
-    }
-
-    // Add remaining puzzles in queue
-    for (const subMode of Object.keys(tasksPuzzles.value)) {
-      const list = tasksPuzzles.value[subMode] || []
-      for (const p of list) {
-        const attempts = puzzleAttempts.value[p.puzzle_id] || 0
-        const res = completedResults.value[p.puzzle_id]
-        puzzlesList.push({
-          puzzle_id: p.puzzle_id,
-          sub_mode: subMode,
-          category: p.category,
-          attempts: attempts,
-          solved: false,
-          time: res ? res.time : 0
-        })
-      }
-    }
 
     try {
       await apiClient('/training-plan/progress', {
@@ -509,11 +462,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         body: JSON.stringify({
           difficulty: trainingPlan.value.level,
           strategy: trainingPlan.value.strategy,
-          tasks_json: {
-            strategy: trainingPlan.value.strategy,
-            difficulty: trainingPlan.value.level,
-            date: trainingPlan.value.date,
-            puzzles: puzzlesList
+          puzzle_progress: {
+            puzzle_id: puzzleId,
+            sub_mode: subMode,
+            category: category,
+            status: status,
+            attempts: attempts,
+            time: Math.round(timeMs / 1000)
           }
         })
       })
