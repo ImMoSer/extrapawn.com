@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore, type PuzzleResult } from '@/features/task-today'
+import { useTaskTodayStore, type PuzzleResult, useTaskTodayAutoplay } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
 import {
   NText,
@@ -11,6 +11,7 @@ import {
   NTag,
   NResult,
   NSpace,
+  NSwitch,
   useMessage
 } from 'naive-ui'
 import {
@@ -37,6 +38,9 @@ const authStore = useAuthStore()
 const router = useRouter()
 const message = useMessage()
 const queryClient = useQueryClient()
+
+// Autoplay features for Mo3ep
+const { isMo3ep, isAutoplayEnabled } = useTaskTodayAutoplay()
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup'>('Discovery')
@@ -482,6 +486,12 @@ onUnmounted(() => {
             {{ taskTodayStore.currentPuzzle.puzzle_type.toUpperCase() }}
           </div>
           <span class="top-timer">{{ formattedTime }}</span>
+
+          <!-- Autoplay Switch for MO3EP -->
+          <NSpace v-if="isMo3ep" align="center" :size="8" class="autoplay-switch-wrapper">
+            <span class="autoplay-label">Autoplay</span>
+            <NSwitch v-model:value="isAutoplayEnabled" size="small" />
+          </NSpace>
         </div>
 
         <div class="side-action right">
@@ -1054,5 +1064,22 @@ onUnmounted(() => {
 .analysis-toggle-section {
   border-top: 1px solid var(--color-border);
   padding: 8px;
+}
+
+.autoplay-switch-wrapper {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+  display: inline-flex;
+}
+
+.autoplay-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--neon-cyan, #00e5ff);
+  text-transform: uppercase;
 }
 </style>
