@@ -171,6 +171,7 @@ export const useCoachStore = defineStore('coach', () => {
   async function triggerAnalysis(fen: string) {
     if (!fen) return
     isAnalyzing.value = true
+    boardStore.setCoachShapes([])
 
     const topMovesPromise = fetchTopMoves(fen)
     const lastMovePromise = fetchLastMoveAnalysis()
