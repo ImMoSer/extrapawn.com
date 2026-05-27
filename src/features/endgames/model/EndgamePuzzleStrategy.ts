@@ -5,6 +5,7 @@ import {
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
+import { useCoachStore } from '@/features/coach'
 import { FreeExplorationStrategy } from '@/features/study'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
@@ -12,9 +13,16 @@ import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
 
 export class EndgamePuzzleStrategy implements IGameplayStrategy {
   config = {
+    /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
     initialBotDelayMs: 500,
-    botDelayMs: 3000,
+    /** Bedenkzeit des Bots während des Puzzles (Endspiele brauchen "Bedenkzeit") */
+    botDelayMs: 100,
+    /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
+    nextPuzzleDelayMs: 100,
+    /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
+    restartDelayMs: 100,
   }
+
 
   private puzzle: EndgamePuzzle
   private humanColor: 'white' | 'black'
@@ -48,7 +56,12 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     return useBoardStore()
   }
 
-  onGameStart() {}
+  onGameStart() {
+    // If it's user's turn at start, trigger coach
+    if (this.boardStore.turn === this.humanColor) {
+      useCoachStore().analyzeCurrentPosition()
+    }
+  }
 
   onDestroy() {
     if (this.nextPuzzleTimeout) {
@@ -91,7 +104,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
            this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
            this.nextPuzzleTimeout = window.setTimeout(() => {
              this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-           }, 1000)
+           }, this.config.nextPuzzleDelayMs)
         }
       } else {
         if (this.puzzle.strategy === 'scenarioOnly') {
@@ -117,11 +130,14 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   }
 
   async onBotMoveExecuted(): Promise<void> {
+    // Bot just moved, it's now user's turn. Trigger coach.
+    useCoachStore().analyzeCurrentPosition()
+
     if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
       this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
       this.nextPuzzleTimeout = window.setTimeout(() => {
         this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-      }, 1000)
+      }, this.config.nextPuzzleDelayMs)
     }
   }
 

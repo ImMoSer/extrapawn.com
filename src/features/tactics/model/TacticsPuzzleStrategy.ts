@@ -5,16 +5,25 @@ import {
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
+import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
 import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
 
 export class TacticsPuzzleStrategy implements IGameplayStrategy {
   config = {
-    initialBotDelayMs: 300,
-    botDelayMs: 1000,
+    /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
+    initialBotDelayMs: 500,
+    /** Bedenkzeit des Bots während des Puzzles */
+    botDelayMs: 100,
+    /** Sound-Handling durch GameStore (hier deaktiviert, da Strategy eigene Sounds spielt) */
     playGameStatusSounds: false,
+    /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
+    nextPuzzleDelayMs: 100,
+    /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
+    restartDelayMs: 100,
   }
+
 
   private puzzle: TacticsPuzzle
   private humanColor: 'white' | 'black'
@@ -48,7 +57,12 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     return useBoardStore()
   }
 
-  onGameStart() {}
+  onGameStart() {
+    // If it's user's turn at start, trigger coach
+    if (this.boardStore.turn === this.humanColor) {
+      useCoachStore().analyzeCurrentPosition()
+    }
+  }
 
   onDestroy() {
     if (this.nextPuzzleTimeout) {
@@ -97,7 +111,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
           )
           this.nextPuzzleTimeout = window.setTimeout(() => {
             this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-          }, 1500)
+          }, this.config.nextPuzzleDelayMs)
         }
       } else {
         // Wrong move - auto restart local after delay
@@ -110,7 +124,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
         )
         this.nextPuzzleTimeout = window.setTimeout(() => {
           this.store.localRestart()
-        }, 1500)
+        }, this.config.restartDelayMs)
         return
       }
     }
@@ -127,6 +141,9 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
   }
 
   async onBotMoveExecuted(): Promise<void> {
+    // Bot just moved, it's now user's turn. Trigger coach.
+    useCoachStore().analyzeCurrentPosition()
+
     if (this.scenarioIndex >= this.scenarioMoves.length) {
       soundService.playSound('game_tacktics_success')
       this.store.handleGameOver(
@@ -137,7 +154,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
       )
       this.nextPuzzleTimeout = window.setTimeout(() => {
         this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-      }, 1500)
+      }, this.config.nextPuzzleDelayMs)
     }
   }
 
@@ -166,12 +183,12 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
         soundService.playSound('game_tacktics_success')
         this.nextPuzzleTimeout = window.setTimeout(() => {
           this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-        }, 1500)
+        }, this.config.nextPuzzleDelayMs)
       } else {
         soundService.playSound('game_tacktics_error')
         this.nextPuzzleTimeout = window.setTimeout(() => {
           this.store.localRestart()
-        }, 1500)
+        }, this.config.restartDelayMs)
       }
     }
   }

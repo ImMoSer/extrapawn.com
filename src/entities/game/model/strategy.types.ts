@@ -19,6 +19,10 @@ export interface IGameplayStrategy {
     botDelayMs?: number
     initialBotDelayMs?: number
     playGameStatusSounds?: boolean
+    /** Delay before loading the next puzzle after success */
+    nextPuzzleDelayMs?: number
+    /** Delay before restarting the current puzzle after an error */
+    restartDelayMs?: number
   }
 
   onGameStart?: (api: IGameCoreApi) => void

@@ -19,6 +19,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   const isCoachEnabled = ref(false)
   const isAnalyzing = ref(false)
+  const isAutonomous = ref(true)
 
   // State for "About Position"
   const currentExplanation = ref<CoachExplanation | null>(null)
@@ -344,18 +345,26 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
+  function analyzeCurrentPosition() {
+    if (!isCoachEnabled.value) return
+    const newFen = pgnService.getCurrentNavigatedFen()
+    selectedMoveIndex.value = null
+    selectedMoveExplanation.value = null
+    triggerAnalysis(newFen)
+  }
+
+  function setAutonomous(value: boolean) {
+    isAutonomous.value = value
+  }
+
   // Watch the PGN tree version to ensure the coach always has the latest move history.
   // Watching boardStore.fen directly can cause race conditions where the PGN history is stale.
   watch(
     () => pgnTreeVersion.value,
     () => {
-      if (!isCoachEnabled.value) return
+      if (!isCoachEnabled.value || !isAutonomous.value) return
 
-      const newFen = pgnService.getCurrentNavigatedFen()
-      selectedMoveIndex.value = null
-      selectedMoveExplanation.value = null
-
-      triggerAnalysis(newFen)
+      analyzeCurrentPosition()
     },
   )
 
@@ -404,5 +413,8 @@ export const useCoachStore = defineStore('coach', () => {
     fetchLastMoveAnalysis,
     fetchTopMoves,
     logFactExtractor,
+    analyzeCurrentPosition,
+    setAutonomous,
+    isAutonomous,
   }
 })
