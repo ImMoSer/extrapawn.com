@@ -1,18 +1,18 @@
 import {
   enginePlayService,
-  useGameStore,
   useBoardStore,
+  useGameStore,
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
-import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
+import { soundService } from '@/shared/lib/sound.service'
 import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
 
 export class TacticsPuzzleStrategy implements IGameplayStrategy {
   config = {
     initialBotDelayMs: 300,
-    botDelayMs: 50,
+    botDelayMs: 1000,
     playGameStatusSounds: false,
   }
 
@@ -21,7 +21,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
   private scenarioMoves: string[]
   private scenarioIndex = 0
   private isPlayoutMode: boolean
-  
+
   private prevScenarioIndex = 0
   private prevPlayoutMode = false
   private nextPuzzleTimeout: number | null = null
@@ -31,7 +31,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     this.humanColor = humanColor
     this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
     this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
-    
+
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
   }
@@ -43,7 +43,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
   private get gameStore() {
     return useGameStore()
   }
-  
+
   private get boardStore() {
     return useBoardStore()
   }
@@ -74,7 +74,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     if (this.puzzle.strategy === 'playOutOnly' || this.puzzle.strategy === 'scenarioPlus') {
       return outcome.reason === 'checkmate' && outcome.winner === this.humanColor
     }
-    
+
     return false
   }
 

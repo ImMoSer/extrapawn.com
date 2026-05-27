@@ -7,7 +7,7 @@ import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import { fetchTablebaseMoves, getPieceCount } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
-import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
@@ -343,12 +343,14 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  // Watch the board's FEN and automatically ask the coach for insights if enabled.
+  // Watch the PGN tree version to ensure the coach always has the latest move history.
+  // Watching boardStore.fen directly can cause race conditions where the PGN history is stale.
   watch(
-    () => boardStore.fen,
-    (newFen) => {
+    () => pgnTreeVersion.value,
+    () => {
       if (!isCoachEnabled.value) return
 
+      const newFen = pgnService.getCurrentNavigatedFen()
       selectedMoveIndex.value = null
       selectedMoveExplanation.value = null
 
