@@ -71,6 +71,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   
   const isPlaying = ref(false)
   const isFinished = ref(false)
+  const isReplay = ref(false)
 
   // Timer State
   const startTime = ref(0)
@@ -98,6 +99,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       puzzleAttempts: puzzleAttempts.value,
       isPlaying: isPlaying.value,
       isFinished: isFinished.value,
+      isReplay: isReplay.value,
       date: new Date().toISOString().split('T')[0]
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
@@ -124,6 +126,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       puzzleAttempts.value = state.puzzleAttempts
       isPlaying.value = state.isPlaying
       isFinished.value = state.isFinished
+      isReplay.value = state.isReplay || false
       
       return true
     } catch (e) {
@@ -134,7 +137,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   // Auto-save on changes
   watch(
-    [trainingPlan, currentTaskIndex, tasksPuzzles, solvedPuzzlesPerTask, completedResults, puzzleAttempts, isPlaying, isFinished],
+    [trainingPlan, currentTaskIndex, tasksPuzzles, solvedPuzzlesPerTask, completedResults, puzzleAttempts, isPlaying, isFinished, isReplay],
     () => {
       if (isPlaying.value || isFinished.value) {
         saveState()
@@ -444,6 +447,11 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     stopTimer()
     gameStore.stop()
     isPlaying.value = false
+    if (isReplay.value) {
+      trainingPlan.value = null
+      isReplay.value = false
+      localStorage.removeItem(STORAGE_KEY)
+    }
   }
 
   async function savePlanProgress(
@@ -462,6 +470,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         body: JSON.stringify({
           difficulty: trainingPlan.value.level,
           strategy: trainingPlan.value.strategy,
+          date: trainingPlan.value.date,
           puzzle_progress: {
             puzzle_id: puzzleId,
             sub_mode: subMode,
@@ -501,6 +510,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       // Check if we are resuming an active plan or starting fresh
       const isCompleted = planData.is_completed || ('active' in planData && !planData.active && planData.is_completed)
       const isResume = !isCompleted && !forceReplayAll
+
+      isReplay.value = isCompleted || false
 
       const solvedPuzzles = isResume ? tasks_json.puzzles.filter(p => p.solved) : []
       const unsolvedPuzzles = isResume ? tasks_json.puzzles.filter(p => !p.solved) : tasks_json.puzzles
@@ -636,6 +647,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     currentTimeMs,
     isPlaying,
     isFinished,
+    isReplay,
     completedResults,
     puzzleAttempts,
     formatMs,
