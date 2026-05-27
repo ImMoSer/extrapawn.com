@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { useTaskTodayStore } from '@/features/task-today'
-import { NButton, NIcon, NText, NScrollbar, NSpace } from 'naive-ui'
-import { CloseCircleOutline, RefreshOutline as RestartIcon, ChevronForwardOutline } from '@vicons/ionicons5'
+import { NButton, NIcon, NText, NScrollbar, NSpace, NList, NListItem, NTag, NH3, useMessage } from 'naive-ui'
+import { CloseCircleOutline, RefreshOutline as RestartIcon, ChevronForwardOutline, TimeOutline } from '@vicons/ionicons5'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useTrainingPlanHistoryQuery } from '@/shared/api/queries/userCabinet.queries'
+import type { TrainingPlanCurrentResponse } from '@/shared/types/api.types'
 
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const router = useRouter()
+const message = useMessage()
+
+const { data: historyData, isLoading: isHistoryLoading } = useTrainingPlanHistoryQuery(computed(() => !taskTodayStore.trainingPlan).value)
 
 function handleQuit() {
   taskTodayStore.quitTaskToday()
@@ -29,6 +34,18 @@ const tasks = computed(() => taskTodayStore.trainingPlan?.tasks || [])
 const isTaskCompleted = (subMode: string) => {
   return taskTodayStore.tasksPuzzles[subMode]?.length === 0
 }
+
+const handleReplay = async (plan: TrainingPlanCurrentResponse) => {
+  const success = await taskTodayStore.replayPlan(plan)
+  if (success) {
+    message.success('Replay gestartet!')
+    if (router.currentRoute.value.path !== '/task-today') {
+      router.push('/task-today')
+    }
+  } else {
+    message.error('Fehler beim Laden des Replays.')
+  }
+}
 </script>
 
 <template>
@@ -43,7 +60,33 @@ const isTaskCompleted = (subMode: string) => {
     </div>
 
     <div v-else-if="!taskTodayStore.trainingPlan" class="no-plan-state">
-      <NText depth="3">{{ t('features.taskToday.noPlan', 'Kein aktiver Trainingsplan') }}</NText>
+      <div class="history-section" style="width: 100%">
+        <NH3 class="history-title">
+          <NIcon style="vertical-align: middle; margin-right: 8px;"><TimeOutline /></NIcon>
+          Historie
+        </NH3>
+        <NScrollbar style="max-height: 400px">
+          <NList hoverable clickable bordered>
+            <NListItem v-for="plan in historyData" :key="plan.date" @click="handleReplay(plan)">
+              <div class="history-item">
+                <div class="history-item-main">
+                  <NText strong>{{ plan.date }}</NText>
+                  <div class="history-item-meta">
+                    <NTag size="small" :type="plan.difficulty === 'Master' ? 'error' : plan.difficulty === 'Pro' ? 'warning' : 'info'">{{ plan.difficulty }}</NTag>
+                    <NText depth="3" style="margin-left: 8px;">{{ plan.strategy }}</NText>
+                  </div>
+                </div>
+                <NIcon><ChevronForwardOutline /></NIcon>
+              </div>
+            </NListItem>
+          </NList>
+          <div v-if="!isHistoryLoading && (!historyData || historyData.length === 0)" style="text-align: center; padding: 20px;">
+            <NText depth="3">Keine vergangenen Pläne gefunden.</NText>
+          </div>
+        </NScrollbar>
+      </div>
+
+      <NText depth="3" style="margin-top: 2rem;">{{ t('features.taskToday.noPlan', 'Kein aktiver Trainingsplan') }}</NText>
       <NButton type="primary" @click="router.push('/user-cabinet')" style="margin-top: 1rem; font-weight: bold;">
         {{ t('features.taskToday.goToCabinet', 'Zum Cabinet gehen und Plan starten') }}
       </NButton>
@@ -209,5 +252,40 @@ const isTaskCompleted = (subMode: string) => {
   align-items: center;
   justify-content: center;
   flex: 1;
+}
+
+.history-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.history-title {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.history-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-item-meta {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
 }
 </style>

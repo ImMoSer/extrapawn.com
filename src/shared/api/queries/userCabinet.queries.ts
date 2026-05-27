@@ -41,6 +41,15 @@ export const useCurrentTrainingPlanQuery = (enabled: boolean = true) => {
   })
 }
 
+export const useTrainingPlanHistoryQuery = (enabled: boolean = true) => {
+  return useQuery<TrainingPlanCurrentResponse[], Error>({
+    queryKey: [...USER_CABINET_KEYS.trainingPlan(), 'history'],
+    queryFn: () => apiClient<TrainingPlanCurrentResponse[]>('/training-plan/history'),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export const useNextTrainingPlanMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({

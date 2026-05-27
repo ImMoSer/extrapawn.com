@@ -8,6 +8,7 @@ import { computed, ref, watch } from 'vue'
 import { apiClient } from '@/shared/api/client'
 import { parseFen } from 'chessops/fen'
 import { TaskTodayStrategy } from './TaskTodayStrategy'
+import type { TrainingPlanCurrentResponse } from '@/shared/types/api.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
@@ -265,7 +266,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         sub_mode,
         category,
         attempts: res ? res.attempts : 1,
-        solved: res ? res.status === 'solved' : false
+        solved: res ? res.status === 'solved' : false,
+        time: res ? res.time : 0
       }
     })
 
@@ -289,10 +291,48 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
+  async function startPlanOnBackend() {
+    if (!trainingPlan.value) return
+
+    // Collect all puzzles from all tasks
+    const allPuzzles: Array<{ puzzle_id: string; sub_mode: string; category: string }> = []
+    Object.keys(tasksPuzzles.value).forEach(subMode => {
+      const list = tasksPuzzles.value[subMode]
+      if (list) {
+        list.forEach(p => {
+          allPuzzles.push({
+            puzzle_id: p.puzzle_id,
+            sub_mode: p.puzzle_type,
+            category: p.category
+          })
+        })
+      }
+    })
+
+    try {
+      await apiClient('/training-plan/start', {
+        method: 'POST',
+        body: JSON.stringify({
+          difficulty: trainingPlan.value.level,
+          strategy: trainingPlan.value.strategy,
+          tasks_json: {
+            strategy: trainingPlan.value.strategy,
+            difficulty: trainingPlan.value.level,
+            date: trainingPlan.value.date,
+            puzzles: allPuzzles
+          }
+        })
+      })
+      console.log('[TaskTodayStore] Successfully started training plan on backend.')
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to start training plan on backend:', err)
+    }
+  }
+
   async function generateAndStartPlan(
     strategyName: 'Discovery' | 'Hardcore' | 'Warmup',
     difficulty: 'Novice' | 'Pro' | 'Master',
-    selectedCategories: Record<string, string[]>
+    recommendations: Record<string, string[]>
   ) {
     try {
       gameStore.setBotEngineId('maia-2200')
@@ -307,6 +347,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       completedResults.value = {}
       puzzleAttempts.value = {}
       
+      // Scaling Rules
+      const scaling = {
+        Novice: { tactics: 3, others: 1, limitTactics: 20, limitOthers: 10 },
+        Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
+        Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
+      }[difficulty]
+
       const plan: TrainingPlan = {
         level: difficulty,
         strategy: strategyName,
@@ -314,10 +361,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         tasks: []
       }
       
-      // Load puzzles sequentially or concurrently
-      for (const subMode of ['tactics', 'finish_him', 'theory_endings', 'practical_chess']) {
-        const categories = selectedCategories[subMode] || []
-        const limitPerCategory = subMode === 'tactics' ? 33 : 10
+      // We iterate over the 4 sub-modes and apply scaling
+      for (const subMode of ['tactics', 'finish_him', 'practical_chess', 'theory_endings']) {
+        const catCount = subMode === 'tactics' ? scaling.tactics : scaling.others
+        const limitPerCategory = subMode === 'tactics' ? scaling.limitTactics : scaling.limitOthers
+        
+        // Take only the number of categories allowed for this difficulty
+        const categories = (recommendations[subMode] || []).slice(0, catCount)
         const allPuzzlesForMode: WorkoutPuzzle[] = []
         const themes: { name: string; count: number }[] = []
         
@@ -335,12 +385,14 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
           }
         }
         
-        tasksPuzzles.value[subMode] = allPuzzlesForMode
-        tasks.push({
-          mode: 'playPuzzle',
-          sub_mode: subMode,
-          themes
-        })
+        if (allPuzzlesForMode.length > 0) {
+          tasksPuzzles.value[subMode] = allPuzzlesForMode
+          tasks.push({
+            mode: 'playPuzzle',
+            sub_mode: subMode,
+            themes
+          })
+        }
       }
       
       plan.tasks = tasks
@@ -350,6 +402,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       isFinished.value = false
       
       saveState()
+      await startPlanOnBackend()
       
       soundService.playSound('app_game_entry')
       playCurrentPuzzle()
@@ -400,6 +453,86 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`
   }
 
+  async function replayPlan(planData: TrainingPlanCurrentResponse) {
+    try {
+      gameStore.setBotEngineId('maia-2200')
+      isPlaying.value = false
+      isFinished.value = false
+      
+      const tasks_json = planData.plan || planData.tasks_json
+      if (!tasks_json || !tasks_json.puzzles) {
+        throw new Error('Invalid plan data for replay')
+      }
+
+      // 1. Prepare batch request
+      const batchRequest = tasks_json.puzzles.map((p: { puzzle_id: string; sub_mode: string }) => ({
+        puzzle_id: p.puzzle_id,
+        puzzle_type: p.sub_mode
+      }))
+
+      // 2. Fetch all puzzles in one batch
+      const response = await apiClient<{ puzzles: WorkoutPuzzle[] }>('/play-puzzle/batch', {
+        method: 'POST',
+        body: JSON.stringify(batchRequest)
+      })
+
+      if (!response.puzzles || response.puzzles.length === 0) {
+        throw new Error('Failed to fetch puzzles for replay')
+      }
+
+      // 3. Reconstruct tasksPuzzles
+      const puzzlesMap = new Map<string, WorkoutPuzzle[]>()
+      response.puzzles.forEach(p => {
+        if (!puzzlesMap.has(p.puzzle_type)) {
+          puzzlesMap.set(p.puzzle_type, [])
+        }
+        puzzlesMap.get(p.puzzle_type)!.push(p)
+      })
+
+      tasksPuzzles.value = Object.fromEntries(puzzlesMap)
+      solvedPuzzlesPerTask.value = {}
+      completedResults.value = {}
+      puzzleAttempts.value = {}
+
+      // 4. Reconstruct TrainingPlan structure
+      const tasks: TrainingTask[] = []
+      puzzlesMap.forEach((list, subMode) => {
+        // Group by category to find themes
+        const catMap = new Map<string, number>()
+        list.forEach(p => {
+          catMap.set(p.category, (catMap.get(p.category) || 0) + 1)
+        })
+        
+        tasks.push({
+          mode: 'playPuzzle',
+          sub_mode: subMode,
+          themes: Array.from(catMap.entries()).map(([name, count]) => ({ name, count }))
+        })
+      })
+
+      trainingPlan.value = {
+        level: planData.difficulty || tasks_json.difficulty || 'Novice',
+        strategy: planData.strategy || tasks_json.strategy || 'Replay',
+        date: planData.date || tasks_json.date || new Date().toISOString().split('T')[0],
+        tasks
+      }
+      
+      currentTaskIndex.value = 0
+      isPlaying.value = true
+      isFinished.value = false
+      
+      saveState()
+      
+      soundService.playSound('app_game_entry')
+      playCurrentPuzzle()
+      
+      return true
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to replay plan:', err)
+      return false
+    }
+  }
+
   return {
     trainingPlan,
     currentTaskIndex,
@@ -416,6 +549,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     formatMs,
     startTaskToday,
     generateAndStartPlan,
+    replayPlan,
     quitTaskToday,
     handlePuzzleSuccess,
     handlePuzzleFailure,

@@ -521,6 +521,19 @@ export interface TrainingPlanNextResponse {
   newStatus?: string
 }
 
+export interface RecommendationEntry {
+  sub_mode: string
+  category: string
+  total_attempts: number
+  success: number
+}
+
+export interface TrainingPlanRecommendations {
+  discovery: RecommendationEntry[]
+  hardcore: RecommendationEntry[]
+  warmup: RecommendationEntry[]
+}
+
 export interface TrainingPlanCurrentResponse {
   active: boolean
   message?: string
@@ -532,6 +545,7 @@ export interface TrainingPlanCurrentResponse {
   overall_progress_percent?: number
   difficulty?: string
   strategy?: string
+  recommendations?: TrainingPlanRecommendations
 }
 
 export interface TrainingPlanCompleteResponse {
