@@ -8,7 +8,7 @@ import { computed, ref, watch } from 'vue'
 import { apiClient } from '@/shared/api/client'
 import { parseFen } from 'chessops/fen'
 import { TaskTodayStrategy } from './TaskTodayStrategy'
-import type { TrainingPlanCurrentResponse } from '@/shared/types/api.types'
+import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity } from '@/shared/types/api.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
@@ -432,7 +432,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
-  function quitTaskToday() {
+  async function quitTaskToday() {
     stopTimer()
     isPlaying.value = false
     isFinished.value = false
@@ -442,6 +442,12 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     puzzleAttempts.value = {}
     localStorage.removeItem(STORAGE_KEY)
     gameStore.stop()
+    try {
+      await apiClient('/training-plan/active', { method: 'DELETE' })
+      console.log('[TaskTodayStore] Successfully aborted active plan on backend.')
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to abort active plan on backend:', err)
+    }
   }
 
   function formatMs(ms: number | undefined): string {
@@ -453,13 +459,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`
   }
 
-  async function replayPlan(planData: TrainingPlanCurrentResponse) {
+  async function replayPlan(planData: DailyTrainingPlanEntity | TrainingPlanCurrentResponse) {
     try {
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
       
-      const tasks_json = planData.plan || planData.tasks_json
+      const tasks_json = 'tasks_json' in planData ? planData.tasks_json : planData.plan
       if (!tasks_json || !tasks_json.puzzles) {
         throw new Error('Invalid plan data for replay')
       }
@@ -513,7 +519,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       trainingPlan.value = {
         level: planData.difficulty || tasks_json.difficulty || 'Novice',
         strategy: planData.strategy || tasks_json.strategy || 'Replay',
-        date: planData.date || tasks_json.date || new Date().toISOString().split('T')[0],
+        date: planData.date || tasks_json.date || (new Date().toISOString().split('T')[0] || ''),
         tasks
       }
       

@@ -513,6 +513,31 @@ export interface TrainingPlanData {
   tasks: TrainingPlanTask[]
 }
 
+export interface DailyTrainingPlanPuzzle {
+  puzzle_id: string
+  sub_mode: string
+  category: string
+  attempts?: number
+  solved?: boolean
+  time?: number
+}
+
+export interface TrainingPlanPuzzlesJson {
+  strategy: string
+  difficulty: string
+  date: string
+  puzzles: DailyTrainingPlanPuzzle[]
+}
+
+export interface DailyTrainingPlanEntity {
+  user_id: string
+  date: string
+  difficulty: string
+  strategy: string
+  is_completed: boolean
+  tasks_json: TrainingPlanPuzzlesJson
+}
+
 export interface TrainingPlanNextResponse {
   message?: string
   plan?: TrainingPlanData
@@ -541,11 +566,12 @@ export interface TrainingPlanCurrentResponse {
   current_streak?: number
   is_completed?: boolean
   date?: string
-  plan?: TrainingPlanData
+  plan?: TrainingPlanPuzzlesJson
   overall_progress_percent?: number
   difficulty?: string
   strategy?: string
   recommendations?: TrainingPlanRecommendations
+  completed_difficulties?: string[]
 }
 
 export interface TrainingPlanCompleteResponse {

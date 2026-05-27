@@ -3,6 +3,7 @@ import type {
   UserProfileStatsDto,
   TrainingPlanCurrentResponse,
   TrainingPlanNextResponse,
+  DailyTrainingPlanEntity,
 } from '@/shared/types/api.types'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiClient } from '../client'
@@ -42,9 +43,9 @@ export const useCurrentTrainingPlanQuery = (enabled: boolean = true) => {
 }
 
 export const useTrainingPlanHistoryQuery = (enabled: boolean = true) => {
-  return useQuery<TrainingPlanCurrentResponse[], Error>({
+  return useQuery<DailyTrainingPlanEntity[], Error>({
     queryKey: [...USER_CABINET_KEYS.trainingPlan(), 'history'],
-    queryFn: () => apiClient<TrainingPlanCurrentResponse[]>('/training-plan/history'),
+    queryFn: () => apiClient<DailyTrainingPlanEntity[]>('/training-plan/history'),
     enabled,
     staleTime: 5 * 60 * 1000,
   })

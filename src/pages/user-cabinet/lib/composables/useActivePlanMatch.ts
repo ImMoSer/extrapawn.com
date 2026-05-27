@@ -1,4 +1,4 @@
-import { useCurrentTrainingPlanQuery } from '@/shared/api/queries/userCabinet.queries'
+import { useTaskTodayStore } from '@/features/task-today'
 import { computed } from 'vue'
 
 interface ActivePlanMatchOptions {
@@ -8,18 +8,17 @@ interface ActivePlanMatchOptions {
 }
 
 export function useActivePlanMatch(options: () => ActivePlanMatchOptions) {
-  // We do not pass `enabled: false` because we want it to fetch or use cached plan data
-  const { data: planData } = useCurrentTrainingPlanQuery()
+  const taskTodayStore = useTaskTodayStore()
 
   const activeTaskKey = computed(() => {
-    const activePlan = planData.value
-    if (!activePlan?.active || !activePlan?.plan?.tasks) {
+    const activePlan = taskTodayStore.trainingPlan
+    if (!taskTodayStore.isPlaying || !activePlan || !activePlan.tasks) {
       return null
     }
 
     const { mode, subMode, theme } = options()
 
-    for (const task of activePlan.plan.tasks) {
+    for (const task of activePlan.tasks) {
       if (task.mode !== mode) continue
       if (subMode && task.sub_mode !== subMode) continue
 

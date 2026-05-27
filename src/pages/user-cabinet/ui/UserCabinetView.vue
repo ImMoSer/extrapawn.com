@@ -33,7 +33,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ActivityChart, ThemeRoseChart, UserProfileHeader } from '@/features/profile'
 import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
-import { DailyTrainingWidget } from '@/features/task-today'
+
 
 const { t } = useI18n()
 const { launchGame } = useGameLauncher()
@@ -200,7 +200,17 @@ const handleManageSubscription = async () => {
         />
 
         <!-- Daily Training Section -->
-        <DailyTrainingWidget :is-authenticated="isAuthenticated" />
+        <n-card :bordered="false" class="gift-redeem-card" embedded>
+          <n-space justify="space-between" align="center" style="width: 100%; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('features.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
+              <n-text depth="3">{{ t('features.userCabinet.plan.desc', 'Absolviere dein tägliches, personalisiertes Training, um deine Taktik und Endspiele zu verbessern.') }}</n-text>
+            </div>
+            <n-button type="primary" size="large" @click="router.push('/task-today')">
+              🚀 {{ t('features.userCabinet.plan.start', 'Training starten') }}
+            </n-button>
+          </n-space>
+        </n-card>
 
         <div class="charts-grid-unified">
           <ThemeRoseChart
