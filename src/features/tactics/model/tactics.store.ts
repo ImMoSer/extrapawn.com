@@ -62,6 +62,8 @@ export const useTacticsStore = defineStore('tactics', () => {
 
   const activePuzzle = ref<TacticsPuzzle | null>(null)
   const activeParams = ref<TacticsParams>({})
+  const isDiscoveryMode = ref(false)
+  const discoveryQueue = ref<TacticsPuzzle[]>([])
   
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
@@ -76,7 +78,7 @@ export const useTacticsStore = defineStore('tactics', () => {
     soundService.playSound('app_game_entry')
     useCoachStore().setAutonomous(false)
     if (!activePuzzle.value) {
-      loadNewPuzzle('tactics', { category: 'kingAttack', difficulty: 'Novice' })
+      startDiscovery('tactics')
     }
   }
 
@@ -196,6 +198,57 @@ export const useTacticsStore = defineStore('tactics', () => {
     feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
   }
 
+  async function refillDiscoveryQueue(subMode: string) {
+    try {
+      const res = await apiClient<{ [key: string]: Array<{ category: string }> }>(`/training-plan/discovery/${subMode}`)
+      const categoriesList = res[`discovery_${subMode}`] || []
+      if (categoriesList.length === 0) {
+        throw new Error('No categories found for discovery')
+      }
+
+      const shuffledCats = [...categoriesList].sort(() => Math.random() - 0.5)
+      const puzzlesPool: TacticsPuzzle[] = []
+      const difficulty = activeParams.value.difficulty || 'Novice'
+
+      const fetchPromises = shuffledCats.map(async (catItem) => {
+        try {
+          const url = `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${catItem.category}&limit=10`
+          const puzzles = await apiClient<TacticsPuzzle[]>(url)
+          return puzzles || []
+        } catch (err) {
+          logger.error(`[TacticsStore] Failed to fetch puzzles for category ${catItem.category}:`, err)
+          return []
+        }
+      })
+
+      const results = await Promise.all(fetchPromises)
+      results.forEach((puzzles) => {
+        puzzlesPool.push(...puzzles)
+      })
+
+      if (puzzlesPool.length === 0) {
+        throw new Error('No puzzles found in discovery pool')
+      }
+
+      discoveryQueue.value = puzzlesPool.sort(() => Math.random() - 0.5)
+    } catch (err) {
+      logger.error('[TacticsStore] refillDiscoveryQueue failed:', err)
+      window.$message?.error('Failed to load discovery pool')
+      isDiscoveryMode.value = false
+      throw err
+    }
+  }
+
+  async function startDiscovery(subMode: string) {
+    isDiscoveryMode.value = true
+    discoveryQueue.value = []
+    activeParams.value = {
+      ...activeParams.value,
+      category: undefined
+    }
+    await loadNewPuzzle(subMode)
+  }
+
   async function loadNewPuzzle(type: string, queryParams: Partial<TacticsParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -206,18 +259,33 @@ export const useTacticsStore = defineStore('tactics', () => {
     activeParams.value = mergedParams
 
     try {
-      const category = mergedParams.category || 'fork'
-      const difficulty = mergedParams.difficulty || 'Novice'
-      
-      const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
+      let mappedPuzzle: TacticsPuzzle
+      if (isDiscoveryMode.value) {
+        if (discoveryQueue.value.length === 0) {
+          await refillDiscoveryQueue(type)
+        }
+        const puzzle = discoveryQueue.value.shift()
+        if (!puzzle) throw new Error('No puzzle in discovery queue')
 
-      const puzzle = await apiClient<TacticsPuzzle>(url)
-      if (!puzzle) throw new Error('Puzzle data is null')
+        mappedPuzzle = {
+          ...puzzle,
+          puzzle_type: type,
+          strategy: puzzle.strategy || 'scenarioOnly'
+        }
+      } else {
+        const category = mergedParams.category || 'fork'
+        const difficulty = mergedParams.difficulty || 'Novice'
+        
+        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
-      const mappedPuzzle: TacticsPuzzle = {
-        ...puzzle,
-        puzzle_type: type,
-        strategy: puzzle.strategy || 'scenarioOnly'
+        const puzzle = await apiClient<TacticsPuzzle>(url)
+        if (!puzzle) throw new Error('Puzzle data is null')
+
+        mappedPuzzle = {
+          ...puzzle,
+          puzzle_type: type,
+          strategy: puzzle.strategy || 'scenarioOnly'
+        }
       }
 
       activePuzzle.value = mappedPuzzle
@@ -317,6 +385,9 @@ export const useTacticsStore = defineStore('tactics', () => {
         stats,
       }
     }),
+    isDiscoveryMode,
+    discoveryQueue,
+    startDiscovery,
     initialize,
     loadNewPuzzle,
     guessColor,

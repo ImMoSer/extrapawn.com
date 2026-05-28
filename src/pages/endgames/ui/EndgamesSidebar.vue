@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SchoolOutline } from '@vicons/ionicons5'
+import { SchoolOutline, CompassOutline } from '@vicons/ionicons5'
 import {
   NIcon,
   NRadioButton,
@@ -8,6 +8,7 @@ import {
   NText,
   NTabs,
   NTab,
+  NButton,
 } from 'naive-ui'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,6 +19,7 @@ import {
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
+import { useEndgamesStore } from '@/features/endgames'
 
 const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
@@ -56,13 +58,83 @@ const endgameThemeOptions = computed(() => {
   }))
 })
 
-watch(selectedEndgameMode, (newMode) => {
-  if (newMode === 'THEORETICAL') {
-    selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
-  } else if (newMode === 'PRACTICAL') {
-    selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+const endgamesStore = useEndgamesStore()
+const isDiscoveryModeActive = computed(() => endgamesStore.isDiscoveryMode)
+
+function toggleDiscovery() {
+  const mode = selectedEndgameMode.value
+  let type = ''
+  if (mode === 'THEORETICAL') {
+    type = 'theory_endings'
+  } else if (mode === 'PRACTICAL') {
+    type = 'practical_chess'
   } else {
-    selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
+    type = 'finish_him'
+  }
+
+  if (isDiscoveryModeActive.value) {
+    endgamesStore.isDiscoveryMode = false
+    endgamesStore.discoveryQueue = []
+    if (mode === 'THEORETICAL') {
+      selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+    } else if (mode === 'PRACTICAL') {
+      selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+    } else {
+      selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
+    }
+    loadEndgame()
+  } else {
+    selectedEndgameTheme.value = ''
+    endgamesStore.startDiscovery(type)
+  }
+}
+
+const activeEndgameTheme = computed({
+  get: () => isDiscoveryModeActive.value ? '' : selectedEndgameTheme.value,
+  set: (val) => {
+    selectedEndgameTheme.value = val
+    endgamesStore.isDiscoveryMode = false
+    endgamesStore.discoveryQueue = []
+  }
+})
+
+watch(selectedEndgameMode, (newMode) => {
+  let type = ''
+  if (newMode === 'THEORETICAL') {
+    type = 'theory_endings'
+  } else if (newMode === 'PRACTICAL') {
+    type = 'practical_chess'
+  } else {
+    type = 'finish_him'
+  }
+
+  if (isDiscoveryModeActive.value) {
+    selectedEndgameTheme.value = ''
+    endgamesStore.startDiscovery(type)
+  } else {
+    if (newMode === 'THEORETICAL') {
+      selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+    } else if (newMode === 'PRACTICAL') {
+      selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+    } else {
+      selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
+    }
+  }
+})
+
+watch(selectedDifficulty, (newDiff) => {
+  endgamesStore.activeParams.difficulty = newDiff
+  if (isDiscoveryModeActive.value) {
+    const mode = selectedEndgameMode.value
+    let type = ''
+    if (mode === 'THEORETICAL') {
+      type = 'theory_endings'
+    } else if (mode === 'PRACTICAL') {
+      type = 'practical_chess'
+    } else {
+      type = 'finish_him'
+    }
+    endgamesStore.startDiscovery(type)
   }
 })
 
@@ -134,10 +206,26 @@ function loadEndgame() {
             </n-radio-group>
           </div>
 
+          <div class="discovery-section-wrapper">
+            <n-button
+              type="primary"
+              block
+              size="large"
+              class="discovery-btn"
+              :class="{ 'active': isDiscoveryModeActive }"
+              @click="toggleDiscovery"
+            >
+              <template #icon>
+                <n-icon><CompassOutline /></n-icon>
+              </template>
+              {{ isDiscoveryModeActive ? 'Discovery Mode: ON' : 'Start Discovery Mode' }}
+            </n-button>
+          </div>
+
           <div class="form-group theme-group">
             <n-text class="input-label">{{ t('features.learningCoach.categoryLabel') }}</n-text>
             <VisualRadioGroup
-              v-model:value="selectedEndgameTheme"
+              v-model:value="activeEndgameTheme"
               :options="endgameThemeOptions"
               :columns="2"
               @update:value="loadEndgame"
@@ -224,5 +312,45 @@ function loadEndgame() {
 :deep(.n-radio-group .n-radio-button) {
   flex: 1;
   text-align: center;
+}
+
+.discovery-section-wrapper {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.discovery-btn {
+  background: linear-gradient(135deg, #7b2cbf 0%, #3a0ca3 100%) !important;
+  color: white !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(157, 78, 221, 0.4) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.discovery-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(123, 44, 191, 0.4), 0 0 10px rgba(99, 226, 183, 0.2) !important;
+  border-color: #63e2b7 !important;
+}
+
+.discovery-btn.active {
+  background: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%) !important;
+  border-color: #00f5d4 !important;
+  box-shadow: 0 0 20px rgba(0, 245, 212, 0.6) !important;
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 245, 212, 0.8);
+  }
 }
 </style>

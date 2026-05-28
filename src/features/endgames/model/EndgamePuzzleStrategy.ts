@@ -6,7 +6,6 @@ import {
   type IGameplayStrategy,
 } from '@/entities/game'
 import { useCoachStore } from '@/features/coach'
-import { FreeExplorationStrategy } from '@/features/study'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
 import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
@@ -101,15 +100,19 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
         this.scenarioIndex++
 
         if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
+           soundService.playSound('game_tacktics_success')
            this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
            this.nextPuzzleTimeout = window.setTimeout(() => {
-             this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+             this.store.loadNewPuzzle(this.puzzle.puzzle_type)
            }, this.config.nextPuzzleDelayMs)
         }
       } else {
         if (this.puzzle.strategy === 'scenarioOnly') {
+           soundService.playSound('game_tacktics_error')
            this.store.handleGameOver(this.puzzle, false, { winner: undefined, reason: 'wrong_move' }, this.humanColor)
-           this.gameStore.startWithStrategy(this.boardStore.fen, new FreeExplorationStrategy(), this.humanColor, true)
+           this.nextPuzzleTimeout = window.setTimeout(() => {
+             this.store.localRestart()
+           }, this.config.restartDelayMs)
            return
         }
 
@@ -134,9 +137,10 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     useCoachStore().analyzeCurrentPosition()
 
     if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
+      soundService.playSound('game_tacktics_success')
       this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
       this.nextPuzzleTimeout = window.setTimeout(() => {
-        this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+        this.store.loadNewPuzzle(this.puzzle.puzzle_type)
       }, this.config.nextPuzzleDelayMs)
     }
   }
@@ -162,6 +166,17 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     const isWin = this.checkWinCondition(status)
     if (status.outcome) {
       this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)
+      if (isWin) {
+        soundService.playSound('game_tacktics_success')
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
+        }, this.config.nextPuzzleDelayMs)
+      } else {
+        soundService.playSound('game_tacktics_error')
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.localRestart()
+        }, this.config.restartDelayMs)
+      }
     }
   }
 }

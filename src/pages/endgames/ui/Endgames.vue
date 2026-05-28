@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NText, NButton, NIcon } from 'naive-ui'
-import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
+import { NText, NButton, NDivider } from 'naive-ui'
 
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
@@ -67,6 +66,28 @@ onUnmounted(() => {
             {{ badge.text }}
           </span>
           <n-text style="color: white; font-weight: bold; margin-left: 10px;">{{ activePuzzleTitle }}</n-text>
+
+          <n-divider vertical />
+
+          <n-text :class="endgamesStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'text-success' : 'text-info'">
+            {{ endgamesStore.feedbackMessage }}
+          </n-text>
+
+          <n-button
+            v-if="endgamesStore.gamePhase === 'GAMEOVER'"
+            type="primary"
+            size="small"
+            secondary
+            @click="
+              endgamesStore.loadNewPuzzle(
+                endgamesStore.activePuzzle?.puzzle_type || 'finish_him',
+                endgamesStore.activeParams,
+              )
+            "
+            style="margin-left: 12px"
+          >
+            Next
+          </n-button>
         </div>
       </div>
       <div v-else class="learning-top-info-placeholder">
@@ -79,38 +100,6 @@ onUnmounted(() => {
     <template #center-column>
       <div v-if="showColorGuess" class="guess-color-overlay">
         <GuessColorSelection />
-      </div>
-      <div v-else-if="endgamesStore.gamePhase === 'GAMEOVER'" class="result-overlay-container">
-        <div class="result-overlay">
-          <n-icon
-            size="64"
-            :class="
-              endgamesStore.feedbackMessage === t('features.finishHim.feedback.win')
-                ? 'icon-success'
-                : 'icon-error'
-            "
-          >
-            <CheckmarkCircle
-              v-if="endgamesStore.feedbackMessage === t('features.finishHim.feedback.win')"
-            />
-            <CloseCircle v-else />
-          </n-icon>
-          <n-text class="result-text">{{ endgamesStore.feedbackMessage }}</n-text>
-
-          <n-button
-            type="primary"
-            size="large"
-            @click="
-              endgamesStore.loadNewPuzzle(
-                endgamesStore.activePuzzle?.puzzle_type || 'finish_him',
-                endgamesStore.activeParams,
-              )
-            "
-            style="margin-top: 1rem"
-          >
-            Next Training
-          </n-button>
-        </div>
       </div>
     </template>
 
@@ -228,6 +217,15 @@ onUnmounted(() => {
 }
 .icon-error {
   color: #f44336;
+}
+
+.text-success {
+  color: #4caf50;
+  font-weight: 600;
+}
+.text-info {
+  color: #c77dff;
+  font-weight: 600;
 }
 
 @keyframes scaleIn {

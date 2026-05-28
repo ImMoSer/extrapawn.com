@@ -110,7 +110,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
             this.humanColor,
           )
           this.nextPuzzleTimeout = window.setTimeout(() => {
-            this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+            this.store.loadNewPuzzle(this.puzzle.puzzle_type)
           }, this.config.nextPuzzleDelayMs)
         }
       } else {
@@ -153,7 +153,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
         this.humanColor,
       )
       this.nextPuzzleTimeout = window.setTimeout(() => {
-        this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+        this.store.loadNewPuzzle(this.puzzle.puzzle_type)
       }, this.config.nextPuzzleDelayMs)
     }
   }
@@ -182,7 +182,7 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
       if (isWin) {
         soundService.playSound('game_tacktics_success')
         this.nextPuzzleTimeout = window.setTimeout(() => {
-          this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
         }, this.config.nextPuzzleDelayMs)
       } else {
         soundService.playSound('game_tacktics_error')

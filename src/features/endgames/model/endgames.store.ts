@@ -64,6 +64,8 @@ export const useEndgamesStore = defineStore('endgames', () => {
 
   const activePuzzle = ref<EndgamePuzzle | null>(null)
   const activeParams = ref<EndgameParams>({})
+  const isDiscoveryMode = ref(false)
+  const discoveryQueue = ref<EndgamePuzzle[]>([])
   
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
@@ -78,7 +80,7 @@ export const useEndgamesStore = defineStore('endgames', () => {
     soundService.playSound('app_game_entry')
     useCoachStore().setAutonomous(false)
     if (!activePuzzle.value) {
-      loadNewPuzzle('practical_chess', { category: 'extraPawn', difficulty: 'Novice' })
+      startDiscovery('finish_him')
     }
   }
 
@@ -182,6 +184,74 @@ export const useEndgamesStore = defineStore('endgames', () => {
     isProcessingGameOver.value = value
   }
 
+  function localRestart() {
+    if (!activePuzzle.value) return
+    isProcessingGameOver.value = false
+    gameStore.setGamePhase('PLAYING')
+    
+    const humanColor = determineHumanColor(activePuzzle.value)
+    currentUserColor.value = humanColor
+
+    gameStore.startWithStrategy(
+      activePuzzle.value.initial_fen,
+      new EndgamePuzzleStrategy(activePuzzle.value, humanColor),
+      humanColor,
+      false
+    )
+    feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+  }
+
+  async function refillDiscoveryQueue(subMode: string) {
+    try {
+      const res = await apiClient<{ [key: string]: Array<{ category: string }> }>(`/training-plan/discovery/${subMode}`)
+      const categoriesList = res[`discovery_${subMode}`] || []
+      if (categoriesList.length === 0) {
+        throw new Error('No categories found for discovery')
+      }
+
+      const shuffledCats = [...categoriesList].sort(() => Math.random() - 0.5)
+      const puzzlesPool: EndgamePuzzle[] = []
+      const difficulty = activeParams.value.difficulty || 'Novice'
+
+      const fetchPromises = shuffledCats.map(async (catItem) => {
+        try {
+          const url = `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${catItem.category}&limit=10`
+          const puzzles = await apiClient<EndgamePuzzle[]>(url)
+          return puzzles || []
+        } catch (err) {
+          logger.error(`[EndgamesStore] Failed to fetch puzzles for category ${catItem.category}:`, err)
+          return []
+        }
+      })
+
+      const results = await Promise.all(fetchPromises)
+      results.forEach((puzzles) => {
+        puzzlesPool.push(...puzzles)
+      })
+
+      if (puzzlesPool.length === 0) {
+        throw new Error('No puzzles found in discovery pool')
+      }
+
+      discoveryQueue.value = puzzlesPool.sort(() => Math.random() - 0.5)
+    } catch (err) {
+      logger.error('[EndgamesStore] refillDiscoveryQueue failed:', err)
+      window.$message?.error('Failed to load discovery pool')
+      isDiscoveryMode.value = false
+      throw err
+    }
+  }
+
+  async function startDiscovery(subMode: string) {
+    isDiscoveryMode.value = true
+    discoveryQueue.value = []
+    activeParams.value = {
+      ...activeParams.value,
+      category: undefined
+    }
+    await loadNewPuzzle(subMode)
+  }
+
   async function loadNewPuzzle(type: string, queryParams: Partial<EndgameParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -192,18 +262,33 @@ export const useEndgamesStore = defineStore('endgames', () => {
     activeParams.value = mergedParams
 
     try {
-      const category = mergedParams.category || 'pawn'
-      const difficulty = mergedParams.difficulty || 'Novice'
-      
-      const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
+      let mappedPuzzle: EndgamePuzzle
+      if (isDiscoveryMode.value) {
+        if (discoveryQueue.value.length === 0) {
+          await refillDiscoveryQueue(type)
+        }
+        const puzzle = discoveryQueue.value.shift()
+        if (!puzzle) throw new Error('No puzzle in discovery queue')
 
-      const puzzle = await apiClient<EndgamePuzzle>(url)
-      if (!puzzle) throw new Error('Puzzle data is null')
+        mappedPuzzle = {
+          ...puzzle,
+          puzzle_type: type,
+          strategy: puzzle.strategy || (type === 'finish_him' ? 'playOutOnly' : 'scenarioPlus')
+        }
+      } else {
+        const category = mergedParams.category || 'pawn'
+        const difficulty = mergedParams.difficulty || 'Novice'
+        
+        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
-      const mappedPuzzle: EndgamePuzzle = {
-        ...puzzle,
-        puzzle_type: type,
-        strategy: puzzle.strategy || (type === 'finish_him' ? 'playOutOnly' : 'scenarioPlus')
+        const puzzle = await apiClient<EndgamePuzzle>(url)
+        if (!puzzle) throw new Error('Puzzle data is null')
+
+        mappedPuzzle = {
+          ...puzzle,
+          puzzle_type: type,
+          strategy: puzzle.strategy || (type === 'finish_him' ? 'playOutOnly' : 'scenarioPlus')
+        }
       }
 
       activePuzzle.value = mappedPuzzle
@@ -315,6 +400,10 @@ export const useEndgamesStore = defineStore('endgames', () => {
         stats,
       }
     }),
+    isDiscoveryMode,
+    discoveryQueue,
+    startDiscovery,
+    localRestart,
     initialize,
     loadNewPuzzle,
     guessColor,
