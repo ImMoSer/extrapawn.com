@@ -169,9 +169,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
     const userColor = determineHumanColor(puzzle)
 
-    // Increment attempts when puzzle starts
-    puzzleAttempts.value[puzzle.puzzle_id] = (puzzleAttempts.value[puzzle.puzzle_id] || 0) + 1
-
     gameStore.setGamePhase('LOADING')
 
     gameStore.startWithStrategy(
@@ -186,11 +183,14 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
     if (puzzle) {
-      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 1
+      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
+      const newAttempts = attempts + 1
+      puzzleAttempts.value[puzzle.puzzle_id] = newAttempts
+
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
         time: 0,
-        attempts: attempts,
+        attempts: newAttempts,
         status: 'failed'
       }
 
@@ -206,8 +206,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         activeTask.value!.sub_mode,
         puzzle.category,
         'failed',
-        attempts,
-        0
+        newAttempts,
+        0,
+        puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
     playCurrentPuzzle()
@@ -220,11 +221,14 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     
     const puzzle = currentPuzzle.value
     if (puzzle) {
-      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 1
+      const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
+      const newAttempts = attempts + 1
+      puzzleAttempts.value[puzzle.puzzle_id] = newAttempts
+
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
         time: timeNeededMs,
-        attempts: attempts,
+        attempts: newAttempts,
         status: 'solved'
       }
 
@@ -243,8 +247,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         subMode,
         puzzle.category,
         'solved',
-        attempts,
-        timeNeededMs
+        newAttempts,
+        timeNeededMs,
+        puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
 
@@ -288,7 +293,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     if (!trainingPlan.value) return
 
     // Collect all puzzles from all tasks
-    const allPuzzles: Array<{ puzzle_id: string; sub_mode: string; category: string }> = []
+    const allPuzzles: Array<{ puzzle_id: string; sub_mode: string; category: string; rating?: number }> = []
     Object.keys(tasksPuzzles.value).forEach(subMode => {
       const list = tasksPuzzles.value[subMode]
       if (list) {
@@ -296,7 +301,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
           allPuzzles.push({
             puzzle_id: p.puzzle_id,
             sub_mode: p.puzzle_type,
-            category: p.category
+            category: p.category,
+            rating: p.rating ? Number(p.rating) : undefined
           })
         })
       }
@@ -460,7 +466,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     category: string,
     status: 'solved' | 'failed',
     attempts: number,
-    timeMs: number
+    timeMs: number,
+    rating?: number
   ) {
     if (!trainingPlan.value) return
 
@@ -477,7 +484,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             category: category,
             status: status,
             attempts: attempts,
-            time: Math.round(timeMs / 1000)
+            time: Math.round(timeMs / 1000),
+            rating: rating
           }
         })
       })

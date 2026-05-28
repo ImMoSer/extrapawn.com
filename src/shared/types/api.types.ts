@@ -481,6 +481,7 @@ export interface DailyTrainingPlanPuzzle {
   attempts?: number
   solved?: boolean
   time?: number
+  rating?: number
 }
 
 export interface TrainingPlanPuzzlesJson {
