@@ -4,6 +4,7 @@ import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
 import { useAutoplayStore } from '@/features/autoplay'
+import { useTablebaseStore, PlayMainlineButton } from '@/features/tablebase-mainline'
 import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
 import { storeToRefs } from 'pinia'
@@ -18,6 +19,7 @@ const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const autoplayStore = useAutoplayStore()
+const tablebaseStore = useTablebaseStore()
 const analysisStore = useAnalysisStore()
 const { analysisLines } = storeToRefs(analysisStore)
 const route = useRoute()
@@ -90,10 +92,25 @@ onUnmounted(() => {
           <slot name="top-info"></slot>
         </div>
 
-        <!-- Dev Autoplay Floating Switch -->
-        <div v-if="autoplayStore.isMo3ep && gameStore.gamePhase === 'PLAYING'" class="global-autoplay-overlay">
-          <span class="global-autoplay-label">Autoplay</span>
-          <n-switch v-model:value="autoplayStore.isAutoplayEnabled" size="small" />
+        <!-- Global Dev Autoplay & Tablebase Playback Floating Overlay -->
+        <div
+          v-if="gameStore.gamePhase === 'PLAYING' && (autoplayStore.isMo3ep || tablebaseStore.isTablebaseAvailable)"
+          class="global-autoplay-overlay"
+        >
+          <!-- Dev Autoplay Switch -->
+          <div v-if="autoplayStore.isMo3ep" class="autoplay-switch-container">
+            <span class="global-autoplay-label">Autoplay</span>
+            <n-switch v-model:value="autoplayStore.isAutoplayEnabled" size="small" />
+          </div>
+
+          <!-- Divider if both are shown -->
+          <span
+            v-if="autoplayStore.isMo3ep && tablebaseStore.isTablebaseAvailable"
+            class="global-autoplay-divider"
+          ></span>
+
+          <!-- Tablebase Mainline Playback (for all users) -->
+          <PlayMainlineButton />
         </div>
 
         <div class="board-section">
@@ -357,5 +374,18 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--neon-bordeaux, #d9004c);
+}
+
+.autoplay-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.global-autoplay-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
 }
 </style>
