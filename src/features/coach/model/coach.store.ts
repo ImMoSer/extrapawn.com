@@ -1,11 +1,11 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
-import { fetchTablebaseMoves, getPieceCount } from '@/shared/lib/engine/coach/engine'
+import { fetchTablebaseMoves, getPieceCount, USE_SERVER_ENGINE } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -15,6 +15,7 @@ import { computed, ref, watch } from 'vue'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
+  const gameStore = useGameStore()
   const analysisEngineStore = useAnalysisEngineStore()
 
   const isCoachEnabled = ref(false)
@@ -252,7 +253,7 @@ export const useCoachStore = defineStore('coach', () => {
     topMovesLoading.value = true
     tablebaseBestMove.value = null
     try {
-      if (getPieceCount(fen) <= 5) {
+      if (USE_SERVER_ENGINE && getPieceCount(fen) <= 5) {
         fetchTablebaseMoves(fen).then((moves) => {
           if (moves && moves.length > 0) {
             const bestMove = moves[0]
@@ -348,6 +349,17 @@ export const useCoachStore = defineStore('coach', () => {
   function analyzeCurrentPosition() {
     if (!isCoachEnabled.value) return
     const newFen = pgnService.getCurrentNavigatedFen()
+
+    if (gameStore.gamePhase === 'PLAYING') {
+      const activeTurn = newFen.split(' ')[1] // 'w' or 'b'
+      const userColor = boardStore.orientation // 'white' or 'black'
+      const userColorCode = userColor === 'white' ? 'w' : 'b'
+      if (activeTurn !== userColorCode) {
+        logger.debug(`[CoachStore] Skipping analysis: opponent's turn.`)
+        return
+      }
+    }
+
     selectedMoveIndex.value = null
     selectedMoveExplanation.value = null
     triggerAnalysis(newFen)

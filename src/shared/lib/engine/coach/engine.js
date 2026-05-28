@@ -264,7 +264,7 @@ class StockfishEngine {
     }
   }
 
-  evaluate(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
+  evaluate(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null, options = {}) {
     const key = `e|${fen}|${depth}`
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
@@ -277,7 +277,7 @@ class StockfishEngine {
     }
 
     // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
-    const mpvKey = `m|${fen}|${USE_SERVER_ENGINE ? 3 : DEFAULT_MULTIPV}|${depth}`
+    const mpvKey = USE_SERVER_ENGINE ? `m|${fen}|server` : `m|${fen}|${DEFAULT_MULTIPV}|${depth}`
     const hitMpv = this.cache.get(mpvKey)
     if (hitMpv) {
       const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score }))
@@ -285,16 +285,15 @@ class StockfishEngine {
       return p
     }
 
-    const p = this._enqueue({ type: 'eval', fen, depth, startFen, moves })
+    const p = this._enqueue({ type: 'eval', fen, depth, startFen, moves, skipTablebase: options.skipTablebase })
     p.catch(() => this.cache.delete(key))
     this.cache.set(key, p)
     return p
   }
 
-  analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
-    // If server engine is forced to max 3 PV, cap cache key at 3 to prevent duplicate requests
-    const n = USE_SERVER_ENGINE ? Math.min(numLines, 3) : Math.max(1, Math.min(numLines, 10))
-    const key = `m|${fen}|${n}|${depth}`
+  analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, startFen = null, moves = null, options = {}) {
+    const key = USE_SERVER_ENGINE ? `m|${fen}|server` : `m|${fen}|${Math.max(1, Math.min(numLines, 10))}|${depth}`
+    const n = USE_SERVER_ENGINE ? 3 : Math.max(1, Math.min(numLines, 10))
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
 
@@ -311,7 +310,7 @@ class StockfishEngine {
       return p
     }
 
-    const p = this._enqueue({ type: 'multipv', fen, depth, numLines: n, startFen, moves })
+    const p = this._enqueue({ type: 'multipv', fen, depth, numLines: n, startFen, moves, skipTablebase: options.skipTablebase })
     p.catch(() => this.cache.delete(key))
     this.cache.set(key, p)
     return p

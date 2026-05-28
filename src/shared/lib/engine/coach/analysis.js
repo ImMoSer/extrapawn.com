@@ -116,7 +116,7 @@ export async function explainMoveAt(fen, moveUCI) {
     ? fullMoves.slice(0, -1) 
     : fullMoves
     
-  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth, startFen, prevMoves)
+  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth, startFen, prevMoves, { skipTablebase: true })
 
   // Win-rate-before is approximated by the best move's score (the position's
   // value assuming optimal play). This is what Lichess-style classifiers use
@@ -145,7 +145,7 @@ export async function explainMoveAt(fen, moveUCI) {
   } else {
     // Player played outside the top set — fall back to a separate eval.
     const evalMoves = prevMoves.concat([moveUCI])
-    const evalAfterRes = await engine.evaluate(newFen, depth, startFen, evalMoves)
+    const evalAfterRes = await engine.evaluate(newFen, depth, startFen, evalMoves, { skipTablebase: true })
     evalAfterWhite = normalizeToWhite(evalAfterRes.cp, newTurn)
     mateAfter = mateToWhite(evalAfterRes.mate, newTurn)
   }

@@ -105,15 +105,13 @@ export class ServerEngineStrategy {
     return Promise.resolve()
   }
 
-  async executeJob(job, { multipv, onLine, onError }) {
+  async executeJob(job, { onLine, onError }) {
     const doBackendFetch = (lichess_moves = null) => {
       fetch('/api/coach-engine/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fen: job.fen,
-          depth: job.depth,
-          multipv,
           start_fen: job.startFen,
           moves: job.moves,
           lichess_moves,
@@ -135,7 +133,7 @@ export class ServerEngineStrategy {
         })
     }
 
-    if (this.getPieceCount(job.fen) <= 5) {
+    if (!job.skipTablebase && this.getPieceCount(job.fen) <= 5) {
       try {
         const moves = await this.fetchTablebaseMoves(job.fen)
         doBackendFetch(moves)
