@@ -1,5 +1,5 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
-import { useBoardStore, useGameStore } from '@/entities/game'
+import { useBoardStore } from '@/entities/game'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
@@ -15,7 +15,6 @@ import { computed, ref, watch } from 'vue'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
-  const gameStore = useGameStore()
   const analysisEngineStore = useAnalysisEngineStore()
 
   const isCoachEnabled = ref(false)
@@ -405,27 +404,6 @@ export const useCoachStore = defineStore('coach', () => {
       evalSwingCp: (currentExplanation.value.eval_cp || 0) - (previousExplanation.value.eval_cp || 0),
     })
   })
-
-  // Watch gameStore to automatically activate coach during tablebase playback
-  let savedCoachEnabled = false
-  let savedAutonomous = true
-
-  watch(
-    () => gameStore.isTablebasePlaybackActive,
-    (active) => {
-      if (active) {
-        savedCoachEnabled = isCoachEnabled.value
-        savedAutonomous = isAutonomous.value
-        isCoachEnabled.value = true
-        isAutonomous.value = true
-        
-        analyzeCurrentPosition()
-      } else {
-        isCoachEnabled.value = savedCoachEnabled
-        isAutonomous.value = savedAutonomous
-      }
-    }
-  )
 
   return {
     isCoachEnabled,

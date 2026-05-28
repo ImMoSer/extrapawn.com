@@ -7,16 +7,11 @@ import type { Key } from '@lichess-org/chessground/types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Role as ChessopsRole } from 'chessops'
 import logger from '@/shared/lib/logger'
-import { useTablebaseStore } from '@/features/tablebase-mainline'
 
 export const useAutoplayStore = defineStore('autoplay', () => {
   const authStore = useAuthStore()
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
-  const tablebaseStore = useTablebaseStore()
-
-  // Developer control to automatically switch to Lichess Tablebase Mainline for 7 or fewer pieces
-  const set_mainline_seven = ref(true)
 
   // 1. Check if the user is mo3ep / MO3EP
   const isMo3ep = computed(() => {
@@ -221,15 +216,6 @@ export const useAutoplayStore = defineStore('autoplay', () => {
           return
         }
 
-        // Delegate to tablebase mainline playback if enabled and piece count <= 7
-        if (set_mainline_seven.value && tablebaseStore.getPieceCount(newFen) <= 7) {
-          if (!gameStore.isTablebasePlaybackActive) {
-            lastPlayedOrAnalyzedFen.value = newFen
-            tablebaseStore.playMainline()
-          }
-          return
-        }
-
         lastPlayedOrAnalyzedFen.value = newFen
         triggerAutoplay(newFen)
       },
@@ -250,7 +236,6 @@ export const useAutoplayStore = defineStore('autoplay', () => {
   return {
     isMo3ep,
     isAutoplayEnabled,
-    set_mainline_seven,
     init,
   }
 })

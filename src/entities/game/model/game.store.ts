@@ -25,7 +25,6 @@ export const useGameStore = defineStore('game', () => {
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
-  const isTablebasePlaybackActive = ref(false)
 
   function getGameStatus(): GameStatusInfo {
     const chessPosition = boardStore.chessPosition
@@ -126,10 +125,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function triggerBotMove(overrideDelay?: number) {
-    if (isTablebasePlaybackActive.value) {
-      logger.info('[GameStore] Bot move execution bypassed because Tablebase Playback is active.')
-      return
-    }
     if (currentStrategy.value) {
       const fenAtRequest = boardStore.fen
       const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
@@ -271,10 +266,6 @@ export const useGameStore = defineStore('game', () => {
 
   async function handleUserMove(orig: Key, dest: Key) {
     if (gamePhase.value !== 'PLAYING') return
-    if (isTablebasePlaybackActive.value) {
-      logger.warn('[GameStore] User move rejected because Tablebase Playback is active.')
-      return
-    }
 
     const { makeUci, parseSquare } = await import('chessops/util')
     const fromSq = parseSquare(orig)
@@ -338,30 +329,6 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function executePlaybackMove(uci: string) {
-    if (gamePhase.value !== 'PLAYING') return
-
-    const fenBefore = boardStore.fen
-    const positionBefore = boardStore.chessPosition.clone()
-
-    const applied = boardStore.applyUciMove(uci)
-    if (!applied) {
-      logger.error(`[GameStore] Failed to apply playback move: ${uci}`)
-      return
-    }
-
-    const chessopsMove = (await import('chessops/util')).parseUci(uci)
-    if (chessopsMove) {
-      const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
-      const fenAfter = boardStore.fen
-      pgnService.addNode({ san, uci, fenBefore, fenAfter })
-      
-      GameAudioEngine.playMoveSoundFromSan(san, false)
-    }
-
-    _checkAndHandleGameOver()
-  }
-
   function setGamePhase(phase: GamePhase) {
     gamePhase.value = phase
     if (phase === 'GAMEOVER' || phase === 'IDLE') {
@@ -407,7 +374,6 @@ export const useGameStore = defineStore('game', () => {
     navigatePgn,
     navigateToNode,
     handleUserMove,
-    executePlaybackMove,
     undoLastUserMove,
     setGamePhase,
     handleGameResignation,
@@ -417,6 +383,5 @@ export const useGameStore = defineStore('game', () => {
     botEngineId,
     setBotEngineId,
     triggerBotMove,
-    isTablebasePlaybackActive,
   }
 })
