@@ -3,6 +3,8 @@
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
+import { useAutoplayStore } from '@/features/autoplay'
+import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted } from 'vue'
@@ -15,6 +17,7 @@ const props = defineProps<{
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
+const autoplayStore = useAutoplayStore()
 const analysisStore = useAnalysisStore()
 const { analysisLines } = storeToRefs(analysisStore)
 const route = useRoute()
@@ -85,6 +88,12 @@ onUnmounted(() => {
       <div class="center-stage" ref="centerColumnRef">
         <div class="cb-top-panel">
           <slot name="top-info"></slot>
+        </div>
+
+        <!-- Dev Autoplay Floating Switch -->
+        <div v-if="autoplayStore.isMo3ep && gameStore.gamePhase === 'PLAYING'" class="global-autoplay-overlay">
+          <span class="global-autoplay-label">Autoplay</span>
+          <n-switch v-model:value="autoplayStore.isAutoplayEnabled" size="small" />
         </div>
 
         <div class="board-section">
@@ -159,6 +168,7 @@ onUnmounted(() => {
 
 /* --- Center Stage Area --- */
 .center-stage {
+  position: relative;
   --eval-bar-width: 4px;
   display: flex;
   flex-direction: column;
@@ -317,5 +327,35 @@ onUnmounted(() => {
     margin: 0;
     flex-shrink: 0;
   }
+}
+
+.global-autoplay-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 11, 20, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(217, 0, 76, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.global-autoplay-overlay:hover {
+  border-color: var(--neon-bordeaux, #d9004c);
+  box-shadow: 0 0 15px rgba(217, 0, 76, 0.25);
+}
+
+.global-autoplay-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--neon-bordeaux, #d9004c);
 }
 </style>

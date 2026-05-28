@@ -2,10 +2,12 @@ import { buildFullExplanation } from '@/shared/lib/engine/coach/full-explanation
 import engine, { setEngineDefaults } from '@/shared/lib/engine/coach/engine'
 import { ensureReady as ensureWasmReady } from '@/shared/lib/engine/coach/analyzer-rs'
 import logger from '@/shared/lib/logger'
+import type { CoachExplanation } from './coach.types'
 
 export class CoachEngineManager {
   private isInitializing = false
   private initPromise: Promise<void> | null = null
+  private explanationCache = new Map<string, Promise<CoachExplanation | null>>()
 
   constructor() {
     logger.info('[CoachEngineManager] Created.')
@@ -38,15 +40,40 @@ export class CoachEngineManager {
   /**
    * Generates a full explanation blob for the given FEN using the coach logic.
    */
-  public async getExplanation(fen: string, options?: { depth?: number; multipv?: number }) {
-    await this.ensureReady()
-    try {
-      const explanation = await buildFullExplanation(fen, options)
-      return explanation
-    } catch (error) {
-      logger.error('[CoachEngineManager] Failed to build full explanation:', error)
-      return null
+  public async getExplanation(
+    fen: string,
+    options?: { depth?: number; multipv?: number },
+  ): Promise<CoachExplanation | null> {
+    const key = `${fen}_d${options?.depth ?? ''}_m${options?.multipv ?? ''}`
+    const cached = this.explanationCache.get(key)
+    if (cached) {
+      logger.info(`[CoachEngineManager] Explanation cache hit for key: ${key}`)
+      return cached
     }
+
+    const promise = (async (): Promise<CoachExplanation | null> => {
+      await this.ensureReady()
+      try {
+        const explanation = (await buildFullExplanation(fen, options)) as CoachExplanation | null
+        return explanation
+      } catch (error) {
+        logger.error('[CoachEngineManager] Failed to build full explanation:', error)
+        this.explanationCache.delete(key)
+        return null
+      }
+    })()
+
+    this.explanationCache.set(key, promise)
+
+    // Limit cache size to 50 entries
+    if (this.explanationCache.size > 50) {
+      const firstKey = this.explanationCache.keys().next().value
+      if (firstKey) {
+        this.explanationCache.delete(firstKey)
+      }
+    }
+
+    return promise
   }
 
   /**

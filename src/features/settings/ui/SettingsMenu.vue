@@ -4,14 +4,16 @@ import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import { soundService } from '@/shared/lib/sound.service'
 import { SettingsOutline } from '@vicons/ionicons5'
-import { NIcon } from 'naive-ui'
+import { NIcon, NSwitch } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '../index'
+import { useAutoplayStore } from '@/features/autoplay'
 
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
+const autoplayStore = useAutoplayStore()
 const { isAuthenticated } = storeToRefs(authStore)
 const { t, locale } = useI18n()
 
@@ -162,6 +164,10 @@ onUnmounted(() => {
           <button class="panel-button" @click="activePanel = 'sounds'">
             {{ t('features.settings.sounds.title') }}
           </button>
+          <div v-if="autoplayStore.isMo3ep" class="autoplay-setting-item">
+            <span class="autoplay-setting-label">Dev Autoplay</span>
+            <n-switch v-model:value="autoplayStore.isAutoplayEnabled" size="small" />
+          </div>
           <button class="panel-button auth-button" @click="handleAuthAction">
             {{ isAuthenticated ? t('nav.logout') : t('nav.login') }}
           </button>
@@ -510,5 +516,20 @@ onUnmounted(() => {
   color: var(--color-text-default);
   min-width: 50px;
   text-align: right;
+}
+.autoplay-setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: rgba(217, 0, 76, 0.08);
+  border: 1px dashed rgba(217, 0, 76, 0.3);
+  border-radius: 6px;
+  margin-top: 5px;
+}
+.autoplay-setting-label {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--neon-bordeaux, #d9004c);
 }
 </style>

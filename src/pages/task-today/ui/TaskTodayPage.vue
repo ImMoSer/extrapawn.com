@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore, type PuzzleResult, useTaskTodayAutoplay } from '@/features/task-today'
+import { useTaskTodayStore, type PuzzleResult } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
 import {
   NText,
@@ -11,7 +11,6 @@ import {
   NTag,
   NResult,
   NSpace,
-  NSwitch,
   useMessage
 } from 'naive-ui'
 import {
@@ -39,8 +38,7 @@ const router = useRouter()
 const message = useMessage()
 const queryClient = useQueryClient()
 
-// Autoplay features for Mo3ep
-const { isMo3ep, isAutoplayEnabled } = useTaskTodayAutoplay()
+
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup'>('Discovery')
@@ -487,11 +485,7 @@ onUnmounted(() => {
           </div>
           <span class="top-timer">{{ formattedTime }}</span>
 
-          <!-- Autoplay Switch for MO3EP -->
-          <NSpace v-if="isMo3ep" align="center" :size="8" class="autoplay-switch-wrapper">
-            <span class="autoplay-label">Autoplay</span>
-            <NSwitch v-model:value="isAutoplayEnabled" size="small" />
-          </NSpace>
+
         </div>
 
         <div class="side-action right">
