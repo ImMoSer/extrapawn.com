@@ -80,19 +80,23 @@ export const useTablebaseStore = defineStore('tablebaseMainline', () => {
         return
       }
 
-      const nextMove = moves.shift()
-      if (!nextMove) {
-        stopPlayback()
-        return
-      }
+      // Determine who is "thinking" right now BEFORE executing the move
+      const isUserThinking = boardStore.turn === boardStore.orientation
+      const delay = isUserThinking ? 1000 : 500
 
-      logger.info(`[TablebaseStore] Executing playback move: ${nextMove.uci} (${nextMove.san})`)
-      await gameStore.executePlaybackMove(nextMove.uci)
+      playbackTimeoutId = window.setTimeout(async () => {
+        const nextMove = moves.shift()
+        if (!nextMove) {
+          stopPlayback()
+          return
+        }
 
-      // Schedule next move in 750ms
-      playbackTimeoutId = window.setTimeout(() => {
+        logger.info(`[TablebaseStore] Executing playback move: ${nextMove.uci} (${nextMove.san}) after ${delay}ms delay`)
+        await gameStore.executePlaybackMove(nextMove.uci)
+        
+        // Recurse to schedule the next step
         executeNextStep()
-      }, 750)
+      }, delay)
     }
 
     // Start loop
