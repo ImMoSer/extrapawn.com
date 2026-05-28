@@ -95,10 +95,7 @@ export class WasmEngineStrategy {
  * Handles Lichess Tablebase fetching for endgames with 5 or fewer pieces.
  */
 export class ServerEngineStrategy {
-  constructor({ getPieceCount, fetchTablebaseMoves }) {
-    this.getPieceCount = getPieceCount
-    this.fetchTablebaseMoves = fetchTablebaseMoves
-  }
+  constructor() {}
 
   init({ onReady }) {
     onReady()
@@ -106,43 +103,29 @@ export class ServerEngineStrategy {
   }
 
   async executeJob(job, { onLine, onError }) {
-    const doBackendFetch = (lichess_moves = null) => {
-      fetch('/api/coach-engine/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fen: job.fen,
-          start_fen: job.startFen,
-          moves: job.moves,
-          lichess_moves,
-        }),
+    fetch('/api/coach-engine/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fen: job.fen,
+        start_fen: job.startFen,
+        moves: job.moves,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
       })
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then((data) => {
-          if (data.lines) {
-            data.lines.forEach((line) => onLine(line))
-          }
-        })
-        .catch((err) => {
-          onError(err)
-        })
-    }
-
-    if (!job.skipTablebase && this.getPieceCount(job.fen) <= 5) {
-      try {
-        const moves = await this.fetchTablebaseMoves(job.fen)
-        doBackendFetch(moves)
-      } catch {
-        doBackendFetch(null)
-      }
-    } else {
-      doBackendFetch(null)
-    }
+      .then((data) => {
+        if (data.lines) {
+          data.lines.forEach((line) => onLine(line))
+        }
+      })
+      .catch((err) => {
+        onError(err)
+      })
   }
 
   stop() {

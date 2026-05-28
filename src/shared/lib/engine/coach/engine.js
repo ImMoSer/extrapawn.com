@@ -1,7 +1,7 @@
 // Browser-side Stockfish (WASM) wrapper & Server analysis orchestrator.
 // Delegates job execution to WasmEngineStrategy or ServerEngineStrategy.
 
-import { tablebaseService } from '@/shared/api/TablebaseService'
+
 import { Chess } from 'chess.js'
 import { LRU } from './engine-cache'
 import { WasmEngineStrategy, ServerEngineStrategy } from './engine-providers'
@@ -131,12 +131,6 @@ export function getPieceCount(fen) {
   return (boardPart.match(/[a-zA-Z]/g) || []).length
 }
 
-export function fetchTablebaseMoves(fen) {
-  return tablebaseService.fetchStandard(fen)
-    .then(data => data?.moves || null)
-    .catch(() => null)
-}
-
 class StockfishEngine {
   constructor(opts = {}) {
     this.workerUrl = opts.workerUrl ?? WORKER_URL
@@ -162,10 +156,7 @@ class StockfishEngine {
   get activeStrategy() {
     if (USE_SERVER_ENGINE) {
       if (!this._serverStrategy) {
-        this._serverStrategy = new ServerEngineStrategy({
-          getPieceCount,
-          fetchTablebaseMoves,
-        })
+        this._serverStrategy = new ServerEngineStrategy()
       }
       return this._serverStrategy
     } else {

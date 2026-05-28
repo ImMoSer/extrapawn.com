@@ -1,12 +1,12 @@
+import { useBoardStore, useGameStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import logger from '@/shared/lib/logger'
+import type { DrawShape } from '@lichess-org/chessground/draw'
+import type { Key } from '@lichess-org/chessground/types'
+import type { Role as ChessopsRole } from 'chessops'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { useAuthStore } from '@/entities/user'
-import { useBoardStore, useGameStore } from '@/entities/game'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import type { Key } from '@lichess-org/chessground/types'
-import type { DrawShape } from '@lichess-org/chessground/draw'
-import type { Role as ChessopsRole } from 'chessops'
-import logger from '@/shared/lib/logger'
 
 export const useAutoplayStore = defineStore('autoplay', () => {
   const authStore = useAuthStore()
@@ -141,8 +141,8 @@ export const useAutoplayStore = defineStore('autoplay', () => {
         boardStore.setCoachShapes([])
       }
 
-      // Wait 1000 ms before executing the move
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Wait 500 ms before executing the move
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Check state again after delay
       if (

@@ -5,7 +5,7 @@ import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/sh
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
-import { fetchTablebaseMoves, getPieceCount, USE_SERVER_ENGINE } from '@/shared/lib/engine/coach/engine'
+import { getPieceCount } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -253,49 +253,27 @@ export const useCoachStore = defineStore('coach', () => {
     topMovesLoading.value = true
     tablebaseBestMove.value = null
     try {
-      if (USE_SERVER_ENGINE && getPieceCount(fen) <= 5) {
-        fetchTablebaseMoves(fen).then((moves) => {
-          if (moves && moves.length > 0) {
-            const bestMove = moves[0]
-            if (bestMove) {
-              const hasDtm = bestMove.checkmate || (bestMove.dtm !== null && bestMove.dtm !== undefined)
-              if (hasDtm) {
-                const sideToMove = fen.split(' ')[1] // 'w' or 'b'
-                let winner = ''
-                let mateIn = 0
-                if (bestMove.checkmate) {
-                  winner = sideToMove === 'w' ? 'White' : 'Black'
-                  mateIn = 1
-                } else if (bestMove.dtm !== null && bestMove.dtm !== undefined) {
-                  const dtmVal = bestMove.dtm
-                  if (dtmVal < 0) {
-                    winner = sideToMove === 'w' ? 'White' : 'Black'
-                  } else {
-                    winner = sideToMove === 'w' ? 'Black' : 'White'
-                  }
-                  mateIn = Math.ceil(Math.abs(dtmVal) / 2)
-                }
-
-                if (winner && mateIn > 0) {
-                  tablebaseBestMove.value = {
-                    san: bestMove.san,
-                    uci: bestMove.uci,
-                    winner,
-                    mateIn,
-                    wdl: 'win'
-                  }
-                  return
-                }
-              }
-            }
-          }
-          tablebaseBestMove.value = null
-        }).catch(() => {
-          tablebaseBestMove.value = null
-        })
-      }
       const result = await getTopMoves(fen, 10)
       topMoves.value = result.moves || []
+
+      // Populate tablebaseBestMove directly from the Gaviota server response
+      if (topMoves.value.length > 0 && getPieceCount(fen) <= 5) {
+        const best = topMoves.value[0]
+        if (best && best.isMate && best.mateIn !== null && best.mateIn !== undefined) {
+          const sideToMove = fen.split(' ')[1] // 'w' or 'b'
+          const winner = best.mateIn > 0 ? 'White' : 'Black'
+          const mateIn = Math.abs(best.mateIn)
+          const isWin = (sideToMove === 'w' && best.mateIn > 0) || (sideToMove === 'b' && best.mateIn < 0)
+
+          tablebaseBestMove.value = {
+            san: best.san,
+            uci: best.uci,
+            winner,
+            mateIn,
+            wdl: isWin ? 'win' : 'loss'
+          }
+        }
+      }
     } catch {
       logger.error('[CoachStore] Top moves failed')
     } finally {
