@@ -357,6 +357,20 @@ export const useCoachStore = defineStore('coach', () => {
     isAutonomous.value = value
   }
 
+  function reset() {
+    logger.info('[CoachStore] Resetting coach state.')
+    isCoachEnabled.value = false
+    isAnalyzing.value = false
+    currentExplanation.value = null
+    previousExplanation.value = null
+    topMoves.value = []
+    lastMoveAnalysis.value = null
+    selectedMoveIndex.value = null
+    selectedMoveExplanation.value = null
+    boardStore.setCoachShapes([])
+    coachEngineManager.stop()
+  }
+
   // Watch the PGN tree version to ensure the coach always has the latest move history.
   // Watching boardStore.fen directly can cause race conditions where the PGN history is stale.
   watch(
@@ -416,5 +430,6 @@ export const useCoachStore = defineStore('coach', () => {
     analyzeCurrentPosition,
     setAutonomous,
     isAutonomous,
+    reset,
   }
 })

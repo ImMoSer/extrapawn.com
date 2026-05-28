@@ -23,8 +23,11 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
+/* eslint-disable-next-line boundaries/element-types */
+import { useGlobalTeardown } from '@/app/lib/useGlobalTeardown'
 
 const { t } = useI18n()
+const { triggerTeardown } = useGlobalTeardown()
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
@@ -224,8 +227,7 @@ watch(
 onUnmounted(() => {
   window.removeEventListener('beforeunload', beforeUnloadHandler)
   studyStore.isActiveMode = false
-  gameStore.stop()
-  analysisStore.resetAnalysisState()
+  triggerTeardown()
 })
 
 // Auto-update node evaluation from engine

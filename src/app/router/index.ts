@@ -1,5 +1,6 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
+import { useGlobalTeardown } from '@/app/lib/useGlobalTeardown'
 import { useEndgamesStore } from '@/features/endgames'
 import { useTacticsStore } from '@/features/tactics'
 import i18n from '@/shared/config/i18n'
@@ -223,14 +224,16 @@ router.beforeEach(async (to, from, next) => {
       )
 
       if (userConfirmed === 'confirm') {
+        const { triggerTeardown } = useGlobalTeardown()
         await gameStore.handleGameResignation()
-        await gameStore.resetGame()
+        triggerTeardown()
         next()
       } else {
         next(false)
       }
     } else {
-      await gameStore.resetGame()
+      const { triggerTeardown } = useGlobalTeardown()
+      triggerTeardown()
       next()
     }
   } else {

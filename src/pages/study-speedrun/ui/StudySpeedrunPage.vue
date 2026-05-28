@@ -7,9 +7,12 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
 import { useStudyStore } from '@/features/study'
+/* eslint-disable-next-line boundaries/element-types */
+import { useGlobalTeardown } from '@/app/lib/useGlobalTeardown'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const { triggerTeardown } = useGlobalTeardown()
 const speedrunStore = useSpeedrunStore()
 const studyStore = useStudyStore()
 const analysisStore = useAnalysisStore()
@@ -73,12 +76,13 @@ function handleJump(index: number) {
 }
 
 onBeforeRouteLeave(() => {
-  analysisStore.hidePanel()
+  // No explicit action needed if onUnmounted handles it via gameStore.stop()
+  // but we keep it empty or remove if preferred.
 })
 
 // Ensure cleanup if user navigates away
 onUnmounted(() => {
-  analysisStore.hidePanel()
+  triggerTeardown()
   if (speedrunStore.isPlaying) {
     speedrunStore.quitSpeedrun()
   }

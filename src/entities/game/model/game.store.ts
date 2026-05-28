@@ -14,6 +14,8 @@ import { GameAudioEngine } from './GameAudioEngine'
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER'
 
+const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
 export const useGameStore = defineStore('game', () => {
   const boardStore = useBoardStore()
   const gamePhase = ref<GamePhase>('IDLE')
@@ -339,30 +341,27 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function stop() {
-    logger.info('[GameStore] Stopping game and resetting states.')
+    logger.info('[GameStore] Stopping game and clearing entity states.')
+    
+    // 1. Clear Strategy
     currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
+    
+    // 2. Clear Phase & Activity
     gamePhase.value = 'IDLE'
     isGameActive.value = false
     userMovesCount.value = 0
 
-    import('@/shared/lib/engine/coach/CoachEngineManager').then(({ coachEngineManager }) => {
-      coachEngineManager.stop()
-    })
-
+    // 3. Clear Entity Systems
+    pgnService.reset(INITIAL_FEN)
     boardStore.resetBoardState()
   }
 
   async function resetGame() {
-    boardStore.resetBoardState()
-
-    gamePhase.value = 'IDLE'
-    currentStrategy.value?.onDestroy?.()
-    currentStrategy.value = null
-    userMovesCount.value = 0
-    isGameActive.value = false
-
-    logger.info('[GameStore] Full game state has been reset.')
+    logger.info('[GameStore] Resetting current game context.')
+    // In resetGame we might want a clean slate but staying in current mode context.
+    // But for safety, we delegate to stop() which is now our "Master Reset"
+    stop()
   }
 
   return {
