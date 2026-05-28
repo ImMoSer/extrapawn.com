@@ -8,7 +8,7 @@ import { computed, ref, watch } from 'vue'
 import { apiClient } from '@/shared/api/client'
 import { parseFen } from 'chessops/fen'
 import { TaskTodayStrategy } from './TaskTodayStrategy'
-import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity } from '@/shared/types/api.types'
+import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
@@ -72,6 +72,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const isPlaying = ref(false)
   const isFinished = ref(false)
   const isReplay = ref(false)
+  const completedReport = ref<CompletedPlanReport | null>(null)
 
   // Timer State
   const startTime = ref(0)
@@ -100,6 +101,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       isPlaying: isPlaying.value,
       isFinished: isFinished.value,
       isReplay: isReplay.value,
+      completedReport: completedReport.value,
       date: new Date().toISOString().split('T')[0]
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
@@ -113,7 +115,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       const state = JSON.parse(saved)
       const today = new Date().toISOString().split('T')[0]
       
-      if (state.date !== today) {
+      if (state.date !== today || state.isReplay) {
         localStorage.removeItem(STORAGE_KEY)
         return false
       }
@@ -127,6 +129,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       isPlaying.value = state.isPlaying
       isFinished.value = state.isFinished
       isReplay.value = state.isReplay || false
+      completedReport.value = state.completedReport || null
       
       return true
     } catch (e) {
@@ -135,9 +138,23 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
+  function clearSavedState() {
+    trainingPlan.value = null
+    currentTaskIndex.value = 0
+    tasksPuzzles.value = {}
+    solvedPuzzlesPerTask.value = {}
+    completedResults.value = {}
+    puzzleAttempts.value = {}
+    isPlaying.value = false
+    isFinished.value = false
+    isReplay.value = false
+    completedReport.value = null
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
   // Auto-save on changes
   watch(
-    [trainingPlan, currentTaskIndex, tasksPuzzles, solvedPuzzlesPerTask, completedResults, puzzleAttempts, isPlaying, isFinished, isReplay],
+    [trainingPlan, currentTaskIndex, tasksPuzzles, solvedPuzzlesPerTask, completedResults, puzzleAttempts, isPlaying, isFinished, isReplay, completedReport],
     () => {
       if (isPlaying.value || isFinished.value) {
         saveState()
@@ -439,6 +456,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     solvedPuzzlesPerTask.value = {}
     completedResults.value = {}
     puzzleAttempts.value = {}
+    completedReport.value = null
     localStorage.removeItem(STORAGE_KEY)
     gameStore.stop()
     try {
@@ -455,6 +473,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     isPlaying.value = false
     if (isReplay.value) {
       trainingPlan.value = null
+      completedReport.value = null
       isReplay.value = false
       localStorage.removeItem(STORAGE_KEY)
     }
@@ -510,13 +529,22 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       isPlaying.value = false
       isFinished.value = false
       
+      const isCompleted = planData.is_completed || ('active' in planData && !planData.active && planData.is_completed)
+
+      if (isCompleted && !forceReplayAll) {
+        completedReport.value = planData.report_json || null
+        trainingPlan.value = null
+        isFinished.value = true
+        isPlaying.value = false
+        isReplay.value = true
+        return true
+      }
+
       const tasks_json = 'tasks_json' in planData ? planData.tasks_json : planData.plan
       if (!tasks_json || !tasks_json.puzzles) {
         throw new Error('Invalid plan data for replay')
       }
 
-      // Check if we are resuming an active plan or starting fresh
-      const isCompleted = planData.is_completed || ('active' in planData && !planData.active && planData.is_completed)
       const isResume = !isCompleted && !forceReplayAll
 
       isReplay.value = isCompleted || false
@@ -572,7 +600,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
           completedResults.value[p.puzzle_id] = {
             puzzle_id: p.puzzle_id,
-            time: p.time || 0,
+            time: (p.time || 0) * 1000,
             attempts: p.attempts || 1,
             status: 'solved'
           }
@@ -586,7 +614,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             if (p.time && p.time > 0) {
               completedResults.value[p.puzzle_id] = {
                 puzzle_id: p.puzzle_id,
-                time: p.time,
+                time: p.time * 1000,
                 attempts: p.attempts,
                 status: 'failed'
               }
@@ -670,5 +698,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     startTimer,
     stopTimer,
     playCurrentPuzzle,
+    clearSavedState,
+    completedReport,
   }
 })

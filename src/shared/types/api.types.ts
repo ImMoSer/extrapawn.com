@@ -491,13 +491,32 @@ export interface TrainingPlanPuzzlesJson {
   puzzles: DailyTrainingPlanPuzzle[]
 }
 
+export interface SubModeReportBreakdown {
+  subMode: string
+  count: number
+  timeMs: number
+  attempts: number
+}
+
+export interface CompletedPlanReport {
+  strategyTitle: string
+  totalPuzzles: number
+  totalTimeMs: number
+  totalAttempts: number
+  accuracy: number
+  avgTimeMs: number
+  breakdown: SubModeReportBreakdown[]
+}
+
 export interface DailyTrainingPlanEntity {
+  id?: string
   user_id: string
   date: string
   difficulty: string
   strategy: string
   is_completed: boolean
   tasks_json: TrainingPlanPuzzlesJson
+  report_json?: CompletedPlanReport
 }
 
 export interface TrainingPlanNextResponse {
@@ -534,6 +553,7 @@ export interface TrainingPlanCurrentResponse {
   strategy?: string
   recommendations?: TrainingPlanRecommendations
   completed_difficulties?: string[]
+  report_json?: CompletedPlanReport
 }
 
 export interface TrainingPlanCompleteResponse {

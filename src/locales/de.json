@@ -185,6 +185,35 @@
     }
   },
   "features": {
+    "taskToday": {
+      "completed": {
+        "title": "Training erfolgreich beendet!",
+        "puzzles": "Puzzles",
+        "breakdownTitle": "Dein Report",
+        "puzzlesCountShort": "Aufgaben",
+        "backToStart": "Zurück zur Startseite",
+        "startAnother": "Anderen Plan starten",
+        "duration": {
+          "hour": "Stunde",
+          "hours": "Stunden",
+          "minute": "Minute",
+          "minutes": "Minuten",
+          "second": "Sekunde",
+          "seconds": "Sekunden"
+        },
+        "stats": {
+          "accuracy": "Genauigkeit",
+          "totalAttempts": "Versuche gesamt",
+          "avgTime": "Ø Zeit / Aufgabe"
+        },
+        "modes": {
+          "tactics": "TACTICS",
+          "finish_him": "FINISH HIM",
+          "practical_chess": "PRACTICAL CHESS",
+          "theory_endings": "THEORY ENDINGS"
+        }
+      }
+    },
     "board": {
       "flip": "Brett drehen",
       "copyFen": "FEN kopieren",

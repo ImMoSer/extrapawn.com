@@ -142,7 +142,7 @@ export const useAutoplayStore = defineStore('autoplay', () => {
       }
 
       // Wait 500 ms before executing the move
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       // Check state again after delay
       if (

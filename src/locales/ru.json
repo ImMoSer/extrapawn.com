@@ -183,6 +183,35 @@
     }
   },
   "features": {
+    "taskToday": {
+      "completed": {
+        "title": "Тренировка успешно завершена!",
+        "puzzles": "задач",
+        "breakdownTitle": "Ваш отчет",
+        "puzzlesCountShort": "задач",
+        "backToStart": "Вернуться на главную",
+        "startAnother": "Начать другую тренировку",
+        "duration": {
+          "hour": "ч.",
+          "hours": "ч.",
+          "minute": "мин.",
+          "minutes": "мин.",
+          "second": "сек.",
+          "seconds": "сек."
+        },
+        "stats": {
+          "accuracy": "Точность",
+          "totalAttempts": "Всего попыток",
+          "avgTime": "Ср. время / задача"
+        },
+        "modes": {
+          "tactics": "TACTICS",
+          "finish_him": "FINISH HIM",
+          "practical_chess": "PRACTICAL CHESS",
+          "theory_endings": "THEORY ENDINGS"
+        }
+      }
+    },
     "board": {
       "flip": "Перевернуть доску",
       "copyFen": "Копировать FEN",
