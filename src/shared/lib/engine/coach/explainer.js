@@ -152,7 +152,7 @@ function classifyByLoss(loss) {
 
 export function see(chess, square, attackingColor) {
   const target = chess.get(square);
-  if (!target) return 0;
+  if (!target || target.type === 'k') return 0;
   const attackers = chess.attackers(square, attackingColor);
   if (!attackers || attackers.length === 0) return 0;
 
@@ -171,9 +171,12 @@ export function see(chess, square, attackingColor) {
   const fenSnap = chess.fen();
   const attackerPiece = { ...chess.get(cheapestSq) };
 
+  const isPromotion = attackerPiece.type === 'p' && (square.endsWith('1') || square.endsWith('8'));
+  const placedType = isPromotion ? 'q' : attackerPiece.type;
+
   chess.remove(cheapestSq);
   chess.remove(square);
-  chess.put({ type: attackerPiece.type, color: attackerPiece.color }, square);
+  chess.put({ type: placedType, color: attackerPiece.color }, square);
 
   const opponent = attackingColor === 'w' ? 'b' : 'w';
   const opponentGain = see(chess, square, opponent);

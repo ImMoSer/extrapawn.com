@@ -72,11 +72,11 @@ export class TaskTodayStrategy implements IGameplayStrategy {
 
         if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
           // Success!
-          this.store.handlePuzzleSuccess(this.store.currentTimeMs)
+          await this.store.handlePuzzleSuccess(this.store.currentTimeMs)
         }
       } else {
         if (this.puzzle.strategy === 'scenarioOnly') {
-          this.store.handlePuzzleFailure()
+          await this.store.handlePuzzleFailure()
           return
         }
 
@@ -92,7 +92,7 @@ export class TaskTodayStrategy implements IGameplayStrategy {
 
   async onBotMoveExecuted(): Promise<void> {
     if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
-      this.store.handlePuzzleSuccess(this.store.currentTimeMs)
+      await this.store.handlePuzzleSuccess(this.store.currentTimeMs)
     }
   }
 
