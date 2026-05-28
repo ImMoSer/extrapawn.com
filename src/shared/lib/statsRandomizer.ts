@@ -5,11 +5,9 @@ import {
   TACTICS_CATEGORIES,
   type FrontendProfileStats,
   type LeaderboardApiResponse,
-  type PersonalActivityStatsResponse,
   type UserSessionProfile,
   type UnifiedLeaderboardResponse,
   type UnifiedLeaderboardEntry,
-  type ActivityHistoryEntry,
 } from '@/shared/types/api.types'
 
 /**
@@ -70,60 +68,6 @@ export function generateRandomUserProfile(): UserSessionProfile {
       },
     },
     endgame_skill: baseRating + getRandomInt(-200, 200),
-  }
-}
-
-export function generateRandomActivityStats(): PersonalActivityStatsResponse {
-  const activities: ActivityHistoryEntry[] = []
-
-  const generatePeriod = (daysBack: number, count: number) => {
-    const modes = ['finish_him', 'theory', 'practical-chess']
-    const subModes = ['win', 'draw']
-    const themes = ['pawn', 'fork', 'pin', 'endgame']
-
-    for (let i = 0; i < count; i++) {
-      const date = new Date(Date.now() - getRandomInt(0, daysBack) * 24 * 60 * 60 * 1000)
-      const dateStr = date.toISOString().split('T')[0]!
-
-      activities.push({
-        date: dateStr,
-        game_mode: modes[getRandomInt(0, modes.length - 1)]!,
-        sub_mode: subModes[getRandomInt(0, subModes.length - 1)]!,
-        theme: themes[getRandomInt(0, themes.length - 1)]!,
-        difficulty: 'Novice',
-        puzzles_solved: getRandomInt(0, 10),
-        puzzles_failed: getRandomInt(0, 5),
-        costs_trigger: getRandomInt(1, 15),
-        rating: getRandomInt(1200, 2000),
-      })
-    }
-  }
-
-  generatePeriod(0, 5) // Today
-  generatePeriod(7, 15) // This week
-  generatePeriod(30, 30) // This month
-
-  return {
-    user: {
-      id: 'example_user',
-      username: 'ExtraPawnCOM',
-      tier: 'King',
-    },
-    activities: activities,
-    statsSummary: [
-      { sub_mode: 'finish_him', category: 'bishop', total_solved: 15, total_failed: 2 },
-      { sub_mode: 'finish_him', category: 'expert', total_solved: 5, total_failed: 8 },
-      { sub_mode: 'finish_him', category: 'pawn', total_solved: 25, total_failed: 1 },
-      { sub_mode: 'theory_endings', category: 'bishop', total_solved: 8, total_failed: 4 },
-      { sub_mode: 'theory_endings', category: 'knight', total_solved: 12, total_failed: 10 },
-      { sub_mode: 'theory_endings', category: 'queen', total_solved: 4, total_failed: 2 },
-      { sub_mode: 'practical_chess', category: 'extraPawn', total_solved: 30, total_failed: 5 },
-      { sub_mode: 'practical_chess', category: 'knightBishop', total_solved: 3, total_failed: 8 },
-      { sub_mode: 'practical_chess', category: 'pawn', total_solved: 18, total_failed: 3 },
-      { sub_mode: 'tactics', category: 'fork', total_solved: 50, total_failed: 5 },
-      { sub_mode: 'tactics', category: 'pin', total_solved: 40, total_failed: 8 },
-      { sub_mode: 'tactics', category: 'discoveredAttack', total_solved: 2, total_failed: 12 }
-    ]
   }
 }
 

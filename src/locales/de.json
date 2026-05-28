@@ -527,6 +527,7 @@
           "theoryWin": "Theorie (Sieg)",
           "theoryDraw": "Theorie (Remis)",
           "practical": "Praxis",
+          "tactics": "Taktik",
           "tacticalTrainer": "Taktik"
         },
         "today": "Heute",

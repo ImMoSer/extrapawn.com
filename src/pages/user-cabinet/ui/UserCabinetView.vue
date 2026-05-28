@@ -1,13 +1,11 @@
-<!-- src/pages/UserCabinetView.vue -->
+<!-- src/pages/user-cabinet/ui/UserCabinetView.vue -->
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
 import { apiClient } from '@/shared/api/client'
 import {
   useDetailedStatsQuery,
-  usePersonalActivityStatsQuery,
 } from '@/shared/api/queries/userCabinet.queries'
 import {
-  generateRandomActivityStats,
   generateRandomDetailedStats,
   generateRandomUserProfile,
 } from '@/shared/lib/statsRandomizer'
@@ -30,7 +28,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { ActivityChart, ThemeRoseChart, UserProfileHeader } from '@/features/profile'
+import { ThemeRoseChart, UserProfileHeader } from '@/features/profile'
 import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
 
@@ -71,23 +69,12 @@ onMounted(() => {
 
 // Vue Query fetching
 const {
-  data: personalActivityData,
-  isPending: isActivityPending,
-  isError: isActivityError,
-  error: activityError,
-} = usePersonalActivityStatsQuery(!isExample.value && isAuthenticated.value)
-
-const {
   data: detailedStatsData,
   isError: isDetailedStatsError,
   error: detailedError,
 } = useDetailedStatsQuery(!isExample.value && isAuthenticated.value)
 
 // Computed wrappers to support Example Mode
-const personalActivityStats = computed(() => {
-  return isExample.value ? generateRandomActivityStats() : personalActivityData.value
-})
-
 const displayProfile = computed(() => {
   if (isExample.value) return generateRandomUserProfile()
   return userProfile.value
@@ -118,7 +105,6 @@ const displayStats = computed<UserProfileStatsDto | null>(() => {
 const error = computed(() => {
   if (isExample.value) return null
   if (!isAuthenticated.value) return null // Handled by login-prompt
-  if (isActivityError.value) return activityError.value?.message
   if (isDetailedStatsError.value) return detailedError.value?.message
   return null
 })
@@ -218,13 +204,6 @@ const handleManageSubscription = async () => {
             :stats="detailedStats"
             :title="t('features.userCabinet.stats.title')"
             @improve="launchGame"
-          />
-        </div>
-
-        <div class="charts-grid">
-          <ActivityChart
-            :stats="personalActivityStats"
-            :is-loading="isExample ? false : isActivityPending"
           />
         </div>
 
@@ -335,27 +314,6 @@ const handleManageSubscription = async () => {
   width: 100%;
 }
 
-.charts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-@media (min-width: 1200px) {
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
-}
-
-.state-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 400px;
-}
-
 .login-prompt {
   padding: 60px 0;
   background-color: var(--color-bg-secondary);
@@ -367,10 +325,6 @@ const handleManageSubscription = async () => {
   .user-cabinet-container {
     padding: 4px;
     margin: 10px auto;
-  }
-
-  .charts-grid {
-    gap: 17px;
   }
 }
 

@@ -525,6 +525,7 @@
           "theoryWin": "Теория (Победа)",
           "theoryDraw": "Теория (Ничья)",
           "practical": "Практика",
+          "tactics": "Тактика",
           "tacticalTrainer": "Тактика"
         },
         "today": "Сегодня",

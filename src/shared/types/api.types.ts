@@ -316,49 +316,10 @@ export interface SolveStreakLeaderboardEntry {
   solved_by_mode: Record<string, number>
 }
 
-export interface ActivityModeStats {
-  puzzles_requested: number
-  puzzles_solved: number
-}
-
-export interface ActivityPeriodStats {
-  finish_him: ActivityModeStats
-  theory: ActivityModeStats
-  'practical-chess': ActivityModeStats
-  rep_generator: ActivityModeStats
-  'study-reply'?: ActivityModeStats
-  speedrun?: ActivityModeStats
-}
-
-export interface ActivityHistoryEntry {
-  date: string
-  game_mode: string
-  sub_mode: string
-  theme: string
-  difficulty: string
-  puzzles_solved: number
-  puzzles_failed: number
-  costs_trigger: number
-  rating: number
-}
-
 export interface UserMeta {
   id: string
   username: string
   tier: string
-}
-
-export interface StatsSummaryEntry {
-  sub_mode: string
-  category: string
-  total_solved: number
-  total_failed: number
-}
-
-export interface PersonalActivityStatsResponse {
-  user: UserMeta
-  activities: ActivityHistoryEntry[]
-  statsSummary: StatsSummaryEntry[]
 }
 
 export type SubscriptionTier =

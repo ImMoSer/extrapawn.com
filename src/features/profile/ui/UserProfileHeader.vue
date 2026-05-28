@@ -56,20 +56,20 @@ const getTierType = (tier: string = '') => {
 // Game modes best ratings logic
 const gameModeScores = computed(() => {
   const baseRating = userProfile.value?.base_puzzle_rating || 1500
-  
-  const ratings = {
-    'finish_him': baseRating,
-    'practical-chess': baseRating,
-    'theory': baseRating,
+
+  const ratings: Record<string, number> = {
+    finish_him: baseRating,
+    tactics: baseRating,
+    theory_endings: baseRating,
+    practical_chess: baseRating,
   }
 
   if (props.profileStats) {
     const statsArray = props.profileStats.stats || []
-    
-    // Find best rating in stats for each mode
-    let key: keyof typeof ratings
-    for (key in ratings) {
-      const modeStats = statsArray.filter((s) => s.game_mode === key)
+
+    // Find best rating in stats for each sub_mode
+    for (const key in ratings) {
+      const modeStats = statsArray.filter((s) => s.sub_mode === key)
       if (modeStats.length > 0) {
         const maxRating = Math.max(...modeStats.map((s) => s.rating || 0))
         if (maxRating > 0) {
@@ -88,18 +88,25 @@ const gameModeScores = computed(() => {
       rating: ratings['finish_him'],
     },
     {
-      key: 'practical-chess',
+      key: 'tactics',
+      label: t('features.userCabinet.stats.modes.tactics'),
+      icon: '🧩',
+      color: 'var(--color-accent-primary)',
+      rating: ratings['tactics'],
+    },
+    {
+      key: 'theory_endings',
+      label: t('features.theoryEndgames.selection.title'),
+      icon: '🎓',
+      color: 'var(--color-accent-error)',
+      rating: ratings['theory_endings'],
+    },
+    {
+      key: 'practical_chess',
       label: t('features.practicalChess.selection.title'),
       icon: '♙',
       color: 'var(--color-accent-warning)',
-      rating: ratings['practical-chess'],
-    },
-    {
-      key: 'theory',
-      label: t('nav.theoryEndgames'),
-      icon: '🎓',
-      color: 'var(--color-accent-error)',
-      rating: ratings['theory'],
+      rating: ratings['practical_chess'],
     },
   ]
 })

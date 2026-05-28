@@ -527,6 +527,7 @@
           "theoryWin": "Theory (Win)",
           "theoryDraw": "Theory (Draw)",
           "practical": "Practical",
+          "tactics": "Tactics",
           "tacticalTrainer": "Tactics"
         },
         "today": "Today",
