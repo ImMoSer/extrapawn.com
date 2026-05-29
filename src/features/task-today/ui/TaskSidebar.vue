@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore } from '@/features/task-today'
+import { useTaskTodayStore } from '../model/taskToday.store'
 import { NButton, NIcon, NText, NScrollbar, NSpace } from 'naive-ui'
 import { RefreshOutline as RestartIcon, ChevronForwardOutline } from '@vicons/ionicons5'
 import { computed } from 'vue'
@@ -240,40 +240,5 @@ const totalAttemptsCount = computed(() => {
   align-items: center;
   justify-content: center;
   flex: 1;
-}
-
-.history-section {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.history-title {
-  margin: 0 0 12px 0;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.history-item-main {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.history-item-meta {
-  display: flex;
-  align-items: center;
-  font-size: 0.8rem;
 }
 </style>
