@@ -20,6 +20,14 @@ export const useCoachStore = defineStore('coach', () => {
   const isCoachEnabled = ref(false)
   const isAnalyzing = ref(false)
 
+  watch(
+    () => isCoachEnabled.value,
+    (val) => {
+      coachEngineManager.isCoachEnabled = val
+    },
+    { immediate: true }
+  )
+
   // State for "About Position"
   const currentExplanation = ref<CoachExplanation | null>(null)
   const previousExplanation = ref<CoachExplanation | null>(null)

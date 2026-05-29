@@ -13,7 +13,7 @@ import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
 export class TacticsPuzzleStrategy implements IGameplayStrategy {
   config = {
     /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
-    initialBotDelayMs: 500,
+    initialBotDelayMs: 100,
     /** Bedenkzeit des Bots während des Puzzles */
     botDelayMs: 100,
     /** Sound-Handling durch GameStore (hier deaktiviert, da Strategy eigene Sounds spielt) */

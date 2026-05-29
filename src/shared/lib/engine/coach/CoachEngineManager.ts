@@ -8,6 +8,7 @@ export class CoachEngineManager {
   private isInitializing = false
   private initPromise: Promise<void> | null = null
   private explanationCache = new Map<string, Promise<CoachExplanation | null>>()
+  public isCoachEnabled = false
 
   constructor() {
     logger.info('[CoachEngineManager] Created.')

@@ -13,7 +13,7 @@ import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
 export class EndgamePuzzleStrategy implements IGameplayStrategy {
   config = {
     /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
-    initialBotDelayMs: 500,
+    initialBotDelayMs: 100,
     /** Bedenkzeit des Bots während des Puzzles (Endspiele brauchen "Bedenkzeit") */
     botDelayMs: 100,
     /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */

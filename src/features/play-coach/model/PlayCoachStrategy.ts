@@ -11,6 +11,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
   }
 
   private readonly ENGINE_ID: import('@/shared/types/api.types').EngineId = 'maia-2200'
+  private isBookExhausted = false
 
   onGameStart() {
     logger.info('[PlayCoachStrategy] Game started')
@@ -24,41 +25,46 @@ export class PlayCoachStrategy implements IGameplayStrategy {
     const explorerStore = useOpeningExplorerStore()
 
     // 1. Try Lichess Book directly from Repository (bypass UI store delay/debounce)
-    try {
-      const stats = await theoryRepository.getLichessStats(
-        fen,
-        { ratingRange: explorerStore.ratingRange },
-        { skipDebounce: true }
-      )
+    if (!this.isBookExhausted) {
+      try {
+        const stats = await theoryRepository.getLichessStats(
+          fen,
+          { ratingRange: explorerStore.ratingRange },
+          { skipDebounce: true }
+        )
 
-      if (stats && stats.moves.length > 0) {
-        // Only use book if there is a significant amount of games or it's early game
-        // For now, follow the user's request: use theory moves from Lichess Players stats
-        const topMoves = stats.moves.slice(0, 5)
-        const firstMove = topMoves[0]
+        if (stats && stats.moves && stats.moves.length > 0) {
+          // Only use book if there is a significant amount of games or it's early game
+          // For now, follow the user's request: use theory moves from Lichess Players stats
+          const topMoves = stats.moves.slice(0, 5)
+          const firstMove = topMoves[0]
 
-        if (firstMove) {
-          const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
+          if (firstMove) {
+            const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
 
-          if (totalPlays > 0) {
-            let random = Math.random() * totalPlays
-            let selectedUci = firstMove.uci
+            if (totalPlays > 0) {
+              let random = Math.random() * totalPlays
+              let selectedUci = firstMove.uci
 
-            for (const move of topMoves) {
-              random -= move.total
-              if (random <= 0) {
-                selectedUci = move.uci
-                break
+              for (const move of topMoves) {
+                random -= move.total
+                if (random <= 0) {
+                  selectedUci = move.uci
+                  break
+                }
               }
-            }
 
-            logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
-            return selectedUci
+              logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
+              return selectedUci
+            }
           }
+        } else if (stats) {
+          logger.info('[PlayCoachStrategy] Book stats returned empty. Marking book as exhausted.')
+          this.isBookExhausted = true
         }
+      } catch (err) {
+        logger.error('[PlayCoachStrategy] Failed to fetch book stats:', err)
       }
-    } catch (err) {
-      logger.error('[PlayCoachStrategy] Failed to fetch book stats:', err)
     }
 
     // 2. Fallback to Engine (Maia)

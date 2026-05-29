@@ -62,6 +62,21 @@ class EnginePlayServiceController {
   }
 
   private async getMoveWithFallback(fen: string, modelId: string): Promise<string | null> {
+    if (modelId === 'maia-2200' && coachEngineManager.isCoachEnabled) {
+      logger.info(
+        `[EnginePlayService] Coach is enabled. Awaiting coach explanation to utilize cached maia-2200 move...`,
+      )
+      try {
+        await coachEngineManager.getExplanation(fen)
+        logger.info('[EnginePlayService] Coach explanation complete. Proceeding with cache check.')
+      } catch (err) {
+        logger.warn(
+          '[EnginePlayService] Awaiting coach explanation failed, falling back to server request:',
+          err,
+        )
+      }
+    }
+
     const HEDGE_DELAY_MS = 250
     const HARD_TIMEOUT_MS = 750
 
