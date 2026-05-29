@@ -5,7 +5,10 @@ import {
 import { soundService } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { apiClient } from '@/shared/api/client'
+import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
+import { useAuthStore } from '@/entities/user'
+import { useUiStore } from '@/shared/ui/model/ui.store'
+import { useRouter } from 'vue-router'
 import { parseFen } from 'chessops/fen'
 import { TaskTodayStrategy } from './TaskTodayStrategy'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
@@ -56,6 +59,9 @@ function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
 
 export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
+  const authStore = useAuthStore()
+  const uiStore = useUiStore()
+  const router = useRouter()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
   const currentTaskIndex = ref(0)
@@ -350,6 +356,12 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     difficulty: 'Novice' | 'Pro' | 'Master',
     recommendations: Record<string, string[]>
   ) {
+    if (authStore.isDailyLimitExceeded()) {
+      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
+      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
+      return false
+    }
+
     try {
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
@@ -398,6 +410,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             }
           } catch (err) {
             console.error(`[TaskTodayStore] Failed to fetch puzzles for ${subMode}/${cat}:`, err)
+            if (err instanceof InsufficientPawnCoinsError) {
+              throw err
+            }
           }
         }
         
@@ -426,6 +441,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to generate and start plan:', err)
+      if (err instanceof InsufficientPawnCoinsError) {
+        authStore.setDailyLimitExceeded(true)
+      }
+      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
       return false
     }
   }
@@ -511,6 +530,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       console.log('[TaskTodayStore] Successfully saved plan progress to backend.')
     } catch (err) {
       console.error('[TaskTodayStore] Failed to save plan progress to backend:', err)
+      if (err instanceof InsufficientPawnCoinsError) {
+        authStore.setDailyLimitExceeded(true)
+      }
+      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
     }
   }
 

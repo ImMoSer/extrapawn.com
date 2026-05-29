@@ -66,7 +66,7 @@ export class CoachEngineManager {
     this.explanationCache.set(key, promise)
 
     // Limit cache size to 50 entries
-    if (this.explanationCache.size > 50) {
+    if (this.explanationCache.size > 2) {
       const firstKey = this.explanationCache.keys().next().value
       if (firstKey) {
         this.explanationCache.delete(firstKey)

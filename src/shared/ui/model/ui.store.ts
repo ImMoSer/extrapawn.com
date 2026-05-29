@@ -72,7 +72,8 @@ export const useUiStore = defineStore('ui', () => {
           t('features.pricing.insufficientCoins.subMessage'),
         {
           confirmText: t('features.pricing.insufficientCoins.goToPricing'),
-          cancelText: t('common.actions.close'),
+          showCancel: false,
+          persistent: true,
         },
       )
 

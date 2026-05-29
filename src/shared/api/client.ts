@@ -46,7 +46,7 @@ export async function apiClient<T>(
       throw new InsufficientPawnCoinsError(
         errorData.message || 'Forbidden',
         errorData.required || 0,
-        errorData.available || 0,
+        errorData.available !== undefined ? errorData.available : (errorData.limit || 0),
       )
     }
 

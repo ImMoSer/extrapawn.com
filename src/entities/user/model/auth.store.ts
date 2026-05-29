@@ -64,6 +64,24 @@ export const useAuthStore = defineStore('auth', () => {
     _syncState()
   }
 
+  function isDailyLimitExceeded(): boolean {
+    if (!userProfile.value) return false
+    const today = new Date().toISOString().split('T')[0]
+    const key = `limit_exceeded_${userProfile.value.id}_${userProfile.value.subscriptionTier}_${today}`
+    return localStorage.getItem(key) === 'true'
+  }
+
+  function setDailyLimitExceeded(exceeded: boolean = true) {
+    if (!userProfile.value) return
+    const today = new Date().toISOString().split('T')[0]
+    const key = `limit_exceeded_${userProfile.value.id}_${userProfile.value.subscriptionTier}_${today}`
+    if (exceeded) {
+      localStorage.setItem(key, 'true')
+    } else {
+      localStorage.removeItem(key)
+    }
+  }
+
   return {
     // State
     userProfile,
@@ -84,5 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     checkSession,
     updateUserStats,
+    isDailyLimitExceeded,
+    setDailyLimitExceeded,
   }
 })

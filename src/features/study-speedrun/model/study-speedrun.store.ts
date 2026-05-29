@@ -5,7 +5,7 @@ import { soundService } from '@/shared/lib/sound.service'
 import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { apiClient } from '@/shared/api/client'
+import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
 import { useAuthStore } from '@/entities/user'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useRouter } from 'vue-router'
@@ -141,6 +141,12 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
   }
 
   async function startSpeedrun(chapters: StudyChapter[]) {
+    if (authStore.isDailyLimitExceeded()) {
+      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 25, 0)
+      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
+      return
+    }
+
     try {
       gameStore.setBotEngineId('maia-2200')
 
@@ -161,6 +167,9 @@ export const useSpeedrunStore = defineStore('speedrun', () => {
       playCurrentChapter()
     } catch (error) {
       console.error('[SpeedrunStore] Failed to start speedrun:', error)
+      if (error instanceof InsufficientPawnCoinsError) {
+        authStore.setDailyLimitExceeded(true)
+      }
       const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
       if (!handled) {
         throw error

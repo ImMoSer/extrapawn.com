@@ -13,7 +13,7 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useCoachStore } from '@/features/coach'
-import { apiClient } from '@/shared/api/client'
+import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
 import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
@@ -174,6 +174,10 @@ export const useTacticsStore = defineStore('tactics', () => {
       }
     } catch (error) {
       logger.error('[TacticsStore] Failed to submit results:', error)
+      if (error instanceof InsufficientPawnCoinsError) {
+        authStore.setDailyLimitExceeded(true)
+      }
+      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
     }
   }
 
@@ -252,6 +256,18 @@ export const useTacticsStore = defineStore('tactics', () => {
   async function loadNewPuzzle(type: string, queryParams: Partial<TacticsParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
+
+    if (authStore.isDailyLimitExceeded()) {
+      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
+      await uiStore.handlePawnCoinsError(
+        error,
+        () => router.push('/pricing'),
+        () => router.push('/')
+      )
+      gameStore.setGamePhase('IDLE')
+      return
+    }
+
     gameStore.setGamePhase('LOADING')
     feedbackMessage.value = t('common.actions.loading')
 
@@ -319,7 +335,7 @@ export const useTacticsStore = defineStore('tactics', () => {
         t('features.gameplay.confirmExit.message'),
       )
       if (confirmed === 'confirm') {
-        gameStore.handleGameResignation()
+        gameStore.stop()
         if (activePuzzle.value) {
           await loadNewPuzzle(activePuzzle.value.puzzle_type, { puzzleId: activePuzzle.value.puzzle_id, ...activeParams.value })
         }
@@ -336,7 +352,7 @@ export const useTacticsStore = defineStore('tactics', () => {
         t('features.gameplay.confirmExit.message'),
       )
       if (confirmed === 'confirm') {
-        gameStore.handleGameResignation()
+        gameStore.stop()
       } else {
         return
       }

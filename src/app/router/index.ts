@@ -10,6 +10,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
 import { useStudyStore } from '@/features/study'
+import { InsufficientPawnCoinsError } from '@/shared/api/client'
 
 import { AboutPage } from '@/pages/about'
 import { LegalPage } from '@/pages/legal'
@@ -193,6 +194,15 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.meta.requiresAuth
   const isAuthenticated = authStore.isAuthenticated
 
+  if (to.meta.isGame && authStore.isDailyLimitExceeded()) {
+    const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
+    uiStore.handlePawnCoinsError(
+      error,
+      () => {}
+    )
+    return next('/pricing')
+  }
+
   // Bypass auth for "example" mode
   if (to.params.id === 'example') {
     return next()
@@ -225,7 +235,6 @@ router.beforeEach(async (to, from, next) => {
 
       if (userConfirmed === 'confirm') {
         const { triggerTeardown } = useGlobalTeardown()
-        await gameStore.handleGameResignation()
         triggerTeardown()
         next()
       } else {
