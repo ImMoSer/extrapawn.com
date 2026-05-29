@@ -6,7 +6,6 @@ import {
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
-  SchoolOutline,
   TrophyOutline,
   ExtensionPuzzleOutline,
   RibbonOutline,
@@ -65,11 +64,6 @@ const menuOptions: MenuOption[] = [
     label: () => t('nav.playCoach', 'Play Coach'),
     key: '/play-coach',
     icon: renderIcon(HardwareChipOutline),
-  },
-  {
-    label: () => t('nav.repertoire'),
-    key: '/study',
-    icon: renderIcon(SchoolOutline),
   },
   {
     label: () => t('nav.leaderboards'),

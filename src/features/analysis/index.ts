@@ -1,6 +1,4 @@
 export * from './model/analysis.store'
-export * from './model/tablebase.store'
 export { default as AnalysisPanel } from './ui/AnalysisPanel.vue'
 export { default as EngineLines } from './ui/EngineLines.vue'
 export { default as EvalBar } from './ui/EvalBar.vue'
-export { default as TablebaseInfo } from './ui/TablebaseInfo.vue'

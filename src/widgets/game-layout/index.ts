@@ -1,5 +1,1 @@
-export { default as ControlPanel } from './ui/ControlPanel.vue'
 export { default as GameLayout } from './ui/GameLayout.vue'
-export { default as TopInfoPanel } from './ui/TopInfoPanel.vue'
-export { useControlsStore } from './model/controls.store'
-export { useTopInfo } from './model/useTopInfo'

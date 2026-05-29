@@ -9,7 +9,6 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-import { useStudyStore } from '@/features/study'
 import { InsufficientPawnCoinsError } from '@/shared/api/client'
 
 import { AboutPage } from '@/pages/about'
@@ -123,28 +122,10 @@ const router = createRouter({
       redirect: '/endgames',
     },
     {
-      path: '/study/:studyId?/:chapterId?',
-      name: 'study-view',
-      component: () => import('@/pages/study').then((m) => m.StudyPage),
-      meta: { isGame: true, game: 'study', requiresAuth: true },
-    },
-    {
-      path: '/study/:lichessId/:color(white|black)',
-      name: 'study-cloud',
-      component: () => import('@/pages/study').then((m) => m.StudyPage),
-      meta: { isGame: true, game: 'study', requiresAuth: false },
-    },
-    {
       path: '/task-today',
       name: 'task-today',
       component: () => import('@/pages/task-today/ui/TaskTodayPage.vue'),
       meta: { isGame: true, requiresAuth: true, game: 'task-today' },
-    },
-    {
-      path: '/study-speedrun',
-      name: 'study-speedrun',
-      component: () => import('@/pages/study-speedrun/ui/StudySpeedrunPage.vue'),
-      meta: { isGame: true, game: 'study-speedrun', requiresAuth: true },
     },
     {
       path: '/practical-chess',
@@ -162,20 +143,7 @@ router.beforeEach(async (to, from, next) => {
   const gameStore = useGameStore()
   const uiStore = useUiStore()
   const authStore = useAuthStore()
-  const studyStore = useStudyStore()
   const t = i18n.global.t
-
-  if (studyStore.cloudLoading) {
-    await uiStore.showConfirmation(
-      t('common.actions.error'),
-      t('features.study.manager.messages.syncInProgress'),
-      {
-        confirmText: t('common.actions.ok'),
-        showCancel: false,
-      },
-    )
-    return next(false)
-  }
 
   if (authStore.isLoading) {
     await new Promise<void>((resolve) => {

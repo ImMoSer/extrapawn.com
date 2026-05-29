@@ -54,12 +54,7 @@ const menuItems = [
     labelKey: 'nav.playCoach',
     color: 'var(--neon-blue, #00f2ff)',
   },
-  {
-    path: '/study',
-    icon: SchoolOutline,
-    labelKey: 'welcome.buttons.repertoire',
-    color: 'var(--neon-lime)',
-  },
+
   {
     path: '/user-cabinet',
     icon: PersonOutline,
@@ -101,11 +96,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateMobile)
 })
 
-// Filter items for mobile (hide 'study')
 const filteredMenuItems = computed(() => {
-  if (isMobile.value) {
-    return menuItems.filter((item) => item.path !== '/study')
-  }
   return menuItems
 })
 </script>
