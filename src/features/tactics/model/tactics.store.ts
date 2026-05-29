@@ -12,7 +12,6 @@ import { useAuthStore } from '@/entities/user'
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { useCoachStore } from '@/features/coach'
 import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
 import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
@@ -76,7 +75,6 @@ export const useTacticsStore = defineStore('tactics', () => {
 
   function initialize() {
     soundService.playSound('app_game_entry')
-    useCoachStore().setAutonomous(false)
     if (!activePuzzle.value) {
       startDiscovery('tactics')
     }
@@ -367,7 +365,6 @@ export const useTacticsStore = defineStore('tactics', () => {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
     isWaitingForColorGuess.value = false
-    useCoachStore().setAutonomous(true)
     gameStore.stop()
   }
 

@@ -1,5 +1,5 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
-import { useBoardStore, useGameStore } from '@/entities/game'
+import { useBoardStore } from '@/entities/game'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
@@ -15,12 +15,10 @@ import { computed, ref, watch } from 'vue'
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
-  const gameStore = useGameStore()
   const analysisEngineStore = useAnalysisEngineStore()
 
   const isCoachEnabled = ref(false)
   const isAnalyzing = ref(false)
-  const isAutonomous = ref(true)
 
   // State for "About Position"
   const currentExplanation = ref<CoachExplanation | null>(null)
@@ -328,23 +326,9 @@ export const useCoachStore = defineStore('coach', () => {
     if (!isCoachEnabled.value) return
     const newFen = pgnService.getCurrentNavigatedFen()
 
-    if (gameStore.gamePhase === 'PLAYING') {
-      const activeTurn = newFen.split(' ')[1] // 'w' or 'b'
-      const userColor = boardStore.orientation // 'white' or 'black'
-      const userColorCode = userColor === 'white' ? 'w' : 'b'
-      if (activeTurn !== userColorCode) {
-        logger.debug(`[CoachStore] Skipping analysis: opponent's turn.`)
-        return
-      }
-    }
-
     selectedMoveIndex.value = null
     selectedMoveExplanation.value = null
     triggerAnalysis(newFen)
-  }
-
-  function setAutonomous(value: boolean) {
-    isAutonomous.value = value
   }
 
   function reset() {
@@ -366,7 +350,7 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => pgnTreeVersion.value,
     () => {
-      if (!isCoachEnabled.value || !isAutonomous.value) return
+      if (!isCoachEnabled.value) return
 
       analyzeCurrentPosition()
     },
@@ -418,8 +402,6 @@ export const useCoachStore = defineStore('coach', () => {
     fetchTopMoves,
     logFactExtractor,
     analyzeCurrentPosition,
-    setAutonomous,
-    isAutonomous,
     reset,
   }
 })

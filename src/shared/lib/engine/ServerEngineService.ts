@@ -49,6 +49,17 @@ export class ServerEngineServiceController {
     engine: string,
     signal?: AbortSignal,
   ): Promise<string | null> {
+    const cacheKey = `${fen}-${engine}`
+    try {
+      const cachedMove = localStorage.getItem(cacheKey)
+      if (cachedMove) {
+        logger.info(`[ServerEngineService] Found cached move for key "${cacheKey}": ${cachedMove}`)
+        return cachedMove
+      }
+    } catch (e) {
+      logger.error(`[ServerEngineService] LocalStorage read failed:`, e)
+    }
+
     if (this.isThinking) {
       logger.warn(
         '[ServerEngineService] getMoveFromServer called while already thinking. Request rejected.',

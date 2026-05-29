@@ -122,6 +122,14 @@ export class ServerEngineStrategy {
         if (data.lines) {
           data.lines.forEach((line) => onLine(line))
         }
+        if (data.coach_move && data.coach_move.length === 2) {
+          const [fen, move] = data.coach_move
+          try {
+            localStorage.setItem(`${fen}-maia-2200`, move)
+          } catch (e) {
+            console.error('[ServerEngineStrategy] Failed to cache Maia move:', e)
+          }
+        }
       })
       .catch((err) => {
         onError(err)
