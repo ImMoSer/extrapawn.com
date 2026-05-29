@@ -1,5 +1,5 @@
 import logger from '@/shared/lib/logger'
-import { databaseClient, DbNotOpenError } from '../DatabaseClient'
+import { db } from '../IndexedDbClient'
 
 export interface TheoryStat {
   fen_key: string
@@ -14,27 +14,12 @@ export interface WikiContent {
   timestamp: number
 }
 
-interface RawTheoryStatRow {
-  fen_key: string
-  source: string
-  data: string
-  expires: number
-}
-
 export class GlobalCacheRepository {
   async getTheoryStat(fen: string, source: string): Promise<TheoryStat | null> {
     try {
-      const rows = await databaseClient.query<RawTheoryStatRow>(
-        'global',
-        `
-        SELECT * FROM theory_stats WHERE fen_key = ? AND source = ?
-      `,
-        [fen, source],
-      )
+      const row = await db.theory_cache.get([fen, source])
+      if (!row) return null
 
-      if (rows.length === 0) return null
-
-      const row = rows[0]!
       if (Date.now() > row.expires) {
         await this.deleteTheoryStat(fen, source)
         return null
@@ -47,55 +32,38 @@ export class GlobalCacheRepository {
         data: JSON.parse(row.data),
       }
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error(
-          `[GlobalCacheRepository] Failed to get theory stat for fen ${fen} and source ${source}`,
-          err,
-        )
-      }
+      logger.error(
+        `[GlobalCacheRepository] Failed to get theory stat for fen ${fen} and source ${source}`,
+        err,
+      )
       return null
     }
   }
 
   async saveTheoryStat(stat: TheoryStat): Promise<boolean> {
     try {
-      await databaseClient.batch('global', [
-        {
-          sql: `
-          INSERT INTO theory_stats (fen_key, source, data, expires)
-          VALUES (?, ?, ?, ?)
-          ON CONFLICT(fen_key, source) DO UPDATE SET
-            data    = excluded.data,
-            expires = excluded.expires
-        `,
-          params: [stat.fen_key, stat.source, JSON.stringify(stat.data), stat.expires],
-        },
-      ])
+      await db.theory_cache.put({
+        fen_key: stat.fen_key,
+        source: stat.source,
+        data: JSON.stringify(stat.data),
+        expires: stat.expires,
+      })
       return true
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error('[GlobalCacheRepository] Failed to save theory stat', err)
-      }
+      logger.error('[GlobalCacheRepository] Failed to save theory stat', err)
       return false
     }
   }
 
   async deleteTheoryStat(fen: string, source: string): Promise<boolean> {
     try {
-      await databaseClient.batch('global', [
-        {
-          sql: 'DELETE FROM theory_stats WHERE fen_key = ? AND source = ?',
-          params: [fen, source],
-        },
-      ])
+      await db.theory_cache.delete([fen, source])
       return true
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error(
-          `[GlobalCacheRepository] Failed to delete theory stat for fen ${fen} and source ${source}`,
-          err,
-        )
-      }
+      logger.error(
+        `[GlobalCacheRepository] Failed to delete theory stat for fen ${fen} and source ${source}`,
+        err,
+      )
       return false
     }
   }
@@ -103,62 +71,41 @@ export class GlobalCacheRepository {
   async cleanupExpiredStats(): Promise<number> {
     try {
       const now = Date.now()
-      await databaseClient.batch('global', [
-        {
-          sql: 'DELETE FROM theory_stats WHERE expires < ?',
-          params: [now],
-        },
-      ])
-      return 0
+      const count = await db.theory_cache.where('expires').below(now).delete()
+      return count
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error('[GlobalCacheRepository] Failed to cleanup expired stats', err)
-      }
+      logger.error('[GlobalCacheRepository] Failed to cleanup expired stats', err)
       return 0
     }
   }
 
   async getWikiContent(slug: string): Promise<WikiContent | null> {
     try {
-      const rows = await databaseClient.query<WikiContent>(
-        'global',
-        'SELECT * FROM wiki_content WHERE slug = ?',
-        [slug],
-      )
-      return rows.length > 0 ? rows[0]! : null
+      const row = await db.wiki_cache.get(slug)
+      return row ?? null
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error(`[GlobalCacheRepository] Failed to get wiki content for slug ${slug}`, err)
-      }
+      logger.error(`[GlobalCacheRepository] Failed to get wiki content for slug ${slug}`, err)
       return null
     }
   }
 
   async saveWikiContent(content: WikiContent): Promise<boolean> {
     try {
-      await databaseClient.batch('global', [
-        {
-          sql: `
-          INSERT INTO wiki_content (slug, content, timestamp)
-          VALUES (?, ?, ?)
-          ON CONFLICT(slug) DO UPDATE SET
-            content   = excluded.content,
-            timestamp = excluded.timestamp
-        `,
-          params: [content.slug, content.content, content.timestamp],
-        },
-      ])
+      await db.wiki_cache.put({
+        slug: content.slug,
+        content: content.content,
+        timestamp: content.timestamp,
+      })
       return true
     } catch (err) {
-      if (!(err instanceof DbNotOpenError)) {
-        logger.error(
-          `[GlobalCacheRepository] Failed to save wiki content for slug ${content.slug}`,
-          err,
-        )
-      }
+      logger.error(
+        `[GlobalCacheRepository] Failed to save wiki content for slug ${content.slug}`,
+        err,
+      )
       return false
     }
   }
 }
 
 export const globalCacheRepository = new GlobalCacheRepository()
+

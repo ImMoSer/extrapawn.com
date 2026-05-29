@@ -8,14 +8,12 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import i18n from '@/shared/config/i18n'
 import FallbackApp from './FallbackApp.vue'
 
-// Basic synchronous checks
+// Basic checks for required APIs
 const checkEnvironment = () => {
-  const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
-  const isIsolated = window.crossOriginIsolated
   const hasCacheApi = 'caches' in window
-  const hasOpfs = navigator.storage && typeof navigator.storage.getDirectory === 'function'
+  const hasIndexedDb = typeof indexedDB !== 'undefined'
 
-  return hasSharedArrayBuffer && isIsolated && hasCacheApi && hasOpfs
+  return hasCacheApi && hasIndexedDb
 }
 
 async function boot() {

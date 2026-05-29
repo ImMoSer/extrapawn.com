@@ -1,7 +1,6 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
 import { SettingsMenu } from '@/features/settings'
 import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
 import GalaxyBackground from '@/shared/ui/visuals/GalaxyBackground.vue'
@@ -14,12 +13,10 @@ import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
-import { databaseClient } from '@/shared/api/storage/DatabaseClient'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { useAutoplayStore } from '@/features/autoplay'
 
 const gameStore = useGameStore()
-const authStore = useAuthStore()
 const autoplayStore = useAutoplayStore()
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -28,20 +25,6 @@ const { t, locale } = useI18n()
 watch(locale, () => {
   updateSeoWithRoute(route.meta as RouteMetaWithSeo, t)
 })
-
-watch(
-  () => [authStore.userProfile?.id] as const,
-  async ([id]) => {
-    if (id) {
-      try {
-        await databaseClient.openUserDb(id)
-      } catch (err) {
-        console.error('Failed to open user DB:', err)
-      }
-    }
-  },
-  { immediate: true },
-)
 
 const isLandscape = ref(false)
 const isSidebarCollapsed = ref(true)

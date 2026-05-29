@@ -48,8 +48,8 @@ async function preloadAssets() {
 
     // 2. Global Database Initialization
     logger.info('[LoaderProfiler] Step 2/3: Initializing Global Database...')
-    const { databaseClient } = await import('@/shared/api/storage/DatabaseClient')
-    await databaseClient.init()
+    const { db } = await import('@/shared/api/storage/IndexedDbClient')
+    await db.open()
     progress.value = 66
 
     // CRITICAL: We are now "Ready" for basic interaction

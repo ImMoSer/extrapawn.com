@@ -1,13 +1,10 @@
 import vue from '@vitejs/plugin-vue'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { visualizer } from 'rollup-plugin-visualizer'
 import AutoImport from 'unplugin-auto-import/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import pkg from './package.json'
 
@@ -26,32 +23,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
 
-      // Custom Plugin to serve SQLite WASM assets from node_modules in DEV mode
-      {
-        name: 'sqlite-wasm-dev-server',
-        apply: 'serve', // Only apply during development
-        configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            const url = req.url?.split('?')[0]
-            if (url === '/sqlite3-worker1.mjs' || url === '/sqlite3.wasm' || url === '/sqlite3-opfs-async-proxy.js') {
-              const fileName = url.slice(1)
-              const filePath = resolve(__dirname, `node_modules/@sqlite.org/sqlite-wasm/dist/${fileName}`)
-              try {
-                const content = readFileSync(filePath)
-                const contentType = url.endsWith('.wasm') ? 'application/wasm' : 'application/javascript'
-                res.setHeader('Content-Type', contentType)
-                res.setHeader('Cache-Control', 'no-cache')
-                res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
-                res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
-                return res.end(content)
-              } catch (e) {
-                console.error(`[sqlite-wasm-dev-server] Failed to serve ${fileName}:`, e)
-              }
-            }
-            next()
-          })
-        }
-      },
+
 
       AutoImport({
         imports: [
@@ -66,22 +38,7 @@ export default defineConfig(({ mode }) => {
         resolvers: [NaiveUiResolver()],
       }),
 
-      viteStaticCopy({
-        targets: [
-          {
-            src: 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3.wasm',
-            dest: '',
-          },
-          {
-            src: 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js',
-            dest: '',
-          },
-          {
-            src: 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-worker1.mjs',
-            dest: '',
-          },
-        ],
-      }),
+
 
       ...(mode === 'development' ? [VueDevTools()] : []),
       visualizer({ open: false, filename: 'stats.html' }),
@@ -108,10 +65,6 @@ export default defineConfig(({ mode }) => {
     },
 
     server: {
-      headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp',
-      },
       proxy: {
         '/api/coach-engine': {
           target: 'http://127.0.0.1:5004',
