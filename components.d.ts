@@ -12,18 +12,14 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BaseSelectionLayout: typeof import('./src/shared/ui/BaseSelectionLayout.vue')['default']
-    ChessboardPreview: typeof import('./src/shared/ui/board-preview/ChessboardPreview.vue')['default']
     ConfirmationModal: typeof import('./src/shared/ui/ConfirmationModal.vue')['default']
     GalaxyBackground: typeof import('./src/shared/ui/visuals/GalaxyBackground.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NButton: typeof import('naive-ui')['NButton']
     NCard: typeof import('naive-ui')['NCard']
-    NCollapse: typeof import('naive-ui')['NCollapse']
-    NCollapseItem: typeof import('naive-ui')['NCollapseItem']
     NConfigProvider: typeof import('naive-ui')['NConfigProvider']
     NDataTable: typeof import('naive-ui')['NDataTable']
     NDialogProvider: typeof import('naive-ui')['NDialogProvider']
-    NDivider: typeof import('naive-ui')['NDivider']
     NDrawer: typeof import('naive-ui')['NDrawer']
     NDrawerContent: typeof import('naive-ui')['NDrawerContent']
     NEmpty: typeof import('naive-ui')['NEmpty']

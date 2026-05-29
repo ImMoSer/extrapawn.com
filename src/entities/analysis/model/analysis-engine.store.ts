@@ -7,7 +7,7 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
   const isAnalysisActive = ref(false)
   const isLoading = ref(false)
   const analysisLines = ref<EvaluatedLineWithSan[]>([])
-  const isMultiThreadAvailable = ref(false)
+  const isLocalEngineAvailable = ref(false)
   const maxThreads = ref(1)
   const numThreads = ref(1)
   const playerColor = ref<'white' | 'black' | null>(null)
@@ -17,7 +17,7 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
 
   async function initialize() {
     await analysisService.initialize()
-    isMultiThreadAvailable.value = analysisService.isMultiThreadAvailable()
+    isLocalEngineAvailable.value = analysisService.isLocalEngineAvailable()
     maxThreads.value = analysisService.getMaxThreads()
 
     // Load threads preference
@@ -119,7 +119,7 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     isAnalysisActive,
     isLoading,
     analysisLines,
-    isMultiThreadAvailable,
+    isLocalEngineAvailable,
     maxThreads,
     numThreads,
     playerColor,

@@ -41,7 +41,7 @@ function checkTerminalPosition(fen) {
   return null
 }
 
-const WORKER_URL = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
+const WORKER_URL = '/stockfish_single/stockfish-18-lite-single.js'
 
 export let USE_SERVER_ENGINE = localStorage.getItem('positional_chess.use_server_coach') !== 'false' // default true
 
@@ -64,7 +64,7 @@ function readPref(key, fallback, min, max) {
 }
 let DEFAULT_DEPTH = readPref('depth', 12, 6, 22)
 let DEFAULT_MULTIPV = readPref('multipv', 5, 1, 10)
-let DEFAULT_THREADS = readPref('threads', 1, 1, 32)
+let DEFAULT_THREADS = 1
 
 export function setEngineDefaults({ depth, multipv, threads } = {}) {
   if (Number.isFinite(depth)) {
@@ -84,12 +84,7 @@ export function setEngineDefaults({ depth, multipv, threads } = {}) {
     }
   }
   if (Number.isFinite(threads)) {
-    DEFAULT_THREADS = Math.max(1, Math.min(32, threads))
-    try {
-      localStorage.setItem('positional_chess.threads', String(DEFAULT_THREADS))
-    } catch {
-      /* ignore */
-    }
+    DEFAULT_THREADS = 1
   }
 }
 export function getEngineDefaults() {

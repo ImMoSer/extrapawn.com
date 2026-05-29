@@ -7,9 +7,8 @@ import {
   ChevronForwardOutline,
   PlaySkipBackOutline,
   PlaySkipForwardOutline,
-  TerminalOutline,
 } from '@vicons/ionicons5'
-import { NButton, NButtonGroup, NIcon, NScrollbar, NSelect, NText, NTooltip } from 'naive-ui'
+import { NButton, NButtonGroup, NIcon, NScrollbar, NText } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { computed, h, onUnmounted, type FunctionalComponent } from 'vue'
 import { EngineLines, useAnalysisStore } from '../index'
@@ -30,15 +29,8 @@ onUnmounted(() => {
   analysisStore.resetAnalysisState()
 })
 
-const { isPanelVisible, isAnalysisActive, numThreads, maxThreads, isMultiThreadAvailable } =
+const { isPanelVisible, isAnalysisActive } =
   storeToRefs(analysisStore)
-
-const threadOptions = computed(() => {
-  return Array.from({ length: maxThreads.value }, (_, i) => ({
-    label: `${i + 1}`,
-    value: i + 1,
-  }))
-})
 
 const pgnRendererComponent = computed(() => {
   const rootNode = pgnService.getRootNode()
@@ -137,27 +129,7 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
             ></template>
           </n-button>
 
-          <!-- Threads selection in the center -->
-          <div class="threads-nav-wrapper">
-            <n-tooltip trigger="hover">
-              <template #trigger>
-                <n-icon size="14" depth="3" class="threads-icon">
-                  <TerminalOutline />
-                </n-icon>
-              </template>
-              {{ $t('features.analysis.threads') }}
-            </n-tooltip>
-            <n-select
-              class="threads-select-nav"
-              size="tiny"
-              :bordered="false"
-              :disabled="!isMultiThreadAvailable"
-              :value="numThreads"
-              :options="threadOptions"
-              @update:value="analysisStore.setThreads"
-              :consistent-menu-width="false"
-            />
-          </div>
+
 
           <n-button
             quaternary
@@ -209,9 +181,7 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
   backdrop-filter: var(--glass-blur);
 }
 
-.threads-select {
-  width: 110px;
-}
+
 
 .analysis-header-nav {
   margin-bottom: 4px;
@@ -233,40 +203,7 @@ const PgnRenderer: FunctionalComponent<{ nodes: PgnNode[]; pathPrefix?: string }
   }
 }
 
-.threads-nav-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  height: 28px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
 
-  .threads-icon {
-    opacity: 0.6;
-    transition: opacity 0.3s;
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  .threads-select-nav {
-    width: 50px;
-    :deep(.n-base-selection) {
-      background: transparent !important;
-      --n-border: none !important;
-      --n-border-hover: none !important;
-      --n-border-active: none !important;
-      --n-box-shadow-focus: none !important;
-    }
-    :deep(.n-base-selection-label) {
-      padding: 0 !important;
-      font-family: monospace;
-      font-weight: 700;
-      color: var(--neon-cyan);
-    }
-  }
-}
 
 .lines-wrapper {
   height: 110px;

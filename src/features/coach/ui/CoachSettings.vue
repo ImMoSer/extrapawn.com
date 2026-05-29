@@ -78,28 +78,7 @@
         <div class="setting-desc">How many candidate moves the engine evaluates per position.</div>
       </div>
 
-      <!-- Threads -->
-      <div class="setting-group" :class="{ 'is-disabled': useServer }">
-        <div class="setting-header">
-          <label for="setting-threads">CPU Threads</label>
-          <span class="setting-value">{{ threads }}</span>
-        </div>
-        <input
-          id="setting-threads"
-          type="range"
-          min="1"
-          :max="maxThreads"
-          step="1"
-          v-model.number="threads"
-          class="setting-slider"
-          :disabled="useServer"
-        />
-        <div class="setting-labels">
-          <span>1</span>
-          <span>{{ maxThreads }}</span>
-        </div>
-        <div class="setting-desc">More threads → faster analysis, but higher CPU usage.</div>
-      </div>
+
 
       <!-- Actions -->
       <div class="settings-actions">
@@ -111,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
@@ -129,8 +108,6 @@ const handleServerToggle = (event: Event) => {
 const defaults = getEngineDefaults()
 const depth = ref(defaults.depth)
 const multipv = ref(defaults.multipv)
-const threads = ref(defaults.threads)
-const maxThreads = computed(() => Math.max(1, navigator.hardwareConcurrency || 4))
 const wrapRef = ref<HTMLElement | null>(null)
 
 const toggleOpen = () => {
@@ -163,10 +140,9 @@ const apply = () => {
   coachEngineManager.setDefaults({
     depth: depth.value,
     multipv: multipv.value,
-    threads: threads.value,
   })
   open.value = false
-  emit('change', { depth: depth.value, multipv: multipv.value, threads: threads.value })
+  emit('change', { depth: depth.value, multipv: multipv.value })
 }
 </script>
 

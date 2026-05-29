@@ -1,4 +1,4 @@
-import { loadMultiThreadEngine, type EngineController } from '@/shared/lib/engine.loader'
+import { loadLocalEngine, type EngineController } from '@/shared/lib/engine.loader'
 import logger from '@/shared/lib/logger'
 
 import {
@@ -8,13 +8,10 @@ import {
   type WdlStats,
 } from './types'
 
-const STORAGE_KEY_THREADS = 'engine-threads-count'
-
 /**
- * Сервис, управляющий экземпляром МНОГОПОТОЧНОГО движка для анализа.
- * Теперь может инстанцироваться несколько раз для разных задач.
+ * Service managing the local single-threaded Stockfish engine instance.
  */
-export class MultiThreadEngineManager {
+export class LocalEngineManager {
   private engine: EngineController | null = null
   private isSupported = false
   private isReady = false
@@ -35,24 +32,14 @@ export class MultiThreadEngineManager {
   private stopResolve: (() => void) | null = null
 
   constructor() {
-    logger.info('[MultiThreadEngineManager] Service created. Engine will be loaded on demand.')
+    logger.info('[LocalEngineManager] Service created. Engine will be loaded on demand.')
     this._loadSavedThreads()
   }
 
   private _loadSavedThreads() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_THREADS)
-      if (saved) {
-        const count = parseInt(saved, 10)
-        if (!isNaN(count) && count >= 1) {
-          this.preferredAnalysisThreads = count
-          this.currentThreads = count
-          logger.info(`[MultiThreadEngineManager] Restored preferred threads: ${count}`)
-        }
-      }
-    } catch (e) {
-      logger.warn('[MultiThreadEngineManager] Failed to load saved threads.', e)
-    }
+    // Single thread engine only
+    this.preferredAnalysisThreads = 1
+    this.currentThreads = 1
   }
 
   public async ensureReady(): Promise<void> {
@@ -70,11 +57,11 @@ export class MultiThreadEngineManager {
 
   private async _initEngine(): Promise<void> {
     try {
-      const loadedEngine = await loadMultiThreadEngine()
+      const loadedEngine = await loadLocalEngine()
 
       if (!loadedEngine) {
         this.isSupported = false
-        logger.warn(`[MultiThreadEngineManager] Multi-threading not supported. Engine not loaded.`)
+        logger.warn(`[LocalEngineManager] Engine loader failed to return engine.`)
         this.isInitializing = false
         this.resolveInitPromise()
         return
@@ -86,8 +73,8 @@ export class MultiThreadEngineManager {
 
       const timeoutId = setTimeout(() => {
         if (!this.isReady) {
-          const errorMsg = 'UCI handshake timeout for MultiThreadEngineManager'
-          logger.error(`[MultiThreadEngineManager] ${errorMsg}`)
+          const errorMsg = 'UCI handshake timeout for LocalEngineManager'
+          logger.error(`[LocalEngineManager] ${errorMsg}`)
           this.rejectInitPromise(new Error(errorMsg))
         }
       }, 60000)
@@ -96,7 +83,7 @@ export class MultiThreadEngineManager {
       this.sendCommand('uci')
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      logger.error('[MultiThreadEngineManager] Failed to initialize engine:', errorMsg, error)
+      logger.error('[LocalEngineManager] Failed to initialize engine:', errorMsg, error)
       this.isInitializing = false
       this.initPromise = null
       if (this.rejectInitPromise) this.rejectInitPromise(error)
@@ -146,9 +133,10 @@ export class MultiThreadEngineManager {
       this.sendCommand(`setoption name Hash value ${this.getOptimalHashSize()}`)
       this.sendCommand('setoption name UCI_ShowWDL value true')
 
-      // Initialize with preferred threads (defaults to 1 if not saved)
-      this.sendCommand(`setoption name Threads value ${this.preferredAnalysisThreads}`)
-      this.currentThreads = this.preferredAnalysisThreads
+      // Single-core mode: force Threads option to 1
+      this.sendCommand('setoption name Threads value 1')
+      this.currentThreads = 1
+      this.preferredAnalysisThreads = 1
 
       this.sendCommand('isready')
     } else if (message === 'readyok') {
@@ -157,12 +145,12 @@ export class MultiThreadEngineManager {
         this.isReady = true
         this.isInitializing = false
         logger.info(
-          `[MultiThreadEngineManager] Engine is ready (init) in ${waitTime.toFixed(1)}ms.`,
+          `[LocalEngineManager] Engine is ready (init) in ${waitTime.toFixed(1)}ms.`,
         )
         if (this.resolveInitPromise) this.resolveInitPromise()
         this.processCommandQueue()
       } else {
-        logger.info(`[MultiThreadEngineManager] readyok received in ${waitTime.toFixed(1)}ms.`)
+        logger.info(`[LocalEngineManager] readyok received in ${waitTime.toFixed(1)}ms.`)
       }
       if (this.readyResolve) {
         const resolve = this.readyResolve
@@ -240,19 +228,18 @@ export class MultiThreadEngineManager {
           }
           case 'pv':
             pvUci = parts.slice(i + 1)
-            i = parts.length // Завершаем цикл, так как pv всегда идет в конце
+            i = parts.length // PV is always at the end
             break
         }
         i++
       }
 
-      // Отправляем данные только если есть минимально полезный набор
       if (score && pvUci.length > 0 && !isNaN(depth) && depth > 0) {
         const parsedData: EvaluatedLine = { id: currentLineId, depth, score, wdl, pvUci }
         this.infiniteAnalysisCallback([parsedData], null)
       }
     } catch (error) {
-      logger.warn('[MultiThreadEngineManager] Error parsing info line:', line, error)
+      logger.warn('[LocalEngineManager] Error parsing info line:', line, error)
     }
   }
 
@@ -372,8 +359,6 @@ export class MultiThreadEngineManager {
     return new Promise((resolve) => {
       this.stopResolve = resolve
       this.sendCommand('stop')
-      // Removed the dangerous setTimeout.
-      // We now strictly rely on the 'bestmove' engine event to resolve this promise and reset the state.
     })
   }
 
@@ -387,33 +372,29 @@ export class MultiThreadEngineManager {
       await this.stopAnalysis()
     }
 
-    this.sendCommand(`setoption name ${name} value ${value}`)
+    const finalValue = name === 'Threads' ? 1 : value
+    this.sendCommand(`setoption name ${name} value ${finalValue}`)
     await this.waitReady()
 
     if (name === 'Threads') {
-      const count = typeof value === 'string' ? parseInt(value, 10) : value
-      this.currentThreads = count
-      this.preferredAnalysisThreads = count
-      try {
-        localStorage.setItem(STORAGE_KEY_THREADS, String(count))
-      } catch (e) {
-        logger.warn('[MultiThreadEngineManager] Failed to save threads preference.', e)
-      }
+      this.currentThreads = 1
+      this.preferredAnalysisThreads = 1
     }
   }
 
   public async setThreads(count: number): Promise<void> {
-    await this.setOption('Threads', count)
+    logger.debug(`[LocalEngineManager] setThreads called with ${count}, forcing 1`)
+    await this.setOption('Threads', 1)
   }
 
-  public isMultiThreadingSupported(): boolean {
+  public isEngineSupported(): boolean {
     return this.isSupported
   }
 
   public getMaxThreads(): number {
-    return Math.max(1, navigator.hardwareConcurrency || 4)
+    return 1
   }
 }
 
 // Global instance for backwards compatibility / default analysis engine
-export const multiThreadEngineManager = new MultiThreadEngineManager()
+export const localEngineManager = new LocalEngineManager()

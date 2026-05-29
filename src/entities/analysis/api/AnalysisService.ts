@@ -1,7 +1,7 @@
 import {
   type AnalysisUpdateCallback,
   type EvaluatedLine,
-  multiThreadEngineManager,
+  localEngineManager,
   type WdlStats,
 } from '@/shared/lib/engine'
 import logger from '@/shared/lib/logger'
@@ -20,7 +20,7 @@ export interface EvaluatedLineWithSan extends EvaluatedLine {
 }
 
 class AnalysisServiceController {
-  private activeEngineManager: typeof multiThreadEngineManager | null = null
+  private activeEngineManager: typeof localEngineManager | null = null
   private sanCache = new Map<
     string,
     { pvSan: string[]; initialFullMoveNumber: number; initialTurn: ChessopsColor }
@@ -37,27 +37,27 @@ class AnalysisServiceController {
       this.initPromise = (async () => {
         logger.info('[AnalysisService] Initializing engines...')
 
-        // 1. Versuch: Multi-Thread laden
-        await multiThreadEngineManager.ensureReady()
+        // 1. Versuch: Local Engine laden
+        await localEngineManager.ensureReady()
 
-        // 2. Prüfen, ob der Multi-Thread Manager wirklich eine Engine geladen hat
-        if (multiThreadEngineManager.isMultiThreadingSupported()) {
-          this.activeEngineManager = multiThreadEngineManager
-          logger.info(`[AnalysisService] Initialized successfully with Multi-Threaded Engine.`)
+        // 2. Prüfen, ob der Local Engine Manager wirklich eine Engine geladen hat
+        if (localEngineManager.isEngineSupported()) {
+          this.activeEngineManager = localEngineManager
+          logger.info(`[AnalysisService] Initialized successfully with Local Engine.`)
         } else {
-          logger.error(`[AnalysisService] Multi-threading not supported. Analysis cannot run.`)
+          logger.error(`[AnalysisService] Local Engine not supported. Analysis cannot run.`)
         }
       })()
     }
     return this.initPromise
   }
 
-  public isMultiThreadAvailable(): boolean {
-    return this.activeEngineManager === multiThreadEngineManager
+  public isLocalEngineAvailable(): boolean {
+    return this.activeEngineManager === localEngineManager
   }
 
   public getMaxThreads(): number {
-    return this.isMultiThreadAvailable() ? multiThreadEngineManager.getMaxThreads() : 1
+    return this.isLocalEngineAvailable() ? localEngineManager.getMaxThreads() : 1
   }
 
   public async startAnalysis(
@@ -116,8 +116,8 @@ class AnalysisServiceController {
     if (!this.activeEngineManager) {
       await this.initialize()
     }
-    if (this.activeEngineManager === multiThreadEngineManager) {
-      await multiThreadEngineManager.startNewGame()
+    if (this.activeEngineManager === localEngineManager) {
+      await localEngineManager.startNewGame()
     }
   }
 
@@ -133,7 +133,7 @@ class AnalysisServiceController {
       await this.initialize()
     }
     if (this.activeEngineManager) {
-      // Check if the engine manager has a setThreads method (MultiThreadEngineManager has it)
+      // Check if the engine manager has a setThreads method (LocalEngineManager has it)
       if ('setThreads' in this.activeEngineManager) {
         await this.activeEngineManager.setThreads(count)
         logger.info(`[AnalysisService] Threads set to ${count}`)

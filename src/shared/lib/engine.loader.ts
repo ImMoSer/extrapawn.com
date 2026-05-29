@@ -6,14 +6,9 @@ export interface EngineController {
   terminate?(): void
 }
 
-export function loadMultiThreadEngine(): Promise<EngineController | null> {
-  if (!window.crossOriginIsolated) {
-    logger.warn('[EngineLoader] Multi-threaded engine not supported: crossOriginIsolated is false.')
-    return Promise.resolve(null)
-  }
-
-  const workerPath = '/npm_stockfish/sf_1807_multi_lite/stockfish-18-lite.js'
-  logger.info(`[EngineLoader] Initializing Web Worker from ${workerPath}`)
+export function loadLocalEngine(): Promise<EngineController | null> {
+  const workerPath = '/stockfish_single/stockfish-18-lite-single.js'
+  logger.info(`[EngineLoader] Initializing Single-Thread Web Worker from ${workerPath}`)
 
   return new Promise((resolve, reject) => {
     try {
