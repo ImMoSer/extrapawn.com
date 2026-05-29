@@ -82,6 +82,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   // Timer State
   const startTime = ref(0)
+  const elapsedTimeBeforePause = ref(0)
   const currentTimeMs = ref(0)
   let timerInterval: number | null = null
 
@@ -173,10 +174,28 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   function startTimer() {
     startTime.value = Date.now()
+    elapsedTimeBeforePause.value = 0
     if (timerInterval) clearInterval(timerInterval)
     timerInterval = window.setInterval(() => {
-      currentTimeMs.value = Date.now() - startTime.value
+      currentTimeMs.value = elapsedTimeBeforePause.value + (Date.now() - startTime.value)
     }, 100)
+  }
+
+  function pauseTimer() {
+    if (timerInterval) {
+      elapsedTimeBeforePause.value += Date.now() - startTime.value
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
+  }
+
+  function resumeTimer() {
+    if (!timerInterval && isPlaying.value) {
+      startTime.value = Date.now()
+      timerInterval = window.setInterval(() => {
+        currentTimeMs.value = elapsedTimeBeforePause.value + (Date.now() - startTime.value)
+      }, 100)
+    }
   }
 
   function stopTimer() {
@@ -184,6 +203,19 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       clearInterval(timerInterval)
       timerInterval = null
     }
+    elapsedTimeBeforePause.value = 0
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      pauseTimer()
+    } else {
+      resumeTimer()
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
   function playCurrentPuzzle() {
@@ -238,7 +270,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   }
 
   async function handlePuzzleSuccess(timeNeededMs: number) {
-    console.log(`[TaskToday] Success! Time needed: ${timeNeededMs}ms`)
+    const cappedTimeMs = Math.min(timeNeededMs, 15 * 60 * 1000)
+    console.log(`[TaskToday] Success! Time needed: ${cappedTimeMs}ms (raw: ${timeNeededMs}ms)`)
     GameAudioEngine.playTaskTodaySuccess()
     stopTimer()
     
@@ -250,7 +283,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
       completedResults.value[puzzle.puzzle_id] = {
         puzzle_id: puzzle.puzzle_id,
-        time: timeNeededMs,
+        time: cappedTimeMs,
         attempts: newAttempts,
         status: 'solved'
       }
@@ -271,7 +304,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.category,
         'solved',
         newAttempts,
-        timeNeededMs,
+        cappedTimeMs,
         puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
@@ -449,13 +482,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
-  async function startTaskToday() {
+  async function startTaskToday(autoPlay = true) {
     try {
       gameStore.setBotEngineId('maia-2200')
 
       if (loadState()) {
         console.log('[TaskTodayStore] Resumed existing state for today.')
-        if (isPlaying.value && currentPuzzle.value) {
+        if (autoPlay && isPlaying.value && currentPuzzle.value) {
           playCurrentPuzzle()
         }
         return true
@@ -522,7 +555,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             category: category,
             status: status,
             attempts: attempts,
-            time: Math.round(timeMs / 1000),
+            time: timeMs,
             rating: rating
           }
         })
@@ -621,9 +654,14 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             initial_fen: ''
           })
 
+          if (p.time !== undefined && p.time !== null && p.time < 0) {
+            throw new Error(`Invalid negative puzzle time: ${p.time} ms for puzzle ${p.puzzle_id}`);
+          }
+          const solvedTimeMs = p.time || 0
+
           completedResults.value[p.puzzle_id] = {
             puzzle_id: p.puzzle_id,
-            time: (p.time || 0) * 1000,
+            time: solvedTimeMs,
             attempts: p.attempts || 1,
             status: 'solved'
           }
@@ -635,9 +673,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
           if (p.attempts && p.attempts > 0) {
             puzzleAttempts.value[p.puzzle_id] = p.attempts
             if (p.time && p.time > 0) {
+              if (p.time < 0) {
+                throw new Error(`Invalid negative puzzle time: ${p.time} ms for puzzle ${p.puzzle_id}`);
+              }
+              const failedTimeMs = p.time
               completedResults.value[p.puzzle_id] = {
                 puzzle_id: p.puzzle_id,
-                time: p.time * 1000,
+                time: failedTimeMs,
                 attempts: p.attempts,
                 status: 'failed'
               }

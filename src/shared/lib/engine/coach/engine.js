@@ -4,7 +4,7 @@
 
 import { Chess } from 'chess.js'
 import { LRU } from './engine-cache'
-import { WasmEngineStrategy, ServerEngineStrategy } from './engine-providers'
+import { ServerEngineStrategy, WasmEngineStrategy } from './engine-providers'
 
 function checkTerminalPosition(fen) {
   try {
@@ -98,7 +98,7 @@ export function getEngineDefaults() {
 
 const DEFAULT_JOB_TIMEOUT_MS = 30_000
 const DEFAULT_INIT_TIMEOUT_MS = 15_000
-const DEFAULT_CACHE_SIZE = 500
+const DEFAULT_CACHE_SIZE = 2
 
 function parseScore(line) {
   const m = line.match(/score (cp|mate) (-?\d+)/)

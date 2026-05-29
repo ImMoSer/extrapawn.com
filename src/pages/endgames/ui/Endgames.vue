@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { NButton, NDivider, NText } from 'naive-ui'
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NText, NButton, NDivider } from 'naive-ui'
 
-import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar, useCoachStore } from '@/features/coach'
-import { useEndgamesStore, GuessColorSelection } from '@/features/endgames'
+import { GuessColorSelection, useEndgamesStore } from '@/features/endgames'
+import { GameLayout } from '@/widgets/game-layout'
 import EndgamesSidebar from './EndgamesSidebar.vue'
 
 const { t } = useI18n()
@@ -116,8 +116,8 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 10, 15, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(10, 10, 15, 0.4);    /* <-- Transparenz (0.7 = 70% Deckkraft) */
+  backdrop-filter: blur(1px);             /* <-- Blur-Effekt (4px Weichzeichnung) */
   display: flex;
   justify-content: center;
   align-items: center;

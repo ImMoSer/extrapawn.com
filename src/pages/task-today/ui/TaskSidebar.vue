@@ -31,6 +31,22 @@ const tasks = computed(() => taskTodayStore.trainingPlan?.tasks || [])
 const isTaskCompleted = (subMode: string) => {
   return taskTodayStore.tasksPuzzles[subMode]?.length === 0
 }
+
+const solvedTimesSumMs = computed(() => {
+  return Object.values(taskTodayStore.completedResults)
+    .filter(r => r.status === 'solved')
+    .reduce((sum, r) => sum + r.time, 0)
+})
+
+const solvedPuzzlesCount = computed(() => {
+  return Object.values(taskTodayStore.completedResults)
+    .filter(r => r.status === 'solved').length
+})
+
+const totalAttemptsCount = computed(() => {
+  return Object.values(taskTodayStore.puzzleAttempts)
+    .reduce((sum, att) => sum + att, 0)
+})
 </script>
 
 <template>
@@ -78,7 +94,12 @@ const isTaskCompleted = (subMode: string) => {
 
       <div class="sidebar-footer">
         <div class="timer-display">
-          {{ taskTodayStore.formatMs(taskTodayStore.currentTimeMs) }}
+          <div class="total-time">
+            {{ taskTodayStore.formatMs(solvedTimesSumMs) }}
+          </div>
+          <div class="accuracy-ratio">
+            {{ solvedPuzzlesCount }}/{{ totalAttemptsCount }}
+          </div>
         </div>
         
         <NSpace vertical block>
@@ -190,14 +211,27 @@ const isTaskCompleted = (subMode: string) => {
 
 .timer-display {
   font-family: monospace;
-  font-size: 2.2rem;
-  font-weight: 800;
-  text-align: center;
-  color: var(--neon-yellow, #f7d547);
   background: #111;
-  padding: 8px;
+  padding: 12px;
   border-radius: 8px;
   border: 1px solid rgba(247, 213, 71, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.total-time {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--neon-yellow, #f7d547);
+}
+
+.accuracy-ratio {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--neon-cyan, #00e5ff);
+  opacity: 0.9;
 }
 
 .finished-state, .no-plan-state {

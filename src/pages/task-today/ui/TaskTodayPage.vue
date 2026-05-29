@@ -18,7 +18,7 @@ import {
   ChevronForwardOutline,
   TimeOutline
 } from '@vicons/ionicons5'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
@@ -58,26 +58,29 @@ const completedDifficulties = computed(() => {
   return currentPlanData.value?.completed_difficulties || []
 })
 
-
-
-onMounted(() => {
-  // Try to load local state first
-  if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
-    taskTodayStore.startTaskToday().then((resumed) => {
-      // If no local state but backend has an active plan, resume from backend
-      if (!resumed && currentPlanData.value?.active && currentPlanData.value?.plan) {
-        console.log('[TaskTodayPage] Active plan on backend detected. Resuming from backend data...')
-        taskTodayStore.replayPlan(currentPlanData.value)
-      }
-    })
-  }
+const completedHistory = computed(() => {
+  return (historyData.value || []).filter(p => p.is_completed)
 })
 
-// Watch for backend current plan updates to resume if local state is missing
-watch(() => currentPlanData.value, (newVal) => {
-  if (newVal?.active && newVal?.plan && !taskTodayStore.isPlaying) {
-    console.log('[TaskTodayPage] Active plan detected via API watch. Resuming...')
-    taskTodayStore.replayPlan(newVal)
+const handleResumeActivePlan = async () => {
+  if (currentPlanData.value) {
+    const success = await taskTodayStore.replayPlan(currentPlanData.value)
+    if (success) {
+      message.success('Training wird fortgesetzt!')
+      queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
+    } else {
+      message.error('Fehler beim Fortsetzen des Trainings.')
+    }
+  }
+}
+
+onMounted(() => {
+  // Try to load local state first, but ensure we stay on the dashboard/history by forcing isPlaying to false
+  if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
+    taskTodayStore.startTaskToday(false).then(() => {
+      taskTodayStore.isPlaying = false
+      taskTodayStore.stopTimer()
+    })
   }
 })
 
@@ -218,7 +221,9 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
   const success = await taskTodayStore.replayPlan(plan)
   if (success) {
     message.success('Replay gestartet!')
-    queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
+    if (!plan.is_completed) {
+      queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
+    }
   } else {
     message.error('Fehler beim Laden des Replays.')
   }
@@ -476,6 +481,7 @@ onUnmounted(() => {
             size="large" 
             block 
             :loading="isStartingPlan"
+            :disabled="!!currentPlanData?.active"
             @click="handleStartPlan"
             class="dashboard-start-btn"
           >
@@ -523,10 +529,24 @@ onUnmounted(() => {
           Historie
         </h2>
         <NScrollbar style="max-height: 520px;">
-          <NList hoverable clickable bordered v-if="historyData && historyData.length > 0">
+          <!-- Laufender Run -->
+          <div v-if="currentPlanData?.active" class="active-plan-banner">
+            <div class="active-plan-info">
+              <span class="active-plan-label">Laufendes Training</span>
+              <div class="active-plan-meta">
+                <NTag size="small" type="success" class="pulse-tag">ACTIVE</NTag>
+                <span class="active-plan-strat">{{ currentPlanData.strategy }} ({{ currentPlanData.difficulty }})</span>
+              </div>
+            </div>
+            <NButton type="success" size="medium" @click="handleResumeActivePlan" class="complete-btn">
+              Abschließen
+            </NButton>
+          </div>
+
+          <NList hoverable clickable bordered v-if="completedHistory.length > 0">
             <NListItem 
-              v-for="plan in historyData" 
-              :key="plan.date + '-' + plan.difficulty" 
+              v-for="plan in completedHistory" 
+              :key="plan.id || (plan.date + '-' + plan.difficulty)" 
               @click="handleReplay(plan)"
             >
               <div class="history-item-row">
@@ -541,7 +561,7 @@ onUnmounted(() => {
               </div>
             </NListItem>
           </NList>
-          <div v-else class="history-empty">
+          <div v-else-if="!currentPlanData?.active" class="history-empty">
             <NText depth="3">Keine vergangenen Pläne gefunden.</NText>
           </div>
         </NScrollbar>
@@ -1426,5 +1446,71 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
   color: var(--neon-cyan, #00e5ff);
   text-transform: uppercase;
+}
+
+/* Active plan banner */
+.active-plan-banner {
+  border: 1px solid #28a745;
+  background: rgba(40, 167, 69, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  animation: blink-green 2s infinite ease-in-out;
+}
+
+@keyframes blink-green {
+  0% {
+    border-color: rgba(40, 167, 69, 0.4);
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
+  }
+  50% {
+    border-color: rgba(40, 167, 69, 1);
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+  }
+  100% {
+    border-color: rgba(40, 167, 69, 0.4);
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
+  }
+}
+
+.active-plan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.active-plan-label {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.active-plan-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-plan-strat {
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.pulse-tag {
+  animation: pulse-opacity 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-opacity {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.complete-btn {
+  font-weight: bold;
 }
 </style>

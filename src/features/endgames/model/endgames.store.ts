@@ -14,6 +14,7 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useCoachStore } from '@/features/coach'
+import { useAutoplayStore } from '@/features/autoplay'
 import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
 import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
@@ -61,6 +62,7 @@ export const useEndgamesStore = defineStore('endgames', () => {
   const uiStore = useUiStore()
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
+  const autoplayStore = useAutoplayStore()
 
   const activePuzzle = ref<EndgamePuzzle | null>(null)
   const activeParams = ref<EndgameParams>({})
@@ -314,8 +316,9 @@ export const useEndgamesStore = defineStore('endgames', () => {
 
       // ONLY for practical_chess and materialEquality we show the color guess
       const isMaterialEqualityGuess = type === 'practical_chess' && mappedPuzzle.category === 'materialEquality'
+      const isAutoplayActive = autoplayStore.isMo3ep && autoplayStore.isAutoplayEnabled
 
-      if (isMaterialEqualityGuess) {
+      if (isMaterialEqualityGuess && !isAutoplayActive) {
         isWaitingForColorGuess.value = true
         gameStore.setGamePhase('IDLE')
         boardStore.setupPosition(mappedPuzzle.initial_fen)
