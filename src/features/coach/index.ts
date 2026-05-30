@@ -6,4 +6,5 @@ import QualityIcon from './ui/QualityIcon.vue'
 export { CoachSidebar, CoachSettings, CoachBook, QualityIcon }
 export { useCoachStore } from './model/coach.store'
 export { useCoachBookStore } from './model/coach-book.store'
+export { useCoachFeedbackStore } from './model/coach-feedback.store'
 export { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'

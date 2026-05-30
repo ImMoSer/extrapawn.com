@@ -26,8 +26,18 @@ export class PlayCoachStrategy implements IGameplayStrategy {
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
-    const explorerStore = useOpeningExplorerStore()
+    try {
+      const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+      const feedbackStore = useCoachFeedbackStore()
+      if (feedbackStore.isTakebackPending) {
+        logger.info('[PlayCoachStrategy] requestBotMove returned null due to pending coach takeback.')
+        return null
+      }
+    } catch (err) {
+      logger.error('[PlayCoachStrategy] Failed to import coach feedback store:', err)
+    }
 
+    const explorerStore = useOpeningExplorerStore()
     // 1. Try Lichess Book directly from Repository (bypass UI store delay/debounce)
     if (!this.isBookExhausted) {
       try {
@@ -80,6 +90,52 @@ export class PlayCoachStrategy implements IGameplayStrategy {
     } catch (err) {
       logger.error('[PlayCoachStrategy] Engine move failed:', err)
       return null
+    }
+  }
+
+  async onUserMoveExecuted() {
+    try {
+      const { useCoachStore } = await import('@/features/coach')
+      const coachStore = useCoachStore()
+
+      if (coachStore.isCoachEnabled) {
+        if (coachStore.isAnalyzing) {
+          const { watch } = await import('vue')
+          await new Promise<void>((resolve) => {
+            const unwatch = watch(
+              () => coachStore.isAnalyzing,
+              (analyzing) => {
+                if (!analyzing) {
+                  unwatch()
+                  resolve()
+                }
+              },
+              { flush: 'sync' }
+            )
+          })
+        }
+
+        const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+        const feedbackStore = useCoachFeedbackStore()
+
+        if (feedbackStore.isTakebackPending) {
+          logger.info('[PlayCoachStrategy] Move flagged as blunder/mistake/inaccuracy. Performing takeback...')
+
+          // Play the sound
+          const { soundService } = await import('@/shared/lib/sound.service')
+          soundService.playSound('game_training_error')
+
+          // Delay for 1000ms synchronously
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+
+          // Perform takeback
+          const { useGameStore } = await import('@/entities/game')
+          const gameStore = useGameStore()
+          gameStore.undoLastUserMove()
+        }
+      }
+    } catch (err) {
+      logger.error('[PlayCoachStrategy] Error waiting for coach analysis:', err)
     }
   }
 

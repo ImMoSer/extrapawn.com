@@ -111,7 +111,18 @@ export const useGameStore = defineStore('game', () => {
 
   function undoLastUserMove() {
     logger.info('[GameStore] Undoing last user move (Takeback).')
-    pgnService.undoLastMove()
+    
+    // If it is the player's turn, it means the bot has already made a move.
+    // We need to undo the bot's move first, then the user's move.
+    const isPlayerTurn = boardStore.turn === playerColor.value
+    if (isPlayerTurn && pgnService.getCurrentNode() !== pgnService.getRootNode()) {
+      pgnService.undoLastMove()
+    }
+
+    if (pgnService.getCurrentNode() !== pgnService.getRootNode()) {
+      pgnService.undoLastMove()
+    }
+
     boardStore.loadPosition(pgnService.getCurrentNavigatedFen())
 
     if (gamePhase.value === 'GAMEOVER') {

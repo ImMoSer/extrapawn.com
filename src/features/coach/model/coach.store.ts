@@ -2,7 +2,6 @@ import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore } from '@/entities/game'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
-import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import { getPieceCount } from '@/shared/lib/engine/coach/engine'
@@ -202,7 +201,6 @@ export const useCoachStore = defineStore('coach', () => {
 
       // Finalize and Log
       await Promise.all([topMovesPromise, lastMovePromise])
-      logFactExtractor()
     } catch {
       logger.error('[CoachStore] Error generating explanation')
     } finally {
@@ -210,50 +208,7 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  function logFactExtractor() {
-    const analysis = lastMoveAnalysis.value
-    const explanation = currentExplanation.value
 
-    const logObj: {
-      lastMove: Record<string, unknown> | null
-      topMoves: Record<string, unknown>[]
-    } = {
-      lastMove: null,
-      topMoves: []
-    }
-
-    if (analysis && !analysis.loading && analysis.quality) {
-      logObj.lastMove = {
-        move: analysis.san,
-        quality: QUALITY_LABEL[analysis.quality] || analysis.quality,
-        summary: analysis.summary,
-        details: analysis.details,
-        consequence: lastMoveConsequence.value,
-        betterMove: analysis.isBestMove ? null : (analysis.bestMoveSan || null),
-      }
-    }
-
-    if (topMoves.value.length > 0 && explanation?.engine_top_moves) {
-      logObj.topMoves = topMoves.value.slice(0, 3).map(m => {
-        const enriched = explanation.engine_top_moves.find(em => em.san === m.san)
-        return {
-          rank: m.rank,
-          san: m.san,
-          eval: m.isMate ? `M${m.mateIn}` : (m.eval_pawns > 0 ? `+${m.eval_pawns}` : `${m.eval_pawns}`),
-          plan: enriched?.plan_brief || null,
-          tagline: m.tagline || null,
-          quality: enriched?.explanation?.quality ? (QUALITY_LABEL[enriched.explanation.quality] || enriched.explanation.quality) : null,
-          summary: enriched?.explanation?.summary || null,
-          details: enriched?.explanation?.details || null,
-          character: enriched?.character || null,
-        }
-      })
-    }
-
-    if (logObj.lastMove || logObj.topMoves.length > 0) {
-      logger.info('[CoachExplanation]', logObj)
-    }
-  }
 
   async function fetchTopMoves(fen: string) {
     topMovesLoading.value = true
@@ -353,8 +308,6 @@ export const useCoachStore = defineStore('coach', () => {
     coachEngineManager.stop()
   }
 
-  // Watch the PGN tree version to ensure the coach always has the latest move history.
-  // Watching boardStore.fen directly can cause race conditions where the PGN history is stale.
   watch(
     () => pgnTreeVersion.value,
     () => {
@@ -362,6 +315,7 @@ export const useCoachStore = defineStore('coach', () => {
 
       analyzeCurrentPosition()
     },
+    { flush: 'sync' }
   )
 
   // Watch deep analysis and handle potential resource management if needed,
@@ -408,7 +362,7 @@ export const useCoachStore = defineStore('coach', () => {
     executeVisualCommands,
     fetchLastMoveAnalysis,
     fetchTopMoves,
-    logFactExtractor,
+
     analyzeCurrentPosition,
     reset,
   }

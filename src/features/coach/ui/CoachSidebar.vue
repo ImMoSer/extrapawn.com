@@ -25,6 +25,7 @@
       </div>
 
       <div v-else class="coach-content">
+        <CoachAvatar />
         <CoachLastMove />
         <CoachTopMoves />
         <CoachPositionSummary />
@@ -38,6 +39,7 @@
 import { EyeOffOutline, EyeOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
+import CoachAvatar from './CoachAvatar.vue'
 import CoachBook from './CoachBook.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
