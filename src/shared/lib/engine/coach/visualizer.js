@@ -212,7 +212,10 @@ function mapTactics(cmds, planSteps) {
   const arrows = new Set()
   const routes = new Set()
 
-  planSteps.forEach((step) => {
+  planSteps.forEach((step, index) => {
+    // Only map tactics/motifs for the attacking side (even indices)
+    if (index % 2 !== 0) return
+
     if (!step.raw_motifs) return
 
     step.raw_motifs.forEach((motif) => {
