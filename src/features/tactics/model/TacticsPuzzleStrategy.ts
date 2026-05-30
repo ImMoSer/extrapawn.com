@@ -9,19 +9,23 @@ import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
 import { useTacticsStore, type TacticsPuzzle } from './tactics.store'
+import { usePreferencesStore } from '@/features/settings'
 
 export class TacticsPuzzleStrategy implements IGameplayStrategy {
-  config = {
-    /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
-    initialBotDelayMs: 100,
-    /** Bedenkzeit des Bots während des Puzzles */
-    botDelayMs: 100,
-    /** Sound-Handling durch GameStore (hier deaktiviert, da Strategy eigene Sounds spielt) */
-    playGameStatusSounds: false,
-    /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
-    nextPuzzleDelayMs: 100,
-    /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
-    restartDelayMs: 100,
+  get config() {
+    const preferencesStore = usePreferencesStore()
+    return {
+      /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
+      initialBotDelayMs: preferencesStore.preferences.delays.initialBotDelayMs,
+      /** Bedenkzeit des Bots während des Puzzles */
+      botDelayMs: preferencesStore.preferences.delays.botDelayMs,
+      /** Sound-Handling durch GameStore (hier deaktiviert, da Strategy eigene Sounds spielt) */
+      playGameStatusSounds: false,
+      /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
+      nextPuzzleDelayMs: preferencesStore.preferences.delays.nextPuzzleDelayMs,
+      /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
+      restartDelayMs: preferencesStore.preferences.delays.restartDelayMs,
+    }
   }
 
 

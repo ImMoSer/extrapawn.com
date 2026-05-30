@@ -7,6 +7,7 @@ import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import { usePreferencesStore } from '@/features/settings'
 
 export const useAutoplayStore = defineStore('autoplay', () => {
   const authStore = useAuthStore()
@@ -20,11 +21,12 @@ export const useAutoplayStore = defineStore('autoplay', () => {
     return profile.id === 'mo3ep' || profile.username === 'MO3EP'
   })
 
-  // LocalStorage state for toggling autoplay
-  const isAutoplayEnabled = ref(localStorage.getItem('global_autoplay') === 'true')
+  const preferencesStore = usePreferencesStore()
 
-  watch(isAutoplayEnabled, (val) => {
-    localStorage.setItem('global_autoplay', String(val))
+  // Use preferences store state for toggling autoplay
+  const isAutoplayEnabled = computed({
+    get: () => preferencesStore.preferences.gameplay.global_autoplay,
+    set: (val) => preferencesStore.updatePreferences({ gameplay: { global_autoplay: val } })
   })
 
   const isAutoplayAnalyzing = ref(false)
@@ -141,8 +143,9 @@ export const useAutoplayStore = defineStore('autoplay', () => {
         boardStore.setCoachShapes([])
       }
 
-      // Wait 500 ms before executing the move
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      // Wait autoplay delay from preferences before executing the move
+      const delay = preferencesStore.preferences.delays.autoPlayDelayMs
+      await new Promise((resolve) => setTimeout(resolve, delay))
 
       // Check state again after delay
       if (

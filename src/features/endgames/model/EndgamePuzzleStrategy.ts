@@ -9,17 +9,21 @@ import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
 import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
+import { usePreferencesStore } from '@/features/settings'
 
 export class EndgamePuzzleStrategy implements IGameplayStrategy {
-  config = {
-    /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
-    initialBotDelayMs: 100,
-    /** Bedenkzeit des Bots während des Puzzles (Endspiele brauchen "Bedenkzeit") */
-    botDelayMs: 100,
-    /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
-    nextPuzzleDelayMs: 100,
-    /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
-    restartDelayMs: 100,
+  get config() {
+    const preferencesStore = usePreferencesStore()
+    return {
+      /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
+      initialBotDelayMs: preferencesStore.preferences.delays.initialBotDelayMs,
+      /** Bedenkzeit des Bots während des Puzzles (Endspiele brauchen "Bedenkzeit") */
+      botDelayMs: preferencesStore.preferences.delays.botDelayMs,
+      /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
+      nextPuzzleDelayMs: preferencesStore.preferences.delays.nextPuzzleDelayMs,
+      /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
+      restartDelayMs: preferencesStore.preferences.delays.restartDelayMs,
+    }
   }
 
 

@@ -1,7 +1,8 @@
 // src/stores/theme.store.ts
-import { ref, reactive } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import logger from '@/shared/lib/logger'
+import { usePreferencesStore } from './preferences.store'
 
 // --- Типы и интерфейсы ---
 export interface BoardTheme {
@@ -15,18 +16,13 @@ export interface PieceSet {
   previewPieceFile: string
 }
 
-// --- НАЧАЛО ИЗМЕНЕНИЙ: Добавлено свойство boardSize ---
 export interface AppTheme {
   board: string
   pieces: string
   animationDuration: number
   boardSize: number
 }
-// --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
-// --- Константы ---
-// --- ИЗМЕНЕНИЕ: Обновлен ключ хранилища для новой структуры ---
-const THEME_STORAGE_KEY = 'user_app_theme_v4'
 const DYNAMIC_STYLE_ELEMENT_ID = 'dynamic-chessboard-styles'
 
 const AVAILABLE_BOARDS: BoardTheme[] = [
@@ -103,53 +99,23 @@ const PIECE_FILES: { [key: string]: { w: string; b: string } } = {
 }
 
 export const useThemeStore = defineStore('theme', () => {
-  const currentTheme = reactive<AppTheme>(loadTheme())
+  const preferencesStore = usePreferencesStore()
   const availableBoards = ref<BoardTheme[]>(AVAILABLE_BOARDS)
   const availablePieceSets = ref<PieceSet[]>(AVAILABLE_PIECE_SETS)
 
-  function loadTheme(): AppTheme {
-    // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавлен boardSize в значения по умолчанию ---
-    const defaults: AppTheme = {
-      board: 'wood4',
-      pieces: 'alpha',
-      animationDuration: 200,
-      boardSize: 600,
-    }
-    // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-    try {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-      if (savedTheme) {
-        const parsed = JSON.parse(savedTheme)
-        // --- ИЗМЕНЕНИЕ: Проверяем наличие всех свойств, включая boardSize ---
-        if (
-          parsed.board &&
-          parsed.pieces &&
-          'animationDuration' in parsed &&
-          'boardSize' in parsed
-        ) {
-          return { ...defaults, ...parsed }
-        }
-      }
-    } catch (error) {
-      logger.error('[ThemeStore] Failed to load or parse theme from localStorage:', error)
-    }
-    return defaults
-  }
-
-  function saveTheme() {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(currentTheme))
-    } catch (error) {
-      logger.error('[ThemeStore] Failed to save theme to localStorage:', error)
-    }
-  }
+  const currentTheme = computed<AppTheme>(() => ({
+    board: preferencesStore.preferences.theme.board,
+    pieces: preferencesStore.preferences.theme.pieces,
+    animationDuration: preferencesStore.preferences.theme.animationDuration,
+    boardSize: 600, // kept for backward compatibility
+  }))
 
   function applyTheme() {
-    const board = AVAILABLE_BOARDS.find((b) => b.name === currentTheme.board)
-    const pieceSet = AVAILABLE_PIECE_SETS.find((p) => p.name === currentTheme.pieces)
+    const board = AVAILABLE_BOARDS.find((b) => b.name === currentTheme.value.board)
+    const pieceSet = AVAILABLE_PIECE_SETS.find((p) => p.name === currentTheme.value.pieces)
 
     if (!board || !pieceSet) {
-      logger.error('[ThemeStore] Cannot apply theme, board or piece set not found.', currentTheme)
+      logger.error('[ThemeStore] Cannot apply theme, board or piece set not found.', currentTheme.value)
       return
     }
 
@@ -181,38 +147,39 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   function setBoard(boardName: string) {
-    if (currentTheme.board !== boardName) {
-      currentTheme.board = boardName
+    if (currentTheme.value.board !== boardName) {
+      preferencesStore.updatePreferences({ theme: { board: boardName } })
       applyTheme()
-      saveTheme()
     }
   }
 
   function setPieceSet(pieceSetName: string) {
-    if (currentTheme.pieces !== pieceSetName) {
-      currentTheme.pieces = pieceSetName
+    if (currentTheme.value.pieces !== pieceSetName) {
+      preferencesStore.updatePreferences({ theme: { pieces: pieceSetName } })
       applyTheme()
-      saveTheme()
     }
   }
 
   function setAnimationDuration(duration: number) {
     const newDuration = Math.max(0, Math.min(500, duration))
-    if (currentTheme.animationDuration !== newDuration) {
-      currentTheme.animationDuration = newDuration
-      saveTheme()
+    if (currentTheme.value.animationDuration !== newDuration) {
+      preferencesStore.updatePreferences({ theme: { animationDuration: newDuration } })
     }
   }
 
-  // --- НАЧАЛО ИЗМЕНЕНИЙ: Новый метод для сохранения размера доски ---
   function setBoardSize(size: number) {
-    if (currentTheme.boardSize !== size) {
-      currentTheme.boardSize = size
-      saveTheme()
-      logger.info(`[ThemeStore] Board size saved: ${size}px`)
-    }
+    // Keep as no-op since boardSize is no longer saved/used
+    logger.debug(`[ThemeStore] setBoardSize ignored: ${size}px`)
   }
-  // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+  // React to store change dynamically
+  watch(
+    () => preferencesStore.preferences.theme,
+    () => {
+      applyTheme()
+    },
+    { deep: true }
+  )
 
   applyTheme()
 
@@ -224,6 +191,6 @@ export const useThemeStore = defineStore('theme', () => {
     setPieceSet,
     applyTheme,
     setAnimationDuration,
-    setBoardSize, // --- ИЗМЕНЕНИЕ: Экспортируем новый метод ---
+    setBoardSize,
   }
 })

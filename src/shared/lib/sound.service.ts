@@ -1,12 +1,20 @@
-// src/shared/lib/sound.service.ts
 import logger from '@/shared/lib/logger'
-
-// --- SETTINGS ---
-const VOICE_VOLUME_KEY = 'user_voice_volume'
-const BOARD_VOLUME_KEY = 'user_board_volume'
 
 // --- TYPES ---
 export type SoundTrack = 'voice' | 'background'
+
+export interface SoundVolumeProvider {
+  getVoiceVolume(): number
+  getBoardVolume(): number
+  setVoiceVolume(vol: number): void
+  setBoardVolume(vol: number): void
+}
+
+let volumeProvider: SoundVolumeProvider | null = null
+
+export function registerVolumeProvider(provider: SoundVolumeProvider) {
+  volumeProvider = provider
+}
 
 export type SoundEvent =
   // --- App ---
@@ -112,16 +120,21 @@ const soundDefinitions: Record<SoundEvent, { track: SoundTrack; path: string | s
 class SoundServiceController {
   private audioCache: Map<string, HTMLAudioElement> = new Map()
 
-  private voiceVolume = 1.0
-  private boardVolume = 1.0
+  private get voiceVolume(): number {
+    if (volumeProvider) return volumeProvider.getVoiceVolume()
+    return 1.0
+  }
+
+  private get boardVolume(): number {
+    if (volumeProvider) return volumeProvider.getBoardVolume()
+    return 1.0
+  }
 
   private isVoiceTrackBusy = false
   private voiceQueue: SoundEvent[] = []
   private activeBackgroundSounds: Set<HTMLAudioElement> = new Set()
 
-  constructor() {
-    this.loadVolumeSettings()
-  }
+  constructor() {}
 
   /**
    * Plays a sound event. 
@@ -241,28 +254,23 @@ class SoundServiceController {
   }
 
   public setVoiceVolume(volume: number): void {
-    this.voiceVolume = Math.max(0, Math.min(1, volume))
-    localStorage.setItem(VOICE_VOLUME_KEY, String(this.voiceVolume))
+    const vol = Math.max(0, Math.min(1, volume))
+    if (volumeProvider) {
+      volumeProvider.setVoiceVolume(vol)
+    }
   }
 
   public setBoardVolume(volume: number): void {
-    this.boardVolume = Math.max(0, Math.min(1, volume))
-    localStorage.setItem(BOARD_VOLUME_KEY, String(this.boardVolume))
+    const vol = Math.max(0, Math.min(1, volume))
+    if (volumeProvider) {
+      volumeProvider.setBoardVolume(vol)
+    }
   }
 
   public getVoiceVolume = (): number => this.voiceVolume
   public getBoardVolume = (): number => this.boardVolume
 
-  private loadVolumeSettings(): void {
-    try {
-      const savedVoice = localStorage.getItem(VOICE_VOLUME_KEY)
-      const savedBoard = localStorage.getItem(BOARD_VOLUME_KEY)
-      if (savedVoice !== null) this.voiceVolume = parseFloat(savedVoice)
-      if (savedBoard !== null) this.boardVolume = parseFloat(savedBoard)
-    } catch (error) {
-      logger.error('[SoundService] Failed to load volume settings from localStorage:', error)
-    }
-  }
+  private loadVolumeSettings(): void {}
 
   public async ensureInitialized(): Promise<void> {
     return Promise.resolve()

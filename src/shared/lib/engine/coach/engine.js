@@ -43,52 +43,47 @@ function checkTerminalPosition(fen) {
 
 const WORKER_URL = '/stockfish_single/stockfish-18-lite-single.js'
 
-export let USE_SERVER_ENGINE = localStorage.getItem('positional_chess.use_server_coach') !== 'false' // default true
+let engineConfigProvider = null
+
+export function registerEngineConfigProvider(provider) {
+  engineConfigProvider = provider
+}
+
+export let USE_SERVER_ENGINE = true
+
+function getPrefs() {
+  if (engineConfigProvider) {
+    return engineConfigProvider.getEnginePrefs()
+  }
+  return { useServerCoach: true, depth: 12, multipv: 5 }
+}
+
+export function getUseServerEngine() {
+  try {
+    const val = getPrefs().useServerCoach
+    USE_SERVER_ENGINE = val
+    return val
+  } catch {
+    return USE_SERVER_ENGINE
+  }
+}
 
 export function setUseServerEngine(val) {
   USE_SERVER_ENGINE = val
-  localStorage.setItem('positional_chess.use_server_coach', String(val))
+  if (engineConfigProvider) {
+    engineConfigProvider.setUseServerCoach(val)
+  }
 }
 
-// Configurable defaults backed by localStorage.
-function readPref(key, fallback, min, max) {
-  try {
-    const raw = localStorage.getItem(`positional_chess.${key}`)
-    if (!raw) return fallback
-    const v = parseInt(raw, 10)
-    if (Number.isFinite(v) && v >= min && v <= max) return v
-  } catch {
-    /* localStorage unavailable */
-  }
-  return fallback
-}
-let DEFAULT_DEPTH = readPref('depth', 12, 6, 22)
-let DEFAULT_MULTIPV = readPref('multipv', 5, 1, 10)
-let DEFAULT_THREADS = 1
-
-export function setEngineDefaults({ depth, multipv, threads } = {}) {
-  if (Number.isFinite(depth)) {
-    DEFAULT_DEPTH = Math.max(6, Math.min(22, depth))
-    try {
-      localStorage.setItem('positional_chess.depth', String(DEFAULT_DEPTH))
-    } catch {
-      /* ignore */
-    }
-  }
-  if (Number.isFinite(multipv)) {
-    DEFAULT_MULTIPV = Math.max(1, Math.min(10, multipv))
-    try {
-      localStorage.setItem('positional_chess.multipv', String(DEFAULT_MULTIPV))
-    } catch {
-      /* ignore */
-    }
-  }
-  if (Number.isFinite(threads)) {
-    DEFAULT_THREADS = 1
-  }
-}
 export function getEngineDefaults() {
-  return { depth: DEFAULT_DEPTH, multipv: DEFAULT_MULTIPV, threads: DEFAULT_THREADS }
+  const prefs = getPrefs()
+  return { depth: prefs.depth, multipv: prefs.multipv, threads: 1 }
+}
+
+export function setEngineDefaults({ depth, multipv } = {}) {
+  if (engineConfigProvider) {
+    engineConfigProvider.setEngineDefaults({ depth, multipv })
+  }
 }
 
 const DEFAULT_JOB_TIMEOUT_MS = 30_000
@@ -149,7 +144,7 @@ class StockfishEngine {
   }
 
   get activeStrategy() {
-    if (USE_SERVER_ENGINE) {
+    if (getUseServerEngine()) {
       if (!this._serverStrategy) {
         this._serverStrategy = new ServerEngineStrategy()
       }
@@ -163,11 +158,11 @@ class StockfishEngine {
   }
 
   init() {
-    if (this._initPromise && this._lastInitWasServer === USE_SERVER_ENGINE) {
+    if (this._initPromise && this._lastInitWasServer === getUseServerEngine()) {
       return this._initPromise
     }
 
-    this._lastInitWasServer = USE_SERVER_ENGINE
+    this._lastInitWasServer = getUseServerEngine()
     this._initPromise = new Promise((resolve, reject) => {
       this._initResolve = resolve
       this._initReject = reject
@@ -263,7 +258,7 @@ class StockfishEngine {
     }
 
     // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
-    const mpvKey = USE_SERVER_ENGINE ? `m|${fen}|server` : `m|${fen}|${DEFAULT_MULTIPV}|${depth}`
+    const mpvKey = getUseServerEngine() ? `m|${fen}|server` : `m|${fen}|${getEngineDefaults().multipv}|${depth}`
     const hitMpv = this.cache.get(mpvKey)
     if (hitMpv) {
       const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score }))
@@ -277,9 +272,9 @@ class StockfishEngine {
     return p
   }
 
-  analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, startFen = null, moves = null, options = {}) {
-    const key = USE_SERVER_ENGINE ? `m|${fen}|server` : `m|${fen}|${Math.max(1, Math.min(numLines, 10))}|${depth}`
-    const n = USE_SERVER_ENGINE ? 3 : Math.max(1, Math.min(numLines, 10))
+  analyzeMultiPV(fen, numLines = getEngineDefaults().multipv, depth = getEngineDefaults().depth, startFen = null, moves = null, options = {}) {
+    const key = getUseServerEngine() ? `m|${fen}|server` : `m|${fen}|${Math.max(1, Math.min(numLines, 10))}|${depth}`
+    const n = getUseServerEngine() ? 3 : Math.max(1, Math.min(numLines, 10))
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
 
@@ -302,7 +297,7 @@ class StockfishEngine {
     return p
   }
 
-  getBestMove(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null) {
+  getBestMove(fen, depth = getEngineDefaults().depth, startFen = null, moves = null) {
     const key = `b|${fen}|${depth}`
     const hit = this.cache.get(key)
     if (hit) return hit // Promise cached
@@ -387,7 +382,7 @@ class StockfishEngine {
     const multipv = job.type === 'multipv' ? job.numLines : 1
     this.activeStrategy.executeJob(job, {
       multipv,
-      threads: DEFAULT_THREADS,
+      threads: 1,
       onLine: (line) => {
         if (job._timedOut) return
         this._onLine(line)

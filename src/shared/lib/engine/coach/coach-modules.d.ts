@@ -12,6 +12,12 @@ declare module '@/shared/lib/engine/coach/engine' {
     shutdown(): void
   }
   export default engine
+  export interface EngineConfigProvider {
+    getEnginePrefs(): { useServerCoach: boolean; depth: number; multipv: number }
+    setUseServerCoach(val: boolean): void
+    setEngineDefaults(options: { depth?: number; multipv?: number }): void
+  }
+  export function registerEngineConfigProvider(provider: EngineConfigProvider): void
   export function setEngineDefaults(options: { depth?: number; multipv?: number; threads?: number }): void
   export function getEngineDefaults(): { depth: number; multipv: number; threads: number }
   export let USE_SERVER_ENGINE: boolean

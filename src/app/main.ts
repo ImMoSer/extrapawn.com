@@ -35,6 +35,10 @@ async function boot() {
   const authStore = useAuthStore()
   await authStore.initialize()
 
+  const { usePreferencesStore } = await import('@/features/settings')
+  const preferencesStore = usePreferencesStore()
+  await preferencesStore.initialize()
+
   // Branch A: User not logged in -> Show minimal Login Screen
   if (!authStore.isAuthenticated) {
     // Save the current path to redirect back after login

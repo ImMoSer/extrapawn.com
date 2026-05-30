@@ -90,25 +90,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { getEngineDefaults, USE_SERVER_ENGINE, setUseServerEngine } from '@/shared/lib/engine/coach/engine'
+import { usePreferencesStore } from '@/features/settings'
 
 const emit = defineEmits(['change'])
 
 const open = ref(false)
-const useServer = ref(USE_SERVER_ENGINE)
+const preferencesStore = usePreferencesStore()
+
+const useServer = ref(preferencesStore.preferences.engine.useServerCoach)
+const depth = ref(preferencesStore.preferences.engine.depth)
+const multipv = ref(preferencesStore.preferences.engine.multipv)
+const wrapRef = ref<HTMLElement | null>(null)
+
+// Sync local inputs if preferences update from elsewhere
+watch(
+  () => preferencesStore.preferences.engine,
+  (newEngine) => {
+    useServer.value = newEngine.useServerCoach
+    depth.value = newEngine.depth
+    multipv.value = newEngine.multipv
+  },
+  { deep: true }
+)
 
 const handleServerToggle = (event: Event) => {
   const target = event.target as HTMLInputElement
-  setUseServerEngine(target.checked)
+  useServer.value = target.checked
 }
-const defaults = getEngineDefaults()
-const depth = ref(defaults.depth)
-const multipv = ref(defaults.multipv)
-const wrapRef = ref<HTMLElement | null>(null)
 
 const toggleOpen = () => {
   open.value = !open.value
@@ -137,9 +148,12 @@ onUnmounted(() => {
 })
 
 const apply = () => {
-  coachEngineManager.setDefaults({
-    depth: depth.value,
-    multipv: multipv.value,
+  preferencesStore.updatePreferences({
+    engine: {
+      useServerCoach: useServer.value,
+      depth: depth.value,
+      multipv: multipv.value,
+    }
   })
   open.value = false
   emit('change', { depth: depth.value, multipv: multipv.value })

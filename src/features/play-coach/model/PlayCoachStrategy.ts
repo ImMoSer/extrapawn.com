@@ -3,11 +3,15 @@ import { enginePlayService } from '@/entities/game'
 import { theoryRepository } from '@/entities/opening'
 import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
+import { usePreferencesStore } from '@/features/settings'
 
 export class PlayCoachStrategy implements IGameplayStrategy {
-  config = {
-    botDelayMs: 100,
-    playGameStatusSounds: true,
+  get config() {
+    const preferencesStore = usePreferencesStore()
+    return {
+      botDelayMs: preferencesStore.preferences.delays.botDelayMs,
+      playGameStatusSounds: true,
+    }
   }
 
   private readonly ENGINE_ID: import('@/shared/types/api.types').EngineId = 'maia-2200'

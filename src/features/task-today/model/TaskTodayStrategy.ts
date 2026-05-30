@@ -7,11 +7,15 @@ import {
 import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
 import { useTaskTodayStore, type WorkoutPuzzle } from './taskToday.store'
+import { usePreferencesStore } from '@/features/settings'
 
 export class TaskTodayStrategy implements IGameplayStrategy {
-  config = {
-    initialBotDelayMs: 300,
-    botDelayMs: 50,
+  get config() {
+    const preferencesStore = usePreferencesStore()
+    return {
+      initialBotDelayMs: preferencesStore.preferences.delays.initialBotDelayMs,
+      botDelayMs: preferencesStore.preferences.delays.botDelayMs,
+    }
   }
 
   private puzzle: WorkoutPuzzle
