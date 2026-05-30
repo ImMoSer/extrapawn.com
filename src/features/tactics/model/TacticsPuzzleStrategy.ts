@@ -100,12 +100,43 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
 
-    if (!this.isPlayoutMode) {
-      const expectedMove = this.scenarioMoves[this.scenarioIndex]
-      if (uciMove === expectedMove) {
-        this.scenarioIndex++
+    const coachStore = useCoachStore()
 
-        if (this.scenarioIndex >= this.scenarioMoves.length) {
+    // 1. In Playout Mode, wait for coach and check for blunder takebacks
+    if (this.isPlayoutMode) {
+      if (coachStore.isCoachEnabled) {
+        try {
+          const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+          const wasTakeback = await waitForCoachAndCheckTakeback()
+          if (wasTakeback) {
+            return
+          }
+        } catch (err) {
+          logger.error('[TacticsPuzzleStrategy] Error waiting for coach analysis in playout:', err)
+        }
+      }
+      return
+    }
+
+    // 2. In Scenario Mode (following the predefined tactical solution)
+    const expectedMove = this.scenarioMoves[this.scenarioIndex]
+    if (uciMove === expectedMove) {
+      this.scenarioIndex++
+
+      if (this.scenarioIndex >= this.scenarioMoves.length) {
+        // Tactical solution completed!
+        logger.info('[TacticsPuzzleStrategy] Scenario completed successfully.')
+        try {
+          const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+          const feedbackStore = useCoachFeedbackStore()
+          feedbackStore.coachMood = 'celebrating'
+          feedbackStore.takebackMessage = 'Tactical Solution Completed!'
+          feedbackStore.isTakebackPending = false
+        } catch (err) {
+          logger.error('[TacticsPuzzleStrategy] Error showing tactical completion feedback:', err)
+        }
+
+        if (this.puzzle.strategy === 'scenarioOnly') {
           soundService.playSound('game_tacktics_success')
           this.store.handleGameOver(
             this.puzzle,
@@ -116,9 +147,68 @@ export class TacticsPuzzleStrategy implements IGameplayStrategy {
           this.nextPuzzleTimeout = window.setTimeout(() => {
             this.store.loadNewPuzzle(this.puzzle.puzzle_type)
           }, this.config.nextPuzzleDelayMs)
+        } else if (this.puzzle.strategy === 'scenarioPlus') {
+          this.isPlayoutMode = true
+          soundService.playSound('game_play_out_start')
+          window.$message?.warning('Scenario complete! Playout against engine starts now.')
         }
       } else {
-        // Wrong move - auto restart local after delay
+        // Scenario correct but not finished yet
+        try {
+          const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+          const feedbackStore = useCoachFeedbackStore()
+          feedbackStore.coachMood = 'proud'
+          feedbackStore.takebackMessage = 'Korrekt! wie gehts weiter?'
+          feedbackStore.isTakebackPending = false
+        } catch (err) {
+          logger.error('[TacticsPuzzleStrategy] Error showing scenario correct feedback:', err)
+        }
+      }
+    } else {
+      // Deviation from the scenario
+      // 1. If coach is enabled, check the quality of the deviation first!
+      if (coachStore.isCoachEnabled) {
+        try {
+          const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+          const wasTakeback = await waitForCoachAndCheckTakeback()
+          if (wasTakeback) {
+            return // Wrong deviation move was undone by the coach
+          }
+        } catch (err) {
+          logger.error('[TacticsPuzzleStrategy] Error checking deviation move quality:', err)
+        }
+      }
+
+      // 2. If we reach here, the deviation is high quality!
+      if (this.puzzle.strategy === 'scenarioPlus') {
+        // Allow high-quality deviation and continue playing out against the engine
+        this.isPlayoutMode = true
+        this.scenarioIndex = this.scenarioMoves.length
+        soundService.playSound('game_play_out_start')
+        window.$message?.warning('Deviation! Continuing against the engine.')
+      } else {
+        // Force takeback on wrong move in scenarioOnly (even if it's a good move, since they must find the scenario)
+        logger.info(`[TacticsPuzzleStrategy] Takeback because tactical solution expected move: ${expectedMove}`)
+
+        if (coachStore.isCoachEnabled) {
+          try {
+            const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+            const feedbackStore = useCoachFeedbackStore()
+            feedbackStore.coachMood = 'warning'
+            feedbackStore.takebackMessage = 'Das ist nicht die Taktiklösung! Überleg noch mal.'
+            feedbackStore.isTakebackPending = true
+
+            soundService.playSound('game_training_error')
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+
+            this.gameStore.undoLastUserMove()
+            return
+          } catch (err) {
+            logger.error('[TacticsPuzzleStrategy] Error setting coach feedback for wrong scenario move:', err)
+          }
+        }
+
+        // Fallback if coach is disabled (classic error/restart flow)
         soundService.playSound('game_tacktics_error')
         this.store.handleGameOver(
           this.puzzle,

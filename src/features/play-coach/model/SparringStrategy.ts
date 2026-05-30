@@ -5,7 +5,7 @@ import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
 
-export class PlayCoachStrategy implements IGameplayStrategy {
+export class SparringStrategy implements IGameplayStrategy {
   get config() {
     const preferencesStore = usePreferencesStore()
     return {
@@ -18,11 +18,11 @@ export class PlayCoachStrategy implements IGameplayStrategy {
   private isBookExhausted = false
 
   onGameStart() {
-    logger.info('[PlayCoachStrategy] Game started')
+    logger.info('[SparringStrategy] Game started')
   }
 
   onDestroy() {
-    logger.info('[PlayCoachStrategy] Strategy destroyed')
+    logger.info('[SparringStrategy] Strategy destroyed')
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
@@ -30,11 +30,11 @@ export class PlayCoachStrategy implements IGameplayStrategy {
       const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
       const feedbackStore = useCoachFeedbackStore()
       if (feedbackStore.isTakebackPending) {
-        logger.info('[PlayCoachStrategy] requestBotMove returned null due to pending coach takeback.')
+        logger.info('[SparringStrategy] requestBotMove returned null due to pending coach takeback.')
         return null
       }
     } catch (err) {
-      logger.error('[PlayCoachStrategy] Failed to import coach feedback store:', err)
+      logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
     }
 
     const explorerStore = useOpeningExplorerStore()
@@ -68,79 +68,42 @@ export class PlayCoachStrategy implements IGameplayStrategy {
                 }
               }
 
-              logger.info(`[PlayCoachStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
+              logger.info(`[SparringStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
               return selectedUci
             }
           }
         } else if (stats) {
-          logger.info('[PlayCoachStrategy] Book stats returned empty. Marking book as exhausted.')
+          logger.info('[SparringStrategy] Book stats returned empty. Marking book as exhausted.')
           this.isBookExhausted = true
         }
       } catch (err) {
-        logger.error('[PlayCoachStrategy] Failed to fetch book stats:', err)
+        logger.error('[SparringStrategy] Failed to fetch book stats:', err)
       }
     }
 
     // 2. Fallback to Engine (Maia)
-    logger.info(`[PlayCoachStrategy] Book empty or failed. Using engine: ${this.ENGINE_ID}`)
+    logger.info(`[SparringStrategy] Book empty or failed. Using engine: ${this.ENGINE_ID}`)
 
     try {
       const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
       return moveUci
     } catch (err) {
-      logger.error('[PlayCoachStrategy] Engine move failed:', err)
+      logger.error('[SparringStrategy] Engine move failed:', err)
       return null
     }
   }
 
   async onUserMoveExecuted() {
     try {
-      const { useCoachStore } = await import('@/features/coach')
-      const coachStore = useCoachStore()
-
-      if (coachStore.isCoachEnabled) {
-        if (coachStore.isAnalyzing) {
-          const { watch } = await import('vue')
-          await new Promise<void>((resolve) => {
-            const unwatch = watch(
-              () => coachStore.isAnalyzing,
-              (analyzing) => {
-                if (!analyzing) {
-                  unwatch()
-                  resolve()
-                }
-              },
-              { flush: 'sync' }
-            )
-          })
-        }
-
-        const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
-        const feedbackStore = useCoachFeedbackStore()
-
-        if (feedbackStore.isTakebackPending) {
-          logger.info('[PlayCoachStrategy] Move flagged as blunder/mistake/inaccuracy. Performing takeback...')
-
-          // Play the sound
-          const { soundService } = await import('@/shared/lib/sound.service')
-          soundService.playSound('game_training_error')
-
-          // Delay for 1000ms synchronously
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-
-          // Perform takeback
-          const { useGameStore } = await import('@/entities/game')
-          const gameStore = useGameStore()
-          gameStore.undoLastUserMove()
-        }
-      }
+      const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+      await waitForCoachAndCheckTakeback()
     } catch (err) {
-      logger.error('[PlayCoachStrategy] Error waiting for coach analysis:', err)
+      logger.error('[SparringStrategy] Error waiting for coach analysis:', err)
     }
   }
 
   onUserMoveUndone() {
-    logger.info('[PlayCoachStrategy] Move undone')
+    logger.info('[SparringStrategy] Move undone')
   }
 
   forcePlayoutMode() {
@@ -148,7 +111,7 @@ export class PlayCoachStrategy implements IGameplayStrategy {
   }
 
   onGameOver(status: import('@/entities/game').GameStatusInfo) {
-    logger.info('[PlayCoachStrategy] Game over:', status)
+    logger.info('[SparringStrategy] Game over:', status)
   }
 
   checkWinCondition(status: import('@/entities/game').GameStatusInfo): boolean {

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
-import { usePlayCoachStore } from '../model/play-coach.store'
+import { useSparringStore } from '../model/sparring.store'
 import { NInput, NButton, NIcon, NTooltip, NSpace } from 'naive-ui'
 import { SwapVerticalOutline, RefreshOutline } from '@vicons/ionicons5'
 import PgnTreeNode from './PgnTreeNode.vue'
 
-const playCoachStore = usePlayCoachStore()
+const sparringStore = useSparringStore()
 
 const rootNode = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,7 +24,7 @@ const rootNode = computed(() => {
       Keine Züge vorhanden
     </div>
 
-    <div class="play-coach-controls">
+    <div class="sparring-controls">
       <n-space vertical :size="12">
         <n-space justify="center" :size="12">
           <n-tooltip trigger="hover">
@@ -33,7 +33,7 @@ const rootNode = computed(() => {
                 circle
                 secondary
                 size="medium"
-                @click="playCoachStore.handleFlip"
+                @click="sparringStore.handleFlip"
                 class="flip-btn"
               >
                 <template #icon>
@@ -50,7 +50,7 @@ const rootNode = computed(() => {
                 circle
                 secondary
                 size="medium"
-                @click="playCoachStore.restartGame"
+                @click="sparringStore.restartGame"
                 class="restart-btn"
               >
                 <template #icon>
@@ -64,17 +64,17 @@ const rootNode = computed(() => {
 
         <n-space :wrap="false" align="center">
           <n-input
-            v-model:value="playCoachStore.localFen"
+            v-model:value="sparringStore.localFen"
             placeholder="FEN eingeben"
             size="small"
             class="fen-input"
-            @keyup.enter="playCoachStore.applyFen(playCoachStore.localFen)"
+            @keyup.enter="sparringStore.applyFen(sparringStore.localFen)"
           />
           <n-button
             type="primary"
             secondary
             size="small"
-            @click="playCoachStore.applyFen(playCoachStore.localFen)"
+            @click="sparringStore.applyFen(sparringStore.localFen)"
           >
             Laden
           </n-button>
@@ -105,7 +105,7 @@ const rootNode = computed(() => {
   font-size: 0.9rem;
 }
 
-.play-coach-controls {
+.sparring-controls {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);

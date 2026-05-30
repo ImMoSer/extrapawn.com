@@ -49,9 +49,9 @@ const menuItems = [
     color: 'var(--neon-pink)',
   },
   {
-    path: '/play-coach',
+    path: '/sparring',
     icon: HardwareChipOutline,
-    labelKey: 'nav.playCoach',
+    labelKey: 'nav.sparring',
     color: 'var(--neon-blue, #00f2ff)',
   },
 

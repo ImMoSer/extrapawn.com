@@ -7,9 +7,9 @@ import { NScrollbar, NText } from 'naive-ui';
 </script>
 
 <template>
-  <div class="play-coach-sidebar">
+  <div class="sparring-sidebar">
     <div class="sidebar-header">
-      <n-text class="sidebar-title">Play Coach</n-text>
+      <n-text class="sidebar-title">Sparring</n-text>
     </div>
 
     <div class="sidebar-content">
@@ -34,7 +34,7 @@ import { NScrollbar, NText } from 'naive-ui';
 </template>
 
 <style scoped>
-.play-coach-sidebar {
+.sparring-sidebar {
   display: flex;
   flex-direction: column;
   height: 100%;

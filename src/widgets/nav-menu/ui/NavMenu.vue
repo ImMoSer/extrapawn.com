@@ -61,8 +61,8 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(FlashOutline),
   },
   {
-    label: () => t('nav.playCoach', 'Play Coach'),
-    key: '/play-coach',
+    label: () => t('nav.sparring', 'Sparring'),
+    key: '/sparring',
     icon: renderIcon(HardwareChipOutline),
   },
   {

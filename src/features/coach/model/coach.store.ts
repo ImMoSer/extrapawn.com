@@ -285,13 +285,13 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  function analyzeCurrentPosition() {
+  async function analyzeCurrentPosition() {
     if (!isCoachEnabled.value) return
     const newFen = pgnService.getCurrentNavigatedFen()
 
     selectedMoveIndex.value = null
     selectedMoveExplanation.value = null
-    triggerAnalysis(newFen)
+    await triggerAnalysis(newFen)
   }
 
   function reset() {

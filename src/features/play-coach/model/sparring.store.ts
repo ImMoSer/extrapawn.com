@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useGameStore, useBoardStore } from '@/entities/game'
 import { useCoachStore } from '@/features/coach'
-import { PlayCoachStrategy } from './PlayCoachStrategy'
+import { SparringStrategy } from './SparringStrategy'
 import { soundService } from '@/shared/lib/sound.service'
 
-export const usePlayCoachStore = defineStore('play-coach', () => {
+export const useSparringStore = defineStore('sparring', () => {
   const gameStore = useGameStore()
   const boardStore = useBoardStore()
   const coachStore = useCoachStore()
@@ -18,7 +18,7 @@ export const usePlayCoachStore = defineStore('play-coach', () => {
     
     gameStore.startWithStrategy(
       boardStore.fen,
-      new PlayCoachStrategy(),
+      new SparringStrategy(),
       boardStore.orientation,
       true
     )
@@ -30,7 +30,7 @@ export const usePlayCoachStore = defineStore('play-coach', () => {
     localFen.value = fen
     gameStore.startWithStrategy(
       fen,
-      new PlayCoachStrategy(),
+      new SparringStrategy(),
       boardStore.orientation,
       false
     )

@@ -3,34 +3,34 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebar } from '@/features/coach'
 import { useBoardStore } from '@/entities/game'
-import { usePlayCoachStore } from '@/features/play-coach'
-import PlayCoachSidebar from './PlayCoachSidebar.vue'
+import { useSparringStore } from '@/features/play-coach'
+import SparringSidebar from './SparringSidebar.vue'
 
 const boardStore = useBoardStore()
-const playCoachStore = usePlayCoachStore()
+const sparringStore = useSparringStore()
 
 watch(() => boardStore.fen, (newFen) => {
-  playCoachStore.localFen = newFen
+  sparringStore.localFen = newFen
 })
 
 onMounted(() => {
-  playCoachStore.initialize()
+  sparringStore.initialize()
 })
 
 onUnmounted(() => {
-  playCoachStore.terminate()
+  sparringStore.terminate()
 })
 </script>
 
 <template>
   <GameLayout>
     <template #left-panel>
-      <PlayCoachSidebar />
+      <SparringSidebar />
     </template>
 
     <template #top-info>
-      <div class="play-coach-top-panel">
-        <span class="mode-badge">PLAY COACH</span>
+      <div class="sparring-top-panel">
+        <span class="mode-badge">SPARRING</span>
         <span class="mode-description">Tritt gegen die Maia Engine an und lerne Eröffnungen aus dem Lichess Book.</span>
       </div>
     </template>
@@ -46,7 +46,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.play-coach-top-panel {
+.sparring-top-panel {
   display: flex;
   align-items: center;
   gap: 16px;
