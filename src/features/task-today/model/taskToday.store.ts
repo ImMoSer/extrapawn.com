@@ -332,13 +332,16 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     if (!trainingPlan.value) return
 
     try {
-      await apiClient('/training-plan/complete', {
+      const response = await apiClient<{ success: boolean; message: string; report?: CompletedPlanReport }>('/training-plan/complete', {
         method: 'POST',
         body: JSON.stringify({
           difficulty: trainingPlan.value.level,
           strategy: trainingPlan.value.strategy
         })
       })
+      if (response && response.report) {
+        completedReport.value = response.report
+      }
       console.log('[TaskTodayStore] Successfully saved completed training plan to DB.')
     } catch (err) {
       console.error('[TaskTodayStore] Failed to save completed training plan:', err)

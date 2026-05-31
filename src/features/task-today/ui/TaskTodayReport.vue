@@ -4,13 +4,23 @@ import {
   NButton,
   NSpace
 } from 'naive-ui'
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const taskTodayStore = useTaskTodayStore()
 const router = useRouter()
 const { t } = useI18n()
+
+const expandedMode = ref<string | null>(null)
+
+function toggleMode(subMode: string) {
+  if (expandedMode.value === subMode) {
+    expandedMode.value = null
+  } else {
+    expandedMode.value = subMode
+  }
+}
 
 function handleGoToDashboard() {
   taskTodayStore.clearSavedState()
@@ -78,6 +88,14 @@ function getSubModeLabel(subMode: string): string {
   }
 }
 
+function formatCategoryLabel(category: string): string {
+  const result = category
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .trim()
+  return result.charAt(0).toUpperCase() + result.slice(1)
+}
+
 const finishedReport = computed(() => {
   if (taskTodayStore.completedReport) {
     return taskTodayStore.completedReport
@@ -92,6 +110,9 @@ const finishedReport = computed(() => {
   let totalPuzzles = 0
   let totalTimeMs = 0
   let totalAttempts = 0
+  let totalFailed = 0
+  let totalRatingSum = 0
+  let puzzlesWithRatingCount = 0
 
   const subModeBreakdown = plan.tasks.map(task => {
     const subMode = task.sub_mode
@@ -100,14 +121,39 @@ const finishedReport = computed(() => {
     
     let subModeTimeMs = 0
     let subModeAttempts = 0
+    let subModeFailed = 0
+    let subModeRatingSum = 0
+    let subModePuzzlesWithRatingCount = 0
+
+    const categoryMap = new Map<string, { solved: number; failed: number; timeMs: number; ratingSum: number; ratingCount: number }>()
+
     solvedList.forEach(p => {
       const res = results[p.puzzle_id]
       if (res) {
-        if (res.time) {
-          subModeTimeMs += res.time
+        const time = res.time || 0
+        const attempts = res.attempts || 1
+        const failed = Math.max(0, attempts - 1)
+        const rating = p.rating ? Number(p.rating) : 0
+
+        subModeTimeMs += time
+        subModeAttempts += attempts
+        subModeFailed += failed
+        if (rating > 0) {
+          subModeRatingSum += rating
+          subModePuzzlesWithRatingCount++
         }
-        if (res.attempts) {
-          subModeAttempts += res.attempts
+
+        const cat = p.category || 'default'
+        if (!categoryMap.has(cat)) {
+          categoryMap.set(cat, { solved: 0, failed: 0, timeMs: 0, ratingSum: 0, ratingCount: 0 })
+        }
+        const catStats = categoryMap.get(cat)!
+        catStats.solved++
+        catStats.failed += failed
+        catStats.timeMs += time
+        if (rating > 0) {
+          catStats.ratingSum += rating
+          catStats.ratingCount++
         }
       }
     })
@@ -115,25 +161,42 @@ const finishedReport = computed(() => {
     totalPuzzles += count
     totalTimeMs += subModeTimeMs
     totalAttempts += subModeAttempts
+    totalFailed += subModeFailed
+    totalRatingSum += subModeRatingSum
+    puzzlesWithRatingCount += subModePuzzlesWithRatingCount
+
+    const categories = Array.from(categoryMap.entries()).map(([category, stats]) => ({
+      category,
+      solved: stats.solved,
+      failed: stats.failed,
+      avgTimeMs: stats.solved > 0 ? Math.round(stats.timeMs / stats.solved) : 0,
+      avgRating: stats.ratingCount > 0 ? Math.round(stats.ratingSum / stats.ratingCount) : 0
+    }))
 
     return {
       subMode,
       count,
+      failedCount: subModeFailed,
       timeMs: subModeTimeMs,
-      attempts: subModeAttempts
+      attempts: subModeAttempts,
+      avgRating: subModePuzzlesWithRatingCount > 0 ? Math.round(subModeRatingSum / subModePuzzlesWithRatingCount) : 0,
+      categories
     }
   })
 
   const accuracy = totalAttempts > 0 ? (totalPuzzles / totalAttempts) * 100 : 100
   const avgTimeMs = totalPuzzles > 0 ? totalTimeMs / totalPuzzles : 0
+  const avgRating = puzzlesWithRatingCount > 0 ? Math.round(totalRatingSum / puzzlesWithRatingCount) : 0
 
   return {
     strategyTitle: `TODAYS ${strategyUpper} FINISHED!`,
     totalPuzzles,
+    totalFailed,
     totalTimeMs,
     totalAttempts,
     accuracy,
     avgTimeMs,
+    avgRating,
     breakdown: subModeBreakdown
   }
 })
@@ -169,8 +232,16 @@ const finishedReport = computed(() => {
           <div class="metric-label">{{ t('features.taskToday.completed.stats.totalAttempts', 'Versuche') }}</div>
         </div>
         <div class="metric-card">
+          <div class="metric-value red-glow-text">{{ finishedReport?.totalFailed ?? 0 }}</div>
+          <div class="metric-label">{{ t('features.taskToday.completed.stats.totalFailed', 'Fehler') }}</div>
+        </div>
+        <div class="metric-card">
           <div class="metric-value">{{ formatDurationShort(finishedReport?.avgTimeMs || 0) }}</div>
           <div class="metric-label">{{ t('features.taskToday.completed.stats.avgTime', 'Ø Zeit') }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value cyan-glow-text">{{ finishedReport?.avgRating && finishedReport.avgRating > 0 ? finishedReport.avgRating : '--' }}</div>
+          <div class="metric-label">{{ t('features.taskToday.completed.stats.avgRating', 'Ø Rating') }}</div>
         </div>
       </div>
 
@@ -182,15 +253,53 @@ const finishedReport = computed(() => {
           <div 
             v-for="item in finishedReport?.breakdown" 
             :key="item.subMode" 
-            class="breakdown-item"
+            class="breakdown-container"
           >
-            <div class="breakdown-left">
-              <span class="breakdown-badge" :class="item.subMode"></span>
-              <span class="breakdown-name">{{ getSubModeLabel(item.subMode) }}</span>
-              <span class="breakdown-count">({{ item.count }} {{ t('features.taskToday.completed.puzzlesCountShort', 'Aufgaben') }})</span>
+            <!-- Header (Klickbar) -->
+            <div 
+              class="breakdown-item"
+              :class="{ 'is-expanded': expandedMode === item.subMode }"
+              @click="toggleMode(item.subMode)"
+            >
+              <div class="breakdown-left">
+                <span class="breakdown-badge" :class="item.subMode"></span>
+                <span class="breakdown-name">{{ getSubModeLabel(item.subMode) }}</span>
+                <span class="breakdown-count">({{ item.count }} {{ t('features.taskToday.completed.puzzlesCountShort', 'Aufgaben') }})</span>
+              </div>
+              <div class="breakdown-right">
+                <span class="breakdown-rating" v-if="item.avgRating && item.avgRating > 0">
+                  {{ item.avgRating }} Elo
+                </span>
+                <span class="breakdown-time">{{ formatDuration(item.timeMs) }}</span>
+                <span class="breakdown-arrow" :class="{ 'rotated': expandedMode === item.subMode }">▼</span>
+              </div>
             </div>
-            <div class="breakdown-right">
-              <span class="breakdown-time">{{ formatDuration(item.timeMs) }}</span>
+
+            <!-- Aufklappbarer Bereich mit Tabellen-Details -->
+            <div 
+              class="breakdown-details"
+              :class="{ 'is-open': expandedMode === item.subMode }"
+            >
+              <table class="details-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('features.taskToday.completed.details.category', 'Kategorie') }}</th>
+                    <th>{{ t('features.taskToday.completed.details.solved', 'Gelöst') }}</th>
+                    <th>{{ t('features.taskToday.completed.details.failed', 'Fehler') }}</th>
+                    <th>{{ t('features.taskToday.completed.details.avgTime', 'Ø Zeit') }}</th>
+                    <th>{{ t('features.taskToday.completed.details.rating', 'Rating') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="cat in item.categories" :key="cat.category">
+                    <td class="cat-name">{{ formatCategoryLabel(cat.category) }}</td>
+                    <td class="cat-solved">{{ cat.solved }}</td>
+                    <td class="cat-failed" :class="{ 'has-errors': cat.failed > 0 }">{{ cat.failed }}</td>
+                    <td class="cat-time">{{ formatDurationShort(cat.avgTimeMs) }}</td>
+                    <td class="cat-rating">{{ cat.avgRating > 0 ? cat.avgRating : '--' }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -227,7 +336,7 @@ const finishedReport = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   padding: 48px;
-  max-width: 680px;
+  max-width: 720px;
   width: 100%;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
               0 0 30px rgba(217, 0, 76, 0.05);
@@ -283,16 +392,25 @@ const finishedReport = computed(() => {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
   margin-bottom: 36px;
+}
+
+@media (max-width: 600px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .metrics-grid > .metric-card:last-child {
+    grid-column: span 2;
+  }
 }
 
 .metric-card {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -306,15 +424,25 @@ const finishedReport = computed(() => {
 }
 
 .metric-value {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 850;
   color: var(--neon-cyan, #00e5ff);
   font-family: 'Fira Code', monospace;
   margin-bottom: 4px;
 }
 
+.metric-value.red-glow-text {
+  color: var(--neon-bordeaux, #d9004c);
+  text-shadow: 0 0 10px rgba(217, 0, 76, 0.3);
+}
+
+.metric-value.cyan-glow-text {
+  color: var(--neon-cyan, #00e5ff);
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
 .metric-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: bold;
   color: var(--color-text-muted, #888);
   text-transform: uppercase;
@@ -343,26 +471,43 @@ const finishedReport = computed(() => {
   gap: 12px;
 }
 
+.breakdown-container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.breakdown-container:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .breakdown-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(0, 0, 0, 0.15);
   padding: 14px 20px;
-  border-radius: 10px;
   border-left: 4px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  user-select: none;
   transition: all 0.2s ease;
 }
 
 .breakdown-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.breakdown-item:nth-child(1) { border-left-color: var(--neon-bordeaux, #d9004c); }
-.breakdown-item:nth-child(2) { border-left-color: #e67e22; }
-.breakdown-item:nth-child(3) { border-left-color: #f1c40f; }
-.breakdown-item:nth-child(4) { border-left-color: #9b59b6; }
+.breakdown-item.is-expanded {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.breakdown-container:nth-child(1) .breakdown-item { border-left-color: var(--neon-bordeaux, #d9004c); }
+.breakdown-container:nth-child(2) .breakdown-item { border-left-color: #e67e22; }
+.breakdown-container:nth-child(3) .breakdown-item { border-left-color: #f1c40f; }
+.breakdown-container:nth-child(4) .breakdown-item { border-left-color: #9b59b6; }
 
 .breakdown-left {
   display: flex;
@@ -400,11 +545,106 @@ const finishedReport = computed(() => {
   align-items: center;
 }
 
+.breakdown-rating {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--neon-cyan, #00e5ff);
+  background: rgba(0, 229, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  margin-right: 16px;
+  font-family: 'Fira Code', monospace;
+}
+
 .breakdown-time {
   font-weight: 700;
   color: var(--neon-yellow, #f1c40f);
   font-family: 'Fira Code', monospace;
   font-size: 0.95rem;
+}
+
+.breakdown-arrow {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-left: 12px;
+  transition: transform 0.3s ease;
+}
+
+.breakdown-arrow.rotated {
+  transform: rotate(180deg);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.breakdown-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0 20px;
+}
+
+.breakdown-details.is-open {
+  max-height: 500px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.details-table th {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.details-table td {
+  padding: 10px 0;
+  color: #ccc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.details-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cat-name {
+  font-weight: 700;
+  color: #fff;
+}
+
+.cat-solved {
+  color: #2ecc71;
+  font-family: 'Fira Code', monospace;
+}
+
+.cat-failed {
+  font-family: 'Fira Code', monospace;
+}
+
+.cat-failed.has-errors {
+  color: var(--neon-bordeaux, #d9004c);
+  font-weight: bold;
+}
+
+.cat-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Fira Code', monospace;
+}
+
+.cat-rating {
+  color: var(--neon-cyan, #00e5ff);
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
 }
 
 .completed-actions {

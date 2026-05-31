@@ -491,20 +491,33 @@ export interface TrainingPlanPuzzlesJson {
   puzzles: DailyTrainingPlanPuzzle[]
 }
 
+export interface CategoryReportBreakdown {
+  category: string
+  solved: number
+  failed: number
+  avgTimeMs: number
+  avgRating: number
+}
+
 export interface SubModeReportBreakdown {
   subMode: string
   count: number
+  failedCount: number
   timeMs: number
   attempts: number
+  avgRating: number
+  categories: CategoryReportBreakdown[]
 }
 
 export interface CompletedPlanReport {
   strategyTitle: string
   totalPuzzles: number
+  totalFailed: number
   totalTimeMs: number
   totalAttempts: number
   accuracy: number
   avgTimeMs: number
+  avgRating: number
   breakdown: SubModeReportBreakdown[]
 }
 
