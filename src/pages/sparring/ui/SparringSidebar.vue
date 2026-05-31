@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { LichessOpeningExplorer, PgnTree } from '@/features/play-coach';
-import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService';
-import { NScrollbar, NText } from 'naive-ui';
+import { LichessOpeningExplorer } from '@/features/sparring';
+import { NText } from 'naive-ui';
 
 // Component is now self-contained using OpeningExplorerStore
 </script>
@@ -16,17 +15,6 @@ import { NScrollbar, NText } from 'naive-ui';
       <div class="active-game-section">
         <div class="coach-stats-section">
           <LichessOpeningExplorer :max-moves="10" />
-        </div>
-
-        <div class="pgn-section" style="margin-top: 20px">
-          <n-text class="input-label" style="margin-bottom: 8px; display: block">Partieverlauf</n-text>
-          <div class="pgn-container">
-            <n-scrollbar style="max-height: 400px">
-              <div class="pgn-content">
-                <PgnTree :key="pgnTreeVersion" />
-              </div>
-            </n-scrollbar>
-          </div>
         </div>
       </div>
     </div>
@@ -74,24 +62,5 @@ import { NScrollbar, NText } from 'naive-ui';
   min-height: 300px;
   display: flex;
   flex-direction: column;
-}
-
-.input-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-muted);
-}
-
-.pgn-container {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.pgn-content {
-  line-height: 1.5;
 }
 </style>

@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { NText, NButton, NDivider } from 'naive-ui'
 
 import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebar, useCoachStore } from '@/features/coach'
+import { useCoachStore } from '@/features/coach'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { useTacticsStore, GuessColorSelection } from '@/features/tactics'
 import TacticsSidebar from './TacticsSidebar.vue'
 
@@ -104,7 +105,7 @@ onUnmounted(() => {
     </template>
 
     <template #right-panel>
-      <CoachSidebar />
+      <CoachSidebarWidget />
     </template>
   </GameLayout>
 </template>

@@ -18,18 +18,43 @@
       </div>
     </div>
 
-    <div>
-      <div v-if="coachStore.isAnalyzing && !coachStore.currentExplanation" class="coach-loading">
-        <div class="spinner"></div>
-        <p>Analyzing position...</p>
+    <!-- Tab Bar -->
+    <div class="tab-switcher-container">
+      <n-tabs
+        :value="activeTab"
+        @update:value="emit('update:activeTab', $event)"
+        type="segment"
+        animated
+        class="mode-tabs"
+      >
+        <n-tab name="coach">
+          Coach
+        </n-tab>
+        <n-tab name="analyse">
+          Analyse
+        </n-tab>
+      </n-tabs>
+    </div>
+
+    <!-- Content area -->
+    <div class="sidebar-content-wrapper">
+      <div v-show="activeTab === 'coach'" class="coach-content-scroll">
+        <div v-if="coachStore.isAnalyzing && !coachStore.currentExplanation" class="coach-loading">
+          <div class="spinner"></div>
+          <p>Analyzing position...</p>
+        </div>
+
+        <div v-else class="coach-content">
+          <CoachAvatar />
+          <CoachLastMove />
+          <CoachTopMoves />
+          <CoachPositionSummary />
+          <CoachBook />
+        </div>
       </div>
 
-      <div v-else class="coach-content">
-        <CoachAvatar />
-        <CoachLastMove />
-        <CoachTopMoves />
-        <CoachPositionSummary />
-        <CoachBook />
+      <div v-show="activeTab === 'analyse'" class="analyse-content-scroll">
+        <slot name="analyse"></slot>
       </div>
     </div>
   </div>
@@ -37,7 +62,7 @@
 
 <script setup lang="ts">
 import { EyeOffOutline, EyeOutline } from '@vicons/ionicons5'
-import { NIcon } from 'naive-ui'
+import { NIcon, NTabs, NTab } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachAvatar from './CoachAvatar.vue'
 import CoachBook from './CoachBook.vue'
@@ -45,6 +70,19 @@ import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachSettings from './CoachSettings.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
+
+withDefaults(
+  defineProps<{
+    activeTab?: string
+  }>(),
+  {
+    activeTab: 'coach',
+  }
+)
+
+const emit = defineEmits<{
+  (e: 'update:activeTab', value: string): void
+}>()
 
 const coachStore = useCoachStore()
 
@@ -106,6 +144,47 @@ const onSettingsChange = () => {
   border-color: rgba(0, 242, 255, 0.4);
 }
 
+.tab-switcher-container {
+  padding: 0 14px 8px;
+}
+
+.mode-tabs {
+  --n-tab-font-size: 0.85rem;
+}
+
+.sidebar-content-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.coach-content-scroll,
+.analyse-content-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.coach-content-scroll::-webkit-scrollbar,
+.analyse-content-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.coach-content-scroll::-webkit-scrollbar-track,
+.analyse-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.coach-content-scroll::-webkit-scrollbar-thumb,
+.analyse-content-scroll::-webkit-scrollbar-thumb {
+  background-color: #27272a;
+  border-radius: 4px;
+}
+.coach-content-scroll::-webkit-scrollbar-thumb:hover,
+.analyse-content-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #3f3f46;
+}
+
 .coach-loading {
   font-size: 12px;
   color: #a1a1aa;
@@ -133,22 +212,6 @@ const onSettingsChange = () => {
 .coach-content {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.coach-content::-webkit-scrollbar {
-  width: 4px;
-}
-.coach-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.coach-content::-webkit-scrollbar-thumb {
-  background-color: #27272a;
-  border-radius: 4px;
-}
-.coach-content::-webkit-scrollbar-thumb:hover {
-  background-color: #3f3f46;
+  gap: 12px;
 }
 </style>

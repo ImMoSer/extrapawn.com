@@ -3,7 +3,8 @@ import { NButton, NDivider, NText } from 'naive-ui'
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { CoachSidebar, useCoachStore } from '@/features/coach'
+import { useCoachStore } from '@/features/coach'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { GuessColorSelection, useEndgamesStore } from '@/features/endgames'
 import { GameLayout } from '@/widgets/game-layout'
 import EndgamesSidebar from './EndgamesSidebar.vue'
@@ -104,7 +105,7 @@ onUnmounted(() => {
     </template>
 
     <template #right-panel>
-      <CoachSidebar />
+      <CoachSidebarWidget />
     </template>
   </GameLayout>
 </template>

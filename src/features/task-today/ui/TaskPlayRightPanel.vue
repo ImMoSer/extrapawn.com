@@ -2,10 +2,7 @@
 import { useTaskTodayStore, type PuzzleResult } from '../model/taskToday.store'
 import { NText, NScrollbar, NList, NListItem } from 'naive-ui'
 import { computed } from 'vue'
-import { AnalysisPanel, useAnalysisStore } from '@/features/analysis'
-
 const taskTodayStore = useTaskTodayStore()
-const analysisStore = useAnalysisStore()
 
 interface DisplayPuzzleItem {
   puzzle_id: string
@@ -84,9 +81,7 @@ const getPuzzleStatus = (puzzleId: string) => {
       </NList>
     </NScrollbar>
 
-    <div class="analysis-toggle-section">
-      <AnalysisPanel v-if="analysisStore.isPanelVisible" />
-    </div>
+
   </div>
 </template>
 
@@ -190,8 +185,5 @@ const getPuzzleStatus = (puzzleId: string) => {
   border-left: 3px solid #28a745;
 }
 
-.analysis-toggle-section {
-  border-top: 1px solid var(--color-border);
-  padding: 8px;
-}
+
 </style>

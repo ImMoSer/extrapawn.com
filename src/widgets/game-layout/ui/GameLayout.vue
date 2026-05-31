@@ -1,12 +1,11 @@
 <!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
-import { EvalBar, useAnalysisStore } from '@/features/analysis'
+import { useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
 import { useAutoplayStore } from '@/features/autoplay'
 import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
-import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -19,7 +18,6 @@ const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const autoplayStore = useAutoplayStore()
 const analysisStore = useAnalysisStore()
-const { analysisLines } = storeToRefs(analysisStore)
 const route = useRoute()
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
@@ -97,16 +95,6 @@ onUnmounted(() => {
         </div>
 
         <div class="board-section">
-          <div class="eval-bar-wrapper">
-            <EvalBar
-              v-if="analysisStore.isAnalysisActive"
-              :score="analysisLines[0]?.score ?? null"
-              :wdl="analysisLines[0]?.wdl ?? null"
-              :turn="analysisLines[0]?.initialTurn"
-              :orientation="boardStore.orientation"
-            />
-          </div>
-
           <div class="board-aspect-wrapper">
             <WebChessBoard
               :fen="boardStore.fen"
@@ -169,7 +157,6 @@ onUnmounted(() => {
 /* --- Center Stage Area --- */
 .center-stage {
   position: relative;
-  --eval-bar-width: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -209,11 +196,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.eval-bar-wrapper {
-  width: var(--eval-bar-width);
-  height: 100%;
-  flex-shrink: 0;
-}
+
 
 .center-column-overlay {
   position: absolute;
@@ -313,16 +296,15 @@ onUnmounted(() => {
   }
 
   .board-section {
-    /* Always reserve space for eval bar exactly */
-    --board-size-mobile: calc(100vw - var(--eval-bar-width));
+    --board-size-mobile: 100vw;
     height: var(--board-size-mobile);
     flex: 0 0 var(--board-size-mobile);
     justify-content: center;
   }
 
   .board-aspect-wrapper {
-    width: calc(100vw - var(--eval-bar-width));
-    height: calc(100vw - var(--eval-bar-width));
+    width: 100vw;
+    height: 100vw;
     aspect-ratio: 1 / 1;
     margin: 0;
     flex-shrink: 0;
