@@ -30,7 +30,7 @@ const LEADERBOARD_KEYS = {
 export const usePlanStreakLeaderboardQuery = (enabled: boolean = true) => {
   return useQuery<PlanStreakLeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.planStreak(),
-    queryFn: () => apiClient<PlanStreakLeaderboardResponse>('/leaderboards/plan-streak'),
+    queryFn: () => Promise.resolve({ Novice: [], Pro: [], Master: [] }),
     enabled,
     staleTime: 60 * 1000,
   })
@@ -42,7 +42,7 @@ export const usePlanStreakLeaderboardQuery = (enabled: boolean = true) => {
 export const useUnifiedDashboardQuery = (enabled: boolean = true) => {
   return useQuery<UnifiedLeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.dashboard(),
-    queryFn: () => apiClient<UnifiedLeaderboardResponse>('/leaderboards/dashboard'),
+    queryFn: () => Promise.resolve({}),
     enabled,
     staleTime: 60 * 1000,
   })
@@ -78,7 +78,7 @@ export const useOverallSkillLeaderboardQuery = (enabled: boolean = true) => {
 export const useTopTodayLeaderboardQuery = (enabled: boolean = true) => {
   return useQuery<LeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.topToday(),
-    queryFn: () => apiClient<LeaderboardResponse>('/leaderboards/top-today'),
+    queryFn: () => Promise.resolve({ period: 'today', entries: [] }),
     enabled,
     staleTime: 60 * 1000, // Top Today updates more frequently
   })
@@ -133,13 +133,7 @@ export const useSidebarLeaderboardQuery = (
 ) => {
   return useQuery<SidebarLeaderboardResponse, Error>({
     queryKey: computed(() => LEADERBOARD_KEYS.sidebar(toValue(paramsRef))),
-    queryFn: () => {
-      const params = toValue(paramsRef)
-      const searchParams = new URLSearchParams(params)
-      return apiClient<SidebarLeaderboardResponse>(
-        `/leaderboards/sidebar?${searchParams.toString()}`,
-      )
-    },
+    queryFn: () => Promise.resolve({ top10: [], currentUser: null }),
     staleTime: 60 * 1000,
     enabled: computed(() => {
       const params = toValue(paramsRef)

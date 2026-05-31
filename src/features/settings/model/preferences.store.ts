@@ -4,8 +4,8 @@ import { useAuthStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
 import { registerEngineConfigProvider } from '@/shared/lib/engine/coach/engine'
+import { apiClient } from '@/shared/api/client'
 
-const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL as string
 const LOCAL_STORAGE_KEY = 'user_preferences_backup_v1'
 
 export interface ThemePreferences {
@@ -147,17 +147,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
       return
     }
     try {
-      const response = await fetch(`${BACKEND_API_URL}/users/me/preferences`, {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const backendPrefs = await response.json()
-        preferences.value = deepMerge(DEFAULT_USER_PREFERENCES, backendPrefs)
-        saveLocal()
-        logger.info('[PreferencesStore] Preferences loaded from backend.')
-      } else {
-        logger.warn('[PreferencesStore] Failed to load preferences from backend, status:', response.status)
-      }
+      const backendPrefs = await apiClient<UserPreferencesDto>('/users/me/preferences')
+      preferences.value = deepMerge(DEFAULT_USER_PREFERENCES, backendPrefs)
+      saveLocal()
+      logger.info('[PreferencesStore] Preferences loaded from backend.')
     } catch (err) {
       logger.error('[PreferencesStore] Error loading preferences from backend:', err)
     }
@@ -174,15 +167,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
       }
       saveTimeout = window.setTimeout(async () => {
         try {
-          const response = await fetch(`${BACKEND_API_URL}/users/me/preferences`, {
+          await apiClient<UserPreferencesDto>('/users/me/preferences', {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
             body: JSON.stringify(updateDto),
-            credentials: 'include',
           })
-          if (!response.ok) throw new Error(`HTTP ${response.status}`)
           logger.info('[PreferencesStore] Preferences successfully updated on backend.')
         } catch (err) {
           logger.error('[PreferencesStore] Failed to update preferences on backend:', err)
