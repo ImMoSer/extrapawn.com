@@ -15,7 +15,6 @@ import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useAutoplayStore } from '@/features/autoplay'
 import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
-import type { GameResultResponse } from '@/shared/types/api.types'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
@@ -141,42 +140,24 @@ export const useEndgamesStore = defineStore('endgames', () => {
     }
 
     try {
-      const resultDto = {
-        wasCorrect: isWin,
-        puzzle: puzzle
+      if (!puzzle || !puzzle.puzzle_type) {
+        throw new Error('Puzzle or puzzle_type is missing')
       }
 
-      const response = await apiClient<GameResultResponse>('/play-puzzle/result', {
-        method: 'POST',
-        body: JSON.stringify(resultDto),
-      })
+      const response = await apiClient<{ PawnCoins: number; dailyLimit: number; spentToday: number }>(
+        `/billing/${puzzle.puzzle_type}`,
+        { method: 'GET' }
+      )
 
-      if (response) {
-        if (response.ratingDelta !== undefined) {
-          const delta = response.ratingDelta
-          const sign = delta >= 0 ? '+' : ''
-          const msg = t('common.stats.ratingChange', { delta: `${sign}${delta}` })
-
-          if (delta >= 0) {
-            window.$message?.success(msg)
-          } else {
-            window.$message?.error(msg)
-          }
-        }
-
-        // Handle flat response or nested update
-        if (response.PawnCoins !== undefined) {
-          authStore.updateUserStats({
-            PawnCoins: response.PawnCoins,
-            dailyLimit: response.dailyLimit,
-            spentToday: response.spentToday
-          })
-        } else if (response.userStatsUpdate) {
-          authStore.updateUserStats(response.userStatsUpdate)
-        }
+      if (response && response.PawnCoins !== undefined) {
+        authStore.updateUserStats({
+          PawnCoins: response.PawnCoins,
+          dailyLimit: response.dailyLimit,
+          spentToday: response.spentToday
+        })
       }
     } catch (error) {
-      logger.error('[EndgamesStore] Failed to submit results:', error)
+      logger.error('[EndgamesStore] Failed to trigger billing:', error)
       if (error instanceof InsufficientPawnCoinsError) {
         authStore.setDailyLimitExceeded(true)
       }
