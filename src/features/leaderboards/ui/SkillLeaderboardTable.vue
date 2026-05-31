@@ -47,9 +47,10 @@ const props = defineProps({
 const { t } = useI18n()
 
 const skillModes = [
-  { key: 'finish_him', nameKey: 'gameModes.finishHim', color: '#42b883' }, // Green
-  { key: 'theory', nameKey: 'features.userCabinet.stats.modes.theory', color: '#9b59b6' }, // Purple
-  { key: 'practical', nameKey: 'features.userCabinet.stats.modes.practical', color: '#3498db' }, // Blue
+  { key: 'finish_him', nameKey: 'gameModes.finishHim', color: '#9b59b6' }, // Purple
+  { key: 'theory_endings', nameKey: 'features.userCabinet.stats.modes.theory', color: '#e74c3c' }, // Red/Coral
+  { key: 'practical_chess', nameKey: 'features.userCabinet.stats.modes.practical', color: '#3498db' }, // Blue
+  { key: 'tactics', nameKey: 'features.userCabinet.stats.modes.tactics', color: '#42b883' }, // Green
 ] as const
 
 const tierToPieceMap: Record<string, string> = {
@@ -85,11 +86,15 @@ const getTotal = (entry: LeaderboardEntry | SolveStreakLeaderboardEntry) => {
 // Helper to get mode score
 const getModeScore = (entry: LeaderboardEntry | SolveStreakLeaderboardEntry, modeKey: string) => {
   if ('score' in entry && entry.score && typeof entry.score === 'object') {
-    return entry.score[modeKey] || 0
+    if (entry.score[modeKey] !== undefined) return entry.score[modeKey]
+    if (modeKey === 'theory_endings' && entry.score['theory'] !== undefined) return entry.score['theory']
+    if (modeKey === 'practical_chess' && entry.score['practical'] !== undefined) return entry.score['practical']
+    return 0
   }
   if ('solved_by_mode' in entry && entry.solved_by_mode) {
-    // Adapter for old practical-chess key
-    const key = modeKey === 'practical' ? 'practical-chess' : modeKey
+    let key = modeKey
+    if (modeKey === 'practical_chess' || modeKey === 'practical') key = 'practical-chess'
+    if (modeKey === 'theory_endings') key = 'theory'
     return entry.solved_by_mode[key] || 0
   }
   return 0

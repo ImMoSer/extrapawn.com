@@ -47,11 +47,11 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
       title: '#',
       key: 'rank',
       align: 'center',
-      width: 30,
-      render: (row) => row.rank || '-',
+      width: 40,
+      render: (_, idx) => (idx + 1).toString(),
     },
     {
-      title: t('features.leaderboards.table.player'),
+      title: t('features.leaderboards.table.player', 'Player'),
       key: 'username',
       minWidth: 120,
       ellipsis: { tooltip: true },
@@ -60,7 +60,7 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
         const id = row.id
         const icon = getSubscriptionIcon(tier)
         return h('div', { style: { display: 'flex', alignItems: 'center' } }, [
-          icon ? h('img', { src: icon, class: 'tier-icon', style: { marginRight: '6px' } }) : null,
+          icon ? h('img', { src: icon, class: 'tier-icon', style: { marginRight: '6px', width: '20px', height: '20px' } }) : null,
           h(
             'n-a',
             {
@@ -74,55 +74,66 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
       },
     },
     {
-      title: isOverall ? 'Score' : t('features.leaderboards.table.maxRating', 'maxRating'),
+      title: isOverall ? t('features.leaderboards.table.solved', 'Solved') : t('features.leaderboards.table.maxRating', 'Max'),
       key: isOverall ? 'score' : 'maxRating',
       align: 'center' as const,
-      width: 85,
+      width: 90,
       render: (row) =>
         h('span', { class: 'mode-score-value' }, isOverall ? row.score : row.maxRating),
     },
     ...(!isOverall
       ? [
           {
-            title: t('features.leaderboards.table.avgRating', 'Avg'),
+            title: t('features.leaderboards.table.avgRating', 'Schnitt'),
             key: 'avgRating',
             align: 'center' as const,
-            width: 85,
+            width: 90,
             render: (row: UnifiedLeaderboardEntry) =>
               h('span', { style: { color: 'var(--color-text-muted)' } }, row.avgRating),
           },
         ]
       : []),
     {
-      title: t('features.leaderboards.table.bestDay', 'error'),
+      title: t('features.leaderboards.table.bestDay', 'Best Day'),
       key: 'highScore',
       align: 'center' as const,
-      width: 100,
+      width: 95,
       render: (row) => h('span', { style: { fontWeight: 'bold' } }, row.highScore),
     },
     {
-      title: t('features.leaderboards.table.activeDays', 'Days'),
+      title: t('features.leaderboards.table.activeDays', 'Tage'),
       key: 'activeDays',
       align: 'center' as const,
-      width: 100,
+      width: 90,
       render: (row) => row.activeDays,
     },
-    {
-      title: t('features.leaderboards.table.played'),
-      key: 'played',
-      align: 'center' as const,
-      width: 100,
-      render: (row) => row.solved + row.failed,
-    },
+    ...(isOverall
+      ? [
+          {
+            title: t('features.leaderboards.table.plans', 'Plans'),
+            key: 'plansCount',
+            align: 'center' as const,
+            width: 90,
+            render: (row: UnifiedLeaderboardEntry) => h('span', { style: { fontWeight: 'bold', color: '#2ecc71' } }, row.plansCount || 0),
+          },
+        ]
+      : [
+          {
+            title: t('features.leaderboards.table.played', 'Spiele'),
+            key: 'played',
+            align: 'center' as const,
+            width: 90,
+            render: (row: UnifiedLeaderboardEntry) => row.solved + row.failed,
+          },
+        ]),
     {
       title: '%',
       key: 'accuracy',
       align: 'right' as const,
-      width: 45,
+      width: 65,
       render(row) {
-        const total = row.solved + row.failed
-        if (total === 0) return '-'
-        const acc = (row.solved / total) * 100
+        const acc = row.accuracy
+        if (acc === undefined || acc === null) return '-'
         return h(
           'span',
           {
@@ -136,7 +147,7 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
               fontWeight: 'bold',
             },
           },
-          `${acc.toFixed(0)}`,
+          `${acc.toFixed(1)}%`,
         )
       },
     },

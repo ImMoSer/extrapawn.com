@@ -37,9 +37,10 @@ const { data: planStreakResponse, isFetching: isPlanStreakLoading } = usePlanStr
 )
 
 const strategicTabs = computed(() => [
-  { id: 'theory', name: t('features.leaderboards.titles.theoryLeaderboard'), icon: '' },
-  { id: 'practical-chess', name: t('features.leaderboards.titles.practicalLeaderboard'), icon: '' },
-  { id: 'finish_him', name: t('features.leaderboards.titles.topFinishHim'), icon: '' },
+  { id: 'practical_chess', name: t('features.leaderboards.titles.practicalLeaderboard', 'Practical Chess'), icon: '' },
+  { id: 'theory_endings', name: t('features.leaderboards.titles.theoryLeaderboard', 'Theory Endings'), icon: '' },
+  { id: 'finish_him', name: t('features.leaderboards.titles.topFinishHim', 'Finish Him'), icon: '' },
+  { id: 'tactics', name: t('features.leaderboards.titles.tacticsLeaderboard', 'Tactics'), icon: '' },
 ])
 
 const exampleData = computed(() => (isExample.value ? generateRandomHallOfFame() : null))
@@ -95,7 +96,7 @@ const isLoading = computed(() => {
         <div class="section-grid">
           <!-- Strategic Mastery -->
           <TimedModeLeaderboardTable
-            :title="t('features.leaderboards.sections.strategic')"
+            title="Puzzle Master"
             :data="isExample ? exampleData?.strategicLeaderboard : dashboardData"
             :tabs="strategicTabs"
             :is-loading="isDashboardLoading"

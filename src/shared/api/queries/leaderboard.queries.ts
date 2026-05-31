@@ -30,7 +30,7 @@ const LEADERBOARD_KEYS = {
 export const usePlanStreakLeaderboardQuery = (enabled: boolean = true) => {
   return useQuery<PlanStreakLeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.planStreak(),
-    queryFn: () => Promise.resolve({ Novice: [], Pro: [], Master: [] }),
+    queryFn: () => apiClient<PlanStreakLeaderboardResponse>('/records/plan-streak'),
     enabled,
     staleTime: 60 * 1000,
   })
@@ -42,7 +42,7 @@ export const usePlanStreakLeaderboardQuery = (enabled: boolean = true) => {
 export const useUnifiedDashboardQuery = (enabled: boolean = true) => {
   return useQuery<UnifiedLeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.dashboard(),
-    queryFn: () => Promise.resolve({}),
+    queryFn: () => apiClient<UnifiedLeaderboardResponse>('/records/dashboard'),
     enabled,
     staleTime: 60 * 1000,
   })
@@ -78,7 +78,7 @@ export const useOverallSkillLeaderboardQuery = (enabled: boolean = true) => {
 export const useTopTodayLeaderboardQuery = (enabled: boolean = true) => {
   return useQuery<LeaderboardResponse, Error>({
     queryKey: LEADERBOARD_KEYS.topToday(),
-    queryFn: () => Promise.resolve({ period: 'today', entries: [] }),
+    queryFn: () => apiClient<LeaderboardResponse>('/records/top-today'),
     enabled,
     staleTime: 60 * 1000, // Top Today updates more frequently
   })

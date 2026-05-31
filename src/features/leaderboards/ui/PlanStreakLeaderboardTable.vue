@@ -1,32 +1,10 @@
 <!-- src/features/leaderboards/ui/PlanStreakLeaderboardTable.vue -->
 <script setup lang="ts">
-import type { PlanStreakLeaderboardResponse } from '@/shared/types/api.types'
-import { BarChart } from 'echarts/charts'
-import {
-  GridComponent,
-  LegendComponent,
-  TitleComponent,
-  TooltipComponent,
-} from 'echarts/components'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { computed, onMounted, onUnmounted, ref, type PropType } from 'vue'
-import VChart from 'vue-echarts'
+import type { PlanStreakLeaderboardResponse, PlanStreakLeaderboardEntry } from '@/shared/types/api.types'
+import type { DataTableColumns } from 'naive-ui'
+import { computed, h, ref, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NTabs, NTabPane, NSpin, NEmpty } from 'naive-ui'
-
-use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
-
-interface TooltipParam {
-  dataIndex: number
-  value: number
-  color: string
-}
-
-interface ClickParam {
-  componentType: string
-  dataIndex: number
-}
+import { NTabs, NTabPane, NSpin, NEmpty, NDataTable } from 'naive-ui'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -47,8 +25,6 @@ const currentEntries = computed(() => {
   return props.entries[activeTab.value] || []
 })
 
-const COMPLETIONS_COLOR = '#9b59b6' // Purple color
-
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
   Knight: 'wN.svg',
@@ -59,159 +35,112 @@ const tierToPieceMap: Record<string, string> = {
   Administrator: 'wK.svg',
 }
 
-const getTierIcon = (tierStr: string) => {
+const getSubscriptionIcon = (tierStr: string) => {
   const actualTier = tierStr && tierToPieceMap[tierStr] ? tierStr : 'Pawn'
   return `/piece/alpha/${tierToPieceMap[actualTier]}`
 }
 
-// Responsive logic
-const isMobile = ref(false)
-const canHover = ref(true)
-const updateMobile = () => {
-  isMobile.value = window.innerWidth <= 768
+const formatDuration = (ms?: number): string => {
+  if (ms === undefined || ms === null) return '-'
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`
+  }
+  return `${seconds}s`
 }
 
-onMounted(() => {
-  updateMobile()
-  canHover.value = window.matchMedia('(hover: hover)').matches
-  window.addEventListener('resize', updateMobile)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateMobile)
-})
-
-const chartOption = computed(() => {
-  const displayEntries = [...currentEntries.value].slice(0, 20)
-
-  return {
-    backgroundColor: 'transparent',
-    tooltip: {
-      show: canHover.value,
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      appendTo: 'body',
-      confine: true,
-      triggerOn: 'mousemove',
-      hideDelay: 0,
-      enterable: false,
-      backgroundColor: '#2a2a2e',
-      borderColor: '#5A5A5A',
-      textStyle: { color: '#CCCCCC' },
-      formatter: (params: unknown) => {
-        const p = params as TooltipParam[]
-        if (!p || !p[0]) return ''
-        const entry = displayEntries[p[0].dataIndex]
-        if (!entry) return ''
-
-        const iconPath = getTierIcon(entry.tier)
-
-        let html = `<div style="padding: 8px; min-width: 150px; background: rgba(10, 11, 20, 0.95); border: 1px solid var(--glass-border); border-radius: 8px;">
-                      <b style="color: #FFFFFF; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--glass-border); padding-bottom: 4px;">
-                        <img src="${iconPath}" alt="tier" style="width: 20px; height: 20px;" /> 
-                        ${entry.username}
-                      </b>`
-
-        html += `
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: ${COMPLETIONS_COLOR}; font-weight: bold;">Completed:</span>
-            <span style="color: #FFF; margin-left: 12px;">${entry.completed_count || 0} ✅</span>
-          </div>`
-
-        html += `</div>`
-        return html
+const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
+  return [
+    {
+      title: '#',
+      key: 'rank',
+      align: 'center',
+      width: 40,
+      render: (_, idx) => (idx + 1).toString(),
+    },
+    {
+      title: t('features.leaderboards.table.player', 'Player'),
+      key: 'username',
+      minWidth: 120,
+      ellipsis: { tooltip: true },
+      render(row) {
+        const tier = row.tier || 'Pawn'
+        const id = row.id
+        const icon = getSubscriptionIcon(tier)
+        return h('div', { style: { display: 'flex', alignItems: 'center' } }, [
+          icon ? h('img', { src: icon, class: 'tier-icon', style: { marginRight: '6px', width: '20px', height: '20px' } }) : null,
+          h(
+            'n-a',
+            {
+              href: `https://lichess.org/@/${id}`,
+              target: '_blank',
+              style: { fontWeight: 'bold' },
+            },
+            row.username,
+          ),
+        ])
       },
     },
-    grid: {
-      left: '3%',
-      right: '12%',
-      bottom: '3%',
-      top: '5%',
-      containLabel: true,
+    {
+      title: t('features.leaderboards.table.streakDays', 'Streak'),
+      key: 'current_streak',
+      align: 'center' as const,
+      width: 95,
+      render: (row) => h('span', { style: { fontWeight: 'bold', color: '#e67e22' } }, `${row.current_streak || 0} 🔥`),
     },
-    xAxis: {
-      type: 'value',
-      show: false,
-      splitLine: { show: false },
+    {
+      title: t('features.leaderboards.table.plans', 'Plans'),
+      key: 'completed_count',
+      align: 'center' as const,
+      width: 90,
+      render: (row) => h('span', { style: { fontWeight: 'bold', color: '#2ecc71' } }, `${row.completed_count || 0} ✅`),
     },
-    yAxis: {
-      type: 'category',
-      inverse: true,
-      triggerEvent: true,
-      data: displayEntries.map((e, idx) => {
-        const rank = idx + 1
-        return `${rank}. {icon${idx}| } ${e.username}`
-      }),
-      axisLabel: {
-        color: '#CCC',
-        fontSize: isMobile.value ? 9 : 12,
-        fontWeight: 'bold',
-        formatter: (value: string) => value,
-        rich: displayEntries.reduce(
-          (acc, entry, index) => {
-            const iconUrl = getTierIcon(entry.tier)
-            const iconSize = isMobile.value ? 20 : 32
-            acc[`icon${index}`] = {
-              backgroundColor: { image: iconUrl },
-              height: iconSize,
-              width: iconSize,
-              align: 'center',
-            }
-            return acc
+    {
+      title: t('features.leaderboards.table.solved', 'Solved'),
+      key: 'puzzles_solved',
+      align: 'center' as const,
+      width: 90,
+      render: (row) => h('span', { style: { fontWeight: 'bold' } }, row.puzzles_solved || 0),
+    },
+    {
+      title: t('features.leaderboards.table.time', 'Time'),
+      key: 'time_spent',
+      align: 'center' as const,
+      width: 100,
+      render: (row) => h('span', { style: { fontFamily: 'monospace' } }, formatDuration(row.time_spent)),
+    },
+    {
+      title: '%',
+      key: 'accuracy',
+      align: 'right' as const,
+      width: 65,
+      render(row) {
+        const acc = row.accuracy
+        if (acc === undefined || acc === null) return '-'
+        return h(
+          'span',
+          {
+            style: {
+              color:
+                acc > 70
+                  ? 'var(--color-accent-success)'
+                  : acc > 40
+                    ? 'var(--color-accent-warning)'
+                    : 'var(--color-accent-error)',
+              fontWeight: 'bold',
+            },
           },
-          {} as Record<
-            string,
-            { backgroundColor: { image: string }; height: number; width: number; align: string }
-          >,
-        ),
+          `${acc.toFixed(1)}%`,
+        )
       },
-      axisLine: { show: false },
-      axisTick: { show: false },
     },
-    series: [
-      {
-        name: 'Completed',
-        type: 'bar',
-        barWidth: isMobile.value ? 17 : 24,
-        itemStyle: {
-          color: COMPLETIONS_COLOR,
-          borderRadius: [0, 4, 4, 0],
-        },
-        label: {
-          show: true,
-          position: 'right',
-          distance: 10,
-          color: COMPLETIONS_COLOR,
-          fontWeight: 'bold',
-          fontSize: isMobile.value ? 10 : 14,
-          formatter: '{c} ✅',
-        },
-        data: displayEntries.map((e) => e.completed_count || 0),
-      },
-    ],
-  }
+  ]
 })
-
-const dynamicHeight = computed(() => {
-  const count = Math.max(currentEntries.value.length, 1)
-  const displayCount = Math.min(count, 20)
-  const perEntry = isMobile.value ? 32 : 45
-  const padding = isMobile.value ? 28 : 40
-  return `${displayCount * perEntry + padding}px`
-})
-
-const onChartClick = (params: unknown) => {
-  const p = params as ClickParam
-  if (p.componentType === 'yAxis' || p.componentType === 'series') {
-    const entries = [...currentEntries.value].slice(0, 20)
-    const entry = entries[p.dataIndex]
-    if (!entry) return
-
-    if (p.componentType === 'yAxis' && entry.id) {
-      window.open(`https://lichess.org/@/${entry.id}`, '_blank')
-    }
-  }
-}
 </script>
 
 <template>
@@ -232,13 +161,17 @@ const onChartClick = (params: unknown) => {
           <NTabPane name="Pro" tab="Pro" />
           <NTabPane name="Master" tab="Master" />
         </NTabs>
-        <div class="chart-container" :style="{ height: dynamicHeight }">
-          <v-chart
+        <div class="table-container">
+          <NDataTable
             v-if="currentEntries.length > 0"
-            class="chart"
-            :option="chartOption"
-            @click="onChartClick"
-            autoresize
+            :columns="columns"
+            :data="currentEntries"
+            :row-key="(row: PlanStreakLeaderboardEntry) => row.id"
+            size="small"
+            striped
+            class="records-table"
+            :max-height="400"
+            :scroll-x="400"
           />
           <NEmpty v-else :description="t('features.userCabinet.stats.noData')" />
         </div>
@@ -295,18 +228,36 @@ const onChartClick = (params: unknown) => {
   height: 200px;
 }
 
-.chart-container {
-  width: 100%;
-  position: relative;
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 16px 0;
+.table-container {
   margin-top: 12px;
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
-.chart {
-  width: 100%;
-  height: 100%;
+.records-table {
+  --n-td-color-striped: rgba(255, 255, 255, 0.035);
+}
+
+:deep(.n-data-table-th) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-muted) !important;
+  font-family: var(--font-family-primary);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+:deep(.n-data-table-td) {
+  font-family: var(--font-family-primary);
+  font-size: 0.95rem;
+  padding: 10px 4px !important;
+}
+
+:deep(.n-tabs-tab) {
+  font-family: var(--font-family-primary);
 }
 
 @media (max-width: 768px) {
@@ -320,8 +271,17 @@ const onChartClick = (params: unknown) => {
     gap: 8px;
   }
 
-  .chart-container {
-    padding: 11px 0;
+  :deep(.n-data-table-th) {
+    font-size: 0.65rem;
+  }
+  
+  :deep(.n-data-table-td) {
+    font-size: 0.75rem;
+    padding: 4px 2px !important;
+  }
+
+  .modes-container {
+    padding: 2px;
   }
 }
 </style>

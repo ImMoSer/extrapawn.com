@@ -226,6 +226,9 @@ export interface PlanStreakLeaderboardEntry {
   training_status?: string
   current_streak?: number
   completed_count?: number
+  puzzles_solved?: number
+  time_spent?: number
+  accuracy?: number
 }
 
 export interface PlanStreakLeaderboardResponse {
@@ -252,6 +255,7 @@ export interface UnifiedLeaderboardEntry {
   rank: number | string
   training_status?: string
   current_streak?: number
+  plansCount?: number
 }
 
 export type LeaderboardDifficulty = 'Novice' | 'Pro' | 'Master'
