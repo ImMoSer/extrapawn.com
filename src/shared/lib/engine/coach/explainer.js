@@ -430,6 +430,8 @@ function classifyMove({
   evalAfterWhite,
   topMoves,
   legacySacrifice,
+  wdlBefore,
+  wdlAfter,
 }) {
   const wrMover = (cpWhite) =>
     moverColor === 'w' ? winRate(cpWhite) : 100 - winRate(cpWhite);
@@ -441,10 +443,35 @@ function classifyMove({
   const bestWhite = best ? moverScoreToWhite(best.score, moverColor) : evalAfterWhite;
   const secondWhite = second ? moverScoreToWhite(second.score, moverColor) : bestWhite;
 
-  const wrBefore = wrMover(evalBeforeWhite);
-  const wrPlayed = wrMover(evalAfterWhite);
-  const wrBest   = wrMover(bestWhite);
-  const wrSecond = wrMover(secondWhite);
+  let wrBefore;
+  if (wdlBefore) {
+    wrBefore = (wdlBefore.win + 0.5 * wdlBefore.draw) / 10;
+  } else {
+    wrBefore = wrMover(evalBeforeWhite);
+  }
+
+  let wrPlayed;
+  if (playedInTop && playedInTop.wdl) {
+    wrPlayed = (playedInTop.wdl.win + 0.5 * playedInTop.wdl.draw) / 10;
+  } else if (wdlAfter) {
+    wrPlayed = (wdlAfter.win + 0.5 * wdlAfter.draw) / 10;
+  } else {
+    wrPlayed = wrMover(evalAfterWhite);
+  }
+
+  let wrBest;
+  if (best && best.wdl) {
+    wrBest = (best.wdl.win + 0.5 * best.wdl.draw) / 10;
+  } else {
+    wrBest = wrMover(bestWhite);
+  }
+
+  let wrSecond;
+  if (second && second.wdl) {
+    wrSecond = (second.wdl.win + 0.5 * second.wdl.draw) / 10;
+  } else {
+    wrSecond = wrMover(secondWhite);
+  }
 
   const loss = Math.max(0, wrBest - wrPlayed);
   const onlyMoveGap = wrBest - wrSecond;
@@ -612,6 +639,8 @@ export function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter,
     evalAfterWhite: evalAfter,
     topMoves: opts.topMoves || [],
     legacySacrifice,
+    wdlBefore: opts.wdlBefore,
+    wdlAfter: opts.wdlAfter,
   });
   // Use whichever sacrifice signal the classifier ended up trusting so
   // motifs / tagline composition stay consistent with the verdict.

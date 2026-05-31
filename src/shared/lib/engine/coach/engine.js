@@ -88,7 +88,7 @@ export function setEngineDefaults({ depth, multipv } = {}) {
 
 const DEFAULT_JOB_TIMEOUT_MS = 30_000
 const DEFAULT_INIT_TIMEOUT_MS = 15_000
-const DEFAULT_CACHE_SIZE = 2
+const DEFAULT_CACHE_SIZE = 3
 
 function parseScore(line) {
   const m = line.match(/score (cp|mate) (-?\d+)/)
@@ -99,6 +99,16 @@ function parseScore(line) {
     return { type: 'mate', value, cp }
   }
   return { type: 'cp', value, cp: value }
+}
+
+function parseWdl(line) {
+  const m = line.match(/wdl (\d+) (\d+) (\d+)/)
+  if (!m) return null
+  return {
+    win: parseInt(m[1], 10),
+    draw: parseInt(m[2], 10),
+    loss: parseInt(m[3], 10),
+  }
 }
 
 function parsePV(line) {
@@ -261,7 +271,7 @@ class StockfishEngine {
     const mpvKey = getUseServerEngine() ? `m|${fen}|server` : `m|${fen}|${getEngineDefaults().multipv}|${depth}`
     const hitMpv = this.cache.get(mpvKey)
     if (hitMpv) {
-      const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score }))
+      const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score, wdl: r.wdl }))
       this.cache.set(key, p)
       return p
     }
@@ -345,6 +355,7 @@ class StockfishEngine {
           const mpv = parseMultiPV(line)
           const score = parseScore(line)
           const pv = parsePV(line)
+          const wdl = parseWdl(line)
           if (score && pv.length > 0) {
             job.lines[mpv] = {
               rank: mpv,
@@ -354,6 +365,7 @@ class StockfishEngine {
               cp: score.type === 'cp' ? score.value : null,
               mate: score.type === 'mate' ? score.value : null,
               isMate: score.type === 'mate',
+              wdl,
             }
           }
         }
@@ -362,7 +374,10 @@ class StockfishEngine {
       job.onLine = (line) => {
         if (line.startsWith('info') && line.includes(' score ')) {
           const score = parseScore(line)
-          if (score) job.scoreObj = score
+          const wdl = parseWdl(line)
+          if (score) {
+            job.scoreObj = { ...score, wdl }
+          }
           if (job.type === 'bestmove') {
             const pv = parsePV(line)
             if (pv.length > 0) job.bestPV = pv
@@ -433,6 +448,7 @@ class StockfishEngine {
     const so = job.scoreObj
     const cp = so ? so.cp : 0
     const mate = so && so.type === 'mate' ? so.value : null
+    const wdl = so && so.wdl ? so.wdl : null
 
     if (job.type === 'multipv') {
       const results = Object.values(job.lines)
@@ -445,6 +461,7 @@ class StockfishEngine {
         score: top.score ?? 0,
         cp: top.cp ?? null,
         mate: top.mate ?? null,
+        wdl: top.wdl ?? null,
       })
     } else if (job.type === 'bestmove') {
       job.resolve({
@@ -453,10 +470,11 @@ class StockfishEngine {
         score: cp,
         cp: so && so.type === 'cp' ? so.value : null,
         mate,
+        wdl,
         pv: job.bestPV.length > 0 ? job.bestPV : [bestMove],
       })
     } else {
-      job.resolve({ cp, mate, score: cp })
+      job.resolve({ cp, mate, score: cp, wdl })
     }
 
     this.currentJob = null

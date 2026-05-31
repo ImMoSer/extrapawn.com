@@ -59,6 +59,7 @@ export interface CoachTopMove {
     winRateLoss?: number
   }
   pvLine?: { san: string; tts?: string; tagline?: string }[]
+  wdl?: { win: number; draw: number; loss: number }
 }
 
 export interface CoachVisualCommands {
@@ -152,6 +153,7 @@ export interface CoachLastMoveAnalysis {
   winRateLoss?: number
   is_best_move?: boolean
   isBestMove?: boolean
+  wdl?: { win: number; draw: number; loss: number }
   [key: string]: unknown
 }
 

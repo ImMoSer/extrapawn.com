@@ -39,6 +39,7 @@ export class WasmEngineStrategy {
     }
 
     this.send('uci')
+    this.send('setoption name UCI_ShowWDL value true')
     this.send('isready')
     return Promise.resolve()
   }

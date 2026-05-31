@@ -53,7 +53,6 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
       } else if (isUserMove && analysis.quality) {
         if (
           analysis.quality === 'blunder' ||
-          analysis.quality === 'missed_mate' ||
           analysis.quality === 'mistake' ||
           analysis.quality === 'inaccuracy'
         ) {

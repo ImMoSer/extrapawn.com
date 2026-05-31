@@ -87,6 +87,7 @@ export async function getTopMoves(fen, count = 10) {
       tagline: top.tagline,
       motifs: top.motifs,
       pvLine,
+      wdl: m.wdl,
     }
   })
   return {
@@ -138,21 +139,36 @@ export async function explainMoveAt(fen, moveUCI) {
 
   let evalAfterWhite
   let mateAfter = null
+  let wdlAfter = null
   if (playedTopEntry) {
     // Convert mover-POV → white POV.
     evalAfterWhite = moverScoreToWhite(playedTopEntry.score, turn)
     mateAfter = mateToWhite(playedTopEntry.mate, turn)
+    wdlAfter = playedTopEntry.wdl ? { ...playedTopEntry.wdl } : null
   } else {
-    // Player played outside the top set — fall back to a separate eval.
+    // Player played outside the top set — fall back to analyzing the new position.
+    // We pre-emptively start a MultiPV search on the new position. This will be cached
+    // under 'm|newFen|server' and immediately reused when the board updates and the UI requests the top moves.
     const evalMoves = prevMoves.concat([moveUCI])
-    const evalAfterRes = await engine.evaluate(newFen, depth, startFen, evalMoves, { skipTablebase: true })
-    evalAfterWhite = normalizeToWhite(evalAfterRes.cp, newTurn)
+    const evalAfterRes = await engine.analyzeMultiPV(newFen, explainMultiPV, depth, startFen, evalMoves, { skipTablebase: true })
+    evalAfterWhite = normalizeToWhite(evalAfterRes.score ?? 0, newTurn)
     mateAfter = mateToWhite(evalAfterRes.mate, newTurn)
+    if (evalAfterRes.wdl) {
+      wdlAfter = {
+        win: evalAfterRes.wdl.loss,
+        draw: evalAfterRes.wdl.draw,
+        loss: evalAfterRes.wdl.win,
+      }
+    }
   }
+
+  const wdlBefore = topRes.moves && topRes.moves[0] ? topRes.moves[0].wdl : null
 
   const explanation = explainMove(fen, newFen, moveUCI, evalBeforeWhite, evalAfterWhite, {
     topMoves: topRes.moves,
     mateAfter,
+    wdlBefore,
+    wdlAfter,
   })
 
   return { fen, newFen, move: moveUCI, ...explanation }
