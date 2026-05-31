@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { NModal, NCard, NButton, NSpace, NText } from 'naive-ui'
-import { useI18n } from 'vue-i18n'
+import { NButton, NCard, NModal, NSpace, NText } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n()
 
@@ -35,7 +35,7 @@ function handleCancel() {
   >
     <NCard
       style="width: 400px"
-      :title="t('features.speedrun.setupTitle')"
+      :title="t('features.taskToday.setupTitle')"
       :bordered="false"
       size="huge"
       role="dialog"
@@ -43,13 +43,13 @@ function handleCancel() {
     >
       <NSpace vertical size="large">
         <NText>
-          {{ t('features.speedrun.readyToStart') }}
+          {{ t('features.taskToday.readyToStart') }}
         </NText>
 
         <NSpace justify="end">
           <NButton @click="handleCancel">{{ t('common.actions.cancel') }}</NButton>
           <NButton type="primary" @click="handleConfirm">{{
-            t('features.speedrun.startBtn')
+            t('features.taskToday.startBtn')
           }}</NButton>
         </NSpace>
       </NSpace>

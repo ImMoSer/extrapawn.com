@@ -111,8 +111,7 @@
   "gameModes": {
     "finishHim": "Переход в эндшпиль",
     "theoryEndgames": "Эндшпиль",
-    "practicalChess": "Практика",
-    "repertoire": "Репертуар"
+    "practicalChess": "Практика"
   },
   "chess": {
     "subThemes": {
@@ -967,7 +966,6 @@
   "nav": {
     "home": "Главная",
     "workout": "Тренировка",
-    "speedrun": "Спидран",
     "leaderboards": "Таблицы",
     "userCabinet": "Кабинет",
     "pricing": "Цены",

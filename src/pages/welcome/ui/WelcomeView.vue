@@ -2,13 +2,13 @@
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
-  FlashOutline,
-  HammerOutline,
-  HardwareChipOutline,
-  LogInOutline,
-  PersonOutline,
-  SchoolOutline,
-  TrophyOutline,
+    FlashOutline,
+    HammerOutline,
+    HardwareChipOutline,
+    LogInOutline,
+    PersonOutline,
+    SchoolOutline,
+    TrophyOutline,
 } from '@vicons/ionicons5'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -64,7 +64,7 @@ const menuItems = [
   {
     path: '/task-today',
     icon: FlashOutline,
-    labelKey: 'features.speedrun.title',
+    labelKey: 'features.taskToday.title',
     color: 'var(--neon-cyan)',
   },
   {

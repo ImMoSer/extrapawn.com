@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {
   CashOutline,
+  ExtensionPuzzleOutline,
   FlashOutline,
   HardwareChipOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
-  TrophyOutline,
-  ExtensionPuzzleOutline,
   RibbonOutline,
+  TrophyOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
 import { computed, h, type Component } from 'vue'
@@ -56,7 +56,7 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(ExtensionPuzzleOutline),
   },
   {
-    label: () => t('features.speedrun.title', 'Task Today'),
+    label: () => t('features.taskToday.title', 'Task Today'),
     key: '/task-today',
     icon: renderIcon(FlashOutline),
   },
