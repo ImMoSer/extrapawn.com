@@ -1,6 +1,7 @@
 import { useCoachStore } from './coach.store'
 import { useCoachFeedbackStore } from './coach-feedback.store'
 import { useGameStore } from '@/entities/game'
+import { usePreferencesStore } from '@/features/settings'
 import { soundService } from '@/shared/lib/sound.service'
 import logger from '@/shared/lib/logger'
 
@@ -20,7 +21,17 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
 
   // 2. Perform takeback if the move was flagged
   const feedbackStore = useCoachFeedbackStore()
+  const preferencesStore = usePreferencesStore()
+
   if (feedbackStore.isTakebackPending) {
+    if (!preferencesStore.coachTakebackEnabled) {
+      // Clear takeback status so it doesn't block sparring bot or other strategies
+      feedbackStore.isTakebackPending = false
+      feedbackStore.pendingTakebackFen = null
+      feedbackStore.takebackMessage = null
+      return false
+    }
+
     const analysis = coachStore.lastMoveAnalysis
     if (analysis) {
       const winRateDrop = (typeof analysis.winRateLoss === 'number' && analysis.winRateLoss > 0)
@@ -46,8 +57,17 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
     // Play training error sound
     soundService.playSound('game_training_error')
 
-    // Delay for 1000ms synchronously to let user read the warning
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Show visuals for the blunder position during the warning delay
+    if (coachStore.currentExplanation?.visual_commands) {
+      const commands = Object.values(coachStore.currentExplanation.visual_commands).flat().join(';')
+      if (commands) {
+        coachStore.executeVisualCommands(commands)
+      }
+    }
+
+    // Delay for configurable ms (default 1000ms) synchronously to let user read the warning
+    const delay = preferencesStore.coachTakebackDelay ?? 1000
+    await new Promise((resolve) => setTimeout(resolve, delay))
 
     // Perform the actual undo
     const gameStore = useGameStore()

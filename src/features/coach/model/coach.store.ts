@@ -12,6 +12,8 @@ import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
+import { useCoachFeedbackStore } from './coach-feedback.store'
+
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
   const analysisEngineStore = useAnalysisEngineStore()
@@ -36,12 +38,14 @@ export const useCoachStore = defineStore('coach', () => {
 
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
-    if (showVisuals.value && currentExplanation.value?.visual_commands) {
+    const feedbackStore = useCoachFeedbackStore()
+    const shouldShowVisuals = showVisuals.value || feedbackStore.isTakebackPending
+    if (shouldShowVisuals && currentExplanation.value?.visual_commands) {
       const commands = Object.values(currentExplanation.value.visual_commands).flat().join(';')
       if (commands) {
         executeVisualCommands(commands)
       }
-    } else if (!showVisuals.value) {
+    } else if (!shouldShowVisuals) {
       boardStore.setCoachShapes([])
     }
   }
@@ -200,14 +204,17 @@ export const useCoachStore = defineStore('coach', () => {
       const explanation = await coachEngineManager.getExplanation(fen)
       currentExplanation.value = explanation
 
-      if (showVisuals.value && explanation?.visual_commands) {
+      const feedbackStore = useCoachFeedbackStore()
+      const shouldShowVisuals = showVisuals.value || feedbackStore.isTakebackPending
+
+      if (shouldShowVisuals && explanation?.visual_commands) {
         const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
           executeVisualCommands(commands)
         } else {
           boardStore.setCoachShapes([])
         }
-      } else if (!showVisuals.value) {
+      } else if (!shouldShowVisuals) {
         boardStore.setCoachShapes([])
       }
 

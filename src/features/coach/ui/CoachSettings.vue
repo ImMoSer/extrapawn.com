@@ -78,7 +78,46 @@
         <div class="setting-desc">How many candidate moves the engine evaluates per position.</div>
       </div>
 
+      <!-- Coach Takeback Settings -->
+      <div class="settings-title" style="margin-top: 16px; border-top: 1px solid #27272a; padding-top: 12px;">
+        Coach Takeback
+      </div>
 
+      <!-- Takeback Enable Switch -->
+      <div class="setting-group">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="setting-takeback" style="color: #d4d4d8; font-weight: 600;">Enable Auto-Takeback</label>
+          <input
+            id="setting-takeback"
+            type="checkbox"
+            v-model="takebackEnabled"
+          />
+        </div>
+        <div class="setting-desc">Automatically undo blunders to try again</div>
+      </div>
+
+      <!-- Takeback Delay -->
+      <div class="setting-group" :class="{ 'is-disabled': !takebackEnabled }">
+        <div class="setting-header">
+          <label for="setting-takeback-delay">Takeback delay</label>
+          <span class="setting-value">{{ takebackDelay / 1000 }}s</span>
+        </div>
+        <input
+          id="setting-takeback-delay"
+          type="range"
+          min="1000"
+          max="5000"
+          step="1000"
+          v-model.number="takebackDelay"
+          class="setting-slider"
+          :disabled="!takebackEnabled"
+        />
+        <div class="setting-labels">
+          <span>1s</span>
+          <span>5s</span>
+        </div>
+        <div class="setting-desc">How long the blunder visuals stay on board before undo.</div>
+      </div>
 
       <!-- Actions -->
       <div class="settings-actions">
@@ -103,6 +142,8 @@ const preferencesStore = usePreferencesStore()
 const useServer = ref(preferencesStore.preferences.engine.useServerCoach)
 const depth = ref(preferencesStore.preferences.engine.depth)
 const multipv = ref(preferencesStore.preferences.engine.multipv)
+const takebackEnabled = ref(preferencesStore.coachTakebackEnabled)
+const takebackDelay = ref(preferencesStore.coachTakebackDelay)
 const wrapRef = ref<HTMLElement | null>(null)
 
 // Sync local inputs if preferences update from elsewhere
@@ -114,6 +155,14 @@ watch(
     multipv.value = newEngine.multipv
   },
   { deep: true }
+)
+
+watch(
+  () => [preferencesStore.coachTakebackEnabled, preferencesStore.coachTakebackDelay] as const,
+  ([newEnabled, newDelay]) => {
+    takebackEnabled.value = newEnabled
+    takebackDelay.value = newDelay
+  }
 )
 
 const handleServerToggle = (event: Event) => {
@@ -155,6 +204,7 @@ const apply = () => {
       multipv: multipv.value,
     }
   })
+  preferencesStore.updateCoachTakeback(takebackEnabled.value, takebackDelay.value)
   open.value = false
   emit('change', { depth: depth.value, multipv: multipv.value })
 }

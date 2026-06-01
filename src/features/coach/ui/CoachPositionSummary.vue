@@ -143,6 +143,7 @@ const copyJson = () => {
   font-size: 13px;
   line-height: 1.5;
   margin-bottom: 8px;
+
 }
 
 .verdict-side {

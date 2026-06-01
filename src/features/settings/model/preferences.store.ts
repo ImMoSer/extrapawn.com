@@ -101,6 +101,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const preferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
   const isLoaded = ref(false)
 
+  // Local-only preferences (not synced to backend)
+  const coachTakebackEnabled = ref(true)
+  const coachTakebackDelay = ref(1000)
+
   // Register shared providers to comply with Feature-Sliced Design
   registerVolumeProvider({
     getVoiceVolume: () => preferences.value.audio.voiceVolume,
@@ -126,7 +130,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
     try {
       const backup = localStorage.getItem(LOCAL_STORAGE_KEY)
       if (backup) {
-        return deepMerge(DEFAULT_USER_PREFERENCES, JSON.parse(backup))
+        const parsed = JSON.parse(backup)
+        coachTakebackEnabled.value = parsed.coachTakebackEnabled ?? true
+        coachTakebackDelay.value = parsed.coachTakebackDelay ?? 1000
+        return deepMerge(DEFAULT_USER_PREFERENCES, parsed)
       }
     } catch (err) {
       logger.error('[PreferencesStore] Failed to parse local preferences:', err)
@@ -136,7 +143,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   function saveLocal() {
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(preferences.value))
+      const payload = {
+        ...preferences.value,
+        coachTakebackEnabled: coachTakebackEnabled.value,
+        coachTakebackDelay: coachTakebackDelay.value,
+      }
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload))
     } catch (err) {
       logger.error('[PreferencesStore] Failed to save local preferences:', err)
     }
@@ -200,10 +212,19 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   )
 
+  function updateCoachTakeback(enabled: boolean, delay: number) {
+    coachTakebackEnabled.value = enabled
+    coachTakebackDelay.value = delay
+    saveLocal()
+  }
+
   return {
     preferences,
     isLoaded,
     initialize,
     updatePreferences,
+    coachTakebackEnabled,
+    coachTakebackDelay,
+    updateCoachTakeback,
   }
 })
