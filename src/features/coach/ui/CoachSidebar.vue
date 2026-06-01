@@ -214,4 +214,13 @@ const onSettingsChange = () => {
   flex-direction: column;
   gap: 12px;
 }
+
+@media (max-width: 768px) {
+  .sidebar-header {
+    padding: 8px 10px 0;
+  }
+  .tab-switcher-container {
+    padding: 0 10px 6px;
+  }
+}
 </style>

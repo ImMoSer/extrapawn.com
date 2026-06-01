@@ -667,4 +667,61 @@ const finishedReport = computed(() => {
   background-color: #ff0055 !important;
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
 }
+
+@media (max-width: 768px) {
+  .completed-screen {
+    padding: 20px 12px;
+  }
+  .completed-content {
+    padding: 24px 16px;
+  }
+  .completed-title-glow {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 600px) {
+  .completed-hero-stats {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  .hero-stat-main {
+    font-size: 1.2rem;
+  }
+  .hero-stat-separator {
+    display: none;
+  }
+  .metric-value {
+    font-size: 1.15rem;
+  }
+  .metric-label {
+    font-size: 0.65rem;
+  }
+  .breakdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .breakdown-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .breakdown-details.is-open {
+    overflow-x: auto;
+  }
+  .details-table {
+    min-width: 480px;
+  }
+  .completed-actions :deep(.n-space) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+  }
+  .completed-action-btn {
+    width: 100% !important;
+  }
+}
 </style>

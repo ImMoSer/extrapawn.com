@@ -359,4 +359,19 @@ function handleContinuationClick(uci: string) {
   margin-right: 4px;
   flex-shrink: 0;
 }
+
+@media (max-width: 768px) {
+  .coach-book {
+    padding: 10px 12px;
+  }
+  .moves-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 6px;
+    padding-right: 0;
+  }
+  .move-btn {
+    padding: 5px 8px;
+  }
+}
 </style>

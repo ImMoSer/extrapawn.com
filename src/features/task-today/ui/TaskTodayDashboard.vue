@@ -826,4 +826,55 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
   font-weight: bold;
   color: var(--neon-yellow, #f7d547);
 }
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 24px 16px;
+    gap: 20px;
+  }
+  .dashboard-title {
+    font-size: 2.0rem;
+    letter-spacing: 2px;
+  }
+  .dashboard-subtitle {
+    font-size: 0.95rem;
+  }
+  .dashboard-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .diff-btn {
+    padding: 12px;
+    font-size: 0.95rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .diff-status {
+    font-size: 0.75rem;
+  }
+  .active-plan-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    text-align: center;
+  }
+  .active-plan-info {
+    align-items: center;
+  }
+  .active-plan-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  .active-plan-actions > * {
+    flex: 1;
+  }
+  .preview-summary {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+}
 </style>

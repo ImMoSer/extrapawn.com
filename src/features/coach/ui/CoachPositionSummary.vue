@@ -304,4 +304,10 @@ const copyJson = () => {
   background-color: #3f3f46;
   border-radius: 4px;
 }
+
+@media (max-width: 768px) {
+  .coach-position-summary {
+    padding: 10px 12px;
+  }
+}
 </style>

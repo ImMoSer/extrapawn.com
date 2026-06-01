@@ -409,4 +409,14 @@ const characterBorder = (label: string | undefined) => {
   color: #a1a1aa;
   border: 1px solid rgba(161, 161, 170, 0.2);
 }
+
+@media (max-width: 768px) {
+  .coach-top-moves {
+    padding: 10px 12px;
+  }
+  .top-move-row {
+    padding: 6px 8px;
+    margin-bottom: 2px;
+  }
+}
 </style>

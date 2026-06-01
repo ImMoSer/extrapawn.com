@@ -143,7 +143,7 @@ const filteredMenuItems = computed(() => {
       </div>
 
       <!-- Mode Selection Grid -->
-      <n-grid x-gap="20" y-gap="20" cols="2 s:3 m:3 l:3" responsive="screen" class="menu-grid">
+      <n-grid :x-gap="isMobile ? 10 : 20" :y-gap="isMobile ? 10 : 20" cols="2 s:3 m:3 l:3" responsive="screen" class="menu-grid">
         <n-grid-item v-for="item in filteredMenuItems" :key="item.path">
           <router-link :to="item.path" custom v-slot="{ navigate }">
             <n-card
@@ -307,6 +307,20 @@ const filteredMenuItems = computed(() => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  --n-padding-left: 0px !important;
+  --n-padding-right: 0px !important;
+  --n-padding-bottom: 0px !important;
+  --n-padding-top: 0px !important;
+}
+
+.glass-card :deep(.n-card__content),
+.glass-card :deep(.n-card-content) {
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Subtle underlying colored gradient that fades in on hover */
@@ -344,7 +358,7 @@ const filteredMenuItems = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 10px;
+  padding: 24px 16px;
   text-align: center;
   width: 100%;
   position: relative;
@@ -410,49 +424,64 @@ const filteredMenuItems = computed(() => {
 
 /* Mobile Adaptation */
 @media (max-width: 768px) {
+  .welcome-container {
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: 20px 12px;
+  }
+
   .content-wrapper {
-    gap: 1.4vh;
+    height: auto;
+    max-height: none;
+    gap: 16px;
   }
 
   .hero-section {
-    gap: 10px;
+    gap: 8px;
   }
 
   .brand-group {
-    gap: 10px;
+    gap: 8px;
+    animation: none; /* Disable floating animation on mobile to save battery and performance */
   }
 
   .brand-text-content {
-    gap: 5px;
-  }
-
-  .hero-logo {
-    height: 15vh;
-  }
-
-  .brand-name {
-    font-size: 2.2rem;
-  }
-
-  .menu-grid {
-    gap: 6px !important;
-  }
-
-  .glass-card {
-    border-radius: 6px;
-  }
-
-  .card-content {
-    padding: 6px;
     gap: 4px;
   }
 
+  .hero-logo {
+    height: 80px;
+  }
+
+  .brand-name {
+    font-size: 2.0rem;
+  }
+
+  .brand-slogan {
+    letter-spacing: 0.15rem;
+    font-size: 0.75rem;
+  }
+
+  .menu-grid {
+    max-height: none;
+  }
+
+  .glass-card {
+    border-radius: 10px;
+  }
+
+  .card-content {
+    padding: 12px 8px;
+    gap: 6px;
+  }
+
   .card-icon {
-    font-size: 20px !important;
+    font-size: 24px !important;
   }
 
   .card-title {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
   }
 }
 </style>

@@ -200,4 +200,12 @@ const message = computed(() => {
   0%, 100% { transform: scale(1); opacity: 0.95; }
   50% { transform: scale(1.02); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .coach-avatar-card {
+    margin: 6px 8px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+}
 </style>

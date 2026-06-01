@@ -173,4 +173,10 @@ const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''
   border-radius: 2px;
   background-color: rgba(134, 239, 172, 0.12);
 }
+
+@media (max-width: 768px) {
+  .coach-last-move {
+    padding: 10px 12px;
+  }
+}
 </style>
