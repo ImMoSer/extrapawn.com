@@ -250,4 +250,16 @@ router.afterEach(async (to, from) => {
   updateSeoWithRoute(to.meta as RouteMetaWithSeo, t)
 })
 
+router.onError((error, to) => {
+  const isChunkError =
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Failed to find module') ||
+    error.message.includes('chunk')
+
+  if (isChunkError) {
+    console.warn('[Router] Chunk-Ladefehler erkannt. Erzwinge Reload auf neue Version:', error)
+    window.location.href = to.fullPath
+  }
+})
+
 export default router
