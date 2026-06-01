@@ -1,5 +1,4 @@
-import { useEndgamesStore } from '@/features/endgames'
-import { useTacticsStore } from '@/features/tactics'
+import { usePuzzleStore } from '@/features/puzzle'
 import type {
   GameLaunchOptions,
 } from '@/shared/types/api.types'
@@ -7,8 +6,7 @@ import { useRouter } from 'vue-router'
 
 export function useGameLauncher() {
   const router = useRouter()
-  const endgamesStore = useEndgamesStore()
-  const tacticsStore = useTacticsStore()
+  const puzzleStore = usePuzzleStore()
 
   const launchGame = (options: GameLaunchOptions) => {
     const { mode, difficulty, theme } = options
@@ -24,31 +22,17 @@ export function useGameLauncher() {
 
     const targetDiff = capitalizeDiff(difficulty)
 
-    // 1. FINISH HIM
-    if (mode === 'finish_him') {
-      endgamesStore.loadNewPuzzle('finish_him', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'endgames' })
-      return
-    }
+    if (mode === 'finish_him' || mode === 'theory_endings' || mode === 'practical_chess' || mode === 'tactics') {
+      const routeName = mode === 'finish_him'
+        ? 'finish-him'
+        : mode === 'theory_endings'
+        ? 'theory-endings'
+        : mode === 'practical_chess'
+        ? 'practical-chess'
+        : 'tactics'
 
-    // 2. THEORY ENDINGS
-    if (mode === 'theory_endings') {
-      endgamesStore.loadNewPuzzle('theory_endings', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'endgames' })
-      return
-    }
-
-    // 3. PRACTICAL CHESS
-    if (mode === 'practical_chess') {
-      endgamesStore.loadNewPuzzle('practical_chess', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'endgames' })
-      return
-    }
-
-    // 4. TACTICS
-    if (mode === 'tactics') {
-      tacticsStore.loadNewPuzzle('tactics', { category: theme, difficulty: targetDiff })
-      router.push({ name: 'tactics' })
+      puzzleStore.loadNewPuzzle(mode, { category: theme, difficulty: targetDiff })
+      router.push({ name: routeName })
       return
     }
 

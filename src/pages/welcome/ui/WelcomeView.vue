@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
+import { storeToRefs } from 'pinia'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
     FlashOutline,
     HammerOutline,
     HardwareChipOutline,
     LogInOutline,
     PersonOutline,
-    SchoolOutline,
+    RibbonOutline,
     TrophyOutline,
 } from '@vicons/ionicons5'
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 // Инициализируем хранилище, роутер и i18n
 const authStore = useAuthStore()
@@ -37,16 +37,28 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   {
-    path: '/endgames',
-    icon: SchoolOutline,
-    labelKey: 'features.learningCoach.tabs.endgame',
-    color: 'var(--neon-purple)',
-  },
-  {
     path: '/tactics',
     icon: HammerOutline,
     labelKey: 'features.learningCoach.tabs.tactic',
     color: 'var(--neon-pink)',
+  },
+  {
+    path: '/finish-him',
+    icon: TrophyOutline,
+    labelKey: 'welcome.submodes.finish_him',
+    color: 'var(--neon-purple)',
+  },
+  {
+    path: '/practical-chess',
+    icon: HardwareChipOutline,
+    labelKey: 'welcome.submodes.practical_chess',
+    color: 'var(--neon-blue, #00f2ff)',
+  },
+  {
+    path: '/theory-endings',
+    icon: RibbonOutline,
+    labelKey: 'welcome.submodes.theory_endings',
+    color: 'var(--neon-yellow)',
   },
   {
     path: '/sparring',
@@ -54,7 +66,6 @@ const menuItems = [
     labelKey: 'nav.sparring',
     color: 'var(--neon-blue, #00f2ff)',
   },
-
   {
     path: '/user-cabinet',
     icon: PersonOutline,
@@ -66,12 +77,6 @@ const menuItems = [
     icon: FlashOutline,
     labelKey: 'features.taskToday.title',
     color: 'var(--neon-cyan)',
-  },
-  {
-    path: '/bonus',
-    icon: TrophyOutline,
-    labelKey: 'welcome.buttons.club',
-    color: 'var(--neon-yellow)',
   },
   {
     path: '/records',

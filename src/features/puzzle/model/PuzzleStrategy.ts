@@ -8,27 +8,24 @@ import {
 import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
-import { useEndgamesStore, type EndgamePuzzle } from './endgames.store'
+import { usePuzzleStore, type PuzzleSubmode, type PuzzlePuzzle } from './puzzle.store'
 import { usePreferencesStore } from '@/features/settings'
 
-export class EndgamePuzzleStrategy implements IGameplayStrategy {
+export class PuzzleStrategy implements IGameplayStrategy {
   get config() {
     const preferencesStore = usePreferencesStore()
     return {
-      /** Reaktionszeit des Bots am Start (wenn Bot beginnt) */
       initialBotDelayMs: preferencesStore.preferences.delays.initialBotDelayMs,
-      /** Bedenkzeit des Bots während des Puzzles (Endspiele brauchen "Bedenkzeit") */
       botDelayMs: preferencesStore.preferences.delays.botDelayMs,
-      /** Pause nach erfolgreichem Lösen, bevor das nächste Puzzle kommt */
+      playGameStatusSounds: false,
       nextPuzzleDelayMs: preferencesStore.preferences.delays.nextPuzzleDelayMs,
-      /** Pause nach Fehlzug, bevor das Puzzle neu gestartet wird */
       restartDelayMs: preferencesStore.preferences.delays.restartDelayMs,
     }
   }
 
-
-  private puzzle: EndgamePuzzle
+  private puzzle: PuzzlePuzzle
   private humanColor: 'white' | 'black'
+  private submode: PuzzleSubmode
   private scenarioMoves: string[]
   private scenarioIndex = 0
   private isPlayoutMode: boolean
@@ -37,9 +34,10 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   private prevPlayoutMode = false
   private nextPuzzleTimeout: number | null = null
 
-  constructor(puzzle: EndgamePuzzle, humanColor: 'white' | 'black') {
+  constructor(puzzle: PuzzlePuzzle, humanColor: 'white' | 'black', submode: PuzzleSubmode) {
     this.puzzle = puzzle
     this.humanColor = humanColor
+    this.submode = submode
     this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
     this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
 
@@ -48,7 +46,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   }
 
   private get store() {
-    return useEndgamesStore()
+    return usePuzzleStore()
   }
 
   private get gameStore() {
@@ -60,7 +58,6 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
   }
 
   onGameStart() {
-    // If it's user's turn at start, trigger coach
     if (this.boardStore.turn === this.humanColor) {
       useCoachStore().analyzeCurrentPosition()
     }
@@ -110,7 +107,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
             return
           }
         } catch (err) {
-          logger.error('[EndgamePuzzleStrategy] Error waiting for coach analysis in playout:', err)
+          logger.error('[PuzzleStrategy] Error waiting for coach analysis in playout:', err)
         }
       }
       return
@@ -122,8 +119,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
       this.scenarioIndex++
 
       if (this.scenarioIndex >= this.scenarioMoves.length) {
-        // Tactical solution completed!
-        logger.info('[EndgamePuzzleStrategy] Scenario completed successfully.')
+        logger.info('[PuzzleStrategy] Scenario completed successfully.')
         try {
           const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
           const feedbackStore = useCoachFeedbackStore()
@@ -131,12 +127,17 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
           feedbackStore.takebackMessage = 'Tactical Solution Completed!'
           feedbackStore.isTakebackPending = false
         } catch (err) {
-          logger.error('[EndgamePuzzleStrategy] Error showing tactical completion feedback:', err)
+          logger.error('[PuzzleStrategy] Error showing tactical completion feedback:', err)
         }
 
         if (this.puzzle.strategy === 'scenarioOnly') {
           soundService.playSound('game_tacktics_success')
-          this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
+          this.store.handleGameOver(
+            this.puzzle,
+            true,
+            { winner: this.humanColor, reason: 'scenario_complete' },
+            this.humanColor,
+          )
           this.nextPuzzleTimeout = window.setTimeout(() => {
             this.store.loadNewPuzzle(this.puzzle.puzzle_type)
           }, this.config.nextPuzzleDelayMs)
@@ -146,7 +147,6 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
           window.$message?.warning('Scenario complete! Playout against engine starts now.')
         }
       } else {
-        // Scenario correct but not finished yet
         try {
           const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
           const feedbackStore = useCoachFeedbackStore()
@@ -154,41 +154,39 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
           feedbackStore.takebackMessage = 'Korrekt! wie gehts weiter?'
           feedbackStore.isTakebackPending = false
         } catch (err) {
-          logger.error('[EndgamePuzzleStrategy] Error showing scenario correct feedback:', err)
+          logger.error('[PuzzleStrategy] Error showing scenario correct feedback:', err)
         }
       }
     } else {
       // Deviation from the scenario
-      // 1. If coach is enabled, check the quality of the deviation first!
       if (coachStore.isCoachEnabled) {
         try {
           const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
           const wasTakeback = await waitForCoachAndCheckTakeback()
           if (wasTakeback) {
-            return // Wrong deviation move was undone by the coach
+            return
           }
         } catch (err) {
-          logger.error('[EndgamePuzzleStrategy] Error checking deviation move quality:', err)
+          logger.error('[PuzzleStrategy] Error checking deviation move quality:', err)
         }
       }
 
-      // 2. If we reach here, the deviation is high quality!
       if (this.puzzle.strategy === 'scenarioPlus') {
-        // Allow high-quality deviation and continue playing out against the engine
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
         soundService.playSound('game_play_out_start')
         window.$message?.warning('Deviation! Continuing against the engine.')
       } else {
-        // Force takeback on wrong move in scenarioOnly (even if it's a good move, since they must find the scenario)
-        logger.info(`[EndgamePuzzleStrategy] Takeback because tactical solution expected move: ${expectedMove}`)
+        logger.info(`[PuzzleStrategy] Takeback because expected move was: ${expectedMove}`)
 
         if (coachStore.isCoachEnabled) {
           try {
             const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
             const feedbackStore = useCoachFeedbackStore()
             feedbackStore.coachMood = 'warning'
-            feedbackStore.takebackMessage = 'Das ist nicht der korrekte Endspiel-Zug! Überleg noch mal.'
+            feedbackStore.takebackMessage = this.submode === 'tactics'
+              ? 'Das ist nicht die Taktiklösung! Überleg noch mal.'
+              : 'Das ist nicht der korrekte Endspiel-Zug! Überleg noch mal.'
             feedbackStore.isTakebackPending = true
 
             soundService.playSound('game_training_error')
@@ -197,13 +195,17 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
             this.gameStore.undoLastUserMove()
             return
           } catch (err) {
-            logger.error('[EndgamePuzzleStrategy] Error setting coach feedback for wrong scenario move:', err)
+            logger.error('[PuzzleStrategy] Error setting coach feedback for wrong scenario move:', err)
           }
         }
 
-        // Fallback if coach is disabled (classic error/restart flow)
         soundService.playSound('game_tacktics_error')
-        this.store.handleGameOver(this.puzzle, false, { winner: undefined, reason: 'wrong_move' }, this.humanColor)
+        this.store.handleGameOver(
+          this.puzzle,
+          false,
+          { winner: undefined, reason: 'wrong_move' },
+          this.humanColor,
+        )
         this.nextPuzzleTimeout = window.setTimeout(() => {
           this.store.localRestart()
         }, this.config.restartDelayMs)
@@ -216,18 +218,28 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     this.scenarioIndex = this.prevScenarioIndex
     this.isPlayoutMode = this.prevPlayoutMode
     this.store.setProcessingGameOver(false)
+    if (this.nextPuzzleTimeout) {
+      clearTimeout(this.nextPuzzleTimeout)
+      this.nextPuzzleTimeout = null
+    }
   }
 
   async onBotMoveExecuted(): Promise<void> {
-    // Bot just moved, it's now user's turn. Trigger coach.
     useCoachStore().analyzeCurrentPosition()
 
-    if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
-      soundService.playSound('game_tacktics_success')
-      this.store.handleGameOver(this.puzzle, true, { winner: this.humanColor, reason: 'scenario_complete' }, this.humanColor)
-      this.nextPuzzleTimeout = window.setTimeout(() => {
-        this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-      }, this.config.nextPuzzleDelayMs)
+    if (this.scenarioIndex >= this.scenarioMoves.length) {
+      if (this.puzzle.strategy === 'scenarioOnly' || this.submode === 'tactics') {
+        soundService.playSound('game_tacktics_success')
+        this.store.handleGameOver(
+          this.puzzle,
+          true,
+          { winner: this.humanColor, reason: 'scenario_complete' },
+          this.humanColor,
+        )
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
+        }, this.config.nextPuzzleDelayMs)
+      }
     }
   }
 
@@ -243,7 +255,7 @@ export class EndgamePuzzleStrategy implements IGameplayStrategy {
     try {
       return await enginePlayService.getBestMove(this.gameStore.botEngineId, fen)
     } catch (error) {
-      logger.error('[EndgamesStrategy] Engine failed to generate move.', error)
+      logger.error('[PuzzleStrategy] Engine failed to generate move.', error)
       return null
     }
   }

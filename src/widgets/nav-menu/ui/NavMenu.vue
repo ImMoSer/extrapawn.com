@@ -46,14 +46,24 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('features.learningCoach.tabs.endgame', 'Endgames'),
-    key: '/endgames',
-    icon: renderIcon(RibbonOutline),
-  },
-  {
     label: () => t('features.learningCoach.tabs.tactic', 'Tactics'),
     key: '/tactics',
     icon: renderIcon(ExtensionPuzzleOutline),
+  },
+  {
+    label: () => t('welcome.submodes.finish_him', 'Finish Him'),
+    key: '/finish-him',
+    icon: renderIcon(TrophyOutline),
+  },
+  {
+    label: () => t('welcome.submodes.practical_chess', 'Practical Chess'),
+    key: '/practical-chess',
+    icon: renderIcon(HardwareChipOutline),
+  },
+  {
+    label: () => t('welcome.submodes.theory_endings', 'Theory Endings'),
+    key: '/theory-endings',
+    icon: renderIcon(RibbonOutline),
   },
   {
     label: () => t('features.taskToday.title', 'Task Today'),

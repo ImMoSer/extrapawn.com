@@ -6,23 +6,28 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 import {
   useGameStore,
+  useBoardStore,
   type GameStatusInfo,
 } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
+import { useAutoplayStore } from '@/features/autoplay'
 import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
-import { TacticsPuzzleStrategy } from './TacticsPuzzleStrategy'
+import { PuzzleStrategy } from './PuzzleStrategy'
 
 const t = i18n.global.t
 
+export const VALID_SUBMODES = ['tactics', 'finish_him', 'practical_chess', 'theory_endings'] as const
+export type PuzzleSubmode = typeof VALID_SUBMODES[number]
+
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
-export interface TacticsPuzzle {
+export interface PuzzlePuzzle {
   puzzle_id: string
   puzzle_type: string
   category: string
@@ -38,30 +43,40 @@ export interface TacticsPuzzle {
   userSelectedColor?: boolean
 }
 
-export interface TacticsParams {
+export interface PuzzleParams {
   type?: string
   category?: string
   difficulty?: string
   puzzleId?: string
 }
 
-function determineHumanColor(puzzle: TacticsPuzzle): 'white' | 'black' {
+function determineHumanColor(puzzle: PuzzlePuzzle): 'white' | 'black' {
   const setup = parseFen(puzzle.initial_fen).unwrap()
   const isBotFirst = puzzle.first_move === 'bot'
   return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
 }
 
-export const useTacticsStore = defineStore('tactics', () => {
+function getStrategyType(submode: PuzzleSubmode): PuzzleStrategyType {
+  if (submode === 'finish_him') return 'scenarioPlus'
+  if (submode === 'tactics') return 'scenarioOnly'
+  if (submode === 'practical_chess' || submode === 'theory_endings') return 'playOutOnly'
+  throw new Error(`[PuzzleStore] Unsupported strategy mapping for submode: ${submode}. Fail-Fast!`)
+}
+
+export const usePuzzleStore = defineStore('puzzle', () => {
   const gameStore = useGameStore()
+  const boardStore = useBoardStore()
   const authStore = useAuthStore()
   const uiStore = useUiStore()
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
+  const autoplayStore = useAutoplayStore()
 
-  const activePuzzle = ref<TacticsPuzzle | null>(null)
-  const activeParams = ref<TacticsParams>({})
+  const activeSubmode = ref<PuzzleSubmode | null>(null)
+  const activePuzzle = ref<PuzzlePuzzle | null>(null)
+  const activeParams = ref<PuzzleParams>({})
   const isDiscoveryMode = ref(false)
-  const discoveryQueue = ref<TacticsPuzzle[]>([])
+  const discoveryQueue = ref<PuzzlePuzzle[]>([])
   
   const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
@@ -72,15 +87,24 @@ export const useTacticsStore = defineStore('tactics', () => {
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
 
-  function initialize() {
+  function initialize(submode: PuzzleSubmode) {
+    if (!VALID_SUBMODES.includes(submode)) {
+      throw new Error(`[PuzzleStore] Invalid submode initialized: "${submode}". Fail-Fast!`)
+    }
+    activeSubmode.value = submode
     soundService.playSound('app_game_entry')
     if (!activePuzzle.value) {
-      startDiscovery('tactics')
+      startDiscovery(submode)
     }
   }
 
   async function guessColor(guessedColor: 'white' | 'black') {
-    if (!activePuzzle.value) return
+    if (!activePuzzle.value) {
+      throw new Error('[PuzzleStore] Guessing color with no active puzzle. Fail-Fast!')
+    }
+    if (!activeSubmode.value) {
+      throw new Error('[PuzzleStore] Guessing color with no active submode. Fail-Fast!')
+    }
     
     const correctColor = determineHumanColor(activePuzzle.value)
     
@@ -91,11 +115,14 @@ export const useTacticsStore = defineStore('tactics', () => {
       // Start the game for real
       gameStore.startWithStrategy(
         activePuzzle.value.initial_fen, 
-        new TacticsPuzzleStrategy(activePuzzle.value, correctColor), 
+        new PuzzleStrategy(activePuzzle.value, correctColor, activeSubmode.value), 
         correctColor, 
         false
       )
       feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      if (activeSubmode.value !== 'tactics') {
+        soundService.playSound('game_you_move')
+      }
     } else {
       // Wrong guess - instant game over
       isWaitingForColorGuess.value = false
@@ -110,7 +137,7 @@ export const useTacticsStore = defineStore('tactics', () => {
   }
 
   async function handleGameOver(
-    puzzle: TacticsPuzzle,
+    puzzle: PuzzlePuzzle,
     isWin: boolean,
     outcome: NonNullable<GameStatusInfo['outcome']>,
     humanColor: 'white' | 'black',
@@ -136,7 +163,7 @@ export const useTacticsStore = defineStore('tactics', () => {
 
     try {
       if (!puzzle || !puzzle.puzzle_type) {
-        throw new Error('Puzzle or puzzle_type is missing')
+        throw new Error('[PuzzleStore] Puzzle or puzzle_type is missing during game over. Fail-Fast!')
       }
 
       const response = await apiClient<{ PawnCoins: number; dailyLimit: number; spentToday: number }>(
@@ -152,7 +179,7 @@ export const useTacticsStore = defineStore('tactics', () => {
         })
       }
     } catch (error) {
-      logger.error('[TacticsStore] Failed to trigger billing:', error)
+      logger.error('[PuzzleStore] Failed to trigger billing:', error)
       if (error instanceof InsufficientPawnCoinsError) {
         authStore.setDailyLimitExceeded(true)
       }
@@ -165,7 +192,12 @@ export const useTacticsStore = defineStore('tactics', () => {
   }
 
   function localRestart() {
-    if (!activePuzzle.value) return
+    if (!activePuzzle.value) {
+      throw new Error('[PuzzleStore] Restarting game with no active puzzle. Fail-Fast!')
+    }
+    if (!activeSubmode.value) {
+      throw new Error('[PuzzleStore] Restarting game with no active submode. Fail-Fast!')
+    }
     isProcessingGameOver.value = false
     gameStore.setGamePhase('PLAYING')
     
@@ -174,7 +206,7 @@ export const useTacticsStore = defineStore('tactics', () => {
 
     gameStore.startWithStrategy(
       activePuzzle.value.initial_fen,
-      new TacticsPuzzleStrategy(activePuzzle.value, humanColor),
+      new PuzzleStrategy(activePuzzle.value, humanColor, activeSubmode.value),
       humanColor,
       false
     )
@@ -186,20 +218,20 @@ export const useTacticsStore = defineStore('tactics', () => {
       const res = await apiClient<{ [key: string]: Array<{ category: string }> }>(`/training-plan/discovery/${subMode}`)
       const categoriesList = res[`discovery_${subMode}`] || []
       if (categoriesList.length === 0) {
-        throw new Error('No categories found for discovery')
+        throw new Error(`[PuzzleStore] No categories found for discovery submode: ${subMode}. Fail-Fast!`)
       }
 
       const shuffledCats = [...categoriesList].sort(() => Math.random() - 0.5)
-      const puzzlesPool: TacticsPuzzle[] = []
+      const puzzlesPool: PuzzlePuzzle[] = []
       const difficulty = activeParams.value.difficulty || 'Novice'
 
       const fetchPromises = shuffledCats.map(async (catItem) => {
         try {
           const url = `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${catItem.category}&limit=10`
-          const puzzles = await apiClient<TacticsPuzzle[]>(url)
+          const puzzles = await apiClient<PuzzlePuzzle[]>(url)
           return puzzles || []
         } catch (err) {
-          logger.error(`[TacticsStore] Failed to fetch puzzles for category ${catItem.category}:`, err)
+          logger.error(`[PuzzleStore] Failed to fetch puzzles for category ${catItem.category}:`, err)
           return []
         }
       })
@@ -210,12 +242,12 @@ export const useTacticsStore = defineStore('tactics', () => {
       })
 
       if (puzzlesPool.length === 0) {
-        throw new Error('No puzzles found in discovery pool')
+        throw new Error(`[PuzzleStore] No puzzles found in discovery pool for: ${subMode}. Fail-Fast!`)
       }
 
       discoveryQueue.value = puzzlesPool.sort(() => Math.random() - 0.5)
     } catch (err) {
-      logger.error('[TacticsStore] refillDiscoveryQueue failed:', err)
+      logger.error('[PuzzleStore] refillDiscoveryQueue failed:', err)
       window.$message?.error('Failed to load discovery pool')
       isDiscoveryMode.value = false
       throw err
@@ -232,9 +264,13 @@ export const useTacticsStore = defineStore('tactics', () => {
     await loadNewPuzzle(subMode)
   }
 
-  async function loadNewPuzzle(type: string, queryParams: Partial<TacticsParams> = {}) {
+  async function loadNewPuzzle(type: string, queryParams: Partial<PuzzleParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
+
+    if (!activeSubmode.value) {
+      throw new Error('[PuzzleStore] Loading puzzle with no active submode. Fail-Fast!')
+    }
 
     if (authStore.isDailyLimitExceeded()) {
       const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
@@ -254,32 +290,41 @@ export const useTacticsStore = defineStore('tactics', () => {
     activeParams.value = mergedParams
 
     try {
-      let mappedPuzzle: TacticsPuzzle
+      let mappedPuzzle: PuzzlePuzzle
       if (isDiscoveryMode.value) {
         if (discoveryQueue.value.length === 0) {
           await refillDiscoveryQueue(type)
         }
         const puzzle = discoveryQueue.value.shift()
-        if (!puzzle) throw new Error('No puzzle in discovery queue')
+        if (!puzzle) {
+          throw new Error('[PuzzleStore] No puzzle in discovery queue. Fail-Fast!')
+        }
 
         mappedPuzzle = {
           ...puzzle,
           puzzle_type: type,
-          strategy: puzzle.strategy || 'scenarioOnly'
+          strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
         }
       } else {
-        const category = mergedParams.category || 'fork'
+        let category = mergedParams.category
+        if (!category) {
+          if (type === 'tactics') category = 'fork'
+          else if (type === 'practical_chess') category = 'extraPawn'
+          else category = 'pawn'
+        }
         const difficulty = mergedParams.difficulty || 'Novice'
         
         const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
-        const puzzle = await apiClient<TacticsPuzzle>(url)
-        if (!puzzle) throw new Error('Puzzle data is null')
+        const puzzle = await apiClient<PuzzlePuzzle>(url)
+        if (!puzzle) {
+          throw new Error('[PuzzleStore] Puzzle data is null from API. Fail-Fast!')
+        }
 
         mappedPuzzle = {
           ...puzzle,
           puzzle_type: type,
-          strategy: puzzle.strategy || 'scenarioOnly'
+          strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
         }
       }
 
@@ -288,18 +333,33 @@ export const useTacticsStore = defineStore('tactics', () => {
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
 
-      isWaitingForColorGuess.value = false
-      gameStore.startWithStrategy(
-        mappedPuzzle.initial_fen,
-        new TacticsPuzzleStrategy(mappedPuzzle, humanColor),
-        humanColor,
-        false
-      )
-      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      // ONLY for practical_chess and materialEquality we show the color guess
+      const isMaterialEqualityGuess = type === 'practical_chess' && mappedPuzzle.category === 'materialEquality'
+      const isAutoplayActive = autoplayStore.isMo3ep && autoplayStore.isAutoplayEnabled
+
+      if (isMaterialEqualityGuess && !isAutoplayActive) {
+        isWaitingForColorGuess.value = true
+        gameStore.setGamePhase('IDLE')
+        boardStore.setupPosition(mappedPuzzle.initial_fen)
+        boardStore.orientation = 'white'
+        feedbackMessage.value = 'Guess which side you are playing!'
+      } else {
+        isWaitingForColorGuess.value = false
+        gameStore.startWithStrategy(
+          mappedPuzzle.initial_fen,
+          new PuzzleStrategy(mappedPuzzle, humanColor, activeSubmode.value),
+          humanColor,
+          false
+        )
+        feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+        if (activeSubmode.value !== 'tactics') {
+          soundService.playSound('game_you_move')
+        }
+      }
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
-          logger.error('[TacticsStore] Failed to load puzzle:', error)
+          logger.error('[PuzzleStore] Failed to load puzzle:', error)
           feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
           gameStore.setGamePhase('IDLE')
           router.push('/')
@@ -342,6 +402,7 @@ export const useTacticsStore = defineStore('tactics', () => {
 
   function reset() {
     activePuzzle.value = null
+    activeSubmode.value = null
     feedbackMessage.value = t('features.finishHim.feedback.pressNext')
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -350,6 +411,7 @@ export const useTacticsStore = defineStore('tactics', () => {
   }
 
   return {
+    activeSubmode,
     gamePhase,
     activePuzzle,
     feedbackMessage,

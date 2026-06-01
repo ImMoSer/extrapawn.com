@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useEndgamesStore } from '../model/endgames.store'
+import { usePuzzleStore } from '../model/puzzle.store'
 import { useI18n } from 'vue-i18n'
 
-const endgamesStore = useEndgamesStore()
+const puzzleStore = usePuzzleStore()
 const { t } = useI18n()
 
 const handleSelection = (color: 'white' | 'black') => {
-  endgamesStore.guessColor(color)
+  puzzleStore.guessColor(color)
 }
 </script>
 

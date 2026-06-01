@@ -1,8 +1,7 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
 import { useGlobalTeardown } from '@/app/lib/useGlobalTeardown'
-import { useEndgamesStore } from '@/features/endgames'
-import { useTacticsStore } from '@/features/tactics'
+import { usePuzzleStore } from '@/features/puzzle'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { watch } from 'vue'
@@ -37,25 +36,43 @@ const router = createRouter({
     },
     {
       path: '/endgames',
-      name: 'endgames',
-      component: () => import('@/pages/endgames/ui/Endgames.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'endgames' },
+      redirect: '/theory-endings',
     },
     {
       path: '/tactics',
       name: 'tactics',
-      component: () => import('@/pages/tactics/ui/Tactics.vue'),
+      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
       meta: { isGame: true, requiresAuth: true, game: 'tactics' },
+      props: { submode: 'tactics' },
     },
     {
       path: '/finish-him',
-      redirect: '/endgames',
+      name: 'finish-him',
+      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'finish_him' },
+      props: { submode: 'finish_him' },
+    },
+    {
+      path: '/practical-chess',
+      name: 'practical-chess',
+      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'practical_chess' },
+      props: { submode: 'practical_chess' },
+    },
+    {
+      path: '/theory-endings',
+      name: 'theory-endings',
+      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
+      meta: { isGame: true, requiresAuth: true, game: 'theory_endings' },
+      props: { submode: 'theory_endings' },
     },
     {
       path: '/workout/:type?/:puzzleId?',
       redirect: (to) => {
         if (to.params.type === 'tactics') return '/tactics'
-        return '/endgames'
+        if (to.params.type === 'finish_him') return '/finish-him'
+        if (to.params.type === 'practical_chess') return '/practical-chess'
+        return '/theory-endings'
       }
     },
     {
@@ -219,15 +236,14 @@ router.beforeEach(async (to, from, next) => {
 })
 
 router.afterEach(async (to, from) => {
-  const fromBaseRoute = String(from.name)
-  const toBaseRoute = String(to.name)
   const t = i18n.global.t
 
-  if (fromBaseRoute?.startsWith('endgames') && !toBaseRoute?.startsWith('endgames')) {
-    useEndgamesStore().reset()
-  }
-  if (fromBaseRoute?.startsWith('tactics') && !toBaseRoute?.startsWith('tactics')) {
-    useTacticsStore().reset()
+  const puzzleGames = ['tactics', 'finish_him', 'practical_chess', 'theory_endings']
+  const isFromPuzzle = puzzleGames.includes(String(from.meta.game))
+  const isToPuzzle = puzzleGames.includes(String(to.meta.game))
+
+  if (isFromPuzzle && !isToPuzzle) {
+    usePuzzleStore().reset()
   }
 
   // Update SEO Meta Tags with translations

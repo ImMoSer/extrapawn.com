@@ -6,8 +6,6 @@ import {
   NRadioGroup,
   NScrollbar,
   NText,
-  NTabs,
-  NTab,
   NButton,
 } from 'naive-ui'
 import { ref, computed, watch } from 'vue'
@@ -19,7 +17,11 @@ import {
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
-import { useEndgamesStore } from '@/features/endgames'
+import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
+
+const props = defineProps<{
+  submode: PuzzleSubmode
+}>()
 
 const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
@@ -28,11 +30,56 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
-const selectedEndgameMode = ref<'GOTO' | 'THEORETICAL' | 'PRACTICAL'>('GOTO')
-const selectedEndgameTheme = ref<string>('pawn')
+const selectedTheme = ref<string>('')
+
+const TACTICS_THEMES = [
+  'fork',
+  'kingAttack',
+  'sacrifice',
+  'pin',
+  'discoveredAttack',
+  'advancedPawn',
+  'attraction',
+  'deflection',
+  'defensiveMove',
+  'quietMove',
+  'hangingPiece',
+  'skewer',
+  'trappedPiece',
+  'intermezzo',
+  'clearance',
+  'capturingDefender',
+  'zugzwang',
+  'backRankMate',
+  'interference',
+  'xRayAttack',
+]
+
+const TACTICS_ICON_UI: Record<string, string> = {
+  fork: '⚔️',
+  kingAttack: '👑',
+  sacrifice: '💥',
+  pin: '📌',
+  discoveredAttack: '👀',
+  advancedPawn: '🏃',
+  attraction: '🧲',
+  deflection: '🛡️',
+  defensiveMove: '🧱',
+  quietMove: '🤫',
+  hangingPiece: '💎',
+  skewer: '⚡',
+  trappedPiece: '🕸️',
+  intermezzo: '⏱️',
+  clearance: '🧹',
+  capturingDefender: '⚔️',
+  zugzwang: '⏳',
+  backRankMate: '🪜',
+  interference: '🚧',
+  xRayAttack: '🩻',
+}
 
 const formatThemeName = (theme: string): string => {
-  const key = `chess.themes.${theme}`
+  const key = props.submode === 'tactics' ? `chess.tactics.${theme}` : `chess.themes.${theme}`
   const translation = t(key)
   if (translation && !translation.startsWith('chess.')) {
     return translation
@@ -40,15 +87,24 @@ const formatThemeName = (theme: string): string => {
   return theme.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())
 }
 
-const endgameThemeOptions = computed(() => {
-  let list: readonly string[] = []
+const themeOptions = computed(() => {
+  if (props.submode === 'tactics') {
+    return TACTICS_THEMES.map((theme) => ({
+      label: formatThemeName(theme),
+      value: theme,
+      icon: TACTICS_ICON_UI[theme] || '🧩',
+    }))
+  }
 
-  if (selectedEndgameMode.value === 'THEORETICAL') {
+  let list: readonly string[] = []
+  if (props.submode === 'theory_endings') {
     list = THEORY_ENDING_CATEGORIES
-  } else if (selectedEndgameMode.value === 'PRACTICAL') {
+  } else if (props.submode === 'practical_chess') {
     list = PRACTICAL_CHESS_CATEGORIES
-  } else {
+  } else if (props.submode === 'finish_him') {
     list = FINISH_HIM_CATEGORIES
+  } else {
+    throw new Error(`[PuzzleSidebar] Unsupported submode: ${props.submode}. Fail-Fast!`)
   }
 
   return list.map((theme) => ({
@@ -58,109 +114,86 @@ const endgameThemeOptions = computed(() => {
   }))
 })
 
-const endgamesStore = useEndgamesStore()
-const isDiscoveryModeActive = computed(() => endgamesStore.isDiscoveryMode)
+const puzzleStore = usePuzzleStore()
+const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 
 function toggleDiscovery() {
-  const mode = selectedEndgameMode.value
-  let type = ''
-  if (mode === 'THEORETICAL') {
-    type = 'theory_endings'
-  } else if (mode === 'PRACTICAL') {
-    type = 'practical_chess'
-  } else {
-    type = 'finish_him'
-  }
-
   if (isDiscoveryModeActive.value) {
-    endgamesStore.isDiscoveryMode = false
-    endgamesStore.discoveryQueue = []
-    if (mode === 'THEORETICAL') {
-      selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
-    } else if (mode === 'PRACTICAL') {
-      selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
-    } else {
-      selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
-    }
-    loadEndgame()
+    puzzleStore.isDiscoveryMode = false
+    puzzleStore.discoveryQueue = []
+    resetThemeToDefault()
+    loadPuzzle()
   } else {
-    selectedEndgameTheme.value = ''
-    endgamesStore.startDiscovery(type)
+    selectedTheme.value = ''
+    puzzleStore.startDiscovery(props.submode)
   }
 }
 
-const activeEndgameTheme = computed({
-  get: () => isDiscoveryModeActive.value ? '' : selectedEndgameTheme.value,
+const activeThemeValue = computed({
+  get: () => isDiscoveryModeActive.value ? '' : selectedTheme.value,
   set: (val) => {
-    selectedEndgameTheme.value = val
-    endgamesStore.isDiscoveryMode = false
-    endgamesStore.discoveryQueue = []
+    selectedTheme.value = val
+    puzzleStore.isDiscoveryMode = false
+    puzzleStore.discoveryQueue = []
   }
 })
 
-watch(selectedEndgameMode, (newMode) => {
-  let type = ''
-  if (newMode === 'THEORETICAL') {
-    type = 'theory_endings'
-  } else if (newMode === 'PRACTICAL') {
-    type = 'practical_chess'
+function resetThemeToDefault() {
+  if (props.submode === 'tactics') {
+    selectedTheme.value = 'fork'
+  } else if (props.submode === 'theory_endings') {
+    selectedTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+  } else if (props.submode === 'practical_chess') {
+    selectedTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+  } else if (props.submode === 'finish_him') {
+    selectedTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
   } else {
-    type = 'finish_him'
+     throw new Error(`[PuzzleSidebar] Unsupported submode reset: ${props.submode}. Fail-Fast!`)
   }
+}
 
+watch(() => props.submode, () => {
+  resetThemeToDefault()
   if (isDiscoveryModeActive.value) {
-    selectedEndgameTheme.value = ''
-    endgamesStore.startDiscovery(type)
+    selectedTheme.value = ''
+    puzzleStore.startDiscovery(props.submode)
   } else {
-    if (newMode === 'THEORETICAL') {
-      selectedEndgameTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
-    } else if (newMode === 'PRACTICAL') {
-      selectedEndgameTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
-    } else {
-      selectedEndgameTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
-    }
+    loadPuzzle()
   }
-})
+}, { immediate: true })
 
 watch(selectedDifficulty, (newDiff) => {
-  endgamesStore.activeParams.difficulty = newDiff
+  puzzleStore.activeParams.difficulty = newDiff
   if (isDiscoveryModeActive.value) {
-    const mode = selectedEndgameMode.value
-    let type = ''
-    if (mode === 'THEORETICAL') {
-      type = 'theory_endings'
-    } else if (mode === 'PRACTICAL') {
-      type = 'practical_chess'
-    } else {
-      type = 'finish_him'
-    }
-    endgamesStore.startDiscovery(type)
+    puzzleStore.startDiscovery(props.submode)
   }
 })
 
-function loadEndgame() {
-  const mode = selectedEndgameMode.value
-  let type = ''
+function loadPuzzle() {
   let source = ''
-
-  if (mode === 'THEORETICAL') {
-    type = 'theory_endings'
-    source = t('features.learningCoach.modes.theory')
-  } else if (mode === 'PRACTICAL') {
-    type = 'practical_chess'
-    source = t('features.learningCoach.modes.practical')
-  } else {
-    type = 'finish_him'
-    source = t('features.learningCoach.modes.goto')
+  if (props.submode === 'tactics') source = t('features.learningCoach.tabs.tactic')
+  else if (props.submode === 'theory_endings') source = t('features.learningCoach.modes.theory')
+  else if (props.submode === 'practical_chess') source = t('features.learningCoach.modes.practical')
+  else if (props.submode === 'finish_him') source = t('features.learningCoach.modes.goto')
+  else {
+     throw new Error(`[PuzzleSidebar] Unsupported submode source naming: ${props.submode}. Fail-Fast!`)
   }
 
   emit('loadRequested', {
-    type,
-    category: selectedEndgameTheme.value,
+    type: props.submode,
+    category: selectedTheme.value,
     difficulty: selectedDifficulty.value,
     source,
   })
 }
+
+const headerTitle = computed(() => {
+  if (props.submode === 'tactics') return t('features.learningCoach.tabs.tactic')
+  if (props.submode === 'theory_endings') return t('welcome.submodes.theory_endings', 'Theory Endings')
+  if (props.submode === 'practical_chess') return t('welcome.submodes.practical_chess', 'Practical Chess')
+  if (props.submode === 'finish_him') return t('welcome.submodes.finish_him', 'Finish Him')
+  throw new Error(`[PuzzleSidebar] Unknown submode header: ${props.submode}. Fail-Fast!`)
+})
 </script>
 
 <template>
@@ -168,22 +201,7 @@ function loadEndgame() {
     <!-- Header -->
     <div class="sidebar-header">
       <n-icon size="24" class="header-icon"><SchoolOutline /></n-icon>
-      <n-text class="header-title">{{ t('features.learningCoach.tabs.endgame') }}</n-text>
-    </div>
-
-    <!-- Tabs for Modes -->
-    <div class="tab-switcher-container">
-        <n-tabs v-model:value="selectedEndgameMode" type="segment" animated class="mode-tabs">
-            <n-tab name="GOTO">
-                {{ t('features.learningCoach.modes.goto') }}
-            </n-tab>
-            <n-tab name="THEORETICAL">
-                {{ t('features.learningCoach.modes.theory') }}
-            </n-tab>
-            <n-tab name="PRACTICAL">
-                {{ t('features.learningCoach.modes.practical') }}
-            </n-tab>
-        </n-tabs>
+      <n-text class="header-title">{{ headerTitle }}</n-text>
     </div>
 
     <!-- Sidebar Content -->
@@ -223,12 +241,14 @@ function loadEndgame() {
           </div>
 
           <div class="form-group theme-group">
-            <n-text class="input-label">{{ t('features.learningCoach.categoryLabel') }}</n-text>
+            <n-text class="input-label">
+              {{ props.submode === 'tactics' ? t('features.learningCoach.tacticsLabel') : t('features.learningCoach.categoryLabel') }}
+            </n-text>
             <VisualRadioGroup
-              v-model:value="activeEndgameTheme"
-              :options="endgameThemeOptions"
-              :columns="2"
-              @update:value="loadEndgame"
+              v-model:value="activeThemeValue"
+              :options="themeOptions"
+              :columns="props.submode === 'tactics' ? 3 : 2"
+              @update:value="loadPuzzle"
             />
           </div>
         </div>
@@ -265,14 +285,6 @@ function loadEndgame() {
   letter-spacing: 0.75px;
   color: var(--color-text-primary);
   text-transform: uppercase;
-}
-
-.tab-switcher-container {
-    padding: 0 8px;
-}
-
-.mode-tabs {
-    --n-tab-font-size: 0.75rem;
 }
 
 .sidebar-scrollable-content {

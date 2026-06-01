@@ -1,36 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { NButton, NDivider, NText } from 'naive-ui'
+import { computed, onUnmounted, watch, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NText, NButton, NDivider } from 'naive-ui'
 
-import { GameLayout } from '@/widgets/game-layout'
 import { useCoachStore } from '@/features/coach'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
-import { useTacticsStore, GuessColorSelection } from '@/features/tactics'
-import TacticsSidebar from './TacticsSidebar.vue'
+import { GuessColorSelection, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
+import { GameLayout } from '@/widgets/game-layout'
+import PuzzleSidebar from './PuzzleSidebar.vue'
+
+const props = defineProps({
+  submode: {
+    type: String as PropType<PuzzleSubmode>,
+    required: true,
+  },
+})
 
 const { t } = useI18n()
-const tacticsStore = useTacticsStore()
+const puzzleStore = usePuzzleStore()
 const coachStore = useCoachStore()
 
-// Handle position load callback from Sidebar
 function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string }) {
-  tacticsStore.loadNewPuzzle(payload.type, {
+  puzzleStore.loadNewPuzzle(payload.type, {
     category: payload.category,
     difficulty: payload.difficulty
   })
 }
 
-const showColorGuess = computed(() => tacticsStore.isWaitingForColorGuess)
+const showColorGuess = computed(() => puzzleStore.isWaitingForColorGuess)
 
 const activePuzzleTitle = computed(() => {
-   return tacticsStore.topInfoDisplay.title
-})
-const badges = computed(() => {
-   return tacticsStore.topInfoDisplay.badges
+   return puzzleStore.topInfoDisplay.title
 })
 
-watch(() => tacticsStore.isWaitingForColorGuess, (isWaiting) => {
+const badges = computed(() => {
+   return puzzleStore.topInfoDisplay.badges
+})
+
+watch(() => puzzleStore.isWaitingForColorGuess, (isWaiting) => {
   if (isWaiting) {
     coachStore.setCoachEnabled(false)
   } else {
@@ -38,51 +45,52 @@ watch(() => tacticsStore.isWaitingForColorGuess, (isWaiting) => {
   }
 })
 
-onMounted(() => {
-  tacticsStore.initialize()
-  if (tacticsStore.isWaitingForColorGuess) {
+watch(() => props.submode, (newSubmode) => {
+  puzzleStore.initialize(newSubmode)
+  if (puzzleStore.isWaitingForColorGuess) {
     coachStore.setCoachEnabled(false)
   } else {
     coachStore.setCoachEnabled(true)
   }
-})
+}, { immediate: true })
 
 onUnmounted(() => {
-  tacticsStore.reset()
+  puzzleStore.reset()
 })
 </script>
 
 <template>
   <GameLayout>
     <template #left-panel>
-      <TacticsSidebar
+      <PuzzleSidebar
+        :submode="props.submode"
         @loadRequested="handleLoadRequested"
       />
     </template>
 
     <template #top-info>
-      <div v-if="tacticsStore.activePuzzle" class="learning-top-panel-container">
+      <div v-if="puzzleStore.activePuzzle" class="learning-top-panel-container">
         <div class="learning-top-info">
           <span v-for="badge in badges" :key="badge.text" class="premium-badge category badge-endings">
             {{ badge.text }}
           </span>
           <n-text style="color: white; font-weight: bold; margin-left: 10px;">{{ activePuzzleTitle }}</n-text>
-          
+
           <n-divider vertical />
-          
-          <n-text :class="tacticsStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'text-success' : 'text-info'">
-            {{ tacticsStore.feedbackMessage }}
+
+          <n-text :class="puzzleStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'text-success' : 'text-info'">
+            {{ puzzleStore.feedbackMessage }}
           </n-text>
 
           <n-button
-            v-if="tacticsStore.gamePhase === 'GAMEOVER'"
+            v-if="puzzleStore.gamePhase === 'GAMEOVER'"
             type="primary"
             size="small"
             secondary
             @click="
-              tacticsStore.loadNewPuzzle(
-                tacticsStore.activePuzzle?.puzzle_type || 'tactics',
-                tacticsStore.activeParams,
+              puzzleStore.loadNewPuzzle(
+                puzzleStore.activePuzzle?.puzzle_type || props.submode,
+                puzzleStore.activeParams,
               )
             "
             style="margin-left: 12px"
@@ -93,7 +101,7 @@ onUnmounted(() => {
       </div>
       <div v-else class="learning-top-info-placeholder">
         <n-text class="status-indicator select-lesson-prompt">
-          Select a tactic training
+          Select a lesson to begin training
         </n-text>
       </div>
     </template>
@@ -117,8 +125,8 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 10, 15, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(10, 10, 15, 0.4);
+  backdrop-filter: blur(1px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -213,6 +221,13 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.icon-success {
+  color: #4caf50;
+}
+.icon-error {
+  color: #f44336;
+}
+
 .text-success {
   color: #4caf50;
   font-weight: 600;
@@ -220,13 +235,6 @@ onUnmounted(() => {
 .text-info {
   color: #c77dff;
   font-weight: 600;
-}
-
-.icon-success {
-  color: #4caf50;
-}
-.icon-error {
-  color: #f44336;
 }
 
 @keyframes scaleIn {
