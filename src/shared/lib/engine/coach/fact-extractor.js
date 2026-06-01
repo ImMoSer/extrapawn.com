@@ -246,10 +246,12 @@ export function extractConcreteFacts(blob) {
       return true;
     });
 
-  console.groupCollapsed('[Fact Extractor] Input Blob & Extracted Facts');
-  console.log('Input Explanation Blob:', blob);
-  console.log('Extracted Facts:', result);
-  console.groupEnd();
+  if (import.meta.env.DEV) {
+    console.groupCollapsed('[Fact Extractor] Input Blob & Extracted Facts');
+    console.log('Input Explanation Blob:', blob);
+    console.log('Extracted Facts:', result);
+    console.groupEnd();
+  }
 
   return result;
 }
