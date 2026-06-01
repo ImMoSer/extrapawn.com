@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore, getPlanCost } from '../model/taskToday.store'
+import { useTaskTodayStore, getPlanCost, TRAINING_PLAN_CONFIGS, type SubModeType, type SubModeConfig } from '../model/taskToday.store'
 import {
   NText,
   NList,
@@ -88,9 +88,9 @@ const recommendedStrategies = computed(() => {
   const recommendations = currentPlanData.value?.recommendations
   if (!recommendations) {
     return {
-      Discovery: { tactics: [], finish_him: [], theory_endings: [], practical_chess: [] } as Record<string, string[]>,
-      Hardcore: { tactics: [], finish_him: [], theory_endings: [], practical_chess: [] } as Record<string, string[]>,
-      Warmup: { tactics: [], finish_him: [], theory_endings: [], practical_chess: [] } as Record<string, string[]>
+      Discovery: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>,
+      Hardcore: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>,
+      Warmup: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>
     }
   }
 
@@ -98,7 +98,6 @@ const recommendedStrategies = computed(() => {
     const result: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      theory_endings: [],
       practical_chess: []
     }
     list.forEach(item => {
@@ -123,52 +122,33 @@ const selectedPlanPreview = computed(() => {
   const recs = recommendedStrategies.value[strategy]
   if (!recs) return null
 
-  const scaling = {
-    Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
-    Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
-    Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
-  }[diff]
+  const planConfig = TRAINING_PLAN_CONFIGS[diff]
+  let totalTasks = 0
 
-  const tacticsCats = (recs.tactics || []).slice(0, scaling.tactics)
-  const finishCats = (recs.finish_him || []).slice(0, scaling.others)
-  const theoryCats = (recs.theory_endings || []).slice(0, scaling.others)
-  const practicalCats = (recs.practical_chess || []).slice(0, scaling.others)
+  const groups = (Object.entries(planConfig) as [SubModeType, SubModeConfig][]).map(([subMode, subConfig]) => {
+    const cats = (recs[subMode] || []).slice(0, subConfig.categories)
+    const totalForGroup = cats.length * subConfig.puzzlesPerCategory
+    totalTasks += totalForGroup
 
-  const totalTasks = (tacticsCats.length * scaling.limitTactics) +
-                     (finishCats.length * scaling.limitOthers) +
-                     (theoryCats.length * scaling.limitOthers) +
-                     (practicalCats.length * scaling.limitOthers)
+    const readableName = {
+      tactics: 'Tactics',
+      finish_him: 'Finish Him',
+      practical_chess: 'Practical Chess'
+    }[subMode]
+
+    return {
+      name: readableName,
+      total: totalForGroup,
+      limit: subConfig.puzzlesPerCategory,
+      categories: cats
+    }
+  }).filter(g => g.categories.length > 0)
 
   return {
     difficulty: diff,
     strategy,
     totalTasks,
-    groups: [
-      {
-        name: 'Tactics',
-        total: tacticsCats.length * scaling.limitTactics,
-        limit: scaling.limitTactics,
-        categories: tacticsCats
-      },
-      {
-        name: 'Finish Him',
-        total: finishCats.length * scaling.limitOthers,
-        limit: scaling.limitOthers,
-        categories: finishCats
-      },
-      {
-        name: 'Practical Chess',
-        total: practicalCats.length * scaling.limitOthers,
-        limit: scaling.limitOthers,
-        categories: practicalCats
-      },
-      {
-        name: 'Theory Endings',
-        total: theoryCats.length * scaling.limitOthers,
-        limit: scaling.limitOthers,
-        categories: theoryCats
-      }
-    ].filter(g => g.categories.length > 0)
+    groups
   }
 })
 
@@ -187,7 +167,6 @@ const handleStartPlan = async () => {
     const formattedRecs: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      theory_endings: [],
       practical_chess: []
     }
     strategyList.forEach(item => {

@@ -60,16 +60,42 @@ function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
   return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
 }
 
-export function getPlanCost(difficulty: 'Novice' | 'Pro' | 'Master'): number {
-  const scaling = {
-    Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
-    Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
-    Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
-  }[difficulty]
+export interface SubModeConfig {
+  categories: number
+  puzzlesPerCategory: number
+}
 
-  const tacticsTasks = scaling.tactics * scaling.limitTactics
-  const otherTasks = scaling.others * scaling.limitOthers * 3
-  return (tacticsTasks * 1) + (otherTasks * 5)
+export type SubModeType = 'tactics' | 'finish_him' | 'practical_chess'
+
+export const TRAINING_PLAN_CONFIGS: Record<'Novice' | 'Pro' | 'Master', Record<SubModeType, SubModeConfig>> = {
+  Novice: {
+    tactics: { categories: 5, puzzlesPerCategory: 20 },
+    finish_him: { categories: 1, puzzlesPerCategory: 10 },
+    practical_chess: { categories: 1, puzzlesPerCategory: 10 }
+  },
+  Pro: {
+    tactics: { categories: 5, puzzlesPerCategory: 30 },
+    finish_him: { categories: 2, puzzlesPerCategory: 10 },
+    practical_chess: { categories: 2, puzzlesPerCategory: 10 }
+  },
+  Master: {
+    tactics: { categories: 5, puzzlesPerCategory: 40 },
+    finish_him: { categories: 3, puzzlesPerCategory: 10 },
+    practical_chess: { categories: 3, puzzlesPerCategory: 10 }
+  }
+}
+
+export function getPlanCost(difficulty: 'Novice' | 'Pro' | 'Master'): number {
+  const config = TRAINING_PLAN_CONFIGS[difficulty]
+  let totalCost = 0
+
+  for (const [subMode, subConfig] of Object.entries(config)) {
+    const puzzleCount = subConfig.categories * subConfig.puzzlesPerCategory
+    const costPerPuzzle = subMode === 'tactics' ? 1 : 5
+    totalCost += puzzleCount * costPerPuzzle
+  }
+
+  return totalCost
 }
 
 export const useTaskTodayStore = defineStore('taskToday', () => {
@@ -80,7 +106,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   const trainingPlan = ref<TrainingPlan | null>(null)
   const currentTaskIndex = ref(0)
-  
+
   // Tasks map: sub_mode -> WorkoutPuzzle[]
   const tasksPuzzles = ref<Record<string, WorkoutPuzzle[]>>({})
   // Solved history: sub_mode -> WorkoutPuzzle[]
@@ -89,12 +115,12 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const completedResults = ref<Record<string, PuzzleResult>>({})
   // Attempts map: puzzle_id -> number
   const puzzleAttempts = ref<Record<string, number>>({})
-  
+
   const isPlaying = ref(false)
   const isFinished = ref(false)
   const isReplay = ref(false)
   const completedReport = ref<CompletedPlanReport | null>(null)
-  
+
   const isHelpActive = ref(false)
   const practicingPuzzle = ref<WorkoutPuzzle | null>(null)
 
@@ -105,7 +131,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   let timerInterval: number | null = null
 
   const activeTask = computed(() => trainingPlan.value?.tasks[currentTaskIndex.value] || null)
-  
+
   const currentPuzzles = computed(() => {
     if (!activeTask.value) return []
     return tasksPuzzles.value[activeTask.value.sub_mode] || []
@@ -114,7 +140,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const currentPuzzle = computed(() => currentPuzzles.value[0] || null)
 
   // --- Persistence Logic ---
-  
+
   function saveState() {
     const state = {
       trainingPlan: trainingPlan.value,
@@ -139,7 +165,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     try {
       const state = JSON.parse(saved)
       const today = new Date().toISOString().split('T')[0]
-      
+
       if (state.date !== today || state.isReplay) {
         localStorage.removeItem(STORAGE_KEY)
         return false
@@ -155,7 +181,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       isFinished.value = state.isFinished
       isReplay.value = state.isReplay || false
       completedReport.value = state.completedReport || null
-      
+
       return true
     } catch (e) {
       console.error('[TaskTodayStore] Failed to load state:', e)
@@ -266,7 +292,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     // 3. Load the FEN of the puzzle on the board
     const userColor = determineHumanColor(puzzle)
     gameStore.setGamePhase('PLAYING')
-    
+
     // Reset PGN and load the initial position for practice
     pgnService.reset(puzzle.initial_fen)
     const boardStore = useBoardStore()
@@ -292,7 +318,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         }, 300)
       }
     }
-    
+
     // Stop the timer so the user doesn't get timed during help
     stopTimer()
   }
@@ -316,10 +342,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     if (puzzle && activeTask.value) {
       const subMode = activeTask.value.sub_mode
       const puzzles = tasksPuzzles.value[subMode] || []
-      
+
       // Remove it from the current queue list if it exists
       const filtered = puzzles.filter(p => p.puzzle_id !== puzzle.puzzle_id)
-      
+
       // Put it at the front of the queue
       tasksPuzzles.value[subMode] = [puzzle, ...filtered]
     }
@@ -369,7 +395,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     console.log(`[TaskToday] Success! Time needed: ${cappedTimeMs}ms (raw: ${timeNeededMs}ms)`)
     GameAudioEngine.playTaskTodaySuccess()
     stopTimer()
-    
+
     const puzzle = currentPuzzle.value
     if (puzzle) {
       const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
@@ -419,7 +445,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         currentTaskIndex.value = nextIdx
       }
     }
-    
+
     playCurrentPuzzle()
   }
 
@@ -513,21 +539,16 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
-      
+
       const todayStr = new Date().toISOString().split('T')[0] || ''
-      
+
       const tasks: TrainingTask[] = []
       tasksPuzzles.value = {}
       solvedPuzzlesPerTask.value = {}
       completedResults.value = {}
       puzzleAttempts.value = {}
-      
-      // Scaling Rules
-      const scaling = {
-        Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
-        Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
-        Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
-      }[difficulty]
+
+      const planConfig = TRAINING_PLAN_CONFIGS[difficulty]
 
       const plan: TrainingPlan = {
         level: difficulty,
@@ -535,17 +556,17 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         date: todayStr,
         tasks: []
       }
-      
-      // We iterate over the 4 sub-modes and apply scaling
-      for (const subMode of ['tactics', 'finish_him', 'practical_chess', 'theory_endings']) {
-        const catCount = subMode === 'tactics' ? scaling.tactics : scaling.others
-        const limitPerCategory = subMode === 'tactics' ? scaling.limitTactics : scaling.limitOthers
-        
+
+      // We iterate over the sub-modes from config and apply parameters
+      for (const [subMode, subConfig] of Object.entries(planConfig) as [SubModeType, SubModeConfig][]) {
+        const catCount = subConfig.categories
+        const limitPerCategory = subConfig.puzzlesPerCategory
+
         // Take only the number of categories allowed for this difficulty
         const categories = (recommendations[subMode] || []).slice(0, catCount)
         const allPuzzlesForMode: WorkoutPuzzle[] = []
         const themes: { name: string; count: number }[] = []
-        
+
         for (const cat of categories) {
           themes.push({ name: cat, count: limitPerCategory })
           try {
@@ -562,7 +583,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             }
           }
         }
-        
+
         if (allPuzzlesForMode.length > 0) {
           tasksPuzzles.value[subMode] = allPuzzlesForMode
           tasks.push({
@@ -572,19 +593,19 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
           })
         }
       }
-      
+
       plan.tasks = tasks
       trainingPlan.value = plan
       currentTaskIndex.value = 0
       isPlaying.value = true
       isFinished.value = false
-      
+
       saveState()
       await startPlanOnBackend()
-      
+
       soundService.playSound('app_game_entry')
       playCurrentPuzzle()
-      
+
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to generate and start plan:', err)
@@ -698,7 +719,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
-      
+
       const isCompleted = planData.is_completed || ('active' in planData && !planData.active && planData.is_completed)
 
       if (isCompleted && !forceReplayAll) {
@@ -806,7 +827,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       // 4. Reconstruct TrainingPlan structure
       const tasks: TrainingTask[] = []
       const allSubModes = ['tactics', 'finish_him', 'practical_chess', 'theory_endings']
-      
+
       allSubModes.forEach(subMode => {
         const puzzlesForMode = tasks_json.puzzles.filter(p => p.sub_mode === subMode)
         if (puzzlesForMode.length > 0) {
@@ -829,22 +850,22 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         date: planData.date || tasks_json.date || (new Date().toISOString().split('T')[0] || ''),
         tasks
       }
-      
+
       const nextIdx = tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
       if (nextIdx !== -1) {
         currentTaskIndex.value = nextIdx
       } else {
         currentTaskIndex.value = 0
       }
-      
+
       isPlaying.value = true
       isFinished.value = false
-      
+
       saveState()
-      
+
       soundService.playSound('app_game_entry')
       playCurrentPuzzle()
-      
+
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to replay plan:', err)
