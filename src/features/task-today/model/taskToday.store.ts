@@ -682,7 +682,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             difficulty: tasks_json.difficulty || 'Novice',
             strategy: 'playOutOnly',
             first_move: 'user',
-            initial_fen: ''
+            initial_fen: '',
+            rating: p.rating ? Number(p.rating) : undefined
           })
 
           if (p.time !== undefined && p.time !== null && p.time < 0) {

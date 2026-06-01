@@ -676,7 +676,8 @@
       "previewChooseStrategy": "Select a strategy for preview.",
       "history": "History",
       "runningTraining": "Running Training",
-      "resumeActiveBtn": "Resume",
+      "resumeActiveBtn": "Continue",
+      "cancelActiveBtn": "Cancel Plan",
       "noPastPlans": "No past plans found.",
       "startTrainingBtn": "🚀 START TRAINING",
       "strategies": {
@@ -696,6 +697,8 @@
       "feedback": {
         "resumeSuccess": "Training resumed!",
         "resumeError": "Failed to resume training.",
+        "cancelSuccess": "Training plan canceled!",
+        "cancelError": "Failed to cancel training plan.",
         "startSuccess": "Daily training plan started!",
         "startError": "Failed to generate plan.",
         "replaySuccess": "Replay started!",
@@ -719,7 +722,16 @@
         "stats": {
           "accuracy": "Accuracy",
           "totalAttempts": "Total Attempts",
-          "avgTime": "Avg. Time / Puzzle"
+          "totalFailed": "Failed",
+          "avgTime": "Avg. Time / Puzzle",
+          "avgRating": "Avg. Rating"
+        },
+        "details": {
+          "category": "Category",
+          "solved": "Solved",
+          "failed": "Failed",
+          "avgTime": "Avg. Time",
+          "rating": "Rating"
         },
         "modes": {
           "tactics": "TACTICS",
@@ -773,6 +785,13 @@
         "pressNext": "Press 'Play Button' to begin.",
         "win": "You won!",
         "yourTurn": "Your turn! Find the correct continuation."
+      }
+    },
+    "gameplay": {
+      "confirmExit": {
+        "title": "Exit Game?",
+        "message": "Are you sure you want to quit the current position? Your progress will be lost.",
+        "browserMessage": "Are you sure you want to leave the game? Your current progress will be lost."
       }
     }
   },

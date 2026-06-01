@@ -8,7 +8,8 @@ import {
   NButton,
   NIcon,
   NTag,
-  useMessage
+  useMessage,
+  useDialog
 } from 'naive-ui'
 import {
   ChevronForwardOutline,
@@ -28,6 +29,7 @@ const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
 const message = useMessage()
+const dialog = useDialog()
 const queryClient = useQueryClient()
 
 const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
@@ -61,6 +63,25 @@ const handleResumeActivePlan = async () => {
       message.error(t('features.taskToday.feedback.resumeError'))
     }
   }
+}
+
+const handleCancelActivePlan = () => {
+  dialog.warning({
+    title: t('pages.userCabinet.plan.confirmTitle'),
+    content: t('pages.userCabinet.plan.confirmMessage'),
+    positiveText: t('shared.buttons.confirm'),
+    negativeText: t('shared.buttons.cancel'),
+    onPositiveClick: async () => {
+      try {
+        await taskTodayStore.quitTaskToday()
+        message.success(t('features.taskToday.feedback.cancelSuccess'))
+        queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
+      } catch (err) {
+        console.error('[TaskTodayDashboard] Cancel error:', err)
+        message.error(t('features.taskToday.feedback.cancelError'))
+      }
+    }
+  })
 }
 
 const recommendedStrategies = computed(() => {
@@ -230,7 +251,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
                 active: selectedDifficulty === diff,
                 completed: completedDifficulties.includes(diff)
               }"
-              :disabled="completedDifficulties.includes(diff) || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false)"
+              :disabled="authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false"
               @click="selectedDifficulty = diff"
             >
               <span class="diff-name">
@@ -334,9 +355,14 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
                 <span class="active-plan-strat">{{ currentPlanData.strategy }} ({{ currentPlanData.difficulty }})</span>
               </div>
             </div>
-            <NButton type="success" size="medium" @click="handleResumeActivePlan" class="complete-btn">
-              {{ t('features.taskToday.resumeActiveBtn') }}
-            </NButton>
+            <div class="active-plan-actions">
+              <NButton type="success" size="medium" @click="handleResumeActivePlan" class="complete-btn">
+                {{ t('features.taskToday.resumeActiveBtn') }}
+              </NButton>
+              <NButton type="error" size="medium" ghost @click="handleCancelActivePlan" class="cancel-btn">
+                {{ t('features.taskToday.cancelActiveBtn') }}
+              </NButton>
+            </div>
           </div>
 
           <NList hoverable clickable bordered v-if="completedHistory.length > 0">
@@ -473,8 +499,18 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
 .diff-btn.completed {
   border-color: rgba(247, 213, 71, 0.3);
   background: rgba(247, 213, 71, 0.05);
-  opacity: 0.6;
-  cursor: not-allowed;
+  cursor: pointer;
+}
+
+.diff-btn.completed.active {
+  border-color: var(--neon-bordeaux);
+  background: rgba(217, 0, 76, 0.15);
+  box-shadow: 0 0 15px rgba(217, 0, 76, 0.25);
+}
+
+.diff-btn.completed:hover:not(:disabled):not(.active) {
+  background: rgba(247, 213, 71, 0.1);
+  border-color: rgba(247, 213, 71, 0.5);
 }
 
 .diff-status {
@@ -707,6 +743,11 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
   align-items: center;
   gap: 12px;
   animation: blink-green 2s infinite ease-in-out;
+}
+
+.active-plan-actions {
+  display: flex;
+  gap: 8px;
 }
 
 @keyframes blink-green {

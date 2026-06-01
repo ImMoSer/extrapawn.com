@@ -21,8 +21,12 @@ export async function apiClient<T>(
 ): Promise<T> {
   const url = `${BACKEND_API_URL}${endpoint}`
 
-  const defaultHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const defaultHeaders: Record<string, string> = {}
+  if (
+    options.body !== undefined ||
+    (options.method && ['POST', 'PUT', 'PATCH'].includes(options.method.toUpperCase()))
+  ) {
+    defaultHeaders['Content-Type'] = 'application/json'
   }
 
   const response = await fetch(url, {

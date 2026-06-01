@@ -676,7 +676,8 @@
       "previewChooseStrategy": "Выберите стратегию для предпросмотра.",
       "history": "История",
       "runningTraining": "Текущая тренировка",
-      "resumeActiveBtn": "Завершить",
+      "resumeActiveBtn": "Продолжить",
+      "cancelActiveBtn": "Отменить",
       "noPastPlans": "Прошедшие планы не найдены.",
       "startTrainingBtn": "🚀 ЗАПУСТИТЬ ТРЕНИРОВКУ",
       "strategies": {
@@ -696,6 +697,8 @@
       "feedback": {
         "resumeSuccess": "Тренировка продолжается!",
         "resumeError": "Ошибка при продолжении тренировки.",
+        "cancelSuccess": "План тренировки отменен!",
+        "cancelError": "Ошибка при отмене плана тренировки.",
         "startSuccess": "Ежедневный тренировочный план запущен!",
         "startError": "Не удалось создать план.",
         "replaySuccess": "Повтор запущен!",
@@ -719,7 +722,16 @@
         "stats": {
           "accuracy": "Точность",
           "totalAttempts": "Всего попыток",
-          "avgTime": "Ср. время / задача"
+          "totalFailed": "Ошибки",
+          "avgTime": "Ср. время / задача",
+          "avgRating": "Ø Рейтинг"
+        },
+        "details": {
+          "category": "Категория",
+          "solved": "Решено",
+          "failed": "Ошибки",
+          "avgTime": "Ø Время",
+          "rating": "Рейтинг"
         },
         "modes": {
           "tactics": "TACTICS",
@@ -773,6 +785,13 @@
         "pressNext": "Нажмите 'Играть', чтобы начать.",
         "win": "Победа!",
         "yourTurn": "Ваш ход! Найдите верное продолжение."
+      }
+    },
+    "gameplay": {
+      "confirmExit": {
+        "title": "Выйти из игры?",
+        "message": "Вы уверены, что хотите покинуть текущую позицию? Ваш прогресс будет утерян.",
+        "browserMessage": "Вы уверены, что хотите выйти из игры? Ваш текущий прогресс будет утерян."
       }
     }
   },

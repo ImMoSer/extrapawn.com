@@ -676,7 +676,8 @@
       "previewChooseStrategy": "Wähle eine Strategie für die Vorschau aus.",
       "history": "Historie",
       "runningTraining": "Laufendes Training",
-      "resumeActiveBtn": "Abschließen",
+      "resumeActiveBtn": "Weitermachen",
+      "cancelActiveBtn": "Canceln",
       "noPastPlans": "Keine vergangenen Pläne gefunden.",
       "startTrainingBtn": "🚀 TRAINING STARTEN",
       "strategies": {
@@ -696,6 +697,8 @@
       "feedback": {
         "resumeSuccess": "Training wird fortgesetzt!",
         "resumeError": "Fehler beim Fortsetzen des Trainings.",
+        "cancelSuccess": "Trainingsplan erfolgreich abgebrochen!",
+        "cancelError": "Fehler beim Abbrechen des Trainingsplans.",
         "startSuccess": "Täglicher Trainingsplan gestartet!",
         "startError": "Plan konnte nicht generiert werden.",
         "replaySuccess": "Replay gestartet!",
@@ -719,7 +722,16 @@
         "stats": {
           "accuracy": "Genauigkeit",
           "totalAttempts": "Versuche gesamt",
-          "avgTime": "Ø Zeit / Aufgabe"
+          "totalFailed": "Fehler",
+          "avgTime": "Ø Zeit / Aufgabe",
+          "avgRating": "Ø Rating"
+        },
+        "details": {
+          "category": "Kategorie",
+          "solved": "Gelöst",
+          "failed": "Fehler",
+          "avgTime": "Ø Zeit",
+          "rating": "Rating"
         },
         "modes": {
           "tactics": "TACTICS",
@@ -773,6 +785,13 @@
         "pressNext": "Drücke 'Spielen' zum Starten.",
         "win": "Gewonnen!",
         "yourTurn": "Du bist dran! Finde die richtige Fortsetzung."
+      }
+    },
+    "gameplay": {
+      "confirmExit": {
+        "title": "Spiel verlassen?",
+        "message": "Bist du sicher, dass du die aktuelle Stellung verlassen möchtest? Dein Fortschritt geht verloren.",
+        "browserMessage": "Bist du sicher, dass du das Spiel verlassen möchtest? Dein aktueller Fortschritt geht verloren."
       }
     }
   },

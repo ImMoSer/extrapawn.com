@@ -34,7 +34,7 @@ const displayList = computed(() => {
     isCurrent: index === 0,
   }))
 
-  return [...solvedItems, ...queueItems] as DisplayPuzzleItem[]
+  return [...queueItems, ...solvedItems] as DisplayPuzzleItem[]
 })
 
 const getPuzzleStatus = (puzzleId: string) => {
