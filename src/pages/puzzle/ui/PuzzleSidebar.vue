@@ -8,7 +8,7 @@ import {
   NText,
   NButton,
 } from 'naive-ui'
-import { ref, computed, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
@@ -29,8 +29,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
-const selectedTheme = ref<string>('')
+
 
 const TACTICS_THEMES = [
   'fork',
@@ -117,6 +116,27 @@ const themeOptions = computed(() => {
 const puzzleStore = usePuzzleStore()
 const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 
+const selectedDifficulty = computed({
+  get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
+  set: (newDiff) => {
+    puzzleStore.activeParams.difficulty = newDiff
+    if (isDiscoveryModeActive.value) {
+      puzzleStore.startDiscovery(props.submode)
+    } else {
+      loadPuzzle()
+    }
+  }
+})
+
+const activeThemeValue = computed({
+  get: () => puzzleStore.isDiscoveryMode ? '' : (puzzleStore.activeParams.category || ''),
+  set: (val) => {
+    puzzleStore.isDiscoveryMode = false
+    puzzleStore.discoveryQueue = []
+    puzzleStore.activeParams.category = val
+  }
+})
+
 function toggleDiscovery() {
   if (isDiscoveryModeActive.value) {
     puzzleStore.isDiscoveryMode = false
@@ -124,29 +144,27 @@ function toggleDiscovery() {
     resetThemeToDefault()
     loadPuzzle()
   } else {
-    selectedTheme.value = ''
+    puzzleStore.activeParams.category = undefined
     puzzleStore.startDiscovery(props.submode)
   }
 }
 
-const activeThemeValue = computed({
-  get: () => isDiscoveryModeActive.value ? '' : selectedTheme.value,
-  set: (val) => {
-    selectedTheme.value = val
-    puzzleStore.isDiscoveryMode = false
-    puzzleStore.discoveryQueue = []
-  }
-})
-
 function resetThemeToDefault() {
+  // If an active puzzle matching the submode is already loaded, sync the category from it
+  if (puzzleStore.activePuzzle && puzzleStore.activePuzzle.puzzle_type === props.submode) {
+    puzzleStore.activeParams.category = puzzleStore.activePuzzle.category
+    return
+  }
+
+  // Otherwise set default category for this submode
   if (props.submode === 'tactics') {
-    selectedTheme.value = 'fork'
+    puzzleStore.activeParams.category = 'fork'
   } else if (props.submode === 'theory_endings') {
-    selectedTheme.value = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+    puzzleStore.activeParams.category = THEORY_ENDING_CATEGORIES[0] || 'pawn'
   } else if (props.submode === 'practical_chess') {
-    selectedTheme.value = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
+    puzzleStore.activeParams.category = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
   } else if (props.submode === 'finish_him') {
-    selectedTheme.value = FINISH_HIM_CATEGORIES[0] || 'pawn'
+    puzzleStore.activeParams.category = FINISH_HIM_CATEGORIES[0] || 'pawn'
   } else {
      throw new Error(`[PuzzleSidebar] Unsupported submode reset: ${props.submode}. Fail-Fast!`)
   }
@@ -154,20 +172,7 @@ function resetThemeToDefault() {
 
 watch(() => props.submode, () => {
   resetThemeToDefault()
-  if (isDiscoveryModeActive.value) {
-    selectedTheme.value = ''
-    puzzleStore.startDiscovery(props.submode)
-  } else {
-    loadPuzzle()
-  }
 }, { immediate: true })
-
-watch(selectedDifficulty, (newDiff) => {
-  puzzleStore.activeParams.difficulty = newDiff
-  if (isDiscoveryModeActive.value) {
-    puzzleStore.startDiscovery(props.submode)
-  }
-})
 
 function loadPuzzle() {
   let source = ''
@@ -181,7 +186,7 @@ function loadPuzzle() {
 
   emit('loadRequested', {
     type: props.submode,
-    category: selectedTheme.value,
+    category: puzzleStore.activeParams.category || '',
     difficulty: selectedDifficulty.value,
     source,
   })

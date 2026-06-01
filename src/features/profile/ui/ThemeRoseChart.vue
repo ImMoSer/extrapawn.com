@@ -194,7 +194,17 @@ const onChartClick = (params: unknown) => {
 
   lastOpenTime.value = Date.now()
 
-  const modeName = t(`features.userCabinet.stats.modes.${activePuzzleType.value}`)
+  const getModeTranslationKey = (type: PlayPuzzleType): string => {
+    switch (type) {
+      case 'tactics': return 'pages.userCabinet.stats.modes.tactics'
+      case 'finish_him': return 'pages.userCabinet.stats.modes.finishHim'
+      case 'practical_chess': return 'pages.userCabinet.stats.modes.practical'
+      case 'theory_endings': return 'pages.userCabinet.stats.modes.theory'
+      default: return ''
+    }
+  }
+
+  const modeName = t(getModeTranslationKey(activePuzzleType.value))
   const subModeName = activeDifficulty.value
 
   activePopup.value = {

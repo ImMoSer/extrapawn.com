@@ -8,7 +8,7 @@ export function useGameLauncher() {
   const router = useRouter()
   const puzzleStore = usePuzzleStore()
 
-  const launchGame = (options: GameLaunchOptions) => {
+  const launchGame = async (options: GameLaunchOptions) => {
     const { mode, difficulty, theme } = options
 
     console.log('[GameLauncher] Launching:', options)
@@ -31,8 +31,14 @@ export function useGameLauncher() {
         ? 'practical-chess'
         : 'tactics'
 
-      puzzleStore.loadNewPuzzle(mode, { category: theme, difficulty: targetDiff })
-      router.push({ name: routeName })
+      try {
+        puzzleStore.isDiscoveryMode = false
+        await puzzleStore.loadNewPuzzle(mode, { category: theme, difficulty: targetDiff })
+        router.push({ name: routeName })
+      } catch (err) {
+        console.error('[GameLauncher] Failed to pre-load puzzle:', err)
+        router.push({ name: routeName })
+      }
       return
     }
 

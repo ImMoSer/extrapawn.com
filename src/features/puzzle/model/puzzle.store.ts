@@ -91,10 +91,22 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     if (!VALID_SUBMODES.includes(submode)) {
       throw new Error(`[PuzzleStore] Invalid submode initialized: "${submode}". Fail-Fast!`)
     }
+    // Clear stale puzzle if the submode changed
+    if (activePuzzle.value && activePuzzle.value.puzzle_type !== submode) {
+      activePuzzle.value = null
+    }
     activeSubmode.value = submode
     soundService.playSound('app_game_entry')
     if (!activePuzzle.value) {
       startDiscovery(submode)
+    } else {
+      isDiscoveryMode.value = false
+      activeParams.value = {
+        ...activeParams.value,
+        type: submode,
+        category: activePuzzle.value.category,
+        difficulty: activePuzzle.value.difficulty,
+      }
     }
   }
 
@@ -268,9 +280,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
 
-    if (!activeSubmode.value) {
-      throw new Error('[PuzzleStore] Loading puzzle with no active submode. Fail-Fast!')
+    if (!VALID_SUBMODES.includes(type as PuzzleSubmode)) {
+      throw new Error(`[PuzzleStore] Invalid submode requested for puzzle loading: "${type}". Fail-Fast!`)
     }
+    activeSubmode.value = type as PuzzleSubmode
 
     if (authStore.isDailyLimitExceeded()) {
       const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
