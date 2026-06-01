@@ -11,7 +11,11 @@ import {
   PlaySkipBackOutline,
   PlaySkipForwardOutline,
 } from '@vicons/ionicons5'
+import { useTaskTodayStore } from '@/features/task-today'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
+const taskTodayStore = useTaskTodayStore()
 const gameStore = useGameStore()
 const coachStore = useCoachStore()
 const analysisStore = useAnalysisStore()
@@ -44,41 +48,50 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <CoachSidebar v-model:active-tab="activeTab">
-    <template #analyse>
-      <div class="analysis-tab-content">
-        <!-- Navigation Buttons -->
-        <div class="nav-toolbar">
-          <n-button-group class="nav-group">
-            <n-button quaternary circle @click="gameStore.navigatePgn('start')" title="Start der Partie">
-              <template #icon><n-icon><PlaySkipBackOutline /></n-icon></template>
-            </n-button>
-            <n-button quaternary circle @click="gameStore.navigatePgn('backward')" title="Zug zurück">
-              <template #icon><n-icon><ChevronBackOutline /></n-icon></template>
-            </n-button>
-            <n-button quaternary circle @click="gameStore.navigatePgn('forward')" title="Zug vorwärts">
-              <template #icon><n-icon><ChevronForwardOutline /></n-icon></template>
-            </n-button>
-            <n-button quaternary circle @click="gameStore.navigatePgn('end')" title="Ende der Partie">
-              <template #icon><n-icon><PlaySkipForwardOutline /></n-icon></template>
-            </n-button>
-          </n-button-group>
-        </div>
+  <div class="coach-widget-container">
+    <div v-if="taskTodayStore.isHelpActive" class="help-done-header">
+      <NButton block type="warning" class="done-btn" @click="taskTodayStore.stopHelpMode()">
+        {{ t('features.taskToday.helpDone') }}
+      </NButton>
+    </div>
+    <div class="sidebar-inner">
+      <CoachSidebar v-model:active-tab="activeTab">
+        <template #analyse>
+          <div class="analysis-tab-content">
+            <!-- Navigation Buttons -->
+            <div class="nav-toolbar">
+              <n-button-group class="nav-group">
+                <n-button quaternary circle @click="gameStore.navigatePgn('start')" title="Start der Partie">
+                  <template #icon><n-icon><PlaySkipBackOutline /></n-icon></template>
+                </n-button>
+                <n-button quaternary circle @click="gameStore.navigatePgn('backward')" title="Zug zurück">
+                  <template #icon><n-icon><ChevronBackOutline /></n-icon></template>
+                </n-button>
+                <n-button quaternary circle @click="gameStore.navigatePgn('forward')" title="Zug vorwärts">
+                  <template #icon><n-icon><ChevronForwardOutline /></n-icon></template>
+                </n-button>
+                <n-button quaternary circle @click="gameStore.navigatePgn('end')" title="Ende der Partie">
+                  <template #icon><n-icon><PlaySkipForwardOutline /></n-icon></template>
+                </n-button>
+              </n-button-group>
+            </div>
 
-        <div class="pgn-section">
-          <n-text class="section-label">Partieverlauf</n-text>
-          <div class="pgn-container">
-            <PgnTree :key="pgnTreeVersion" />
+            <div class="pgn-section">
+              <n-text class="section-label">Partieverlauf</n-text>
+              <div class="pgn-container">
+                <PgnTree :key="pgnTreeVersion" />
+              </div>
+            </div>
+
+            <div class="engine-section">
+              <n-text class="section-label">Engine-Linien</n-text>
+              <EngineLines />
+            </div>
           </div>
-        </div>
-
-        <div class="engine-section">
-          <n-text class="section-label">Engine-Linien</n-text>
-          <EngineLines />
-        </div>
-      </div>
-    </template>
-  </CoachSidebar>
+        </template>
+      </CoachSidebar>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -140,5 +153,23 @@ onUnmounted(async () => {
 }
 .pgn-container::-webkit-scrollbar-thumb:hover {
   background-color: #3f3f46;
+}
+
+.coach-widget-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sidebar-inner {
+  flex: 1;
+  min-height: 0;
+}
+.help-done-header {
+  padding: 8px 14px;
+  background: rgba(247, 213, 71, 0.1);
+  border-bottom: 1px solid rgba(247, 213, 71, 0.2);
+}
+.done-btn {
+  font-weight: bold;
 }
 </style>

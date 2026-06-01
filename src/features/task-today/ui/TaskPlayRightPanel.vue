@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { useTaskTodayStore, type PuzzleResult } from '../model/taskToday.store'
-import { NText, NScrollbar, NList, NListItem } from 'naive-ui'
+import { useTaskTodayStore, type WorkoutPuzzle, type PuzzleResult } from '../model/taskToday.store'
+import { NText, NScrollbar, NList, NListItem, NButton } from 'naive-ui'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 
 interface DisplayPuzzleItem {
@@ -70,7 +73,17 @@ const getPuzzleStatus = (puzzleId: string) => {
             <div class="puzzle-stats-grid">
               <span class="stat-rating">R: {{ puzzle.rating || '?' }}</span>
               <div class="stat-group">
-                <span class="stat-attempts" :class="{ 'has-failed': getPuzzleStatus(puzzle.puzzle_id) === 'failed' }">
+                <NButton
+                  v-if="(taskTodayStore.puzzleAttempts[puzzle.puzzle_id] ?? 0) >= 3 && getPuzzleStatus(puzzle.puzzle_id) !== 'solved'"
+                  size="tiny"
+                  type="error"
+                  ghost
+                  class="help-btn"
+                  @click.stop="taskTodayStore.startHelpMode(puzzle as unknown as WorkoutPuzzle)"
+                >
+                  {{ t('shared.buttons.help') }}
+                </NButton>
+                <span v-else class="stat-attempts" :class="{ 'has-failed': getPuzzleStatus(puzzle.puzzle_id) === 'failed' }">
                   {{ getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 1 : 0 }}/{{ taskTodayStore.puzzleAttempts[puzzle.puzzle_id] || 0 }}
                 </span>
                 <span class="stat-timer">{{ getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? taskTodayStore.formatMs(puzzle.result?.time || 0) : '00:00' }}</span>
@@ -163,6 +176,13 @@ const getPuzzleStatus = (puzzleId: string) => {
 .stat-attempts.has-failed {
   color: #ff4d4f;
   background: rgba(255, 77, 79, 0.1);
+}
+
+.help-btn {
+  font-size: 0.7rem;
+  padding: 0 4px;
+  height: 20px;
+  line-height: 18px;
 }
 
 .stat-timer {

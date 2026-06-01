@@ -663,6 +663,7 @@
     },
     "taskToday": {
       "title": "Tagesaufgabe",
+      "helpDone": "Fertig & Nochmals versuchen",
       "setupTitle": "Aufgabeneinrichtung",
       "readyToStart": "Bist du bereit, die Aufgabe zu starten? Der Timer beginnt sofort.",
       "startBtn": "Aufgabe starten",

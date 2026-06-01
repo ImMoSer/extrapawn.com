@@ -663,6 +663,7 @@
     },
     "taskToday": {
       "title": "Task Today",
+      "helpDone": "Done & Try Again",
       "setupTitle": "Task Setup",
       "readyToStart": "Are you ready to start the task? The timer will start immediately.",
       "startBtn": "Start Task",

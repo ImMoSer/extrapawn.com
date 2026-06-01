@@ -24,6 +24,7 @@ export const useGameStore = defineStore('game', () => {
   const isGameActive = ref(false)
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
+  const isFreePlay = ref(false)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
 
   function getGameStatus(): GameStatusInfo {
@@ -291,7 +292,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     // Pre-validate move with Strategy
-    if (currentStrategy.value && currentStrategy.value.validateUserMove && intendedUci) {
+    if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove && intendedUci) {
       const isLegalForStrategy = await currentStrategy.value.validateUserMove(
         intendedUci,
         boardStore.fen,
@@ -326,6 +327,10 @@ export const useGameStore = defineStore('game', () => {
       isGameActive.value = true
     }
     userMovesCount.value++
+
+    if (isFreePlay.value) {
+      return
+    }
 
     const strategyAtStart = currentStrategy.value
 
@@ -383,6 +388,7 @@ export const useGameStore = defineStore('game', () => {
     isGameActive,
     playerColor,
     currentStrategy,
+    isFreePlay,
     startWithStrategy,
     loadPosition,
     navigatePgn,

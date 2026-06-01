@@ -8,6 +8,7 @@ import {
   TaskPlayRightPanel 
 } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { useAnalysisStore } from '@/features/analysis'
 import { onBeforeRouteLeave } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
@@ -51,7 +52,8 @@ onUnmounted(() => {
       <!-- Game board is handled by GameLayout -->
     </template>
     <template #right-panel>
-      <TaskPlayRightPanel />
+      <CoachSidebarWidget v-if="taskTodayStore.isHelpActive" />
+      <TaskPlayRightPanel v-else />
     </template>
   </GameLayout>
 </template>

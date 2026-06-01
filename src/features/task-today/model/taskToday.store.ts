@@ -1,7 +1,10 @@
 import {
   useGameStore,
+  useBoardStore,
   GameAudioEngine
 } from '@/entities/game'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { useCoachStore } from '@/features/coach'
 import { soundService } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
@@ -91,6 +94,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const isFinished = ref(false)
   const isReplay = ref(false)
   const completedReport = ref<CompletedPlanReport | null>(null)
+  
+  const isHelpActive = ref(false)
+  const practicingPuzzle = ref<WorkoutPuzzle | null>(null)
 
   // Timer State
   const startTime = ref(0)
@@ -243,6 +249,83 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       new TaskTodayStrategy(puzzle, userColor),
       userColor,
     )
+  }
+
+  function startHelpMode(puzzle: WorkoutPuzzle) {
+    isHelpActive.value = true
+    practicingPuzzle.value = puzzle
+
+    // 1. Enable coach & visuals
+    const coachStore = useCoachStore()
+    coachStore.setCoachEnabled(true)
+    coachStore.showVisuals = true
+
+    // 2. Enable free play in gameStore
+    gameStore.isFreePlay = true
+
+    // 3. Load the FEN of the puzzle on the board
+    const userColor = determineHumanColor(puzzle)
+    gameStore.setGamePhase('PLAYING')
+    
+    // Reset PGN and load the initial position for practice
+    pgnService.reset(puzzle.initial_fen)
+    const boardStore = useBoardStore()
+    boardStore.setupPosition(puzzle.initial_fen, userColor)
+
+    // If bot makes the first move in the solution, execute it now
+    if (puzzle.first_move === 'bot' && puzzle.tactical_solution) {
+      const moves = puzzle.tactical_solution.trim().split(/\s+/)
+      const firstMove = moves[0]
+      if (firstMove) {
+        setTimeout(async () => {
+          const { parseUci } = await import('chessops/util')
+          const { makeSan } = await import('chessops/san')
+          const chessopsMove = parseUci(firstMove)
+          if (chessopsMove && boardStore.chessPosition.isLegal(chessopsMove)) {
+            const fenBefore = boardStore.fen
+            const san = makeSan(boardStore.chessPosition, chessopsMove)
+            boardStore.applyUciMove(firstMove)
+            const fenAfter = boardStore.fen
+            pgnService.addNode({ san, uci: firstMove, fenBefore, fenAfter })
+            GameAudioEngine.playMoveSoundFromSan(san, true)
+          }
+        }, 300)
+      }
+    }
+    
+    // Stop the timer so the user doesn't get timed during help
+    stopTimer()
+  }
+
+  function stopHelpMode() {
+    if (!isHelpActive.value) return
+
+    isHelpActive.value = false
+    const puzzle = practicingPuzzle.value
+    practicingPuzzle.value = null
+
+    // 1. Disable coach & visuals
+    const coachStore = useCoachStore()
+    coachStore.setCoachEnabled(false)
+    coachStore.showVisuals = false
+
+    // 2. Disable free play in gameStore
+    gameStore.isFreePlay = false
+
+    // 3. Put the practicing puzzle at the front of the queue so they immediately play it
+    if (puzzle && activeTask.value) {
+      const subMode = activeTask.value.sub_mode
+      const puzzles = tasksPuzzles.value[subMode] || []
+      
+      // Remove it from the current queue list if it exists
+      const filtered = puzzles.filter(p => p.puzzle_id !== puzzle.puzzle_id)
+      
+      // Put it at the front of the queue
+      tasksPuzzles.value[subMode] = [puzzle, ...filtered]
+    }
+
+    // 4. Restart/re-setup the game for this puzzle
+    playCurrentPuzzle()
   }
 
   async function handlePuzzleFailure() {
@@ -795,6 +878,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     startTimer,
     stopTimer,
     playCurrentPuzzle,
+    isHelpActive,
+    practicingPuzzle,
+    startHelpMode,
+    stopHelpMode,
     clearSavedState,
     completedReport,
   }

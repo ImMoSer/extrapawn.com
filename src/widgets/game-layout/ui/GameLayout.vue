@@ -4,6 +4,7 @@ import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
 import { useAutoplayStore } from '@/features/autoplay'
+import { useTaskTodayStore } from '@/features/task-today'
 import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
@@ -18,6 +19,7 @@ const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const autoplayStore = useAutoplayStore()
 const analysisStore = useAnalysisStore()
+const taskTodayStore = useTaskTodayStore()
 const route = useRoute()
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
@@ -28,6 +30,7 @@ const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.d
 const effectiveAnalysisMode = computed(() => {
   return (
     analysisStore.isPanelVisible ||
+    taskTodayStore.isHelpActive ||
     (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
   )
 })

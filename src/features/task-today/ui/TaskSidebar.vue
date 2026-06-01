@@ -76,9 +76,10 @@ const totalAttemptsCount = computed(() => {
             class="task-tab"
             :class="{ 
               active: taskTodayStore.currentTaskIndex === index,
-              completed: isTaskCompleted(task.sub_mode)
+              completed: isTaskCompleted(task.sub_mode),
+              disabled: taskTodayStore.isHelpActive
             }"
-            @click="selectTask(index)"
+            @click="!taskTodayStore.isHelpActive && selectTask(index)"
           >
             <div class="task-tab-content">
               <div class="task-row">
@@ -103,7 +104,7 @@ const totalAttemptsCount = computed(() => {
         </div>
         
         <NSpace vertical block>
-          <NButton block type="warning" @click="handleRestart">
+          <NButton block type="warning" :disabled="taskTodayStore.isHelpActive" @click="handleRestart">
             <template #icon><NIcon><RestartIcon /></NIcon></template>
             Restart Puzzle
           </NButton>
@@ -169,6 +170,15 @@ const totalAttemptsCount = computed(() => {
 .task-tab.completed {
   border-color: var(--color-success);
   opacity: 0.7;
+}
+
+.task-tab.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.task-tab.disabled:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .task-tab-content {
