@@ -34,7 +34,7 @@ const KNIGHT_COINS = 500
 const BISHOP_COINS = 750
 const ROOK_COINS = 1000
 const QUEEN_COINS = 5000
-const KING_COINS = 0 // Displayed as LIMITLESS
+const KING_COINS = 10000
 
 const PAWN_COLOR = 'var(--text-color-3)'
 const KNIGHT_COLOR = 'var(--neon-blue)'
@@ -81,8 +81,8 @@ const isPolarCustomer = computed(() => {
   return !!authStore.getUserProfile?.isPolarCustomer
 })
 
-const subscriptionTiers = computed(() => {
-  const baseTiers = [
+const subscriptionTiers = computed<SubscriptionTier[]>(() => {
+  const baseTiers: SubscriptionTier[] = [
     {
       id: 'pawn',
       name: t('pages.pricing.tiers.pawn.name'),
@@ -144,7 +144,6 @@ const subscriptionTiers = computed(() => {
       color: KING_COLOR,
       price: t('pages.pricing.tiers.king.price'),
       isPurchasable: true,
-      isLimitless: true,
     },
   ]
 
@@ -204,6 +203,7 @@ interface SubscriptionTier {
   canBuy?: boolean
   isUpgrade?: boolean
   isLimitless?: boolean
+  isBlockedByCancel?: boolean
 }
 
 const message = useMessage()

@@ -57,6 +57,18 @@ function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
   return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
 }
 
+export function getPlanCost(difficulty: 'Novice' | 'Pro' | 'Master'): number {
+  const scaling = {
+    Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
+    Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
+    Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
+  }[difficulty]
+
+  const tacticsTasks = scaling.tactics * scaling.limitTactics
+  const otherTasks = scaling.others * scaling.limitOthers * 3
+  return (tacticsTasks * 1) + (otherTasks * 5)
+}
+
 export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
   const authStore = useAuthStore()
@@ -387,18 +399,34 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
+
   async function generateAndStartPlan(
     strategyName: 'Discovery' | 'Hardcore' | 'Warmup',
     difficulty: 'Novice' | 'Pro' | 'Master',
     recommendations: Record<string, string[]>
   ) {
-    if (authStore.isDailyLimitExceeded()) {
-      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
+    const cost = getPlanCost(difficulty)
+    const availableCoins = authStore.userProfile?.PawnCoins ?? 0
+    if (availableCoins < cost) {
+      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', cost, availableCoins)
       await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
       return false
     }
 
     try {
+      // Charge the plan upfront
+      const billingRes = await apiClient<{ success: boolean; PawnCoins: number; dailyLimit: number; spentToday: number }>('/billing/plan', {
+        method: 'POST',
+        body: JSON.stringify({ cost })
+      })
+      if (billingRes && billingRes.PawnCoins !== undefined) {
+        authStore.updateUserStats({
+          PawnCoins: billingRes.PawnCoins,
+          dailyLimit: billingRes.dailyLimit,
+          spentToday: billingRes.spentToday
+        })
+      }
+
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
@@ -413,7 +441,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       
       // Scaling Rules
       const scaling = {
-        Novice: { tactics: 3, others: 1, limitTactics: 20, limitOthers: 10 },
+        Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
         Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
         Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
       }[difficulty]

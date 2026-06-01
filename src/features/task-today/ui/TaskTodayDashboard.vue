@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore } from '../model/taskToday.store'
+import { useTaskTodayStore, getPlanCost } from '../model/taskToday.store'
 import {
   NText,
   NList,
@@ -103,7 +103,7 @@ const selectedPlanPreview = computed(() => {
   if (!recs) return null
 
   const scaling = {
-    Novice: { tactics: 3, others: 1, limitTactics: 20, limitOthers: 10 },
+    Novice: { tactics: 5, others: 1, limitTactics: 10, limitOthers: 10 },
     Pro: { tactics: 4, others: 2, limitTactics: 30, limitOthers: 10 },
     Master: { tactics: 5, others: 3, limitTactics: 40, limitOthers: 10 }
   }[diff]
@@ -230,10 +230,19 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
                 active: selectedDifficulty === diff,
                 completed: completedDifficulties.includes(diff)
               }"
+              :disabled="completedDifficulties.includes(diff) || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false)"
               @click="selectedDifficulty = diff"
             >
-              <span class="diff-name">{{ t('puzzleCategories.difficulties.level_' + diff.toLowerCase()) }}</span>
-              <span class="diff-status" v-if="completedDifficulties.includes(diff)">✓ {{ t('features.taskToday.completedStatus') }}</span>
+              <span class="diff-name">
+                {{ t('puzzleCategories.difficulties.level_' + diff.toLowerCase()) }}
+                <span class="diff-cost-badge">({{ getPlanCost(diff) }} PC)</span>
+              </span>
+              <span class="diff-status" v-if="completedDifficulties.includes(diff)">
+                ✓ {{ t('features.taskToday.completedStatus') }}
+              </span>
+              <span class="diff-status expensive" v-else-if="authStore.userProfile && authStore.userProfile.PawnCoins < getPlanCost(diff)">
+                {{ t('features.taskToday.insufficientCoinsBadge') }}
+              </span>
             </button>
           </div>
         </div>
@@ -267,7 +276,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             size="large" 
             block 
             :loading="isStartingPlan"
-            :disabled="!!currentPlanData?.active"
+            :disabled="!!currentPlanData?.active || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(selectedDifficulty) : false)"
             @click="handleStartPlan"
             class="dashboard-start-btn"
           >
@@ -282,6 +291,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
         <div v-if="selectedPlanPreview" class="preview-content">
           <div class="preview-summary">
             <span class="preview-strategy-name">{{ selectedPlanPreview.strategy.toUpperCase() }}</span>
+            <span class="preview-cost">{{ getPlanCost(selectedPlanPreview.difficulty) }} PawnCoins</span>
             <span class="preview-task-count">{{ t('features.taskToday.previewTasks', { count: selectedPlanPreview.totalTasks }) }}</span>
           </div>
 
@@ -749,5 +759,30 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
 
 .complete-btn {
   font-weight: bold;
+}
+
+.diff-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.diff-cost-badge {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.diff-status.expensive {
+  background: rgba(217, 0, 76, 0.1);
+  color: var(--neon-bordeaux, #d9004c);
+  border: 1px solid rgba(217, 0, 76, 0.2);
+}
+
+.preview-cost {
+  font-weight: bold;
+  color: var(--neon-yellow, #f7d547);
 }
 </style>
