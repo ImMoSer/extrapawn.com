@@ -33,7 +33,7 @@ onMounted(() => {
   <div class="global-loader-wrapper">
     <div class="loader-content webview-blocker">
       <!-- Info Button Right Top -->
-      <button class="info-btn" :title="t('common.actions.help')" @click="showTutorial = true">
+      <button class="info-btn" :title="t('shared.buttons.help')" @click="showTutorial = true">
         <div class="pulse-ring"></div>
         <span class="info-icon">i</span>
       </button>
@@ -47,7 +47,7 @@ onMounted(() => {
       <div class="copy-section">
         <input type="text" readonly :value="appUrl" class="copy-input" />
         <button @click="copyLink" class="copy-button" :class="{ 'is-copied': copied }">
-          {{ copied ? t('common.actions.copied') : t('common.actions.copyLink') }}
+          {{ copied ? t('shared.board.copied') : t('shared.buttons.copyLink') }}
         </button>
       </div>
 

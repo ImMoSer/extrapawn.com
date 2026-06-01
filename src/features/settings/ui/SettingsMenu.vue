@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
@@ -23,7 +23,7 @@ import {
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '../index'
-import { usePreferencesStore } from '../model/preferences.store'
+import { usePreferencesStore, type UserPreferencesDto } from '../model/preferences.store'
 import { useAutoplayStore } from '@/features/autoplay'
 
 const themeStore = useThemeStore()
@@ -32,70 +32,34 @@ const autoplayStore = useAutoplayStore()
 const preferencesStore = usePreferencesStore()
 
 const { isAuthenticated } = storeToRefs(authStore)
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const isOpen = ref(false)
 
-// Computed bindings to Preferences Store
-const currentBoard = computed({
-  get: () => preferencesStore.preferences.theme.board,
-  set: (val) => themeStore.setBoard(val)
-})
+// Local draft preferences state that is cloned from the store when opening the drawer
+const draftPreferences = ref<UserPreferencesDto>(
+  JSON.parse(JSON.stringify(preferencesStore.preferences))
+)
 
-const currentPieces = computed({
-  get: () => preferencesStore.preferences.theme.pieces,
-  set: (val) => themeStore.setPieceSet(val)
-})
+const initializeDraft = () => {
+  draftPreferences.value = JSON.parse(JSON.stringify(preferencesStore.preferences))
+}
 
-const animationDuration = computed({
-  get: () => preferencesStore.preferences.theme.animationDuration,
-  set: (val) => themeStore.setAnimationDuration(val)
-})
-
-const voiceVolume = computed({
-  get: () => preferencesStore.preferences.audio.voiceVolume,
-  set: (val) => preferencesStore.updatePreferences({ audio: { voiceVolume: val } })
-})
-
-const boardVolume = computed({
-  get: () => preferencesStore.preferences.audio.boardVolume,
-  set: (val) => preferencesStore.updatePreferences({ audio: { boardVolume: val } })
-})
-
-const selectedLanguage = computed({
-  get: () => preferencesStore.preferences.gameplay.language,
-  set: (val) => {
-    changeLang(val)
-    preferencesStore.updatePreferences({ gameplay: { language: val } })
+// Re-initialize draft when the drawer is opened
+watch(isOpen, (newVal) => {
+  if (newVal) {
+    initializeDraft()
   }
 })
 
-const globalAutoplay = computed({
-  get: () => preferencesStore.preferences.gameplay.global_autoplay,
-  set: (val) => preferencesStore.updatePreferences({ gameplay: { global_autoplay: val } })
-})
-
-// Delay bindings
-const initialBotDelayMs = computed({
-  get: () => preferencesStore.preferences.delays.initialBotDelayMs,
-  set: (val) => preferencesStore.updatePreferences({ delays: { initialBotDelayMs: val } })
-})
-const botDelayMs = computed({
-  get: () => preferencesStore.preferences.delays.botDelayMs,
-  set: (val) => preferencesStore.updatePreferences({ delays: { botDelayMs: val } })
-})
-const nextPuzzleDelayMs = computed({
-  get: () => preferencesStore.preferences.delays.nextPuzzleDelayMs,
-  set: (val) => preferencesStore.updatePreferences({ delays: { nextPuzzleDelayMs: val } })
-})
-const restartDelayMs = computed({
-  get: () => preferencesStore.preferences.delays.restartDelayMs,
-  set: (val) => preferencesStore.updatePreferences({ delays: { restartDelayMs: val } })
-})
-const autoPlayDelayMs = computed({
-  get: () => preferencesStore.preferences.delays.autoPlayDelayMs,
-  set: (val) => preferencesStore.updatePreferences({ delays: { autoPlayDelayMs: val } })
-})
+const handleSave = async () => {
+  // Apply language change
+  changeLang(draftPreferences.value.gameplay.language)
+  // Save updated preferences to store & backend
+  await preferencesStore.updatePreferences(draftPreferences.value)
+  // Close the drawer
+  isOpen.value = false
+}
 
 const handleAuthAction = () => {
   if (isAuthenticated.value) {
@@ -119,10 +83,32 @@ const handleAuthAction = () => {
       </n-icon>
     </button>
 
-    <n-drawer v-model:show="isOpen" :width="380" placement="right" resizable>
-      <n-drawer-content closable title="Preferences" class="settings-drawer-content">
+    <n-drawer
+      v-model:show="isOpen"
+      :width="380"
+      placement="right"
+      resizable
+      class="settings-drawer"
+    >
+      <n-drawer-content closable :title="t('features.settings.title')" class="settings-drawer-content">
         <div class="drawer-inner-layout">
           
+          <!-- Top level Language Selector (non-collapsible) -->
+          <div class="settings-section-card language-section-card">
+            <div class="section-label">{{ t('features.settings.language') }}</div>
+            <div class="language-selector">
+              <button
+                v-for="lang in ['en', 'de', 'ru']"
+                :key="lang"
+                class="lang-btn"
+                :class="{ active: draftPreferences.gameplay.language === lang }"
+                @click="draftPreferences.gameplay.language = lang as 'en' | 'de' | 'ru'"
+              >
+                {{ lang.toUpperCase() }}
+              </button>
+            </div>
+          </div>
+
           <!-- Collapse Accordion Section -->
           <n-collapse :default-expanded-names="['ui']" accordion>
             
@@ -136,14 +122,14 @@ const handleAuthAction = () => {
               </template>
               
               <div class="settings-section-card">
-                <div class="section-label">Chess Board</div>
+                <div class="section-label">{{ t('features.settings.board') }}</div>
                 <div class="board-selector-grid">
                   <div
                     v-for="board in themeStore.availableBoards"
                     :key="board.name"
                     class="selector-item board-item"
-                    :class="{ selected: board.name === currentBoard }"
-                    @click="currentBoard = board.name"
+                    :class="{ selected: board.name === draftPreferences.theme.board }"
+                    @click="draftPreferences.theme.board = board.name"
                   >
                     <img :src="`/board/jpg_png/${board.thumbnailFile}`" :alt="board.name" />
                   </div>
@@ -151,14 +137,14 @@ const handleAuthAction = () => {
               </div>
 
               <div class="settings-section-card">
-                <div class="section-label">Chess Pieces</div>
+                <div class="section-label">{{ t('features.settings.pieces') }}</div>
                 <div class="piece-selector-grid">
                   <div
                     v-for="pieceSet in themeStore.availablePieceSets"
                     :key="pieceSet.name"
                     class="selector-item piece-item"
-                    :class="{ selected: pieceSet.name === currentPieces }"
-                    @click="currentPieces = pieceSet.name"
+                    :class="{ selected: pieceSet.name === draftPreferences.theme.pieces }"
+                    @click="draftPreferences.theme.pieces = pieceSet.name"
                   >
                     <img :src="pieceSet.previewPieceFile" :alt="pieceSet.name" />
                   </div>
@@ -166,10 +152,10 @@ const handleAuthAction = () => {
               </div>
 
               <div class="settings-section-card">
-                <div class="section-label">Animation Duration</div>
+                <div class="section-label">{{ t('features.settings.animationDuration') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="animationDuration" :min="0" :max="500" :step="100" />
-                  <span class="value-badge">{{ animationDuration }}ms</span>
+                  <n-slider v-model:value="draftPreferences.theme.animationDuration" :min="0" :max="500" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.theme.animationDuration }}ms</span>
                 </div>
               </div>
             </n-collapse-item>
@@ -186,98 +172,92 @@ const handleAuthAction = () => {
               <div class="settings-section-card">
                 <div class="section-label">{{ t('features.settings.sounds.voice') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="voiceVolume" :min="0" :max="1" :step="0.1" />
-                  <span class="value-badge">{{ Math.round(voiceVolume * 100) }}%</span>
+                  <n-slider v-model:value="draftPreferences.audio.voiceVolume" :min="0" :max="1" :step="0.1" />
+                  <span class="value-badge">{{ Math.round(draftPreferences.audio.voiceVolume * 100) }}%</span>
                 </div>
               </div>
 
               <div class="settings-section-card">
                 <div class="section-label">{{ t('features.settings.sounds.board') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="boardVolume" :min="0" :max="1" :step="0.1" />
-                  <span class="value-badge">{{ Math.round(boardVolume * 100) }}%</span>
+                  <n-slider v-model:value="draftPreferences.audio.boardVolume" :min="0" :max="1" :step="0.1" />
+                  <span class="value-badge">{{ Math.round(draftPreferences.audio.boardVolume * 100) }}%</span>
                 </div>
               </div>
             </n-collapse-item>
 
-            <!-- 3. Gameplay, Language & Bot Delays -->
+            <!-- 3. Gameplay & Bot Delays -->
             <n-collapse-item name="gameplay">
               <template #header>
                 <div class="collapse-header-title">
                   <n-icon><GameControllerOutline /></n-icon>
-                  <span>Gameplay & Bot Delays</span>
+                  <span>{{ t('features.settings.gameplayBotDelays') }}</span>
                 </div>
               </template>
 
-              <!-- Language selector -->
-              <div class="settings-section-card">
-                <div class="section-label">Language</div>
-                <div class="language-selector">
-                  <button
-                    v-for="lang in ['en', 'de', 'ru']"
-                    :key="lang"
-                    class="lang-btn"
-                    :class="{ active: locale === lang }"
-                    @click="selectedLanguage = lang as 'en' | 'de' | 'ru'"
-                  >
-                    {{ lang.toUpperCase() }}
-                  </button>
-                </div>
-              </div>
-
               <!-- Bot Delay sliders -->
               <div class="settings-section-card">
-                <div class="section-label">Initial Bot Delay</div>
+                <div class="section-label">{{ t('features.settings.initialBotDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="initialBotDelayMs" :min="0" :max="1000" :step="50" />
-                  <span class="value-badge">{{ initialBotDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.initialBotDelayMs" :min="0" :max="1000" :step="50" />
+                  <span class="value-badge">{{ draftPreferences.delays.initialBotDelayMs }}ms</span>
                 </div>
               </div>
 
               <div class="settings-section-card">
-                <div class="section-label">Bot Thinking Delay</div>
+                <div class="section-label">{{ t('features.settings.botThinkingDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="botDelayMs" :min="0" :max="1000" :step="50" />
-                  <span class="value-badge">{{ botDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.botDelayMs" :min="0" :max="1000" :step="50" />
+                  <span class="value-badge">{{ draftPreferences.delays.botDelayMs }}ms</span>
                 </div>
               </div>
 
               <div class="settings-section-card">
-                <div class="section-label">Next Puzzle Delay</div>
+                <div class="section-label">{{ t('features.settings.nextPuzzleDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="nextPuzzleDelayMs" :min="0" :max="2000" :step="100" />
-                  <span class="value-badge">{{ nextPuzzleDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.nextPuzzleDelayMs" :min="0" :max="2000" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.delays.nextPuzzleDelayMs }}ms</span>
                 </div>
               </div>
 
               <div class="settings-section-card">
-                <div class="section-label">Restart Delay</div>
+                <div class="section-label">{{ t('features.settings.restartDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="restartDelayMs" :min="0" :max="2000" :step="100" />
-                  <span class="value-badge">{{ restartDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.restartDelayMs" :min="0" :max="2000" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.delays.restartDelayMs }}ms</span>
                 </div>
               </div>
 
-              <div class="settings-section-card">
-                <div class="section-label">Autoplay Move Delay</div>
+              <!-- Dev Autoplay Move Delay -->
+              <div v-if="autoplayStore.isMo3ep" class="settings-section-card">
+                <div class="section-label">{{ t('features.settings.autoplayMoveDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="autoPlayDelayMs" :min="0" :max="2000" :step="100" />
-                  <span class="value-badge">{{ autoPlayDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.autoPlayDelayMs" :min="0" :max="2000" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.delays.autoPlayDelayMs }}ms</span>
                 </div>
               </div>
 
               <!-- Dev Autoplay switch -->
               <div v-if="autoplayStore.isMo3ep" class="settings-section-card dev-autoplay-card">
                 <div class="dev-autoplay-row">
-                  <span class="dev-autoplay-label">Dev Autoplay</span>
-                  <n-switch v-model:value="globalAutoplay" size="medium" />
+                  <span class="dev-autoplay-label">{{ t('features.settings.devAutoplay') }}</span>
+                  <n-switch v-model:value="draftPreferences.gameplay.global_autoplay" size="medium" />
                 </div>
               </div>
             </n-collapse-item>
           </n-collapse>
 
-          <!-- Bottom authentication buttons -->
+          <!-- Bottom Save and authentication buttons -->
           <div class="drawer-footer">
+            <n-button
+              block
+              size="large"
+              class="save-btn"
+              @click="handleSave"
+            >
+              {{ t('features.settings.save') }}
+            </n-button>
+
             <n-button
               block
               size="large"
@@ -289,7 +269,7 @@ const handleAuthAction = () => {
                 <n-icon v-if="isAuthenticated"><LogOutOutline /></n-icon>
                 <n-icon v-else><LogInOutline /></n-icon>
               </template>
-              {{ isAuthenticated ? t('nav.logout') : t('nav.login') }}
+              {{ isAuthenticated ? t('shared.nav.logout') : t('shared.nav.login') }}
             </n-button>
           </div>
 
@@ -495,11 +475,29 @@ const handleAuthAction = () => {
   color: var(--neon-bordeaux, #d9004c);
 }
 
-/* Drawer Footer and Auth button */
+/* Drawer Footer and Auth/Save buttons */
 .drawer-footer {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.save-btn {
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, var(--neon-cyan, #00e5ff), var(--neon-blue, #0055ff)) !important;
+  color: #fff !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
 }
 
 .auth-action-btn {
@@ -538,5 +536,14 @@ const handleAuthAction = () => {
 
 :deep(.n-collapse-item__header-main) {
   width: 100%;
+}
+</style>
+
+<style>
+.settings-drawer,
+.settings-drawer .n-drawer-content {
+  background-color: var(--bg-1, #0a0b14) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 </style>

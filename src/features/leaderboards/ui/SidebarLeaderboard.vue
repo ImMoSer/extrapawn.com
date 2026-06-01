@@ -58,10 +58,10 @@ const calculateWinRate = (solved: number, failed: number) => {
           <tr>
             <th class="col-rank">#</th>
             <th class="col-player">{{ t('features.leaderboards.table.player') }}</th>
-            <th class="col-solved">{{ t('features.userCabinet.stats.modes.all', 'Solved') }}</th>
+            <th class="col-solved">{{ t('pages.userCabinet.stats.modes.all', 'Solved') }}</th>
             <th class="col-rate">{{ t('features.leaderboards.sidebar.winRate', 'Quote') }}</th>
             <th class="col-score">
-              {{ t('features.userCabinet.detailedAnalytics.bestScore', 'Best') }}
+              {{ t('pages.userCabinet.detailedAnalytics.bestScore', 'Best') }}
             </th>
           </tr>
         </thead>
@@ -83,7 +83,7 @@ const calculateWinRate = (solved: number, failed: number) => {
             <td class="col-score">{{ entry.maxRating }}</td>
           </tr>
           <tr v-if="!isLoading && (!data?.top10 || data.top10.length === 0)" class="empty-row">
-            <td colspan="5">{{ t('features.userCabinet.stats.noData') }}</td>
+            <td colspan="5">{{ t('pages.userCabinet.stats.noData') }}</td>
           </tr>
         </tbody>
       </table>

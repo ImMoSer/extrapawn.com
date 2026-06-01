@@ -131,7 +131,7 @@ onMounted(() => {
     <div v-if="hasError" class="error-overlay">
       <div class="loader-content webview-blocker">
         <img src="/png/extra_pawn_black.png" alt="Logo" class="loader-logo static" />
-        <h2 class="loader-title error-text">{{ t('common.actions.error') }}</h2>
+        <h2 class="loader-title error-text">{{ t('shared.errors.title') }}</h2>
         <p class="loader-text">
           {{ t('app.globalLoader.error') }}
         </p>
@@ -139,7 +139,7 @@ onMounted(() => {
           {{ errorMessage }}
         </p>
         <button @click="preloadAssets" class="copy-button">
-          {{ t('common.actions.retry') }}
+          {{ t('shared.buttons.retry') }}
         </button>
       </div>
     </div>

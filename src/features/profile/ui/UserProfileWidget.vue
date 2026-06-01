@@ -75,7 +75,7 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
             </n-space>
 
             <n-statistic
-              :label="t('features.userCabinet.stats.pawncoinsLabel')"
+              :label="t('pages.userCabinet.stats.pawncoinsLabel')"
               class="header-pawncoins"
             >
               <template #prefix>
@@ -108,12 +108,12 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
           </n-icon>
           <div style="text-align: center">
             <n-text strong size="large" block class="login-title">{{
-              t('features.userCabinet.title')
+              t('pages.userCabinet.title')
             }}</n-text>
-            <n-text depth="3">{{ t('features.userCabinet.loginPrompt') }}</n-text>
+            <n-text depth="3">{{ t('pages.userCabinet.loginPrompt') }}</n-text>
           </div>
           <n-button type="primary" size="large" block secondary strong @click="handleLogin">
-            {{ t('nav.loginWithLichess') }}
+            {{ t('shared.nav.loginWithLichess') }}
           </n-button>
         </n-space>
       </n-card>

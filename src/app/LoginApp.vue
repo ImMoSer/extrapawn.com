@@ -31,7 +31,7 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
       </div>
 
       <button @click="handleLogin" class="login-button">
-        {{ t('nav.loginWithLichess') }}
+        {{ t('shared.nav.loginWithLichess') }}
       </button>
 
       <div class="lang-switcher">

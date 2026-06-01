@@ -47,10 +47,10 @@ const props = defineProps({
 const { t } = useI18n()
 
 const skillModes = [
-  { key: 'finish_him', nameKey: 'gameModes.finishHim', color: '#9b59b6' }, // Purple
-  { key: 'theory_endings', nameKey: 'features.userCabinet.stats.modes.theory', color: '#e74c3c' }, // Red/Coral
-  { key: 'practical_chess', nameKey: 'features.userCabinet.stats.modes.practical', color: '#3498db' }, // Blue
-  { key: 'tactics', nameKey: 'features.userCabinet.stats.modes.tactics', color: '#42b883' }, // Green
+  { key: 'finish_him', nameKey: 'shared.gameModes.finishHim', color: '#9b59b6' }, // Purple
+  { key: 'theory_endings', nameKey: 'shared.gameModes.theoryEndgames', color: '#e74c3c' }, // Red/Coral
+  { key: 'practical_chess', nameKey: 'shared.gameModes.practicalChess', color: '#3498db' }, // Blue
+  { key: 'tactics', nameKey: 'shared.gameModes.tactics', color: '#42b883' }, // Green
 ] as const
 
 const tierToPieceMap: Record<string, string> = {
@@ -301,7 +301,7 @@ const onChartClick = (params: unknown) => {
         @click="onChartClick"
         autoresize
       />
-      <n-empty v-else :description="t('features.userCabinet.stats.noData')" />
+      <n-empty v-else :description="t('pages.userCabinet.stats.noData')" />
     </div>
   </div>
 </template>

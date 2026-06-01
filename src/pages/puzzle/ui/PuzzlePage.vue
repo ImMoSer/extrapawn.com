@@ -78,7 +78,7 @@ onUnmounted(() => {
 
           <n-divider vertical />
 
-          <n-text :class="puzzleStore.feedbackMessage === t('features.finishHim.feedback.win') ? 'text-success' : 'text-info'">
+          <n-text :class="puzzleStore.feedbackMessage === t('features.puzzle.feedback.win') ? 'text-success' : 'text-info'">
             {{ puzzleStore.feedbackMessage }}
           </n-text>
 

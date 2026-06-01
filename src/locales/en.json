@@ -35,698 +35,7 @@
       "description": "Explore our subscription tiers: Pawn, Knight, Bishop, Rook, Queen, and King. Choose the best plan for your chess growth."
     }
   },
-  "common": {
-    "actions": {
-      "loading": "Loading...",
-      "error": "Error",
-      "processing": "Processing...",
-      "ok": "OK",
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "delete": "Delete",
-      "play": "Play",
-      "notAvailable": "N/A",
-      "linkCopied": "Link copied to clipboard!",
-      "copyFailed": "Could not copy link.",
-      "copyLink": "Copy link",
-      "copied": "Copied!",
-      "close": "Close",
-      "retry": "Retry",
-      "limitless": "limitless"
-    },
-    "difficulties": {
-      "level_novice": "Novice",
-      "level_pro": "Pro",
-      "level_master": "Master"
-    },
-    "global": "Global",
-    "periods": {
-      "day": "Day",
-      "week": "Week",
-      "month": "Month",
-      "days14": "Last 14 days",
-      "days21": "Last 21 days"
-    },
-    "stats": {
-      "success": "Success",
-      "accuracy": "Accuracy",
-      "improve": "Improve",
-      "points": {
-        "one": "Point",
-        "other": "{count} Points"
-      },
-      "seconds": {
-        "one": "Second",
-        "other": "{count} Seconds"
-      },
-      "attempts": {
-        "one": "Attempt",
-        "other": "{count} Attempts"
-      },
-      "ratingChange": "Rating {delta}",
-      "attemptNoRating": "Attempt {count}: No rating change."
-    },
-    "controls": {
-      "new": "New",
-      "restart": "Restart",
-      "resign": "Resign",
-      "share": "Share"
-    },
-    "status": {
-      "label": "Status Code",
-      "unknown": "Unknown"
-    },
-    "navigation": {
-      "prev": "Previous Move",
-      "next": "Next Move"
-    },
-    "notifications": {
-      "fenCopied": "FEN copied to clipboard!",
-      "pgnCopied": "PGN copied to clipboard!"
-    },
-    "updateNotification": {
-      "title": "New Version Available!",
-      "content": "A new version (v{version}) is online. Please update the app to receive all the latest features and fixes.",
-      "button": "Update Now"
-    }
-  },
-  "gameModes": {
-    "finishHim": "Finish Him",
-    "theoryEndgames": "Endgames",
-    "practicalChess": "Practical",
-    "repertoire": "Repertoire"
-  },
-  "chess": {
-    "subThemes": {
-      "complexEndgame": "Complex Endgame",
-      "pawnEndgame": "Pawn Endgame",
-      "queenVsRook": "Queen vs Rook",
-      "rookVsRook": "Rook vs Rook",
-      "rookVsPawns": "Rook vs Pawns",
-      "knightVsPawns": "Knight vs Pawns",
-      "rookVsBishop": "Rook vs Bishop",
-      "bishopVsPawns": "Bishop vs Pawns",
-      "rookVsKnight": "Rook vs Knight",
-      "queenVsQueen": "Queen vs Queen",
-      "queenVsBishop": "Queen vs Bishop",
-      "queenVsPawns": "Queen vs Pawns",
-      "queenVsKnight": "Queen vs Knight",
-      "knightVsBishop": "Knight vs Bishop",
-      "bishopVsBishop": "Bishop vs Bishop",
-      "bishopVsKnight": "Bishop vs Knight",
-      "knightVsKnight": "Knight vs Knight",
-      "opColBishop": "Opposite Colored Bishops",
-      "twoMinorsVsRook": "Two Minor Pieces vs Rook",
-      "opColBishopPlus": "Opposite Colored Bishops +"
-    },
-    "themes": {
-      "queenPieces": "Queen & Pieces",
-      "rookPieces": "Rook & Pieces",
-      "bishop": "Bishop Endgame",
-      "rookPawn": "Rook & Pawn",
-      "queen": "Queen Endgame",
-      "knight": "Knight Endgame",
-      "expert": "Expert",
-      "knightBishop": "Knight vs Bishop",
-      "pawn": "Pawn Endgame",
-      "extraPawn": "Extra Pawn",
-      "materialEquality": "Black or White?",
-      "exchange": "Exchange"
-    },
-    "tactics": {
-      "fork": "Fork",
-      "kingAttack": "King Attack",
-      "sacrifice": "Sacrifice",
-      "pin": "Pin",
-      "discoveredAttack": "Discovered Attack",
-      "advancedPawn": "Advanced Pawn",
-      "attraction": "Attraction",
-      "deflection": "Deflection",
-      "defensiveMove": "Defensive Move",
-      "quietMove": "Quiet Move",
-      "hangingPiece": "Hanging Piece",
-      "skewer": "Skewer",
-      "trappedPiece": "Trapped Piece",
-      "intermezzo": "Intermezzo",
-      "clearance": "Clearance",
-      "capturingDefender": "Capturing Defender",
-      "zugzwang": "Zugzwang",
-      "backRankMate": "Back-Rank Mate",
-      "interference": "Interference",
-      "xRayAttack": "X-Ray Attack",
-      "auto": "Automatic"
-    },
-    "types": {
-      "win": "Win",
-      "draw": "Draw",
-      "advantage": "Advantage",
-      "whiteEndgame": "Vs White",
-      "blackEndgame": "Vs Black"
-    }
-  },
-  "features": {
-    "taskToday": {
-      "title": "Task Today",
-      "setupTitle": "Task Setup",
-      "readyToStart": "Are you ready to start the task? The timer will start immediately.",
-      "startBtn": "Start Task",
-      "completed": {
-        "title": "Training Successfully Completed!",
-        "puzzles": "Puzzles",
-        "breakdownTitle": "Your Report",
-        "puzzlesCountShort": "Tasks",
-        "backToStart": "Back to Dashboard",
-        "startAnother": "Start Another Plan",
-        "duration": {
-          "hour": "hour",
-          "hours": "hours",
-          "minute": "minute",
-          "minutes": "minutes",
-          "second": "second",
-          "seconds": "seconds"
-        },
-        "stats": {
-          "accuracy": "Accuracy",
-          "totalAttempts": "Total Attempts",
-          "avgTime": "Avg. Time / Puzzle"
-        },
-        "modes": {
-          "tactics": "TACTICS",
-          "finish_him": "FINISH HIM",
-          "practical_chess": "PRACTICAL CHESS",
-          "theory_endings": "THEORY ENDINGS"
-        }
-      }
-    },
-    "board": {
-      "flip": "Flip Board",
-      "copyFen": "Copy FEN",
-      "copyPgn": "Copy PGN"
-    },
-    "finishHim": {
-      "feedback": {
-        "getReady": "Get ready for the next challenge!",
-        "pressNext": "Press 'Play Button' to begin.",
-        "yourTurn": "Your turn! Find the correct continuation.",
-        "yourTurnPlayout": "Your turn! Find the best moves to win.",
-        "timeUp": "Time's up! The playout phase is lost.",
-        "resigned": "You have resigned the game.",
-        "win": "You won!",
-        "loss": "You lost!",
-        "loadFailed": "Failed to load puzzle."
-      },
-      "selection": {
-        "title": "Finish Him",
-        "subtitle": "Realize your advantage against the engine",
-        "themeLabel": "Endgame Theme"
-      },
-      "error": {
-        "puzzleNotFound": "Puzzle with ID {puzzleId} was not found or is unavailable."
-      },
-      "stats": {
-        "mode": "Mode",
-        "theme": "Theme",
-        "rating": "Our Rating",
-        "evaluation": "Our Evaluation"
-      }
-    },
-
-    "userCabinet": {
-      "title": "User Cabinet",
-      "loginPrompt": "Log in to view your statistics and activity.",
-      "trainingPlan": {
-        "title": "Daily Training Plan",
-        "refreshed": "Plan refreshed",
-        "noPlan": "You have no active plan for today. Request one to start your daily training and earn your streak!",
-        "requestButton": "Request Today's Plan ({level})",
-        "loading": "Loading your plan...",
-        "error": "Failed to load plan",
-        "streak": "Day",
-        "overallProgress": "Overall Progress",
-        "planFulfilled": "🎉 Plan fulfilled! Claim your reward to secure your streak!",
-        "claimReward": "Claim Reward & Secure Streak",
-        "planCompleted": "✅ You have completed today's plan. Come back tomorrow!",
-        "yesterdayTitle": "Daily Training Plan for yesterday",
-        "completeYesterdayFirst": "You have to complete your plan for yesterday, before you can start today's plan.",
-        "yesterdayCompleted": "You have completed yesterday's plan.",
-        "getTodayPlan": "Get plan for today",
-        "columns": {
-          "mode": "Mode",
-          "subMode": "Type",
-          "theme": "Theme",
-          "progress": "Progress",
-          "action": "Action"
-        },
-        "actions": {
-          "play": "Play",
-          "done": "Done"
-        },
-        "upgradeTitle": "🏆 Status Upgrade!",
-        "awesome": "Awesome!"
-      },
-      "info": {
-        "lichessId": "Lichess ID",
-        "subscriptionTier": "Subscription",
-        "tierExpires": " (until {date})",
-        "tierPermanent": " (permanent)"
-      },
-      "subscription": {
-        "title": "Manage Subscription",
-        "description": "Manage your billing details, download invoices, or cancel your subscription.",
-        "openPortal": "Open Customer Portal",
-        "reactivate": "Reactivate",
-        "reactivateTooltip": "Please reactivate your subscription in the customer portal to make upgrades.",
-        "error": "Failed to open customer portal."
-      },
-      "stats": {
-        "pawncoinsLabel": "PawnCoins",
-        "endgameSkillLabel": "Endgame Skill",
-        "puzzlesSolved": "1 Puzzle Solved | {count} Puzzles Solved",
-        "skillEarned": "Skill Today",
-        "finishHimRatingLabel": "FinishHim Rating",
-        "bestRatingsTitle": "Best Ratings",
-        "global": {
-          "title": "Activity"
-        },
-        "activity": {
-          "titleWithTime": "Today's activity (resets at {time})"
-        },
-        "periods": {
-          "day": "Day",
-          "week": "Week",
-          "month": "Month"
-        },
-        "modes": {
-          "all": "Mode",
-          "finishHim": "Finish Him",
-          "theory": "Theory",
-          "theoryWin": "Theory (Win)",
-          "theoryDraw": "Theory (Draw)",
-          "practical": "Practical",
-          "tactics": "Tactics",
-          "tacticalTrainer": "Tactics"
-        },
-        "today": "Today",
-        "noData": "No data for the selected period.",
-        "success": "Success",
-        "accuracy": "Accuracy",
-        "attempts": "attempts",
-        "puzzle": "Puzzle",
-        "theoryThemes": "Endgame Themes",
-        "improve": "Improve"
-      },
-      "telegram": {
-        "title": "Telegram Integration",
-        "boundStatusSimple": "Account bound to Telegram",
-        "bindButton": "Bind Telegram Account"
-      },
-      "activity": {
-        "title": "Lichess Activity",
-        "noActivity": "No recent Lichess activity found.",
-        "dateHeader": "Date",
-        "summaryHeader": "Activity Summary"
-      },
-      "detailedAnalytics": {
-        "title": "Detailed Analytics",
-        "bestScore": "Best Score"
-      },
-      "analyticsTable": {
-        "theme": "Theme",
-        "rating": "Rating",
-        "accuracy": "Accuracy",
-        "solved_attempted": "Solved/Attempted",
-        "accuracy_percent": "Accuracy %",
-        "themeDistribution": "Theme Distribution",
-        "byAttempts": "by attempts",
-        "byRating": "by rating"
-      },
-      "gift": {
-        "title": "Redeem Gift Code",
-        "description": "Enter your 8-digit code to activate your club subscription.",
-        "placeholder": "Code",
-        "activate": "Activate",
-        "successTitle": "Congratulations! 🎉",
-        "successMessage": "You have successfully activated the {tier} club tier. It will remain active until {date}. We wish you great success in your training!",
-        "ok": "OK",
-        "invalid": "Invalid or already used code.",
-        "error": "Error during redemption."
-      },
-      "polar": {
-        "successTitle": "Payment Successful! 🎉",
-        "successMessage": "Thank you for subscribing. Your account has been upgraded and your PawnCoins balance corresponds to your new tier.",
-        "ok": "Start Training"
-      }
-    },
-    "pricing": {
-      "title": "Subscriptions and Prices",
-      "repertoireGenerator": "Repertoire Generator",
-      "upgrade": {
-        "title": "Subscription Upgrade",
-        "intro": "Fantastic! You want to upgrade to {targetTier}.",
-        "details": "Your current subscription {currentTier} will be upgraded to {targetTier} immediately!",
-        "bullet1": "The billing date for the next invoice remains unchanged.",
-        "bullet2": "The new subscription starts immediately.",
-        "bullet3": "The price difference will be calculated automatically and charged to your saved payment method right away.",
-        "warning": "Please ensure that the payment via your saved payment method is not blocked, otherwise the upgrade will be reversed.",
-        "agbLabel": "I agree to the ",
-        "agbLinkText": "Terms of Service",
-        "agbSuffix": " and confirm the immediate start of the contract execution.",
-        "button": "Upgrade now (paid)",
-        "successTitle": "Upgrade Successful!",
-        "successMessage": "Your account has just been upgraded to {targetTier}. You now have full access to all new features!",
-        "toCabinet": "Go to User Cabinet",
-        "error": "Upgrade error. Please try again later.",
-        "successToast": "Upgrade successful! You now have immediate access."
-      },
-      "tiers": {
-        "title": "Subscription Tiers",
-        "pawn": {
-          "name": "Pawn",
-          "role": "Free for everyone to get to know the app.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "Free forever"
-        },
-        "knight": {
-          "name": "Knight",
-          "role": "Bonus tier for active community members.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins"
-        },
-        "bishop": {
-          "name": "Bishop",
-          "role": "Exclusive bonus for top performers in the club.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins"
-        },
-        "rook": {
-          "name": "Rook",
-          "role": "The \"No-Brainer\" entry for amateurs.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "3.99 € / Month"
-        },
-        "queen": {
-          "name": "Queen",
-          "role": "The \"Standard\" for ambitious club players.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "5.99 € / Month"
-        },
-        "king": {
-          "name": "King",
-          "role": "The \"Full-Power\" package for pros & analysts.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "9.99 € / Month"
-        },
-        "price": {
-          "soon": "Price will be announced",
-          "bonus": "Club Bonus"
-        }
-      },
-      "bonusInfo": {
-        "title": "🎉 xtrapawn Bonus Program",
-        "howItWorks": "📅 How does it work?",
-        "p1": "Our bonus program rewards the most active members of the xtrapawn club on Lichess.",
-        "p2": "Bonuses are assigned automatically. The calculation is done daily at 05:29 AM (UTC+1) based on performance over the last 30 days.",
-        "p3": "1st Place (King - limitless), 2nd Place (Queen - 5000), 3rd Place (Rook - 1000).",
-        "p4a": "Players with Vector 500+ receive Bishop (750 PawnCoins).",
-        "p4b": "Players with Vector 250+ receive Knight (500 PawnCoins).",
-        "p5": "Status is updated daily and remains valid until the next calculation.",
-        "homepageLink": "Club Homepage",
-        "alertText": "Prefer to earn instead of buy? Check out our",
-        "alertButton": "Bonus Program",
-        "teamLink": "Join our Lichess team",
-        "knight": "Knight Status: From Vector 250+",
-        "bishop": "Bishop Status: From Vector 500+",
-        "p6": "Status calculation is rolling over the last 30 days.",
-        "p7": "Subject to changes in the bonus program.",
-        "p8": "Good luck with your training!",
-        "moreInfo": "More info here"
-      },
-      "costs": {
-        "title": "Game Mode Costs",
-        "pawncoinLabel": "PawnCoins"
-      },
-      "insufficientCoins": {
-        "title": "Insufficient PawnCoins",
-        "message": "Starting this game requires {required} PawnCoins. You currently have: {available}.",
-        "subMessage": "You can learn more about how to top up your balance on the pricing page.",
-        "goToPricing": "Go to Pricing"
-      }
-    },
-
-    "analysis": {
-      "engine": "Analysis",
-      "threads": "Threads",
-      "loading": "Loading analysis...",
-      "mateInShort": "M{value}",
-      "makeMove": "Make a move to see analysis.",
-      "profile": "Engine",
-      "profiles": {
-        "lite": "Lite (12MB)",
-        "pro": "Pro (48MB)"
-      },
-      "openingTheory": "Opening Theory",
-      "viewOnWikibooks": "View on Wikibooks",
-      "loadingTheory": "Loading theory...",
-      "noTheoryFound": "No dedicated theory found for this position.",
-      "noTheorySubtext": "Try a more common move order.",
-      "reviewModeOverlay": "Review mode to see theory",
-      "move": "Move",
-      "tablebase": {
-        "whiteWins": "White wins",
-        "whiteMatesIn": "White mates in {moves}",
-        "blackWins": "Black wins",
-        "blackMatesIn": "Black mates in {moves}",
-        "draw": "Draw",
-        "mateIn": "Mate in {moves}",
-        "bestMove": "Best move",
-        "checkmate": "Checkmate",
-        "stalemate": "Stalemate"
-      }
-    },
-    "learningCoach": {
-      "title": "Coach",
-      "difficultyLabel": "Difficulty",
-      "categoryLabel": "Category",
-      "modeLabel": "Endgame Mode",
-      "tacticsLabel": "Tactical Motifs",
-      "loadPosition": "Load Position",
-      "generatePosition": "Generate Position",
-      "chatPlaceholder": "Ask the coach a question...",
-      "coachThinking": "Coach is thinking...",
-      "tabs": {
-        "endgame": "Endgames",
-        "tactic": "Tactics",
-        "opening": "Openings",
-        "chat": "Chat Coach"
-      },
-      "modes": {
-        "goto": "GoTo",
-        "theory": "Theoretical",
-        "practical": "Practical"
-      },
-      "details": {
-        "title": "Position Details",
-        "id": "ID",
-        "mode": "Mode",
-        "rating": "Rating",
-        "solution": "Solution Path",
-        "initialFen": "Initial FEN",
-        "category": "Category",
-        "difficulty": "Difficulty",
-        "gameModus": "Game Mode",
-        "engmRating": "Engine Rating",
-        "tacticalRating": "Tactics Rating",
-        "subCategory": "Sub-Category",
-        "themes": "Themes",
-        "copied": "FEN copied to clipboard!"
-      },
-      "topInfo": {
-        "tag": "LEARN",
-        "selectLesson": "Select a training lesson",
-        "activeLesson": "Active: {source} ({id})"
-      },
-      "welcomeMsg": "Hi! I have loaded the position from the \"{source}\" section. Let's analyze this position. You can also ask me questions about it here!",
-      "openingPlaceholder": "Opening \"{name}\" selected (placeholder)."
-    },
-    "theoryEndgames": {
-      "selection": {
-        "title": "Theoretical Endgames",
-        "subtitle": "Practice classic positions to perfection",
-        "typeLabel": "Task Type",
-        "difficultyLabel": "Difficulty",
-        "categoryLabel": "Category",
-        "start": "Start Training"
-      },
-      "feedback": {
-        "pressNext": "Press 'Play' to start.",
-        "win": "You won! Position converted.",
-        "drawSuccess": "Draw achieved! Great defense.",
-        "loss": "Defeat. Try again."
-      }
-    },
-    "practicalChess": {
-      "youMove": {
-        "title": "CHOOSE!",
-        "subtitle": "Analyze the position and pick the side you want to play. One side is winning - but which one?",
-        "playWhite": "White",
-        "playBlack": "Black"
-      },
-      "selection": {
-        "title": "Practical Chess",
-        "subtitle": "Master real-game scenarios and endgames",
-        "difficultyLabel": "Difficulty",
-        "categoryLabel": "Material setups",
-        "start": "Practice now"
-      }
-    },
-    "auth": {
-      "requiredForAction": "You must be logged in to perform this action.",
-      "serverEngineAuth": "Authentication required to use selected engine.",
-      "loginModal": {
-        "title": "Login via Lichess",
-        "intro": "Choose the permissions you want to grant to ExtraPawn.",
-        "permissions": {
-          "prefTitle": "Read Preferences",
-          "prefDesc": "Required to read your basic profile info and site preferences.",
-          "studyTitle": "Lichess Study Access (Optional)",
-          "studyDesc": "Allows the app to read your private studies and push new chapters directly to Lichess. Recommended if you want to use the Cloud Sync features."
-        },
-        "continue": "Continue to Lichess"
-      }
-    },
-    "errors": {
-      "backendConnectionFailed": "Could not connect to the server.",
-      "telegramAuthFailed": "Telegram authentication failed.",
-      "rateLimit": {
-        "title": "Too Many Requests",
-        "message": "Too many requests. Please wait {seconds} seconds."
-      },
-      "unknown": "An unknown error occurred."
-    },
-    "settings": {
-      "title": "Settings",
-      "selectBoard": "Board",
-      "selectPieces": "Pieces",
-      "selectLanguage": "Language",
-      "back": "Back",
-      "sounds": {
-        "title": "Sounds",
-        "voice": "Voice",
-        "board": "Board"
-      },
-      "animation": {
-        "title": "Animation",
-        "duration": "Duration"
-      }
-    },
-    "gameplay": {
-      "confirmExit": {
-        "title": "Do you want to resign?",
-        "message": "Are you sure you want to resign the current game?",
-        "browserMessage": "Are you sure you want to leave? Your current game will be counted as a loss."
-      },
-      "gameOver": {
-        "stalemate": "Game over: Stalemate."
-      },
-      "feedback": {
-        "loadFailed": "Failed to load puzzle. It might not exist."
-      },
-      "playWithDefaultEngine": "Play with default engine"
-    },
-    "puzzleInfo": {
-      "title": "Puzzle Info",
-      "tacticalRating": "Tactical Rating",
-      "solveTime": "Solve Time",
-      "funValue": "Skill Value",
-      "evaluation": "Evaluation",
-      "pieces": "Pieces",
-      "finalPositionTitle": "Material in final position",
-      "leaderboardTitle": "Best Times",
-      "tableRank": "#",
-      "tablePlayer": "Player",
-      "tableTime": "Time",
-      "endgameThemeLabel": "Endgame Theme"
-    },
-    "engine": {
-      "title": "Sparring Partner",
-      "select": "Sparring partner"
-    },
-    "leaderboards": {
-      "bannerAlt": "Leaderboards Banner",
-      "sections": {
-        "hot": "HOT 🔥",
-        "competitive": "COMPETITIVE MODES 🏆",
-        "strategic": "STRATEGIC MASTERY 🏰",
-        "hallOfFame": "HALL OF FAME 🏛️"
-      },
-      "titles": {
-        "topFinishHim": "Finish Him",
-        "overallSkill": "Overall Skill",
-        "skillStreak": "+100 everyday",
-        "topToday": "Top Today",
-        "finishHimLeaderboard": "Finish Him",
-        "theoryLeaderboard": "Theoretical",
-        "practicalLeaderboard": "Practical"
-      },
-      "sidebar": {
-        "title": "Top 10 (30 Days)",
-        "currentUser": "You",
-        "winRate": "Rate"
-      },
-      "table": {
-        "rank": "#",
-        "player": "Player",
-        "time": "Time",
-        "challenge": "Challenge",
-        "daysOld": "1 Day | {count} Days",
-        "totalSkill": "Skill",
-        "score": "Score",
-        "avgRating": "Avg",
-        "maxRating": "Max",
-        "highScore": "BestScore",
-        "bestDay": "Best Day",
-        "activeDays": "Activity",
-        "streakDays": "1 Day | {count} Days",
-        "action": "Action",
-        "requested": "Requested",
-        "played": "Played",
-        "solved": "Solved",
-        "failed": "Failed",
-        "bullet": "Bullet",
-        "blitz": "Blitz",
-        "rapid": "Rapid",
-        "classic": "Classic"
-      },
-      "errors": {
-        "dataLoadFailed": "Failed to load leaderboard data.",
-        "unknown": "An unknown error occurred."
-      },
-      "periods": {
-        "days14": "Last 14 days",
-        "days21": "Last 21 days"
-      }
-    },
-    "controls": {
-      "new": "New",
-      "restart": "Restart",
-      "resign": "Resign",
-      "share": "Share"
-    }
-  },
-  "nav": {
-    "home": "Home",
-    "workout": "Training",
-    "speedrun": "Speedrun",
-    "leaderboards": "LeaderBoards",
-    "userCabinet": "Cabinet",
-    "pricing": "Pricing",
-    "about": "About",
-    "legal": "Legal",
-    "repertoire": "Study",
-    "playCoach": "Play Coach",
-    "sparring": "Sparring",
-    "login": "Login",
-    "logout": "Logout",
-    "loginWithLichess": "Login with Lichess"
-  },  "legal": {
+  "legal": {
     "title": "Legal Information",
     "precedence": "This translation is provided for information purposes only. In the event of any discrepancies or conflicts between this English version and the German original, the German version shall prevail and be legally binding.",
     "tabs": {
@@ -866,22 +175,6 @@
       }
     }
   },
-  "app": {
-    "title": "EXTRAPAWN",
-    "globalLoader": {
-      "error": "Failed to load essential assets. Please check your internet connection and try again.",
-      "message": "Welcome! The app is on your device for the first time or it need to be updated and needs to be fully downloaded. This only happens once.",
-      "hint": "Once the download is finished, the app can be used completely offline.",
-      "webviewWarning": "It seems you have opened the app in an integrated browser (e.g., Telegram, Instagram). For full functionality, we require a real browser like Google Chrome or Safari.",
-      "webviewAction": "Please copy the link and open it in your default browser (Chrome or Safari).",
-      "warmingMessage": "Initializing engine...",
-      "warmingHint": "Compiling the engine can take a few seconds on mobile devices."
-    },
-    "login": {
-      "welcomeTitle": "Welcome to EXTRAPAWN",
-      "welcomeText": "Your ultimate laboratory for chess training and deep analysis. Log in via Lichess to access all professional features."
-    }
-  },
   "about": {
     "hero": {
       "title": "ExtraPawn — The Chess Gym for Serious Players",
@@ -1003,26 +296,541 @@
     },
     "footerNote": "Built with ❤️ for those who seek chess mastery."
   },
-  "welcome": {
-    "titleV2": "Select a Game Mode",
-    "slogan": "Consistency is the key to mastery.",
-    "buttons": {
-      "training": "Training",
-      "leaderboards": "LeaderBoards",
-      "club": "Club",
-      "repertoire": "Study"
+  "puzzleCategories": {
+    "themes": {
+      "queenPieces": "Queen & Pieces",
+      "rookPieces": "Rook & Pieces",
+      "bishop": "Bishop Endgame",
+      "rookPawn": "Rook & Pawn",
+      "queen": "Queen Endgame",
+      "knight": "Knight Endgame",
+      "expert": "Expert",
+      "knightBishop": "Knight vs Bishop",
+      "pawn": "Pawn Endgame",
+      "extraPawn": "Extra Pawn",
+      "materialEquality": "Black or White?",
+      "exchange": "Exchange"
     },
-    "loginPrompt": "Or log in to access all features:"
+    "subThemes": {
+      "complexEndgame": "Complex Endgame",
+      "pawnEndgame": "Pawn Endgame",
+      "queenVsRook": "Queen vs Rook",
+      "rookVsRook": "Rook vs Rook",
+      "rookVsPawns": "Rook vs Pawns",
+      "knightVsPawns": "Knight vs Pawns",
+      "rookVsBishop": "Rook vs Bishop",
+      "bishopVsPawns": "Bishop vs Pawns",
+      "rookVsKnight": "Rook vs Knight",
+      "queenVsQueen": "Queen vs Queen",
+      "queenVsBishop": "Queen vs Bishop",
+      "queenVsPawns": "Queen vs Pawns",
+      "queenVsKnight": "Queen vs Knight",
+      "knightVsBishop": "Knight vs Bishop",
+      "bishopVsBishop": "Bishop vs Bishop",
+      "bishopVsKnight": "Bishop vs Knight",
+      "knightVsKnight": "Knight vs Knight",
+      "opColBishop": "Opposite Colored Bishops",
+      "twoMinorsVsRook": "Two Minor Pieces vs Rook",
+      "opColBishopPlus": "Opposite Colored Bishops +",
+      "tactical": "Tactical",
+      "practical": "Practical",
+      "theoretical": "Theoretical"
+    },
+    "tactics": {
+      "fork": "Fork",
+      "kingAttack": "King Attack",
+      "sacrifice": "Sacrifice",
+      "pin": "Pin",
+      "discoveredAttack": "Discovered Attack",
+      "advancedPawn": "Advanced Pawn",
+      "attraction": "Attraction",
+      "deflection": "Deflection",
+      "defensiveMove": "Defensive Move",
+      "quietMove": "Quiet Move",
+      "hangingPiece": "Hanging Piece",
+      "skewer": "Skewer",
+      "trappedPiece": "Trapped Piece",
+      "intermezzo": "Intermezzo",
+      "clearance": "Clearance",
+      "capturingDefender": "Capturing Defender",
+      "zugzwang": "Zugzwang",
+      "backRankMate": "Back-Rank Mate",
+      "interference": "Interference",
+      "xRayAttack": "X-Ray Attack",
+      "auto": "Automatic"
+    },
+    "difficulties": {
+      "level_novice": "Novice",
+      "level_pro": "Pro",
+      "level_master": "Master"
+    },
+    "types": {
+      "win": "Win",
+      "draw": "Draw",
+      "advantage": "Advantage",
+      "whiteEndgame": "Vs White",
+      "blackEndgame": "Vs Black"
+    }
   },
-  "clubPage": {
-    "mostValuablePlayersTitle": "Club Top 20 & Bonus Status",
-    "table": {
-      "player": "Player",
-      "vector": "Vector",
-      "performance": "Perf.",
-      "gamesPlayed": "Games",
-      "winRate": "Win %",
-      "streak": "Streak"
+  "pages": {
+    "welcome": {
+      "titleV2": "Select a Game Mode",
+      "slogan": "Consistency is the key to mastery.",
+      "buttons": {
+        "training": "Training",
+        "leaderboards": "LeaderBoards",
+        "club": "Club",
+        "repertoire": "Study"
+      },
+      "loginPrompt": "Or log in to access all features:",
+      "submodes": {
+        "finish_him": "Finish Him",
+        "practical_chess": "Practical Chess",
+        "theory_endings": "Theory Endings"
+      }
+    },
+    "userCabinet": {
+      "title": "User Cabinet",
+      "loginPrompt": "Log in to view your statistics and activity.",
+      "info": {
+        "lichessId": "Lichess ID",
+        "subscriptionTier": "Subscription",
+        "tierExpires": " (until {date})",
+        "tierPermanent": " (permanent)"
+      },
+      "subscription": {
+        "title": "Manage Subscription",
+        "description": "Manage your billing details, download invoices, or cancel your subscription.",
+        "openPortal": "Open Customer Portal",
+        "reactivate": "Reactivate",
+        "reactivateTooltip": "Please reactivate your subscription in the customer portal to make upgrades.",
+        "error": "Failed to open customer portal."
+      },
+      "polar": {
+        "successTitle": "Payment Successful! 🎉",
+        "successMessage": "Thank you for subscribing. Your account has been upgraded and your PawnCoins balance corresponds to your new tier.",
+        "ok": "Start Training"
+      },
+      "gift": {
+        "title": "Redeem Gift Code",
+        "description": "Enter your 8-digit code to activate your club subscription.",
+        "placeholder": "Code",
+        "activate": "Activate",
+        "successTitle": "Congratulations! 🎉",
+        "successMessage": "You have successfully activated the {tier} club tier. It will remain active until {date}. We wish you great success in your training!",
+        "ok": "OK",
+        "invalid": "Invalid or already used code.",
+        "error": "Error during redemption."
+      },
+      "detailedAnalytics": {
+        "title": "Detailed Analytics",
+        "bestScore": "Best Score"
+      },
+      "analyticsTable": {
+        "theme": "Theme",
+        "rating": "Rating",
+        "accuracy": "Accuracy",
+        "solved_attempted": "Solved/Attempted",
+        "accuracy_percent": "Accuracy %",
+        "themeDistribution": "Theme Distribution",
+        "byAttempts": "by attempts",
+        "byRating": "by rating"
+      },
+      "stats": {
+        "pawncoinsLabel": "PawnCoins",
+        "bestRatingsTitle": "Best Ratings",
+        "improve": "Improve",
+        "noData": "No data for the selected period.",
+        "success": "Success",
+        "title": "",
+        "modes": {
+          "all": "Mode",
+          "finishHim": "Finish Him",
+          "theory": "Theory",
+          "practical": "Practical",
+          "tactics": "Tactics"
+        }
+      },
+      "plan": {
+        "activeDesc": "Your active plan",
+        "activeTitle": "Active Plan",
+        "completedDesc": "Plan completed!",
+        "completedTitle": "Completed",
+        "confirmCancel": "Cancel",
+        "confirmMessage": "Are you sure?",
+        "confirmOk": "OK",
+        "confirmTitle": "Confirm",
+        "desc": "Training Plan",
+        "discoveryDesc": "Explore new positions",
+        "hardcoreDesc": "Hardcore mode",
+        "reset": "Reset",
+        "resume": "Resume",
+        "selectDifficulty": "Select Difficulty",
+        "start": "Start",
+        "startError": "Error starting plan",
+        "startPlan": "Start Plan",
+        "startSuccess": "Plan started successfully",
+        "title": "Daily Training Plan",
+        "viewLeaderboard": "View Leaderboard",
+        "warmupDesc": "Warm up with easy puzzles"
+      }
+    },
+    "pricing": {
+      "title": "Subscriptions and Prices",
+      "repertoireGenerator": "Repertoire Generator",
+      "checkoutError": "Payment checkout failed. Please try again.",
+      "tiers": {
+        "title": "Subscription Tiers",
+        "pawn": {
+          "name": "Pawn",
+          "role": "Free for everyone to get to know the app.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins",
+          "price": "Free forever"
+        },
+        "knight": {
+          "name": "Knight",
+          "role": "Bonus tier for active community members.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins"
+        },
+        "bishop": {
+          "name": "Bishop",
+          "role": "Exclusive bonus for top performers in the club.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins"
+        },
+        "rook": {
+          "name": "Rook",
+          "role": "The \"No-Brainer\" entry for amateurs.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins",
+          "price": "3.99 € / Month"
+        },
+        "queen": {
+          "name": "Queen",
+          "role": "The \"Standard\" for ambitious club players.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins",
+          "price": "5.99 € / Month"
+        },
+        "king": {
+          "name": "King",
+          "role": "The \"Full-Power\" package for pros & analysts.",
+          "description": "Daily replenishment up to {pawncoins} PawnCoins",
+          "price": "9.99 € / Month"
+        },
+        "price": {
+          "soon": "Price will be announced",
+          "bonus": "Club Bonus"
+        }
+      },
+      "bonusInfo": {
+        "title": "🎉 xtrapawn Bonus Program",
+        "howItWorks": "📅 How does it work?",
+        "p1": "Our bonus program rewards the most active members of the xtrapawn club on Lichess.",
+        "p2": "Bonuses are assigned automatically. The calculation is done daily at 05:29 AM (UTC+1) based on performance over the last 30 days.",
+        "p3": "1st Place (King - limitless), 2nd Place (Queen - 5000), 3rd Place (Rook - 1000).",
+        "p4a": "Players with Vector 500+ receive Bishop (750 PawnCoins).",
+        "p4b": "Players with Vector 250+ receive Knight (500 PawnCoins).",
+        "p5": "Status is updated daily and remains valid until the next calculation.",
+        "homepageLink": "Club Homepage",
+        "alertText": "Prefer to earn instead of buy? Check out our",
+        "alertButton": "Bonus Program",
+        "teamLink": "Join our Lichess team",
+        "knight": "Knight Status: From Vector 250+",
+        "bishop": "Bishop Status: From Vector 500+",
+        "p6": "Status calculation is rolling over the last 30 days.",
+        "p7": "Subject to changes in the bonus program.",
+        "p8": "Good luck with your training!",
+        "moreInfo": "More info here"
+      },
+      "costs": {
+        "title": "Game Mode Costs",
+        "pawncoinLabel": "PawnCoins"
+      },
+      "insufficientCoins": {
+        "title": "Insufficient PawnCoins",
+        "message": "Starting this game requires {required} PawnCoins. You currently have: {available}.",
+        "subMessage": "You can learn more about how to top up your balance on the pricing page.",
+        "goToPricing": "Go to Pricing"
+      },
+      "upgrade": {
+        "title": "Subscription Upgrade",
+        "intro": "Fantastic! You want to upgrade to {targetTier}.",
+        "details": "Your current subscription {currentTier} will be upgraded to {targetTier} immediately!",
+        "bullet1": "The billing date for the next invoice remains unchanged.",
+        "bullet2": "The new subscription starts immediately.",
+        "bullet3": "The price difference will be calculated automatically and charged to your saved payment method right away.",
+        "warning": "Please ensure that the payment via your saved payment method is not blocked, otherwise the upgrade will be reversed.",
+        "agbLabel": "I agree to the ",
+        "agbLinkText": "Terms of Service",
+        "agbSuffix": " and confirm the immediate start of the contract execution.",
+        "button": "Upgrade now (paid)",
+        "successTitle": "Upgrade Successful!",
+        "successMessage": "Your account has just been upgraded to {targetTier}. You now have full access to all new features!",
+        "toCabinet": "Go to User Cabinet",
+        "error": "Upgrade error. Please try again later.",
+        "successToast": "Upgrade successful! You now have immediate access."
+      }
+    },
+    "bonus": {
+      "mostValuablePlayersTitle": "Club Top 20 & Bonus Status",
+      "table": {
+        "player": "Player",
+        "vector": "Vector",
+        "performance": "Perf.",
+        "gamesPlayed": "Games",
+        "winRate": "Win %",
+        "streak": "Streak"
+      }
+    },
+    "puzzle": {
+      "selection": {
+        "practicalTitle": "Practical Chess",
+        "theoryTitle": "Theoretical Endgames"
+      },
+      "youMove": {
+        "title": "CHOOSE!",
+        "subtitle": "Analyze the position and pick the side you want to play. One side is winning - but which one?",
+        "playWhite": "White",
+        "playBlack": "Black"
+      }
+    },
+    "recordsPage": {}
+  },
+  "features": {
+    "coach": {
+      "categoryLabel": "Category",
+      "difficultyLabel": "Difficulty",
+      "tacticsLabel": "Tactical Motifs",
+      "modes": {
+        "goto": "GoTo",
+        "practical": "Practical",
+        "theory": "Theoretical"
+      },
+      "tabs": {
+        "tactic": "Tactics"
+      }
+    },
+    "leaderboards": {
+      "bannerAlt": "Leaderboards Banner",
+      "sections": {
+        "hot": "HOT 🔥",
+        "competitive": "COMPETITIVE MODES 🏆",
+        "strategic": "STRATEGIC MASTERY 🏰",
+        "hallOfFame": "HALL OF FAME 🏛️"
+      },
+      "titles": {
+        "overallSkill": "Overall Skill",
+        "skillStreak": "+100 everyday",
+        "topToday": "Top Today",
+        "finishHimLeaderboard": "Finish Him"
+      },
+      "sidebar": {
+        "title": "Top 10 (30 Days)",
+        "currentUser": "You",
+        "winRate": "Rate"
+      },
+      "table": {
+        "rank": "#",
+        "player": "Player",
+        "time": "Time",
+        "challenge": "Challenge",
+        "daysOld": "1 Day | {count} Days",
+        "totalSkill": "Skill",
+        "score": "Score",
+        "plans": "Plans",
+        "avgRating": "Avg",
+        "maxRating": "Max",
+        "highScore": "BestScore",
+        "bestDay": "Best Day",
+        "activeDays": "Activity",
+        "streakDays": "1 Day | {count} Days",
+        "action": "Action",
+        "requested": "Requested",
+        "played": "Played",
+        "solved": "Solved",
+        "failed": "Failed",
+        "bullet": "Bullet",
+        "blitz": "Blitz",
+        "rapid": "Rapid",
+        "classic": "Classic"
+      },
+      "errors": {
+        "dataLoadFailed": "Failed to load leaderboard data.",
+        "unknown": "An unknown error occurred."
+      },
+      "periods": {
+        "days14": "Last 14 days",
+        "days21": "Last 21 days"
+      }
+    },
+    "taskToday": {
+      "title": "Task Today",
+      "setupTitle": "Task Setup",
+      "readyToStart": "Are you ready to start the task? The timer will start immediately.",
+      "startBtn": "Start Task",
+      "subtitle": "Complete your daily personalized chess training",
+      "chooseDifficulty": "1. Choose Difficulty",
+      "completedStatus": "Completed",
+      "trainingStrategy": "2. Training Strategy",
+      "preview": "Plan Preview",
+      "previewTasks": "0 Tasks | 1 Task | {count} Tasks",
+      "previewChooseStrategy": "Select a strategy for preview.",
+      "history": "History",
+      "runningTraining": "Running Training",
+      "resumeActiveBtn": "Resume",
+      "noPastPlans": "No past plans found.",
+      "startTrainingBtn": "🚀 START TRAINING",
+      "strategies": {
+        "discovery": {
+          "title": "💡 Discovery",
+          "desc": "Learn new themes and fill gaps in your knowledge."
+        },
+        "hardcore": {
+          "title": "🔥 Hardcore",
+          "desc": "Target and attack your biggest weaknesses."
+        },
+        "warmup": {
+          "title": "⚡ Warmup",
+          "desc": "Reinforce your knowledge with your strongest themes."
+        }
+      },
+      "feedback": {
+        "resumeSuccess": "Training resumed!",
+        "resumeError": "Failed to resume training.",
+        "startSuccess": "Daily training plan started!",
+        "startError": "Failed to generate plan.",
+        "replaySuccess": "Replay started!",
+        "replayError": "Failed to load replay."
+      },
+      "completed": {
+        "title": "Training Successfully Completed!",
+        "puzzles": "Puzzles",
+        "breakdownTitle": "Your Report",
+        "puzzlesCountShort": "Tasks",
+        "backToStart": "Back to Dashboard",
+        "startAnother": "Start Another Plan",
+        "duration": {
+          "hour": "hour",
+          "hours": "hours",
+          "minute": "minute",
+          "minutes": "minutes",
+          "second": "second",
+          "seconds": "seconds"
+        },
+        "stats": {
+          "accuracy": "Accuracy",
+          "totalAttempts": "Total Attempts",
+          "avgTime": "Avg. Time / Puzzle"
+        },
+        "modes": {
+          "tactics": "TACTICS",
+          "finish_him": "FINISH HIM",
+          "practical_chess": "PRACTICAL CHESS",
+          "theory_endings": "THEORY ENDINGS"
+        }
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "selectBoard": "Board",
+      "selectPieces": "Pieces",
+      "language": "Language",
+      "autoplayMoveDelay": "Autoplay Move Delay",
+      "botThinkingDelay": "Bot Thinking Delay",
+      "devAutoplay": "Developer Autoplay",
+      "gameplayBotDelays": "Gameplay & Bot Delays",
+      "initialBotDelay": "Initial Bot Delay",
+      "nextPuzzleDelay": "Next Puzzle Delay",
+      "restartDelay": "Restart Delay",
+      "save": "SAVE",
+      "sounds": {
+        "title": "Sounds",
+        "voice": "Voice",
+        "board": "Board"
+      },
+      "animationDuration": "Animation Duration",
+      "board": "Board Design",
+      "pieces": "Pieces Style"
+    },
+    "autoplay": {},
+    "analysis": {
+      "mateInShort": "M{value}",
+      "move": "Move",
+      "makeMove": "Make a move to see analysis.",
+      "noTheoryFound": "No dedicated theory found for this position.",
+      "noTheorySubtext": "Try a more common move order.",
+      "openingTheory": "Opening Theory",
+      "reviewModeOverlay": "Review mode to see theory",
+      "viewOnWikibooks": "View on Wikibooks"
+    },
+    "engine": {
+      "select": "Sparring partner"
+    },
+    "profile": {},
+    "puzzle": {
+      "feedback": {
+        "loadFailed": "Failed to load puzzle.",
+        "loss": "You lost!",
+        "pressNext": "Press 'Play Button' to begin.",
+        "win": "You won!",
+        "yourTurn": "Your turn! Find the correct continuation."
+      }
+    }
+  },
+  "shared": {
+    "nav": {
+      "home": "Home",
+      "tactics": "Tactics",
+      "finishHim": "Finish Him",
+      "practicalChess": "Practical Chess",
+      "theoryEndgames": "Theory Endings",
+      "taskToday": "Task Today",
+      "sparring": "Sparring",
+      "leaderboards": "LeaderBoards",
+      "userCabinet": "Cabinet",
+      "pricing": "Pricing",
+      "about": "About",
+      "legal": "Legal",
+      "repertoire": "Study",
+      "login": "Login",
+      "logout": "Logout",
+      "loginWithLichess": "Login with Lichess"
+    },
+    "errors": {
+      "backendConnectionFailed": "Could not connect to the server.",
+      "telegramAuthFailed": "Telegram authentication failed.",
+      "rateLimit": {
+        "title": "Too Many Requests",
+        "message": "Too many requests. Please wait {seconds} seconds."
+      },
+      "unknown": "An unknown error occurred.",
+      "acceptTermsRequired": "You must accept the terms of use."
+    },
+    "buttons": {
+      "back": "Back",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "copyLink": "Copy link",
+      "help": "Help",
+      "retry": "Retry"
+    },
+    "board": {
+      "copied": "Copied!"
+    },
+    "app": {
+      "limitless": "limitless",
+      "loading": "Loading...",
+      "global": "Global",
+      "updateNotification": {
+        "title": "New Version Available!",
+        "content": "A new version (v{version}) is online. Please update the app to receive all the latest features and fixes.",
+        "button": "Update Now"
+      }
+    },
+    "gameModes": {
+      "finishHim": "Finish Him",
+      "theoryEndgames": "Endgames",
+      "practicalChess": "Practical",
+      "tactics": "Tactics",
+      "repertoire": "Repertoire"
     }
   }
 }

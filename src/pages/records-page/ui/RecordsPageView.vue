@@ -37,10 +37,10 @@ const { data: planStreakResponse, isFetching: isPlanStreakLoading } = usePlanStr
 )
 
 const strategicTabs = computed(() => [
-  { id: 'practical_chess', name: t('features.leaderboards.titles.practicalLeaderboard', 'Practical Chess'), icon: '' },
-  { id: 'theory_endings', name: t('features.leaderboards.titles.theoryLeaderboard', 'Theory Endings'), icon: '' },
-  { id: 'finish_him', name: t('features.leaderboards.titles.topFinishHim', 'Finish Him'), icon: '' },
-  { id: 'tactics', name: t('features.leaderboards.titles.tacticsLeaderboard', 'Tactics'), icon: '' },
+  { id: 'practical_chess', name: t('shared.gameModes.practicalChess'), icon: '' },
+  { id: 'theory_endings', name: t('shared.gameModes.theoryEndgames'), icon: '' },
+  { id: 'finish_him', name: t('shared.gameModes.finishHim'), icon: '' },
+  { id: 'tactics', name: t('shared.gameModes.tactics'), icon: '' },
 ])
 
 const exampleData = computed(() => (isExample.value ? generateRandomHallOfFame() : null))
@@ -56,7 +56,7 @@ const isLoading = computed(() => {
     <h1 class="brand-text hall-of-fame-title">HALL OF FAME</h1>
 
     <div v-if="isLoading" class="loading-message">
-      <n-spin size="small" /> {{ t('common.actions.loading') }}
+      <n-spin size="small" /> {{ t('shared.app.loading') }}
     </div>
 
     <div v-else class="records-page__grid">
@@ -84,7 +84,7 @@ const isLoading = computed(() => {
         <TimedModeLeaderboardTable
           :title="t('features.leaderboards.titles.overallSkill')"
           :data="isExample ? exampleData?.overallLeaderboard : dashboardData"
-          :tabs="[{ id: 'overall', name: t('common.global', 'Global'), icon: '' }]"
+          :tabs="[{ id: 'overall', name: t('shared.app.global', 'Global'), icon: '' }]"
           :is-loading="isDashboardLoading"
           color-class="topToday"
         />

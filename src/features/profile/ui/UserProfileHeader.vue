@@ -40,9 +40,9 @@ const avatarUrl = computed(() => {
 })
 
 const formatTierExpireDate = (isoDate: string | null | undefined) => {
-  if (!isoDate) return t('features.userCabinet.info.tierPermanent')
+  if (!isoDate) return t('pages.userCabinet.info.tierPermanent')
   const date = new Date(isoDate)
-  return t('features.userCabinet.info.tierExpires', { date: date.toLocaleDateString() })
+  return t('pages.userCabinet.info.tierExpires', { date: date.toLocaleDateString() })
 }
 
 const getTierType = (tier: string = '') => {
@@ -82,28 +82,28 @@ const gameModeScores = computed(() => {
   return [
     {
       key: 'finish_him',
-      label: t('features.userCabinet.stats.modes.finishHim'),
+      label: t('pages.userCabinet.stats.modes.finishHim'),
       icon: '🎯',
       color: 'var(--color-accent-success)',
       rating: ratings['finish_him'],
     },
     {
       key: 'tactics',
-      label: t('features.userCabinet.stats.modes.tactics'),
+      label: t('pages.userCabinet.stats.modes.tactics'),
       icon: '🧩',
       color: 'var(--color-accent-primary)',
       rating: ratings['tactics'],
     },
     {
       key: 'theory_endings',
-      label: t('features.theoryEndgames.selection.title'),
+      label: t('pages.puzzle.selection.theoryTitle'),
       icon: '🎓',
       color: 'var(--color-accent-error)',
       rating: ratings['theory_endings'],
     },
     {
       key: 'practical_chess',
-      label: t('features.practicalChess.selection.title'),
+      label: t('pages.puzzle.selection.practicalTitle'),
       icon: '♙',
       color: 'var(--color-accent-warning)',
       rating: ratings['practical_chess'],
@@ -176,12 +176,12 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
               round
               @click="$emit('reactivate')"
             >
-              {{ t('features.userCabinet.subscription.reactivate') }}
+              {{ t('pages.userCabinet.subscription.reactivate') }}
             </n-button>
           </n-space>
 
           <div class="funcoins-stat">
-            <n-statistic :label="t('features.userCabinet.stats.pawncoinsLabel')">
+            <n-statistic :label="t('pages.userCabinet.stats.pawncoinsLabel')">
               <template #prefix>🪙</template>
               <template #default>
                 <span v-if="isLimitless" class="rainbow-text limitless-symbol">∞</span>
@@ -199,7 +199,7 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
 
       <!-- Right: Best Ratings (taking remaining space) -->
       <div class="ratings-section">
-        <div class="section-title">{{ t('features.userCabinet.stats.bestRatingsTitle') }}</div>
+        <div class="section-title">{{ t('pages.userCabinet.stats.bestRatingsTitle') }}</div>
         <n-grid :cols="2" :x-gap="12" :y-gap="12">
           <n-grid-item v-for="stat in gameModeScores" :key="stat.key">
             <div class="score-item" :style="{ borderColor: stat.color }">

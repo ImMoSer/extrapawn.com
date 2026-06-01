@@ -144,9 +144,9 @@ const option = computed(() => {
             const p = params as RoseParam
             const theme = p.name
             let themeName = theme
-            if (te(`chess.tactics.${theme}`)) themeName = t(`chess.tactics.${theme}`)
-            else if (te(`chess.themes.${theme}`)) themeName = t(`chess.themes.${theme}`)
-            else if (te(`chess.subThemes.${theme}`)) themeName = t(`chess.subThemes.${theme}`)
+            if (te(`puzzleCategories.tactics.${theme}`)) themeName = t(`puzzleCategories.tactics.${theme}`)
+            else if (te(`puzzleCategories.themes.${theme}`)) themeName = t(`puzzleCategories.themes.${theme}`)
+            else if (te(`puzzleCategories.subThemes.${theme}`)) themeName = t(`puzzleCategories.subThemes.${theme}`)
 
             return themeName.length > 100 ? themeName.slice(0, 100) + '..' : themeName
           },
@@ -170,9 +170,9 @@ const onChartClick = (params: unknown) => {
   const theme = data.category
 
   let themeName = theme
-  if (te(`chess.tactics.${theme}`)) themeName = t(`chess.tactics.${theme}`)
-  else if (te(`chess.themes.${theme}`)) themeName = t(`chess.themes.${theme}`)
-  else if (te(`chess.subThemes.${theme}`)) themeName = t(`chess.subThemes.${theme}`)
+  if (te(`puzzleCategories.tactics.${theme}`)) themeName = t(`puzzleCategories.tactics.${theme}`)
+  else if (te(`puzzleCategories.themes.${theme}`)) themeName = t(`puzzleCategories.themes.${theme}`)
+  else if (te(`puzzleCategories.subThemes.${theme}`)) themeName = t(`puzzleCategories.subThemes.${theme}`)
 
   const ev = p.event.event as Event
   let x = window.innerWidth / 2
@@ -261,18 +261,18 @@ const handleTabChange = (type: PlayPuzzleType) => {
 
       <div class="header-right-group">
         <n-radio-group v-model:value="viewMode" size="small">
-          <n-radio-button value="rating">{{ t('features.userCabinet.analyticsTable.rating') }}</n-radio-button>
-          <n-radio-button value="accuracy">{{ t('features.userCabinet.analyticsTable.accuracy') }}</n-radio-button>
+          <n-radio-button value="rating">{{ t('pages.userCabinet.analyticsTable.rating') }}</n-radio-button>
+          <n-radio-button value="accuracy">{{ t('pages.userCabinet.analyticsTable.accuracy') }}</n-radio-button>
         </n-radio-group>
       </div>
     </div>
 
     <div class="puzzle-type-selector">
       <n-tabs type="segment" size="small" :value="activePuzzleType" @update:value="handleTabChange">
-        <n-tab name="tactics">{{ t('features.userCabinet.stats.modes.tactics') }}</n-tab>
-        <n-tab name="finish_him">{{ t('features.userCabinet.stats.modes.finishHim') }}</n-tab>
-        <n-tab name="practical_chess">{{ t('features.userCabinet.stats.modes.practical') }}</n-tab>
-        <n-tab name="theory_endings">{{ t('features.userCabinet.stats.modes.theory') }}</n-tab>
+        <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
+        <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
+        <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
+        <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
       </n-tabs>
     </div>
 
@@ -282,9 +282,9 @@ const handleTabChange = (type: PlayPuzzleType) => {
 
     <div class="chart-footer">
       <n-radio-group v-model:value="activeDifficulty" size="small">
-        <n-radio-button value="Novice">Novice</n-radio-button>
-        <n-radio-button value="Pro">Pro</n-radio-button>
-        <n-radio-button value="Master">Master</n-radio-button>
+        <n-radio-button value="Novice">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
+        <n-radio-button value="Pro">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
+        <n-radio-button value="Master">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
       </n-radio-group>
     </div>
 
@@ -293,16 +293,16 @@ const handleTabChange = (type: PlayPuzzleType) => {
       <div class="modal-content">
         <div class="modal-controls">
            <n-tabs type="segment" :value="activePuzzleType" @update:value="handleTabChange">
-            <n-tab name="tactics">{{ t('features.userCabinet.stats.modes.tactics') }}</n-tab>
-            <n-tab name="finish_him">{{ t('features.userCabinet.stats.modes.finishHim') }}</n-tab>
-            <n-tab name="practical_chess">{{ t('features.userCabinet.stats.modes.practical') }}</n-tab>
-            <n-tab name="theory_endings">{{ t('features.userCabinet.stats.modes.theory') }}</n-tab>
+            <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
+            <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
+            <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
+            <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
           </n-tabs>
 
           <n-radio-group v-model:value="activeDifficulty" size="medium">
-            <n-radio-button value="Novice">Novice</n-radio-button>
-            <n-radio-button value="Pro">Pro</n-radio-button>
-            <n-radio-button value="Master">Master</n-radio-button>
+            <n-radio-button value="Novice">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
+            <n-radio-button value="Pro">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
+            <n-radio-button value="Master">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
           </n-radio-group>
         </div>
         <div class="modal-chart-wrapper">
@@ -323,21 +323,21 @@ const handleTabChange = (type: PlayPuzzleType) => {
         <div class="popup-content">
           <div class="popup-theme-name">{{ activePopup.data.themeName }}</div>
           <div class="popup-row">
-            <span>{{ t('features.userCabinet.analyticsTable.rating') }}:</span>
+            <span>{{ t('pages.userCabinet.analyticsTable.rating') }}:</span>
             <span class="rating-val">{{ activePopup.data.rating }}</span>
           </div>
           <div class="popup-row">
-            <span>{{ t('features.userCabinet.analyticsTable.accuracy') }}:</span>
+            <span>{{ t('pages.userCabinet.analyticsTable.accuracy') }}:</span>
             <span class="accuracy-val" :class="{ 'high-acc': activePopup.data.accuracy > 70, 'low-acc': activePopup.data.accuracy <= 70 }">{{ activePopup.data.accuracy }}%</span>
           </div>
           <div class="popup-row">
-            <span>{{ t('features.userCabinet.stats.success') }}:</span>
+            <span>{{ t('pages.userCabinet.stats.success') }}:</span>
             <span>{{ activePopup.data.success }} / {{ activePopup.data.requested }}</span>
           </div>
         </div>
         <div class="popup-footer">
           <n-button type="primary" block @click="onImproveClick" class="improve-btn" :disabled="isLocked" :class="{ 'is-locked': isLocked }">
-            {{ t('features.userCabinet.stats.improve') }}
+            {{ t('pages.userCabinet.stats.improve') }}
           </n-button>
         </div>
       </div>

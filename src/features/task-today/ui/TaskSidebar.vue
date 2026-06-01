@@ -56,7 +56,7 @@ const totalAttemptsCount = computed(() => {
     <div v-if="taskTodayStore.isFinished" class="finished-state">
       <NText type="success" strong>TRAINING COMPLETED</NText>
       <NButton type="primary" @click="handleGoToStart" style="margin-top: 1rem">
-        {{ t('common.actions.back') }}
+        {{ t('shared.buttons.back') }}
       </NButton>
     </div>
 

@@ -23,8 +23,8 @@ export const useUiStore = defineStore('ui', () => {
   const isModalPersistent = ref(false)
   const modalTitle = ref('')
   const modalMessage = ref('')
-  const modalConfirmText = ref(t('common.actions.confirm'))
-  const modalCancelText = ref(t('common.actions.cancel'))
+  const modalConfirmText = ref(t('shared.buttons.confirm'))
+  const modalCancelText = ref(t('shared.buttons.cancel'))
   const modalExtraText = ref('')
   const isCancelButtonVisible = ref(true)
   const isExtraButtonVisible = ref(false)
@@ -38,8 +38,8 @@ export const useUiStore = defineStore('ui', () => {
   ): Promise<'confirm' | 'cancel' | 'extra' | null> {
     modalTitle.value = title
     modalMessage.value = message
-    modalConfirmText.value = options.confirmText || t('common.actions.confirm')
-    modalCancelText.value = options.cancelText || t('common.actions.cancel')
+    modalConfirmText.value = options.confirmText || t('shared.buttons.confirm')
+    modalCancelText.value = options.cancelText || t('shared.buttons.cancel')
     modalExtraText.value = options.extraText || ''
     isCancelButtonVisible.value = options.showCancel ?? true
     isExtraButtonVisible.value = options.showExtra ?? false
@@ -63,15 +63,15 @@ export const useUiStore = defineStore('ui', () => {
     if (error instanceof InsufficientPawnCoinsError) {
       const e = error as InsufficientPawnCoinsError
       const confirmed = await showConfirmation(
-        t('features.pricing.insufficientCoins.title'),
-        t('features.pricing.insufficientCoins.message', {
+        t('pages.pricing.insufficientCoins.title'),
+        t('pages.pricing.insufficientCoins.message', {
           required: e.required,
           available: e.available,
         }) +
           '\n\n' +
-          t('features.pricing.insufficientCoins.subMessage'),
+          t('pages.pricing.insufficientCoins.subMessage'),
         {
-          confirmText: t('features.pricing.insufficientCoins.goToPricing'),
+          confirmText: t('pages.pricing.insufficientCoins.goToPricing'),
           showCancel: false,
           persistent: true,
         },
@@ -121,8 +121,8 @@ export const useUiStore = defineStore('ui', () => {
     modalTitle.value = ''
     modalMessage.value = ''
     resolvePromise = null
-    modalConfirmText.value = t('common.actions.confirm')
-    modalCancelText.value = t('common.actions.cancel')
+    modalConfirmText.value = t('shared.buttons.confirm')
+    modalCancelText.value = t('shared.buttons.cancel')
     modalExtraText.value = ''
     isCancelButtonVisible.value = true
     isExtraButtonVisible.value = false

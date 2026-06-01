@@ -133,13 +133,13 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
         h('span', { style: { color: 'var(--text-color-3)', fontWeight: 'bold' } }, index + 1),
     },
     {
-      title: t('clubPage.table.player'),
+      title: t('pages.bonus.table.player'),
       key: 'username',
       minWidth: isMobile.value ? 100 : 150,
       render: (row: ClubPlayer) => renderUsername(row),
     },
     {
-      title: t('clubPage.table.vector'),
+      title: t('pages.bonus.table.vector'),
       key: 'vector',
       align: 'right' as const,
       width: numericWidth,
@@ -167,26 +167,26 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       },
     },
     {
-      title: t('clubPage.table.performance'),
+      title: t('pages.bonus.table.performance'),
       key: 'performance',
       align: 'right' as const,
       width: numericWidth,
     },
     {
-      title: t('clubPage.table.gamesPlayed'),
+      title: t('pages.bonus.table.gamesPlayed'),
       key: 'total_games_played',
       align: 'right' as const,
       width: numericWidth,
     },
     {
-      title: t('clubPage.table.winRate'),
+      title: t('pages.bonus.table.winRate'),
       key: 'win_rate',
       align: 'right' as const,
       width: numericWidth,
       render: (row: ClubPlayer) => `${row.win_rate}%`,
     },
     {
-      title: t('clubPage.table.streak'),
+      title: t('pages.bonus.table.streak'),
       key: 'max_streak',
       align: 'right' as const,
       width: numericWidth,
@@ -219,21 +219,21 @@ onMounted(() => {
       <n-space vertical :size="isMobile ? 'medium' : 'large'">
         <n-h1 align-text class="page-title">
           <n-text style="color: var(--neon-cyan)">{{
-            t('features.pricing.bonusInfo.title')
+            t('pages.pricing.bonusInfo.title')
           }}</n-text>
         </n-h1>
 
         <n-card class="info-card" :content-style="isMobile ? { padding: '12px' } : {}">
           <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
-            {{ t('features.pricing.bonusInfo.howItWorks') }}
+            {{ t('pages.pricing.bonusInfo.howItWorks') }}
           </n-h2>
 
           <n-space vertical size="medium">
             <n-text depth="1" strong :style="{ fontSize: isMobile ? '0.95rem' : '1.1rem' }">
-              {{ t('features.pricing.bonusInfo.p1') }}
+              {{ t('pages.pricing.bonusInfo.p1') }}
             </n-text>
             <n-text depth="2" :style="{ fontSize: isMobile ? '0.85rem' : '1rem' }">
-              {{ t('features.pricing.bonusInfo.p2') }}
+              {{ t('pages.pricing.bonusInfo.p2') }}
             </n-text>
 
             <n-space vertical :size="isMobile ? 'small' : 'medium'" style="margin-top: 8px">
@@ -250,7 +250,7 @@ onMounted(() => {
                   "
                   >TOP 1-3</n-tag
                 >
-                <n-text>{{ t('features.pricing.bonusInfo.p3') }}</n-text>
+                <n-text>{{ t('pages.pricing.bonusInfo.p3') }}</n-text>
               </div>
               <div class="condition-item">
                 <n-tag
@@ -265,7 +265,7 @@ onMounted(() => {
                   "
                   >VECTOR 500</n-tag
                 >
-                <n-text>{{ t('features.pricing.bonusInfo.p4a') }}</n-text>
+                <n-text>{{ t('pages.pricing.bonusInfo.p4a') }}</n-text>
               </div>
               <div class="condition-item">
                 <n-tag
@@ -280,7 +280,7 @@ onMounted(() => {
                   "
                   >VECTOR 250</n-tag
                 >
-                <n-text>{{ t('features.pricing.bonusInfo.p4b') }}</n-text>
+                <n-text>{{ t('pages.pricing.bonusInfo.p4b') }}</n-text>
               </div>
             </n-space>
 
@@ -288,13 +288,13 @@ onMounted(() => {
               depth="3"
               style="font-style: italic; font-size: 0.85rem; margin-top: 8px; display: block"
             >
-              {{ t('features.pricing.bonusInfo.p5') }}
+              {{ t('pages.pricing.bonusInfo.p5') }}
             </n-text>
           </n-space>
         </n-card>
 
         <n-h2 prefix="bar" align-text type="success" class="table-headline">
-          {{ t('clubPage.mostValuablePlayersTitle') || 'Club Top 20 & Bonus Status' }}
+          {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 & Bonus Status' }}
         </n-h2>
 
         <div class="table-wrapper">
@@ -319,7 +319,7 @@ onMounted(() => {
             :size="isMobile ? 'medium' : 'large'"
             block
           >
-            {{ t('features.pricing.bonusInfo.homepageLink') }}
+            {{ t('pages.pricing.bonusInfo.homepageLink') }}
             <template #icon v-if="!isMobile">
               <n-icon><ArrowForwardOutline /></n-icon>
             </template>

@@ -107,14 +107,14 @@ const handleStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup'
       formattedRecs
     )
     if (success) {
-      message.success(t('features.userCabinet.plan.startSuccess', 'Täglicher Trainingsplan gestartet! Leite weiter...'))
+      message.success(t('pages.userCabinet.plan.startSuccess', 'Täglicher Trainingsplan gestartet! Leite weiter...'))
       router.push('/task-today')
     } else {
-      message.error(t('features.userCabinet.plan.startError', 'Plan konnte nicht generiert werden.'))
+      message.error(t('pages.userCabinet.plan.startError', 'Plan konnte nicht generiert werden.'))
     }
   } catch (err) {
     console.error('[DailyTrainingWidget] Start error:', err)
-    message.error(t('features.userCabinet.plan.startError', 'Plan konnte nicht generiert werden.'))
+    message.error(t('pages.userCabinet.plan.startError', 'Plan konnte nicht generiert werden.'))
   } finally {
     isStartingPlan.value = false
   }
@@ -145,10 +145,10 @@ const proceedWithOverwrite = () => {
   <n-card :bordered="false" class="training-plan-card" embedded>
     <n-space vertical size="medium" style="width: 100%">
       <div class="section-title-row">
-        <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('features.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
+        <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('pages.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
         <div v-if="planStatus === 'none'" class="difficulty-select-wrapper">
           <n-space align="center">
-            <n-text depth="3" style="font-weight: bold; font-size: 0.9rem;">{{ t('features.userCabinet.plan.selectDifficulty', 'SCHWIERIGKEIT:') }}</n-text>
+            <n-text depth="3" style="font-weight: bold; font-size: 0.9rem;">{{ t('pages.userCabinet.plan.selectDifficulty', 'SCHWIERIGKEIT:') }}</n-text>
             <n-button-group>
               <n-button 
                 v-for="diff in (['Novice', 'Pro', 'Master'] as const)" 
@@ -169,19 +169,19 @@ const proceedWithOverwrite = () => {
       <div v-if="planStatus === 'active'" class="active-plan-banner">
         <div class="active-plan-info">
           <n-text class="active-plan-title">
-            {{ t('features.userCabinet.plan.activeTitle', 'Aktiver Trainingsplan:') }}
+            {{ t('pages.userCabinet.plan.activeTitle', 'Aktiver Trainingsplan:') }}
             <span class="active-plan-highlight">{{ localPlan?.level }} - {{ localPlan?.strategy }}</span>
           </n-text>
           <div class="active-plan-desc">
-            {{ t('features.userCabinet.plan.activeDesc', 'Setze dein heutiges Training fort.') }}
+            {{ t('pages.userCabinet.plan.activeDesc', 'Setze dein heutiges Training fort.') }}
           </div>
         </div>
         <n-space align="center" justify="end" class="active-plan-actions">
           <n-button type="warning" secondary @click="taskTodayStore.quitTaskToday()">
-            {{ t('features.userCabinet.plan.reset', 'Zurücksetzen') }}
+            {{ t('pages.userCabinet.plan.reset', 'Zurücksetzen') }}
           </n-button>
           <n-button type="primary" size="large" @click="router.push('/task-today')" class="pulse-button">
-            🚀 {{ t('features.userCabinet.plan.resume', 'Fortsetzen') }}
+            🚀 {{ t('pages.userCabinet.plan.resume', 'Fortsetzen') }}
           </n-button>
         </n-space>
       </div>
@@ -190,12 +190,12 @@ const proceedWithOverwrite = () => {
       <div v-else-if="planStatus === 'completed'" class="completed-plan-banner">
         <n-result
           status="success"
-          :title="t('features.userCabinet.plan.completedTitle', 'Tagesziel erreicht!')"
-          :description="t('features.userCabinet.plan.completedDesc', 'Du hast dein tägliches Training für heute erfolgreich abgeschlossen. Komm morgen wieder für einen neuen Plan!')"
+          :title="t('pages.userCabinet.plan.completedTitle', 'Tagesziel erreicht!')"
+          :description="t('pages.userCabinet.plan.completedDesc', 'Du hast dein tägliches Training für heute erfolgreich abgeschlossen. Komm morgen wieder für einen neuen Plan!')"
         >
           <template #footer>
             <n-button type="primary" secondary @click="router.push('/records')" style="font-weight: bold;">
-              🏆 {{ t('features.userCabinet.plan.viewLeaderboard', 'Bestenliste ansehen') }}
+              🏆 {{ t('pages.userCabinet.plan.viewLeaderboard', 'Bestenliste ansehen') }}
             </n-button>
           </template>
         </n-result>
@@ -207,7 +207,7 @@ const proceedWithOverwrite = () => {
         <div class="strategy-card discovery">
           <div class="strategy-header">
             <div class="strategy-badge">💡 DISCOVERY</div>
-            <p class="strategy-desc">{{ t('features.userCabinet.plan.discoveryDesc', 'Lerne neue Themen kennen und fülle Wissenslücken.') }}</p>
+            <p class="strategy-desc">{{ t('pages.userCabinet.plan.discoveryDesc', 'Lerne neue Themen kennen und fülle Wissenslücken.') }}</p>
           </div>
           <div class="strategy-body">
             <div v-for="subMode in ['tactics', 'finish_him', 'theory_endings', 'practical_chess']" :key="subMode" class="strategy-submode">
@@ -221,7 +221,7 @@ const proceedWithOverwrite = () => {
           </div>
           <div class="strategy-footer">
             <n-button type="primary" block @click="confirmStartPlan('Discovery')" :loading="isStartingPlan" class="start-btn">
-              {{ t('features.userCabinet.plan.startPlan', 'Plan starten') }}
+              {{ t('pages.userCabinet.plan.startPlan', 'Plan starten') }}
             </n-button>
           </div>
         </div>
@@ -230,7 +230,7 @@ const proceedWithOverwrite = () => {
         <div class="strategy-card hardcore">
           <div class="strategy-header">
             <div class="strategy-badge">🔥 HARDCORE</div>
-            <p class="strategy-desc">{{ t('features.userCabinet.plan.hardcoreDesc', 'Attackiere gezielt deine größten Schwächen.') }}</p>
+            <p class="strategy-desc">{{ t('pages.userCabinet.plan.hardcoreDesc', 'Attackiere gezielt deine größten Schwächen.') }}</p>
           </div>
           <div class="strategy-body">
             <div v-for="subMode in ['tactics', 'finish_him', 'theory_endings', 'practical_chess']" :key="subMode" class="strategy-submode">
@@ -244,7 +244,7 @@ const proceedWithOverwrite = () => {
           </div>
           <div class="strategy-footer">
             <n-button type="primary" block @click="confirmStartPlan('Hardcore')" :loading="isStartingPlan" class="start-btn">
-              {{ t('features.userCabinet.plan.startPlan', 'Plan starten') }}
+              {{ t('pages.userCabinet.plan.startPlan', 'Plan starten') }}
             </n-button>
           </div>
         </div>
@@ -253,7 +253,7 @@ const proceedWithOverwrite = () => {
         <div class="strategy-card warmup">
           <div class="strategy-header">
             <div class="strategy-badge">⚡ WARMUP</div>
-            <p class="strategy-desc">{{ t('features.userCabinet.plan.warmupDesc', 'Festige dein Wissen mit deinen stärksten Themen.') }}</p>
+            <p class="strategy-desc">{{ t('pages.userCabinet.plan.warmupDesc', 'Festige dein Wissen mit deinen stärksten Themen.') }}</p>
           </div>
           <div class="strategy-body">
             <div v-for="subMode in ['tactics', 'finish_him', 'theory_endings', 'practical_chess']" :key="subMode" class="strategy-submode">
@@ -267,7 +267,7 @@ const proceedWithOverwrite = () => {
           </div>
           <div class="strategy-footer">
             <n-button type="primary" block @click="confirmStartPlan('Warmup')" :loading="isStartingPlan" class="start-btn">
-              {{ t('features.userCabinet.plan.startPlan', 'Plan starten') }}
+              {{ t('pages.userCabinet.plan.startPlan', 'Plan starten') }}
             </n-button>
           </div>
         </div>
@@ -280,19 +280,19 @@ const proceedWithOverwrite = () => {
     v-model:show="showOverwriteConfirm"
     preset="card"
     style="max-width: 420px; background-color: rgba(10, 11, 20, 0.95)"
-    :title="t('features.userCabinet.plan.confirmTitle', 'Plan überschreiben?')"
+    :title="t('pages.userCabinet.plan.confirmTitle', 'Plan überschreiben?')"
     :mask-closable="false"
   >
     <n-space vertical :size="24">
       <n-text style="font-size: 1.1em; line-height: 1.5">
-        {{ t('features.userCabinet.plan.confirmMessage', 'Du hast bereits einen aktiven Trainingsplan für heute. Das Starten eines neuen Plans überschreibt deinen aktuellen Fortschritt. Möchtest du fortfahren?') }}
+        {{ t('pages.userCabinet.plan.confirmMessage', 'Du hast bereits einen aktiven Trainingsplan für heute. Das Starten eines neuen Plans überschreibt deinen aktuellen Fortschritt. Möchtest du fortfahren?') }}
       </n-text>
       <n-space justify="end" :size="12">
         <n-button @click="showOverwriteConfirm = false">
-          {{ t('features.userCabinet.plan.confirmCancel', 'Abbrechen') }}
+          {{ t('pages.userCabinet.plan.confirmCancel', 'Abbrechen') }}
         </n-button>
         <n-button type="warning" @click="proceedWithOverwrite" style="font-weight: bold;">
-          {{ t('features.userCabinet.plan.confirmOk', 'Ja, überschreiben') }}
+          {{ t('pages.userCabinet.plan.confirmOk', 'Ja, überschreiben') }}
         </n-button>
       </n-space>
     </n-space>

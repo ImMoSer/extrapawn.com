@@ -173,7 +173,7 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
             :max-height="400"
             :scroll-x="400"
           />
-          <NEmpty v-else :description="t('features.userCabinet.stats.noData')" />
+          <NEmpty v-else :description="t('pages.userCabinet.stats.noData')" />
         </div>
       </template>
     </div>

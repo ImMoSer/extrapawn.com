@@ -39,49 +39,49 @@ const menuItems = [
   {
     path: '/tactics',
     icon: HammerOutline,
-    labelKey: 'features.learningCoach.tabs.tactic',
+    labelKey: 'shared.nav.tactics',
     color: 'var(--neon-pink)',
   },
   {
     path: '/finish-him',
     icon: TrophyOutline,
-    labelKey: 'welcome.submodes.finish_him',
+    labelKey: 'shared.nav.finishHim',
     color: 'var(--neon-purple)',
   },
   {
     path: '/practical-chess',
     icon: HardwareChipOutline,
-    labelKey: 'welcome.submodes.practical_chess',
+    labelKey: 'shared.nav.practicalChess',
     color: 'var(--neon-blue, #00f2ff)',
   },
   {
     path: '/theory-endings',
     icon: RibbonOutline,
-    labelKey: 'welcome.submodes.theory_endings',
+    labelKey: 'shared.nav.theoryEndgames',
     color: 'var(--neon-yellow)',
   },
   {
     path: '/sparring',
     icon: HardwareChipOutline,
-    labelKey: 'nav.sparring',
+    labelKey: 'shared.nav.sparring',
     color: 'var(--neon-blue, #00f2ff)',
   },
   {
     path: '/user-cabinet',
     icon: PersonOutline,
-    labelKey: 'nav.userCabinet',
+    labelKey: 'shared.nav.userCabinet',
     color: 'var(--neon-orange)',
   },
   {
     path: '/task-today',
     icon: FlashOutline,
-    labelKey: 'features.taskToday.title',
+    labelKey: 'shared.nav.taskToday',
     color: 'var(--neon-cyan)',
   },
   {
     path: '/records',
     icon: TrophyOutline,
-    labelKey: 'welcome.buttons.leaderboards',
+    labelKey: 'shared.nav.leaderboards',
     color: 'var(--neon-yellow)',
   },
 ]
@@ -115,7 +115,7 @@ const filteredMenuItems = computed(() => {
           <img src="/png/extra_pawn_black.png" alt="EXTRAPAWN" class="hero-logo" />
           <div class="brand-text-content">
             <h1 class="brand-name brand-text">EXTRAPAWN</h1>
-            <p class="brand-slogan">{{ t('welcome.slogan') }}</p>
+            <p class="brand-slogan">{{ t('pages.welcome.slogan') }}</p>
           </div>
         </div>
 
@@ -131,7 +131,7 @@ const filteredMenuItems = computed(() => {
             <template #icon>
               <n-icon><LogInOutline /></n-icon>
             </template>
-            {{ t('nav.loginWithLichess') }}
+            {{ t('shared.nav.loginWithLichess') }}
           </n-button>
         </div>
 

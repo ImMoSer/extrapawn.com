@@ -40,9 +40,9 @@ export function useVersionUpdate() {
 
   const showUpdateModal = (newVersion: string) => {
     dialog.success({
-      title: t('common.updateNotification.title'),
-      content: t('common.updateNotification.content', { version: newVersion }),
-      positiveText: t('common.updateNotification.button'),
+      title: t('shared.app.updateNotification.title'),
+      content: t('shared.app.updateNotification.content', { version: newVersion }),
+      positiveText: t('shared.app.updateNotification.button'),
       closable: false,
       maskClosable: false,
       onPositiveClick: () => {

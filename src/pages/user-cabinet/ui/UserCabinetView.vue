@@ -130,9 +130,9 @@ const handleRedeem = async () => {
   } catch (err) {
     const error = err as { status?: number }
     if (error.status === 404 || error.status === 409) {
-      message.error(t('features.userCabinet.gift.invalid'))
+      message.error(t('pages.userCabinet.gift.invalid'))
     } else {
-      message.error(t('features.userCabinet.gift.error'))
+      message.error(t('pages.userCabinet.gift.error'))
     }
   } finally {
     isRedeeming.value = false
@@ -150,7 +150,7 @@ const handleManageSubscription = async () => {
       window.location.href = res.url
     }
   } catch {
-    message.error(t('features.userCabinet.subscription.error'))
+    message.error(t('pages.userCabinet.subscription.error'))
   } finally {
     isManagingSubscription.value = false
   }
@@ -166,12 +166,12 @@ const handleManageSubscription = async () => {
     <div v-else-if="!isExample && (!isAuthenticated || !userProfile)" class="login-prompt">
       <n-result
         status="403"
-        :title="t('features.userCabinet.title')"
-        :description="t('features.userCabinet.loginPrompt')"
+        :title="t('pages.userCabinet.title')"
+        :description="t('pages.userCabinet.loginPrompt')"
       >
         <template #footer>
           <n-button type="primary" size="large" @click="authStore.login()">
-            {{ t('nav.loginWithLichess') }}
+            {{ t('shared.nav.loginWithLichess') }}
           </n-button>
         </template>
       </n-result>
@@ -189,11 +189,11 @@ const handleManageSubscription = async () => {
         <n-card :bordered="false" class="gift-redeem-card" embedded>
           <n-space justify="space-between" align="center" style="width: 100%; flex-wrap: wrap; gap: 16px;">
             <div>
-              <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('features.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
-              <n-text depth="3">{{ t('features.userCabinet.plan.desc', 'Absolviere dein tägliches, personalisiertes Training, um deine Taktik und Endspiele zu verbessern.') }}</n-text>
+              <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('pages.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
+              <n-text depth="3">{{ t('pages.userCabinet.plan.desc', 'Absolviere dein tägliches, personalisiertes Training, um deine Taktik und Endspiele zu verbessern.') }}</n-text>
             </div>
             <n-button type="primary" size="large" @click="router.push('/task-today')">
-              🚀 {{ t('features.userCabinet.plan.start', 'Training starten') }}
+              🚀 {{ t('pages.userCabinet.plan.start', 'Training starten') }}
             </n-button>
           </n-space>
         </n-card>
@@ -202,7 +202,7 @@ const handleManageSubscription = async () => {
           <ThemeRoseChart
             v-if="detailedStats"
             :stats="detailedStats"
-            :title="t('features.userCabinet.stats.title')"
+            :title="t('pages.userCabinet.stats.title')"
             @improve="launchGame"
           />
         </div>
@@ -211,12 +211,12 @@ const handleManageSubscription = async () => {
         <!-- Gift Code Redeem Area -->
         <n-card :bordered="false" class="gift-redeem-card" embedded>
           <n-space vertical>
-            <n-h3 style="margin-bottom: 0">🎁 {{ t('features.userCabinet.gift.title') }}</n-h3>
-            <n-text depth="3">{{ t('features.userCabinet.gift.description') }}</n-text>
+            <n-h3 style="margin-bottom: 0">🎁 {{ t('pages.userCabinet.gift.title') }}</n-h3>
+            <n-text depth="3">{{ t('pages.userCabinet.gift.description') }}</n-text>
             <n-input-group style="margin-top: 8px">
               <n-input
                 v-model:value="giftCode"
-                :placeholder="t('features.userCabinet.gift.placeholder')"
+                :placeholder="t('pages.userCabinet.gift.placeholder')"
                 :maxlength="8"
                 size="large"
                 style="max-width: 250px"
@@ -229,7 +229,7 @@ const handleManageSubscription = async () => {
                 :disabled="giftCode.length !== 8"
                 @click="handleRedeem"
               >
-                {{ t('features.userCabinet.gift.activate') }}
+                {{ t('pages.userCabinet.gift.activate') }}
               </n-button>
             </n-input-group>
           </n-space>
@@ -244,9 +244,9 @@ const handleManageSubscription = async () => {
         >
           <n-space vertical>
             <n-h3 style="margin-bottom: 0"
-              >⚙️ {{ t('features.userCabinet.subscription.title') }}</n-h3
+              >⚙️ {{ t('pages.userCabinet.subscription.title') }}</n-h3
             >
-            <n-text depth="3">{{ t('features.userCabinet.subscription.description') }}</n-text>
+            <n-text depth="3">{{ t('pages.userCabinet.subscription.description') }}</n-text>
             <n-button
               type="primary"
               size="large"
@@ -254,7 +254,7 @@ const handleManageSubscription = async () => {
               @click="handleManageSubscription"
               style="margin-top: 8px; width: fit-content"
             >
-              {{ t('features.userCabinet.subscription.openPortal') }}
+              {{ t('pages.userCabinet.subscription.openPortal') }}
             </n-button>
           </n-space>
         </n-card>
@@ -266,18 +266,18 @@ const handleManageSubscription = async () => {
       v-model:show="showSuccessModal"
       preset="card"
       style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95)"
-      :title="t('features.userCabinet.gift.successTitle')"
+      :title="t('pages.userCabinet.gift.successTitle')"
       :mask-closable="false"
       @close="handleSuccessOk"
     >
       <n-space vertical :size="24">
         <n-text style="font-size: 1.1em; line-height: 1.5">
           {{
-            t('features.userCabinet.gift.successMessage', { tier: successTier, date: successDate })
+            t('pages.userCabinet.gift.successMessage', { tier: successTier, date: successDate })
           }}
         </n-text>
         <n-button type="primary" size="large" block @click="handleSuccessOk">
-          {{ t('features.userCabinet.gift.ok') }}
+          {{ t('pages.userCabinet.gift.ok') }}
         </n-button>
       </n-space>
     </n-modal>
@@ -287,15 +287,15 @@ const handleManageSubscription = async () => {
       v-model:show="showPolarSuccessModal"
       preset="card"
       style="max-width: 400px; background-color: rgba(10, 11, 20, 0.95)"
-      :title="t('features.userCabinet.polar.successTitle')"
+      :title="t('pages.userCabinet.polar.successTitle')"
       :mask-closable="false"
     >
       <n-space vertical :size="24">
         <n-text style="font-size: 1.1em; line-height: 1.5">
-          {{ t('features.userCabinet.polar.successMessage') }}
+          {{ t('pages.userCabinet.polar.successMessage') }}
         </n-text>
         <n-button type="primary" size="large" block @click="showPolarSuccessModal = false">
-          {{ t('features.userCabinet.polar.ok') }}
+          {{ t('pages.userCabinet.polar.ok') }}
         </n-button>
       </n-space>
     </n-modal>

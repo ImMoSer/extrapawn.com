@@ -79,7 +79,7 @@ const TACTICS_ICON_UI: Record<string, string> = {
 }
 
 const formatThemeName = (theme: string): string => {
-  const key = props.submode === 'tactics' ? `chess.tactics.${theme}` : `chess.themes.${theme}`
+  const key = props.submode === 'tactics' ? `puzzleCategories.tactics.${theme}` : `puzzleCategories.themes.${theme}`
   const translation = t(key)
   if (translation && !translation.startsWith('chess.')) {
     return translation
@@ -171,10 +171,10 @@ watch(selectedDifficulty, (newDiff) => {
 
 function loadPuzzle() {
   let source = ''
-  if (props.submode === 'tactics') source = t('features.learningCoach.tabs.tactic')
-  else if (props.submode === 'theory_endings') source = t('features.learningCoach.modes.theory')
-  else if (props.submode === 'practical_chess') source = t('features.learningCoach.modes.practical')
-  else if (props.submode === 'finish_him') source = t('features.learningCoach.modes.goto')
+  if (props.submode === 'tactics') source = t('features.coach.tabs.tactic')
+  else if (props.submode === 'theory_endings') source = t('features.coach.modes.theory')
+  else if (props.submode === 'practical_chess') source = t('features.coach.modes.practical')
+  else if (props.submode === 'finish_him') source = t('features.coach.modes.goto')
   else {
      throw new Error(`[PuzzleSidebar] Unsupported submode source naming: ${props.submode}. Fail-Fast!`)
   }
@@ -188,10 +188,10 @@ function loadPuzzle() {
 }
 
 const headerTitle = computed(() => {
-  if (props.submode === 'tactics') return t('features.learningCoach.tabs.tactic')
-  if (props.submode === 'theory_endings') return t('welcome.submodes.theory_endings', 'Theory Endings')
-  if (props.submode === 'practical_chess') return t('welcome.submodes.practical_chess', 'Practical Chess')
-  if (props.submode === 'finish_him') return t('welcome.submodes.finish_him', 'Finish Him')
+  if (props.submode === 'tactics') return t('features.coach.tabs.tactic')
+  if (props.submode === 'theory_endings') return t('pages.welcome.submodes.theory_endings', 'Theory Endings')
+  if (props.submode === 'practical_chess') return t('pages.welcome.submodes.practical_chess', 'Practical Chess')
+  if (props.submode === 'finish_him') return t('pages.welcome.submodes.finish_him', 'Finish Him')
   throw new Error(`[PuzzleSidebar] Unknown submode header: ${props.submode}. Fail-Fast!`)
 })
 </script>
@@ -210,16 +210,16 @@ const headerTitle = computed(() => {
         <div class="tab-content-wrapper">
           <!-- Universal Difficulty Selector -->
           <div class="form-group difficulty-section">
-            <n-text class="input-label">{{ t('features.learningCoach.difficultyLabel') }}</n-text>
+            <n-text class="input-label">{{ t('features.coach.difficultyLabel') }}</n-text>
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
               <n-radio-button value="Novice">
-                {{ t('common.difficulties.level_novice') }}
+                {{ t('puzzleCategories.difficulties.level_novice') }}
               </n-radio-button>
               <n-radio-button value="Pro">
-                {{ t('common.difficulties.level_pro') }}
+                {{ t('puzzleCategories.difficulties.level_pro') }}
               </n-radio-button>
               <n-radio-button value="Master">
-                {{ t('common.difficulties.level_master') }}
+                {{ t('puzzleCategories.difficulties.level_master') }}
               </n-radio-button>
             </n-radio-group>
           </div>
@@ -242,7 +242,7 @@ const headerTitle = computed(() => {
 
           <div class="form-group theme-group">
             <n-text class="input-label">
-              {{ props.submode === 'tactics' ? t('features.learningCoach.tacticsLabel') : t('features.learningCoach.categoryLabel') }}
+              {{ props.submode === 'tactics' ? t('features.coach.tacticsLabel') : t('features.coach.categoryLabel') }}
             </n-text>
             <VisualRadioGroup
               v-model:value="activeThemeValue"

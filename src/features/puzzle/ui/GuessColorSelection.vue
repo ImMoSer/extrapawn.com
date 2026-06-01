@@ -13,13 +13,13 @@ const handleSelection = (color: 'white' | 'black') => {
 <template>
   <div class="you-move-bar">
     <button class="side-btn black" @click="handleSelection('black')">
-      {{ t('features.practicalChess.youMove.playBlack').toUpperCase() }}
+      {{ t('pages.puzzle.youMove.playBlack').toUpperCase() }}
     </button>
 
-    <div class="center-text">{{ t('features.practicalChess.youMove.title').toUpperCase() }}</div>
+    <div class="center-text">{{ t('pages.puzzle.youMove.title').toUpperCase() }}</div>
 
     <button class="side-btn white" @click="handleSelection('white')">
-      {{ t('features.practicalChess.youMove.playWhite').toUpperCase() }}
+      {{ t('pages.puzzle.youMove.playWhite').toUpperCase() }}
     </button>
   </div>
 </template>

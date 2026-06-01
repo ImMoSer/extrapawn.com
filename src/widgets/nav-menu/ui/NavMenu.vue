@@ -41,62 +41,62 @@ const ParagraphIcon = () =>
 
 const menuOptions: MenuOption[] = [
   {
-    label: () => t('nav.home'),
+    label: () => t('shared.nav.home'),
     key: '/',
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('features.learningCoach.tabs.tactic', 'Tactics'),
+    label: () => t('shared.nav.tactics'),
     key: '/tactics',
     icon: renderIcon(ExtensionPuzzleOutline),
   },
   {
-    label: () => t('welcome.submodes.finish_him', 'Finish Him'),
+    label: () => t('shared.nav.finishHim'),
     key: '/finish-him',
     icon: renderIcon(TrophyOutline),
   },
   {
-    label: () => t('welcome.submodes.practical_chess', 'Practical Chess'),
+    label: () => t('shared.nav.practicalChess'),
     key: '/practical-chess',
     icon: renderIcon(HardwareChipOutline),
   },
   {
-    label: () => t('welcome.submodes.theory_endings', 'Theory Endings'),
+    label: () => t('shared.nav.theoryEndgames'),
     key: '/theory-endings',
     icon: renderIcon(RibbonOutline),
   },
   {
-    label: () => t('features.taskToday.title', 'Task Today'),
+    label: () => t('shared.nav.taskToday'),
     key: '/task-today',
     icon: renderIcon(FlashOutline),
   },
   {
-    label: () => t('nav.sparring', 'Sparring'),
+    label: () => t('shared.nav.sparring'),
     key: '/sparring',
     icon: renderIcon(HardwareChipOutline),
   },
   {
-    label: () => t('nav.leaderboards'),
+    label: () => t('shared.nav.leaderboards'),
     key: '/records',
     icon: renderIcon(TrophyOutline),
   },
   {
-    label: () => t('nav.userCabinet'),
+    label: () => t('shared.nav.userCabinet'),
     key: '/user-cabinet',
     icon: renderIcon(PersonOutline),
   },
   {
-    label: () => t('nav.pricing'),
+    label: () => t('shared.nav.pricing'),
     key: '/pricing',
     icon: renderIcon(CashOutline),
   },
   {
-    label: () => t('nav.about'),
+    label: () => t('shared.nav.about'),
     key: '/about',
     icon: renderIcon(InformationCircleOutline),
   },
   {
-    label: () => t('nav.legal'),
+    label: () => t('shared.nav.legal'),
     key: '/legal',
     icon: renderIcon(ParagraphIcon),
   },

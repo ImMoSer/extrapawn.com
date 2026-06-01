@@ -78,7 +78,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const isDiscoveryMode = ref(false)
   const discoveryQueue = ref<PuzzlePuzzle[]>([])
   
-  const feedbackMessage = ref(t('features.finishHim.feedback.pressNext'))
+  const feedbackMessage = ref(t('features.puzzle.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
   const isWaitingForColorGuess = ref(false)
   const isWaitingForColorSelection = ref(false)
@@ -119,7 +119,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         correctColor, 
         false
       )
-      feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+      feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
       if (activeSubmode.value !== 'tactics') {
         soundService.playSound('game_you_move')
       }
@@ -149,15 +149,15 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     analysisStore.setPlayerColor(humanColor)
 
     if (isWin) {
-      feedbackMessage.value = t('features.finishHim.feedback.win')
+      feedbackMessage.value = t('features.puzzle.feedback.win')
     } else {
       const reason = outcome.reason
       if (reason === 'stalemate') {
         feedbackMessage.value = t('features.gameplay.gameOver.stalemate')
       } else if (reason === 'resign' || reason === 'wrong_move') {
-        feedbackMessage.value = t('features.finishHim.feedback.loss')
+        feedbackMessage.value = t('features.puzzle.feedback.loss')
       } else {
-        feedbackMessage.value = t('features.finishHim.feedback.loss')
+        feedbackMessage.value = t('features.puzzle.feedback.loss')
       }
     }
 
@@ -210,7 +210,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       humanColor,
       false
     )
-    feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+    feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
   }
 
   async function refillDiscoveryQueue(subMode: string) {
@@ -284,7 +284,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     }
 
     gameStore.setGamePhase('LOADING')
-    feedbackMessage.value = t('common.actions.loading')
+    feedbackMessage.value = t('shared.app.loading')
 
     const mergedParams = { ...activeParams.value, ...queryParams, type }
     activeParams.value = mergedParams
@@ -351,7 +351,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
           humanColor,
           false
         )
-        feedbackMessage.value = t('features.finishHim.feedback.yourTurn')
+        feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
         if (activeSubmode.value !== 'tactics') {
           soundService.playSound('game_you_move')
         }
@@ -360,7 +360,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
        if (!handled) {
           logger.error('[PuzzleStore] Failed to load puzzle:', error)
-          feedbackMessage.value = t('features.finishHim.feedback.loadFailed')
+          feedbackMessage.value = t('features.puzzle.feedback.loadFailed')
           gameStore.setGamePhase('IDLE')
           router.push('/')
        }
@@ -403,7 +403,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   function reset() {
     activePuzzle.value = null
     activeSubmode.value = null
-    feedbackMessage.value = t('features.finishHim.feedback.pressNext')
+    feedbackMessage.value = t('features.puzzle.feedback.pressNext')
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
     isWaitingForColorGuess.value = false
@@ -423,20 +423,21 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       const puzzle = activePuzzle.value
       if (!puzzle) return { title: '', badges: [], stats: [] }
 
-      const title = (puzzle.category ? t(`chess.themes.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
+      const namespace = activeSubmode.value === 'tactics' ? 'tactics' : 'themes'
+      const title = (puzzle.category ? t(`puzzleCategories.${namespace}.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
       const badges = [{ text: puzzle.puzzle_type.toUpperCase() }]
       if (puzzle.difficulty) {
-         badges.push({ text: t(`common.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() })
+         badges.push({ text: t(`puzzleCategories.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() })
       }
 
       const stats = []
       if (puzzle.rating) {
-        stats.push({ value: puzzle.rating, label: t('features.userCabinet.analyticsTable.rating') })
+        stats.push({ value: puzzle.rating, label: t('pages.userCabinet.analyticsTable.rating') })
       }
 
       return {
         title,
-        secondaryText: puzzle.sub_category ? t(`chess.subThemes.${puzzle.sub_category}`) : undefined,
+        secondaryText: puzzle.sub_category ? t(`puzzleCategories.subThemes.${puzzle.sub_category}`) : undefined,
         badges,
         stats,
       }

@@ -47,7 +47,7 @@ function handleCancel() {
         </NText>
 
         <NSpace justify="end">
-          <NButton @click="handleCancel">{{ t('common.actions.cancel') }}</NButton>
+          <NButton @click="handleCancel">{{ t('shared.buttons.cancel') }}</NButton>
           <NButton type="primary" @click="handleConfirm">{{
             t('features.taskToday.startBtn')
           }}</NButton>

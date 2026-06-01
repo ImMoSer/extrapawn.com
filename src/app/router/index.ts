@@ -197,10 +197,10 @@ router.beforeEach(async (to, from, next) => {
     localStorage.setItem('redirect_after_login', to.fullPath)
 
     const userConfirmedLogin = await uiStore.showConfirmation(
-      t('features.auth.requiredForAction'),
-      t('features.userCabinet.loginPrompt'),
+      t('shared.auth.requiredForAction'),
+      t('pages.userCabinet.loginPrompt'),
       {
-        confirmText: t('nav.loginWithLichess'),
+        confirmText: t('shared.nav.loginWithLichess'),
         showCancel: true,
       },
     )

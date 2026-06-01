@@ -15,6 +15,7 @@ import {
   TimeOutline
 } from '@vicons/ionicons5'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/entities/user'
 import {
   useCurrentTrainingPlanQuery,
@@ -23,6 +24,7 @@ import {
 import { useQueryClient } from '@tanstack/vue-query'
 import type { DailyTrainingPlanEntity, RecommendationEntry } from '@/shared/types/api.types'
 
+const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
 const message = useMessage()
@@ -53,10 +55,10 @@ const handleResumeActivePlan = async () => {
   if (currentPlanData.value) {
     const success = await taskTodayStore.replayPlan(currentPlanData.value)
     if (success) {
-      message.success('Training wird fortgesetzt!')
+      message.success(t('features.taskToday.feedback.resumeSuccess'))
       queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
     } else {
-      message.error('Fehler beim Fortsetzen des Trainings.')
+      message.error(t('features.taskToday.feedback.resumeError'))
     }
   }
 }
@@ -181,14 +183,14 @@ const handleStartPlan = async () => {
     )
 
     if (success) {
-      message.success('Täglicher Trainingsplan gestartet!')
+      message.success(t('features.taskToday.feedback.startSuccess'))
       queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
     } else {
-      message.error('Plan konnte nicht generiert werden.')
+      message.error(t('features.taskToday.feedback.startError'))
     }
   } catch (err) {
     console.error('[TaskTodayDashboard] Start error:', err)
-    message.error('Plan konnte nicht generiert werden.')
+    message.error(t('features.taskToday.feedback.startError'))
   } finally {
     isStartingPlan.value = false
   }
@@ -197,12 +199,12 @@ const handleStartPlan = async () => {
 const handleReplay = async (plan: DailyTrainingPlanEntity) => {
   const success = await taskTodayStore.replayPlan(plan)
   if (success) {
-    message.success('Replay gestartet!')
+    message.success(t('features.taskToday.feedback.replaySuccess'))
     if (!plan.is_completed) {
       queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
     }
   } else {
-    message.error('Fehler beim Laden des Replays.')
+    message.error(t('features.taskToday.feedback.replayError'))
   }
 }
 </script>
@@ -210,15 +212,15 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1 class="dashboard-title">📅 TASK TODAY</h1>
-      <p class="dashboard-subtitle">Absolviere dein tägliches personalisiertes Schachtraining</p>
+      <h1 class="dashboard-title">📅 {{ t('features.taskToday.title') }}</h1>
+      <p class="dashboard-subtitle">{{ t('features.taskToday.subtitle') }}</p>
     </div>
 
     <div class="dashboard-grid">
       <!-- Left Column: Setup & Selectors -->
       <div class="dashboard-card setup-card">
         <div class="setup-section">
-          <h2 class="section-title">1. Schwierigkeit wählen</h2>
+          <h2 class="section-title">{{ t('features.taskToday.chooseDifficulty') }}</h2>
           <div class="difficulty-options">
             <button 
               v-for="diff in (['Novice', 'Pro', 'Master'] as const)" 
@@ -230,14 +232,14 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               }"
               @click="selectedDifficulty = diff"
             >
-              <span class="diff-name">{{ diff }}</span>
-              <span class="diff-status" v-if="completedDifficulties.includes(diff)">✓ Beendet</span>
+              <span class="diff-name">{{ t('puzzleCategories.difficulties.level_' + diff.toLowerCase()) }}</span>
+              <span class="diff-status" v-if="completedDifficulties.includes(diff)">✓ {{ t('features.taskToday.completedStatus') }}</span>
             </button>
           </div>
         </div>
 
         <div class="setup-section" style="margin-top: 2rem;">
-          <h2 class="section-title">2. Trainings-Strategie</h2>
+          <h2 class="section-title">{{ t('features.taskToday.trainingStrategy') }}</h2>
           <div class="strategies-options">
             <div 
               v-for="strat in (['Discovery', 'Hardcore', 'Warmup'] as const)"
@@ -250,14 +252,10 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               @click="selectedStrategy = strat"
             >
               <div class="strategy-badge">
-                <span v-if="strat === 'Discovery'">💡 Discovery</span>
-                <span v-else-if="strat === 'Hardcore'">🔥 Hardcore</span>
-                <span v-else>⚡ Warmup</span>
+                <span>{{ t(`features.taskToday.strategies.${strat.toLowerCase()}.title`) }}</span>
               </div>
               <p class="strategy-desc">
-                <span v-if="strat === 'Discovery'">Lerne neue Themen kennen und fülle Wissenslücken.</span>
-                <span v-else-if="strat === 'Hardcore'">Attackiere gezielt deine größten Schwächen.</span>
-                <span v-else>Festige dein Wissen mit deinen stärksten Themen.</span>
+                <span>{{ t(`features.taskToday.strategies.${strat.toLowerCase()}.desc`) }}</span>
               </p>
             </div>
           </div>
@@ -273,18 +271,18 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             @click="handleStartPlan"
             class="dashboard-start-btn"
           >
-            🚀 TRAINING STARTEN
+            {{ t('features.taskToday.startTrainingBtn') }}
           </NButton>
         </div>
       </div>
 
       <!-- Center Column: Preview -->
       <div class="dashboard-card preview-card">
-        <h2 class="section-title">Plan-Vorschau</h2>
+        <h2 class="section-title">{{ t('features.taskToday.preview') }}</h2>
         <div v-if="selectedPlanPreview" class="preview-content">
           <div class="preview-summary">
             <span class="preview-strategy-name">{{ selectedPlanPreview.strategy.toUpperCase() }}</span>
-            <span class="preview-task-count">{{ selectedPlanPreview.totalTasks }} Aufgaben</span>
+            <span class="preview-task-count">{{ t('features.taskToday.previewTasks', { count: selectedPlanPreview.totalTasks }) }}</span>
           </div>
 
           <NScrollbar style="max-height: 480px; padding-right: 8px;">
@@ -292,7 +290,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               <div v-for="group in selectedPlanPreview.groups" :key="group.name" class="preview-group">
                 <div class="group-header">
                   <span class="group-title">{{ group.name.toUpperCase() }}</span>
-                  <span class="group-total">({{ group.total }} Aufgaben)</span>
+                  <span class="group-total">({{ t('features.taskToday.previewTasks', { count: group.total }) }})</span>
                 </div>
                 <div class="group-categories">
                   <div v-for="cat in group.categories" :key="cat" class="preview-cat-item">
@@ -306,7 +304,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
           </NScrollbar>
         </div>
         <div v-else class="preview-empty">
-          <NText depth="3">Wähle eine Strategie für die Vorschau aus.</NText>
+          <NText depth="3">{{ t('features.taskToday.previewChooseStrategy') }}</NText>
         </div>
       </div>
 
@@ -314,20 +312,20 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
       <div class="dashboard-card history-card">
         <h2 class="section-title">
           <NIcon style="vertical-align: middle; margin-right: 8px;"><TimeOutline /></NIcon>
-          Historie
+          {{ t('features.taskToday.history') }}
         </h2>
         <NScrollbar style="max-height: 520px;">
           <!-- Laufender Run -->
           <div v-if="currentPlanData?.active" class="active-plan-banner">
             <div class="active-plan-info">
-              <span class="active-plan-label">Laufendes Training</span>
+              <span class="active-plan-label">{{ t('features.taskToday.runningTraining') }}</span>
               <div class="active-plan-meta">
                 <NTag size="small" type="success" class="pulse-tag">ACTIVE</NTag>
                 <span class="active-plan-strat">{{ currentPlanData.strategy }} ({{ currentPlanData.difficulty }})</span>
               </div>
             </div>
             <NButton type="success" size="medium" @click="handleResumeActivePlan" class="complete-btn">
-              Abschließen
+              {{ t('features.taskToday.resumeActiveBtn') }}
             </NButton>
           </div>
 
@@ -350,7 +348,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             </NListItem>
           </NList>
           <div v-else-if="!currentPlanData?.active" class="history-empty">
-            <NText depth="3">Keine vergangenen Pläne gefunden.</NText>
+            <NText depth="3">{{ t('features.taskToday.noPastPlans') }}</NText>
           </div>
         </NScrollbar>
       </div>
