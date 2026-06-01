@@ -71,14 +71,17 @@ onUnmounted(() => {
     <template #top-info>
       <div v-if="puzzleStore.activePuzzle" class="learning-top-panel-container">
         <div class="learning-top-info">
-          <span v-for="badge in badges" :key="badge.text" class="premium-badge category badge-endings">
+          <span v-for="badge in badges" :key="badge.text" class="premium-badge category badge-endings mobile-hide">
             {{ badge.text }}
           </span>
-          <n-text style="color: white; font-weight: bold; margin-left: 10px;">{{ activePuzzleTitle }}</n-text>
+          <n-text class="active-puzzle-title">{{ activePuzzleTitle }}</n-text>
 
-          <n-divider vertical />
+          <n-divider vertical class="mobile-hide" />
 
-          <n-text :class="puzzleStore.feedbackMessage === t('features.puzzle.feedback.win') ? 'text-success' : 'text-info'">
+          <n-text
+            class="mobile-hide"
+            :class="puzzleStore.feedbackMessage === t('features.puzzle.feedback.win') ? 'text-success' : 'text-info'"
+          >
             {{ puzzleStore.feedbackMessage }}
           </n-text>
 
@@ -235,6 +238,21 @@ onUnmounted(() => {
 .text-info {
   color: #c77dff;
   font-weight: 600;
+}
+
+.active-puzzle-title {
+  color: white;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+@media (max-width: 768px) {
+  .mobile-hide {
+    display: none !important;
+  }
+  .active-puzzle-title {
+    margin-left: 0;
+  }
 }
 
 @keyframes scaleIn {

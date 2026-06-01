@@ -143,4 +143,16 @@ const sparringStore = useSparringStore()
 .load-btn {
   font-weight: 600;
 }
+
+@media (max-width: 768px) {
+  .panel-left {
+    display: none !important;
+  }
+  .fen-input-wrapper {
+    display: none !important;
+  }
+  .sparring-controls-panel {
+    justify-content: center;
+  }
+}
 </style>

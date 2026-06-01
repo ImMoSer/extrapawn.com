@@ -185,18 +185,6 @@ const handleManageSubscription = async () => {
           @reactivate="handleManageSubscription"
         />
 
-        <!-- Daily Training Section -->
-        <n-card :bordered="false" class="gift-redeem-card" embedded>
-          <n-space justify="space-between" align="center" style="width: 100%; flex-wrap: wrap; gap: 16px;">
-            <div>
-              <n-h3 style="margin-bottom: 0; font-weight: 800; letter-spacing: 1px;">📅 {{ t('pages.userCabinet.plan.title', 'TÄGLICHES TRAINING') }}</n-h3>
-              <n-text depth="3">{{ t('pages.userCabinet.plan.desc', 'Absolviere dein tägliches, personalisiertes Training, um deine Taktik und Endspiele zu verbessern.') }}</n-text>
-            </div>
-            <n-button type="primary" size="large" @click="router.push('/task-today')">
-              🚀 {{ t('pages.userCabinet.plan.start', 'Training starten') }}
-            </n-button>
-          </n-space>
-        </n-card>
 
         <div class="charts-grid-unified">
           <ThemeRoseChart
