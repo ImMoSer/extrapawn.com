@@ -7,7 +7,7 @@ Dieses Dokument fasst die Implementierung, die finale Software-Architektur, beka
 ## 1. Übersicht & Zielsetzung
 
 Das System gibt dem Spieler während Partien gegen Bot-Gegner sowie in Trainings-Modi (Taktiken, Endspiele) visuelles und akustisches Feedback zu seinen Zügen durch einen virtuellen Schachcoach.
-Ein Kern-Feature ist das **Auto-Takeback**: Spielt der Spieler einen schlechten Zug (Patzer, Fehler, Ungenauigkeit), wird dieser nach einer kurzen Verzögerung (1000 ms) automatisch zurückgenommen. Der Spieler erhält eine visuelle Verwarnung und einen akustischen Warnhinweis, um den Zug noch einmal zu überdenken.
+Ein Kern-Feature ist das **Auto-Takeback**: Spielt der Spieler einen schlechten Zug mit einem Winrate-Verlust von 20 % oder mehr (z. B. Patzer, Fehler oder verpasste Matts), wird dieser nach einer kurzen Verzögerung (1000 ms) automatisch zurückgenommen. Der Spieler erhält eine visuelle Verwarnung und einen akustischen Warnhinweis, um den Zug noch einmal zu überdenken.
 
 ---
 
@@ -45,7 +45,7 @@ graph TD
 
 3. **`coach-feedback.store.ts` (Features - UI & Visual State)**:
    * Verwaltet den Zustand der Coach-Stimmung (`coachMood`): `neutral`, `proud`, `shocked`, `thoughtful`, `warning`, `relieved`, `celebrating`.
-   * Reagiert über einen synchronen Watcher (`{ flush: 'sync' }`) auf das Ende der Coach-Analyse und setzt `isTakebackPending = true` sowie die Nachricht `takebackMessage`, falls die Zugqualität schlechter als `good` ist.
+   * Reagiert über einen synchronen Watcher (`{ flush: 'sync' }`) auf das Ende der Coach-Analyse und setzt `isTakebackPending = true` sowie die Nachricht `takebackMessage`, falls der Winrate-Verlust 20 % oder mehr beträgt (`winRateLoss >= 20`).
    * Beinhaltet keine Nebeneffekte (wie `setTimeout` oder Sound-Trigger), um Race Conditions zu vermeiden.
 
 4. **`game.store.ts` (Entities - Kern-Spiellogik)**:

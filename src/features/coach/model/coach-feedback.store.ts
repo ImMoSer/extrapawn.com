@@ -51,11 +51,9 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
       if (boardStore.isGameOver) {
         coachMood.value = 'celebrating'
       } else if (isUserMove && analysis.quality) {
-        if (
-          analysis.quality === 'blunder' ||
-          analysis.quality === 'mistake' ||
-          analysis.quality === 'inaccuracy'
-        ) {
+        const hasHighWinRateLoss = typeof analysis.winRateLoss === 'number' && analysis.winRateLoss >= 20
+
+        if (hasHighWinRateLoss) {
           // Trigger Auto-Takeback
           isTakebackPending.value = true
           pendingTakebackFen.value = prevFen || null
@@ -66,6 +64,9 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
           } else if (analysis.quality === 'mistake') {
             coachMood.value = 'warning'
             takebackMessage.value = 'Das war ein Fehler! Überleg noch mal, es gibt einen besseren Zug.'
+          } else if (analysis.quality === 'missed_mate') {
+            coachMood.value = 'shocked'
+            takebackMessage.value = 'Du hast ein Matt verpasst! Überleg noch mal, es gibt einen besseren Zug.'
           } else {
             coachMood.value = 'shocked'
             takebackMessage.value = 'Das war ein grober Patzer! Überleg noch mal, es gibt einen besseren Zug.'
@@ -84,6 +85,16 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
             case 'good':
             case 'neutral':
               coachMood.value = 'neutral'
+              break
+            case 'inaccuracy':
+            case 'missed_mate':
+              coachMood.value = 'thoughtful'
+              break
+            case 'mistake':
+              coachMood.value = 'warning'
+              break
+            case 'blunder':
+              coachMood.value = 'shocked'
               break
             default:
               coachMood.value = 'neutral'

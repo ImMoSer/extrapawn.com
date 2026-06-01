@@ -32,7 +32,7 @@ export const useCoachStore = defineStore('coach', () => {
   const previousExplanation = ref<CoachExplanation | null>(null)
 
   // State for Visuals
-  const showVisuals = ref(true)
+  const showVisuals = ref(false)
 
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
@@ -52,8 +52,8 @@ export const useCoachStore = defineStore('coach', () => {
     const subActions = actionStr.split(';')
     const allShapes: DrawShape[] = []
 
-    // Chessground standard brushes + safety (11 colors)
-    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove']
+    // Chessground standard brushes + safety (13 colors)
+    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove', 'paleBlue', 'paleGreen']
 
     for (const sub of subActions) {
       if (!sub.trim()) continue
@@ -119,7 +119,19 @@ export const useCoachStore = defineStore('coach', () => {
     if (allShapes.length > 0) {
       // Sort shapes by color priority so the highest priority renders on top.
       const COLOR_PRIORITY: Record<string, number> = {
-        coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
+        coachgray: 0,
+        coachbrown: 1,
+        coachyellow: 2,
+        coachpaleGreen: 3,
+        coachgreen: 4,
+        coachcyan: 5,
+        coachpaleBlue: 6,
+        coachblue: 7,
+        coachpurple: 8,
+        coachpink: 9,
+        coachorange: 10,
+        coachred: 11,
+        bestmove: 12
       }
       allShapes.sort((a, b) => {
         const pA = COLOR_PRIORITY[a.brush as string] ?? -1
@@ -304,6 +316,7 @@ export const useCoachStore = defineStore('coach', () => {
     lastMoveAnalysis.value = null
     selectedMoveIndex.value = null
     selectedMoveExplanation.value = null
+    showVisuals.value = false
     boardStore.setCoachShapes([])
     coachEngineManager.stop()
   }

@@ -5,12 +5,14 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+    BookOutline,
+    ExtensionPuzzleOutline,
     FlashOutline,
-    HammerOutline,
+    GridOutline,
     HardwareChipOutline,
     LogInOutline,
     PersonOutline,
-    RibbonOutline,
+    SkullOutline,
     TrophyOutline,
 } from '@vicons/ionicons5'
 
@@ -37,40 +39,28 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   {
-    path: '/tactics',
-    icon: HammerOutline,
-    labelKey: 'shared.nav.tactics',
-    color: 'var(--neon-pink)',
+    path: '/theory-endings',
+    icon: BookOutline,
+    labelKey: 'shared.nav.theoryEndgames',
+    color: 'var(--neon-yellow)',
   },
   {
     path: '/finish-him',
-    icon: TrophyOutline,
+    icon: SkullOutline,
     labelKey: 'shared.nav.finishHim',
     color: 'var(--neon-purple)',
   },
   {
     path: '/practical-chess',
-    icon: HardwareChipOutline,
+    icon: GridOutline,
     labelKey: 'shared.nav.practicalChess',
-    color: 'var(--neon-blue, #00f2ff)',
+    color: 'var(--neon-blue)',
   },
   {
-    path: '/theory-endings',
-    icon: RibbonOutline,
-    labelKey: 'shared.nav.theoryEndgames',
-    color: 'var(--neon-yellow)',
-  },
-  {
-    path: '/sparring',
-    icon: HardwareChipOutline,
-    labelKey: 'shared.nav.sparring',
-    color: 'var(--neon-blue, #00f2ff)',
-  },
-  {
-    path: '/user-cabinet',
-    icon: PersonOutline,
-    labelKey: 'shared.nav.userCabinet',
-    color: 'var(--neon-orange)',
+    path: '/tactics',
+    icon: ExtensionPuzzleOutline,
+    labelKey: 'shared.nav.tactics',
+    color: 'var(--neon-pink)',
   },
   {
     path: '/task-today',
@@ -79,10 +69,22 @@ const menuItems = [
     color: 'var(--neon-cyan)',
   },
   {
+    path: '/sparring',
+    icon: HardwareChipOutline,
+    labelKey: 'shared.nav.sparring',
+    color: 'var(--neon-lime)',
+  },
+  {
+    path: '/user-cabinet',
+    icon: PersonOutline,
+    labelKey: 'shared.nav.userCabinet',
+    color: 'var(--neon-orange)',
+  },
+  {
     path: '/records',
     icon: TrophyOutline,
     labelKey: 'shared.nav.leaderboards',
-    color: 'var(--neon-yellow)',
+    color: 'var(--neon-bordeaux)',
   },
 ]
 

@@ -50,11 +50,14 @@ const CHESSGROUND_BRUSHES = {
   blue: { key: 'b', color: '#0030C0', opacity: 1, lineWidth: 10 },
   yellow: { key: 'y', color: '#E6A000', opacity: 1, lineWidth: 10 },
   orange: { key: 'o', color: '#D56000', opacity: 1, lineWidth: 10 },
+  purple: { key: 'u', color: '#7B1FA2', opacity: 1, lineWidth: 10 },
   bestmove: { key: 'p', color: '#ff007a', opacity: 1, lineWidth: 10 },
   cyan: { key: 'c', color: '#008BA1', opacity: 1, lineWidth: 10 },
   pink: { key: 'k', color: '#B3205D', opacity: 1, lineWidth: 10 },
   brown: { key: 'w', color: '#6D4C41', opacity: 1, lineWidth: 10 },
   gray: { key: 'x', color: '#616161', opacity: 1, lineWidth: 10 },
+  paleBlue: { key: 'pb', color: '#0030C0', opacity: 0.4, lineWidth: 15 },
+  paleGreen: { key: 'pg', color: '#15781B', opacity: 0.4, lineWidth: 15 },
 
   // Coach-specific thin brushes
   coachgreen: { key: 'G', color: '#15781B', opacity: 0.5, lineWidth: 5 },
@@ -67,6 +70,8 @@ const CHESSGROUND_BRUSHES = {
   coachpink: { key: 'K', color: '#B3205D', opacity: 0.5, lineWidth: 5 },
   coachbrown: { key: 'W', color: '#6D4C41', opacity: 0.5, lineWidth: 5 },
   coachgray: { key: 'X', color: '#616161', opacity: 0.5, lineWidth: 5 },
+  coachpaleBlue: { key: 'PB', color: '#0030C0', opacity: 0.4, lineWidth: 5 },
+  coachpaleGreen: { key: 'PG', color: '#15781B', opacity: 0.4, lineWidth: 5 },
 } as const
 
 const nagMarkerStyle = computed(() => {
@@ -397,7 +402,9 @@ watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, 
 :deep(.cg-shapes) g.coachcyan path, :deep(.cg-shapes) g.coachcyan line,
 :deep(.cg-shapes) g.coachpink path, :deep(.cg-shapes) g.coachpink line,
 :deep(.cg-shapes) g.coachbrown path, :deep(.cg-shapes) g.coachbrown line,
-:deep(.cg-shapes) g.coachgray path, :deep(.cg-shapes) g.coachgray line {
+:deep(.cg-shapes) g.coachgray path, :deep(.cg-shapes) g.coachgray line,
+:deep(.cg-shapes) g.coachpaleBlue path, :deep(.cg-shapes) g.coachpaleBlue line,
+:deep(.cg-shapes) g.coachpaleGreen path, :deep(.cg-shapes) g.coachpaleGreen line {
   stroke-width: 0.35% !important;
 }
 

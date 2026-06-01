@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import {
+  BookOutline,
   CashOutline,
   ExtensionPuzzleOutline,
   FlashOutline,
+  GridOutline,
   HardwareChipOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
-  RibbonOutline,
+  SkullOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
@@ -53,17 +55,17 @@ const menuOptions: MenuOption[] = [
   {
     label: () => t('shared.nav.finishHim'),
     key: '/finish-him',
-    icon: renderIcon(TrophyOutline),
+    icon: renderIcon(SkullOutline),
   },
   {
     label: () => t('shared.nav.practicalChess'),
     key: '/practical-chess',
-    icon: renderIcon(HardwareChipOutline),
+    icon: renderIcon(GridOutline),
   },
   {
     label: () => t('shared.nav.theoryEndgames'),
     key: '/theory-endings',
-    icon: renderIcon(RibbonOutline),
+    icon: renderIcon(BookOutline),
   },
   {
     label: () => t('shared.nav.taskToday'),
