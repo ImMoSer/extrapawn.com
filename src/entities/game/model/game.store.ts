@@ -138,11 +138,14 @@ export const useGameStore = defineStore('game', () => {
   async function triggerBotMove(overrideDelay?: number) {
     if (currentStrategy.value) {
       const fenAtRequest = boardStore.fen
+      const startTime = Date.now()
       const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
+      const elapsedTime = Date.now() - startTime
 
-      const delay = overrideDelay ?? currentStrategy.value.config?.botDelayMs ?? 50
-      if (delay > 0) {
-        await new Promise((resolve) => setTimeout(resolve, delay))
+      const targetDelay = overrideDelay ?? currentStrategy.value.config?.botDelayMs ?? 50
+      const remainingDelay = Math.max(0, targetDelay - elapsedTime)
+      if (remainingDelay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remainingDelay))
       }
 
       // Race condition protection
