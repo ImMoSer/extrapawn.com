@@ -1,10 +1,10 @@
-import { defineStore } from 'pinia'
-import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '@/entities/user'
+import { apiClient } from '@/shared/api/client'
+import { registerEngineConfigProvider } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
-import { registerEngineConfigProvider } from '@/shared/lib/engine/coach/engine'
-import { apiClient } from '@/shared/api/client'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
 
 const LOCAL_STORAGE_KEY = 'user_preferences_backup_v1'
 
@@ -148,10 +148,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
           ...rawPreferences.value,
           delays: {
             initialBotDelayMs: 500,
-            botDelayMs: 350,
-            nextPuzzleDelayMs: 5000,
+            botDelayMs: 500,
+            nextPuzzleDelayMs: 3000,
             restartDelayMs: 1000,
-            crashtestDelayMs: 1250,
+            crashtestDelayMs: 1000,
           },
         }
       }
@@ -223,7 +223,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
     try {
       const rawBackendPrefs = await apiClient<BackendUserPreferencesDto>('/users/me/preferences')
-      
+
       const mappedPrefs: UserPreferencesDto = {
         theme: rawBackendPrefs.theme,
         engine: rawBackendPrefs.engine,
@@ -253,7 +253,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   async function updatePreferences(updateDto: DeepPartial<UserPreferencesDto>) {
     preferences.value = deepMerge(preferences.value, updateDto)
     saveLocal()
-    
+
     // Sync to backend if authenticated
     if (authStore.isAuthenticated) {
       if (saveTimeout) {

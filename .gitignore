@@ -44,3 +44,5 @@ swagger.json
 safe-cleanup-analysis.cjs
 safe-to-delete-keys.json
 i18n-check.cjs
+
+greek_gift.json

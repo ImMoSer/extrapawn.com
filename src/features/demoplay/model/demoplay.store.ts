@@ -1,14 +1,15 @@
-import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import { useAuthStore } from '@/entities/user'
 import { useBoardStore, useGameStore } from '@/entities/game'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { usePreferencesStore } from '@/features/settings'
+import { useAuthStore } from '@/entities/user'
 import { usePuzzleStore } from '@/features/puzzle'
+import { usePreferencesStore } from '@/features/settings'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
 import logger from '@/shared/lib/logger'
+import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
-import type { DrawShape } from '@lichess-org/chessground/draw'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
 
 export const useDemoplayStore = defineStore('demoplay', () => {
   const authStore = useAuthStore()
@@ -16,6 +17,10 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   const gameStore = useGameStore()
   const preferencesStore = usePreferencesStore()
   const puzzleStore = usePuzzleStore()
+
+  // Configurable delays for the first demo move in the new position
+  const USER_THINKING_TIME = 7500
+  const COACH_VISUALIZE_TIME = 2500
 
   // Link isDemoplayEnabled directly to preferencesStore to maintain a single source of truth
   const isDemoplayEnabled = computed({
@@ -25,10 +30,10 @@ export const useDemoplayStore = defineStore('demoplay', () => {
     }
   })
 
-  // Initial Demo Play delay state (3000ms pause when new puzzle is loaded)
+  // Initial Demo Play delay state (pause when new puzzle is loaded)
   const isInitialDelayActive = ref(false)
   const initialDelayTimer = ref<number | null>(null)
-  
+
   // Demoplay status
   const isDemoplayAnalyzing = ref(false)
   const lastPlayedOrAnalyzedFen = ref<string | null>(null)
@@ -129,13 +134,13 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   }
 
   // Trigger coach analysis and perform demoplay move
-  async function triggerDemoplay(fenToAnalyze: string) {
+  async function triggerDemoplay(fenToAnalyze: string, prefetchedExplanation?: CoachExplanation | null) {
     if (isDemoplayAnalyzing.value || isInitialDelayActive.value || isCrashtestEnabled.value) return
     isDemoplayAnalyzing.value = true
 
     try {
       logger.info(`[Demoplay] Starting Coach analysis for FEN: ${fenToAnalyze}`)
-      const explanation = await coachEngineManager.getExplanation(fenToAnalyze)
+      const explanation = prefetchedExplanation || await coachEngineManager.getExplanation(fenToAnalyze)
 
       // Check if state remains valid after async API request
       const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze
@@ -176,16 +181,18 @@ export const useDemoplayStore = defineStore('demoplay', () => {
         boardStore.setCoachShapes([])
       }
 
-      // Calculate move delay dynamically
-      let delay = 1250
+      // Calculate move delay dynamically (skip if we already visualized during prefetched delay)
+      let delay = prefetchedExplanation ? 0 : 1250
       const topMove = explanation?.engine_top_moves?.[0]
-      if (topMove && topMove.mate !== null) {
+      if (!prefetchedExplanation && topMove && topMove.mate !== null) {
         const mValue = Math.abs(topMove.mate)
         delay = mValue * 100
         logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected. Dynamic delay scaled to ${delay}ms.`)
       }
 
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
 
       // Check state again after delay
       const postDelayFenChanged = boardStore.fen !== fenToAnalyze
@@ -251,27 +258,65 @@ export const useDemoplayStore = defineStore('demoplay', () => {
     (newPuzzle) => {
       if (isDemoplayEnabled.value && newPuzzle && !isCrashtestEnabled.value) {
         isInitialDelayActive.value = true
-        logger.info('[Demoplay] New puzzle loaded. Starting initial delay of 3000ms.')
-        
+        logger.info(`[Demoplay] New puzzle loaded. Starting user thinking delay of ${USER_THINKING_TIME}ms.`)
+
         if (initialDelayTimer.value) {
           clearTimeout(initialDelayTimer.value)
-        }
-        
-        initialDelayTimer.value = window.setTimeout(() => {
-          isInitialDelayActive.value = false
           initialDelayTimer.value = null
-          logger.info('[Demoplay] Initial delay ended. Proceeding with gameplay.')
-          
-          // Trigger move if it's the user's turn
-          if (
-            gameStore.gamePhase === 'PLAYING' &&
-            boardStore.turn === boardStore.orientation &&
-            boardStore.fen !== lastPlayedOrAnalyzedFen.value
-          ) {
-            lastPlayedOrAnalyzedFen.value = boardStore.fen
-            triggerDemoplay(boardStore.fen)
+        }
+
+        initialDelayTimer.value = window.setTimeout(async () => {
+          // Verify demoplay is still active before proceeding to Phase 2 (visualization)
+          if (!isDemoplayEnabled.value || gameStore.gamePhase !== 'PLAYING' || isCrashtestEnabled.value) {
+            isInitialDelayActive.value = false
+            initialDelayTimer.value = null
+            return
           }
-        }, 3000)
+
+          logger.info(`[Demoplay] User thinking delay ended. Fetching and showing coach visualizations for ${COACH_VISUALIZE_TIME}ms.`)
+
+          const fenToAnalyze = boardStore.fen
+          let explanation: CoachExplanation | null = null
+
+          if (boardStore.turn === boardStore.orientation) {
+            try {
+              explanation = await coachEngineManager.getExplanation(fenToAnalyze)
+
+              // Draw the visualizations on the board
+              if (explanation?.visual_commands) {
+                const commands = Object.values(explanation.visual_commands).flat().join(';')
+                if (commands) {
+                  const shapes = parseVisualCommands(commands)
+                  boardStore.setCoachShapes(shapes)
+                } else {
+                  boardStore.setCoachShapes([])
+                }
+              } else {
+                boardStore.setCoachShapes([])
+              }
+            } catch (err) {
+              logger.error('[Demoplay] Error fetching explanation during initial delay:', err)
+            }
+          }
+
+          // Start the visualization phase timer
+          initialDelayTimer.value = window.setTimeout(async () => {
+            isInitialDelayActive.value = false
+            initialDelayTimer.value = null
+            logger.info('[Demoplay] Initial delay ended. Proceeding with gameplay.')
+
+            if (
+              isDemoplayEnabled.value &&
+              gameStore.gamePhase === 'PLAYING' &&
+              !isCrashtestEnabled.value &&
+              boardStore.turn === boardStore.orientation &&
+              boardStore.fen !== lastPlayedOrAnalyzedFen.value
+            ) {
+              lastPlayedOrAnalyzedFen.value = boardStore.fen
+              await triggerDemoplay(boardStore.fen, explanation)
+            }
+          }, COACH_VISUALIZE_TIME)
+        }, USER_THINKING_TIME)
       }
     }
   )
@@ -305,12 +350,17 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       { immediate: true }
     )
 
-    // Cleanup shapes when demoplay gets disabled or game finishes
+    // Cleanup shapes and timers when demoplay gets disabled or game finishes
     watch(
       [isDemoplayEnabled, () => gameStore.gamePhase],
       ([demoplayEnabled, gamePhase]) => {
         if (!demoplayEnabled || gamePhase !== 'PLAYING') {
           boardStore.setCoachShapes([])
+          if (initialDelayTimer.value) {
+            clearTimeout(initialDelayTimer.value)
+            initialDelayTimer.value = null
+          }
+          isInitialDelayActive.value = false
         }
       }
     )
