@@ -786,6 +786,11 @@
         "pressNext": "Drücke 'Spielen' zum Starten.",
         "win": "Gewonnen!",
         "yourTurn": "Du bist dran! Finde die richtige Fortsetzung."
+      },
+      "header": {
+        "rating": "Rating",
+        "style": "Stil",
+        "motifs": "Motive"
       }
     },
     "gameplay": {

@@ -22,6 +22,7 @@ export interface WorkoutPuzzle {
   puzzle_id: string
   puzzle_type: string
   category: string
+  category_comby?: string[]
   sub_category?: string
   difficulty: string
   rating?: number | string

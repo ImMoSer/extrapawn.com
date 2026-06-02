@@ -598,7 +598,7 @@
     "coach": {
       "categoryLabel": "Category",
       "difficultyLabel": "Difficulty",
-      "tacticsLabel": "Tactical Motifs",
+      "tacticsLabel": "Motifs",
       "modes": {
         "goto": "GoTo",
         "practical": "Practical",
@@ -786,6 +786,11 @@
         "pressNext": "Press 'Play Button' to begin.",
         "win": "You won!",
         "yourTurn": "Your turn! Find the correct continuation."
+      },
+      "header": {
+        "rating": "Rating",
+        "style": "Style",
+        "motifs": "Motifs"
       }
     },
     "gameplay": {

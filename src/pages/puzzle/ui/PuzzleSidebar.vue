@@ -17,7 +17,7 @@ import {
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
-import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
+import { usePuzzleStore, type PuzzleSubmode, PuzzleHalloHeader } from '@/features/puzzle'
 
 const props = defineProps<{
   submode: PuzzleSubmode
@@ -192,21 +192,22 @@ function loadPuzzle() {
   })
 }
 
-const headerTitle = computed(() => {
-  if (props.submode === 'tactics') return t('features.coach.tabs.tactic')
-  if (props.submode === 'theory_endings') return t('pages.welcome.submodes.theory_endings', 'Theory Endings')
-  if (props.submode === 'practical_chess') return t('pages.welcome.submodes.practical_chess', 'Practical Chess')
-  if (props.submode === 'finish_him') return t('pages.welcome.submodes.finish_him', 'Finish Him')
-  throw new Error(`[PuzzleSidebar] Unknown submode header: ${props.submode}. Fail-Fast!`)
+const isPuzzleActive = computed(() => {
+  return !!puzzleStore.activePuzzle && puzzleStore.activePuzzle.puzzle_type === props.submode
 })
 </script>
 
 <template>
   <div class="trainings-sidebar">
     <!-- Header -->
-    <div class="sidebar-header">
-      <n-icon size="24" class="header-icon"><SchoolOutline /></n-icon>
-      <n-text class="header-title">{{ headerTitle }}</n-text>
+    <div class="sidebar-header" :class="{ 'with-card': isPuzzleActive }">
+      <template v-if="!isPuzzleActive">
+        <n-icon size="24" class="header-icon"><SchoolOutline /></n-icon>
+        <PuzzleHalloHeader :submode="props.submode" />
+      </template>
+      <template v-else>
+        <PuzzleHalloHeader :submode="props.submode" />
+      </template>
     </div>
 
     <!-- Sidebar Content -->
@@ -271,12 +272,19 @@ const headerTitle = computed(() => {
 }
 
 .sidebar-header {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+}
+
+.sidebar-header.with-card {
+  box-sizing: border-box;
+  display: block;
+  padding: 8px;
 }
 
 .header-icon {

@@ -120,12 +120,17 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       const explanation = await coachEngineManager.getExplanation(fenToAnalyze)
 
       // Check if state remains valid after async API request
-      if (
-        boardStore.fen !== fenToAnalyze ||
-        gameStore.gamePhase !== 'PLAYING' ||
-        !isCrashtestEnabled.value
-      ) {
-        logger.warn('[Crashtest] State or FEN changed during analysis. Aborting.')
+      const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze
+      const postAnalysisPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
+      const postAnalysisCrashtestDisabled = !isCrashtestEnabled.value
+
+      if (postAnalysisFenChanged || postAnalysisPhaseInvalid || postAnalysisCrashtestDisabled) {
+        logger.info(
+          `[Crashtest] Cleanly aborting analysis due to state change: ` +
+          `fenChanged=${postAnalysisFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
+          `gamePhase=${gameStore.gamePhase}, ` +
+          `crashtestEnabled=${isCrashtestEnabled.value}`
+        )
         isCrashtestAnalyzing.value = false
         return
       }
@@ -148,12 +153,17 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       await new Promise((resolve) => setTimeout(resolve, delay))
 
       // Check state again after delay
-      if (
-        boardStore.fen !== fenToAnalyze ||
-        gameStore.gamePhase !== 'PLAYING' ||
-        !isCrashtestEnabled.value
-      ) {
-        logger.warn('[Crashtest] State or FEN changed during wait delay. Aborting.')
+      const postDelayFenChanged = boardStore.fen !== fenToAnalyze
+      const postDelayPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
+      const postDelayCrashtestDisabled = !isCrashtestEnabled.value
+
+      if (postDelayFenChanged || postDelayPhaseInvalid || postDelayCrashtestDisabled) {
+        logger.info(
+          `[Crashtest] Cleanly aborting after wait delay due to state change: ` +
+          `fenChanged=${postDelayFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
+          `gamePhase=${gameStore.gamePhase}, ` +
+          `crashtestEnabled=${isCrashtestEnabled.value}`
+        )
         isCrashtestAnalyzing.value = false
         return
       }

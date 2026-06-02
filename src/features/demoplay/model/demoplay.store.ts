@@ -1,0 +1,325 @@
+import { defineStore } from 'pinia'
+import { ref, computed, watch } from 'vue'
+import { useAuthStore } from '@/entities/user'
+import { useBoardStore, useGameStore } from '@/entities/game'
+import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { usePreferencesStore } from '@/features/settings'
+import { usePuzzleStore } from '@/features/puzzle'
+import logger from '@/shared/lib/logger'
+import type { Key } from '@lichess-org/chessground/types'
+import type { Role as ChessopsRole } from 'chessops'
+import type { DrawShape } from '@lichess-org/chessground/draw'
+
+export const useDemoplayStore = defineStore('demoplay', () => {
+  const authStore = useAuthStore()
+  const boardStore = useBoardStore()
+  const gameStore = useGameStore()
+  const preferencesStore = usePreferencesStore()
+  const puzzleStore = usePuzzleStore()
+
+  // Link isDemoplayEnabled directly to preferencesStore to maintain a single source of truth
+  const isDemoplayEnabled = computed({
+    get: () => preferencesStore.isDemoplayEnabled,
+    set: (val) => {
+      preferencesStore.isDemoplayEnabled = val
+    }
+  })
+
+  // Initial Demo Play delay state (3000ms pause when new puzzle is loaded)
+  const isInitialDelayActive = ref(false)
+  const initialDelayTimer = ref<number | null>(null)
+  
+  // Demoplay status
+  const isDemoplayAnalyzing = ref(false)
+  const lastPlayedOrAnalyzedFen = ref<string | null>(null)
+
+  const isMo3ep = computed(() => {
+    const profile = authStore.userProfile
+    if (!profile) return false
+    return profile.id === 'mo3ep' || profile.username === 'MO3EP'
+  })
+
+  const isCrashtestEnabled = computed(() => {
+    return !!preferencesStore.preferences.gameplay.global_crashtest
+  })
+
+  // Safety watch: if crashtest is enabled, immediately turn off demoplay
+  watch(isCrashtestEnabled, (enabled) => {
+    if (enabled && isDemoplayEnabled.value) {
+      isDemoplayEnabled.value = false
+    }
+  }, { immediate: true })
+
+  function getPromotionRole(char: string): ChessopsRole {
+    switch (char) {
+      case 'q': return 'queen'
+      case 'r': return 'rook'
+      case 'b': return 'bishop'
+      case 'n': return 'knight'
+      default: return 'queen'
+    }
+  }
+
+  // Parse visual commands string into Chessground DrawShapes
+  function parseVisualCommands(actionStr: string): DrawShape[] {
+    const subActions = actionStr.split(';')
+    const allShapes: DrawShape[] = []
+    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove']
+
+    for (const sub of subActions) {
+      if (!sub.trim()) continue
+
+      const cleanSub = sub.replace(/[\[\]]/g, '').trim()
+      const parts = cleanSub.split(':')
+      const cmd = parts[0]?.trim()
+      const data = parts[1]?.trim()
+      let brush = parts[2]?.trim() || 'green'
+
+      if (!VALID_BRUSHES.includes(brush)) {
+        brush = 'green'
+      }
+
+      const coachBrush = brush === 'bestmove' ? 'bestmove' : `coach${brush}`
+
+      if (cmd === 'clear') {
+        return []
+      }
+
+      if (!data) continue
+
+      if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
+        const squares = data.split('->')
+        for (let i = 0; i < squares.length - 1; i++) {
+          const orig = squares[i]?.trim()
+          const dest = squares[i + 1]?.trim()
+
+          if (orig && dest && orig.length === 2 && dest.length === 2) {
+            allShapes.push({
+              orig: orig as Key,
+              dest: dest as Key,
+              brush: coachBrush,
+              modifiers: { lineWidth: 3 }
+            })
+          }
+        }
+      } else if (cmd === 'mark') {
+        const squares = data.split(',')
+        squares.forEach(sq => {
+          const cleanSq = sq.trim()
+          if (cleanSq && cleanSq.length === 2) {
+            allShapes.push({
+              orig: cleanSq as Key,
+              brush: coachBrush
+            })
+          }
+        })
+      }
+    }
+
+    const COLOR_PRIORITY: Record<string, number> = {
+      coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10
+    }
+    allShapes.sort((a, b) => {
+      const pA = COLOR_PRIORITY[a.brush as string] ?? -1
+      const pB = COLOR_PRIORITY[b.brush as string] ?? -1
+      return pA - pB
+    })
+
+    return allShapes
+  }
+
+  // Trigger coach analysis and perform demoplay move
+  async function triggerDemoplay(fenToAnalyze: string) {
+    if (isDemoplayAnalyzing.value || isInitialDelayActive.value || isCrashtestEnabled.value) return
+    isDemoplayAnalyzing.value = true
+
+    try {
+      logger.info(`[Demoplay] Starting Coach analysis for FEN: ${fenToAnalyze}`)
+      const explanation = await coachEngineManager.getExplanation(fenToAnalyze)
+
+      // Check if state remains valid after async API request
+      const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze
+      const postAnalysisPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
+      const postAnalysisDemoplayDisabled = !isDemoplayEnabled.value
+      const postAnalysisDelayActive = isInitialDelayActive.value
+      const postAnalysisCrashtestActive = isCrashtestEnabled.value
+
+      if (
+        postAnalysisFenChanged ||
+        postAnalysisPhaseInvalid ||
+        postAnalysisDemoplayDisabled ||
+        postAnalysisDelayActive ||
+        postAnalysisCrashtestActive
+      ) {
+        logger.info(
+          `[Demoplay] Cleanly aborting analysis due to state change: ` +
+          `fenChanged=${postAnalysisFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
+          `gamePhase=${gameStore.gamePhase}, ` +
+          `demoplayEnabled=${isDemoplayEnabled.value}, ` +
+          `initialDelayActive=${isInitialDelayActive.value}, ` +
+          `crashtestActive=${postAnalysisCrashtestActive}`
+        )
+        isDemoplayAnalyzing.value = false
+        return
+      }
+
+      // Draw the visualizations on the board
+      if (explanation?.visual_commands) {
+        const commands = Object.values(explanation.visual_commands).flat().join(';')
+        if (commands) {
+          const shapes = parseVisualCommands(commands)
+          boardStore.setCoachShapes(shapes)
+        } else {
+          boardStore.setCoachShapes([])
+        }
+      } else {
+        boardStore.setCoachShapes([])
+      }
+
+      // Calculate move delay dynamically
+      let delay = 1250
+      const topMove = explanation?.engine_top_moves?.[0]
+      if (topMove && topMove.mate !== null) {
+        const mValue = Math.abs(topMove.mate)
+        delay = mValue * 100
+        logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected. Dynamic delay scaled to ${delay}ms.`)
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
+
+      // Check state again after delay
+      const postDelayFenChanged = boardStore.fen !== fenToAnalyze
+      const postDelayPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
+      const postDelayDemoplayDisabled = !isDemoplayEnabled.value
+      const postDelayDelayActive = isInitialDelayActive.value
+      const postDelayCrashtestActive = isCrashtestEnabled.value
+
+      if (
+        postDelayFenChanged ||
+        postDelayPhaseInvalid ||
+        postDelayDemoplayDisabled ||
+        postDelayDelayActive ||
+        postDelayCrashtestActive
+      ) {
+        logger.info(
+          `[Demoplay] Cleanly aborting after wait delay due to state change: ` +
+          `fenChanged=${postDelayFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
+          `gamePhase=${gameStore.gamePhase}, ` +
+          `demoplayEnabled=${isDemoplayEnabled.value}, ` +
+          `initialDelayActive=${isInitialDelayActive.value}, ` +
+          `crashtestActive=${postDelayCrashtestActive}`
+        )
+        isDemoplayAnalyzing.value = false
+        return
+      }
+
+      // Get the best move from the coach
+      const bestMoveUci = explanation?.engine_top_moves?.[0]?.uci
+      if (!bestMoveUci || bestMoveUci.length < 4) {
+        logger.error('[Demoplay] No valid best move returned by Coach.')
+        isDemoplayAnalyzing.value = false
+        return
+      }
+
+      logger.info(`[Demoplay] Demoplay best move: ${bestMoveUci}`)
+      const orig = bestMoveUci.substring(0, 2) as Key
+      const dest = bestMoveUci.substring(2, 4) as Key
+      const promoChar = bestMoveUci.length === 5 ? bestMoveUci.charAt(4) : null
+
+      if (promoChar) {
+        setTimeout(() => {
+          if (boardStore.promotionState) {
+            const role = getPromotionRole(promoChar)
+            boardStore.completePromotion(role)
+            logger.info(`[Demoplay] Auto-completed promotion to: ${role}`)
+          }
+        }, 50)
+      }
+
+      isDemoplayAnalyzing.value = false
+
+      await gameStore.handleUserMove(orig, dest)
+    } catch (e) {
+      logger.error('[Demoplay] Error during demoplay execution', e)
+      isDemoplayAnalyzing.value = false
+    }
+  }
+
+  // Trigger initial delay when active puzzle changes
+  watch(
+    () => puzzleStore.activePuzzle,
+    (newPuzzle) => {
+      if (isDemoplayEnabled.value && newPuzzle && !isCrashtestEnabled.value) {
+        isInitialDelayActive.value = true
+        logger.info('[Demoplay] New puzzle loaded. Starting initial delay of 3000ms.')
+        
+        if (initialDelayTimer.value) {
+          clearTimeout(initialDelayTimer.value)
+        }
+        
+        initialDelayTimer.value = window.setTimeout(() => {
+          isInitialDelayActive.value = false
+          initialDelayTimer.value = null
+          logger.info('[Demoplay] Initial delay ended. Proceeding with gameplay.')
+          
+          // Trigger move if it's the user's turn
+          if (
+            gameStore.gamePhase === 'PLAYING' &&
+            boardStore.turn === boardStore.orientation &&
+            boardStore.fen !== lastPlayedOrAnalyzedFen.value
+          ) {
+            lastPlayedOrAnalyzedFen.value = boardStore.fen
+            triggerDemoplay(boardStore.fen)
+          }
+        }, 3000)
+      }
+    }
+  )
+
+  let isInitialized = false
+
+  function init() {
+    if (isInitialized) return
+    isInitialized = true
+
+    logger.info('[DemoplayStore] Initializing global demoplay watchers.')
+
+    watch(
+      [() => boardStore.fen, () => boardStore.turn, () => gameStore.gamePhase, isDemoplayEnabled, isInitialDelayActive, isCrashtestEnabled],
+      ([newFen, newTurn, gamePhase, demoplayEnabled, initialDelayActive, crashtestEnabled]) => {
+        if (!isMo3ep.value || !demoplayEnabled || gamePhase !== 'PLAYING' || initialDelayActive || crashtestEnabled) {
+          return
+        }
+
+        if (newTurn !== boardStore.orientation) {
+          return
+        }
+
+        if (newFen === lastPlayedOrAnalyzedFen.value) {
+          return
+        }
+
+        lastPlayedOrAnalyzedFen.value = newFen
+        triggerDemoplay(newFen)
+      },
+      { immediate: true }
+    )
+
+    // Cleanup shapes when demoplay gets disabled or game finishes
+    watch(
+      [isDemoplayEnabled, () => gameStore.gamePhase],
+      ([demoplayEnabled, gamePhase]) => {
+        if (!demoplayEnabled || gamePhase !== 'PLAYING') {
+          boardStore.setCoachShapes([])
+        }
+      }
+    )
+  }
+
+  return {
+    isMo3ep,
+    isDemoplayEnabled,
+    isInitialDelayActive,
+    init,
+  }
+})

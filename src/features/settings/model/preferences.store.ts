@@ -47,6 +47,14 @@ export interface UserPreferencesDto {
   delays: DelayPreferences
 }
 
+export interface BackendUserPreferencesDto {
+  theme: ThemePreferences
+  engine: EnginePreferences
+  audio: AudioPreferences
+  gameplay: Omit<GameplayPreferences, 'global_crashtest'> & { global_autoplay?: boolean }
+  delays: Omit<DelayPreferences, 'crashtestDelayMs'> & { autoPlayDelayMs?: number }
+}
+
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
@@ -100,6 +108,27 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const authStore = useAuthStore()
   const rawPreferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
 
+  const isDemoplayEnabled = ref(localStorage.getItem('global_demoplay') === 'true')
+
+  // Mutual exclusion: crashtest always has priority!
+  watch(isDemoplayEnabled, (val) => {
+    if (val && rawPreferences.value.gameplay.global_crashtest) {
+      isDemoplayEnabled.value = false
+    } else {
+      localStorage.setItem('global_demoplay', val ? 'true' : 'false')
+    }
+  }, { immediate: true })
+
+  watch(
+    () => rawPreferences.value.gameplay.global_crashtest,
+    (val) => {
+      if (val) {
+        isDemoplayEnabled.value = false
+      }
+    },
+    { immediate: true }
+  )
+
   const preferences = computed<UserPreferencesDto>({
     get: () => {
       if (rawPreferences.value.gameplay.global_crashtest) {
@@ -111,6 +140,18 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: 50,
             restartDelayMs: 50,
             crashtestDelayMs: 50,
+          },
+        }
+      }
+      if (isDemoplayEnabled.value) {
+        return {
+          ...rawPreferences.value,
+          delays: {
+            initialBotDelayMs: 500,
+            botDelayMs: 350,
+            nextPuzzleDelayMs: 5000,
+            restartDelayMs: 1000,
+            crashtestDelayMs: 1250,
           },
         }
       }
@@ -181,8 +222,27 @@ export const usePreferencesStore = defineStore('preferences', () => {
       return
     }
     try {
-      const backendPrefs = await apiClient<UserPreferencesDto>('/users/me/preferences')
-      preferences.value = deepMerge(DEFAULT_USER_PREFERENCES, backendPrefs)
+      const rawBackendPrefs = await apiClient<BackendUserPreferencesDto>('/users/me/preferences')
+      
+      const mappedPrefs: UserPreferencesDto = {
+        theme: rawBackendPrefs.theme,
+        engine: rawBackendPrefs.engine,
+        audio: rawBackendPrefs.audio,
+        gameplay: {
+          language: rawBackendPrefs.gameplay?.language ?? DEFAULT_USER_PREFERENCES.gameplay.language,
+          botEngine: rawBackendPrefs.gameplay?.botEngine ?? DEFAULT_USER_PREFERENCES.gameplay.botEngine,
+          global_crashtest: rawBackendPrefs.gameplay?.global_autoplay ?? DEFAULT_USER_PREFERENCES.gameplay.global_crashtest,
+        },
+        delays: {
+          initialBotDelayMs: rawBackendPrefs.delays?.initialBotDelayMs ?? DEFAULT_USER_PREFERENCES.delays.initialBotDelayMs,
+          botDelayMs: rawBackendPrefs.delays?.botDelayMs ?? DEFAULT_USER_PREFERENCES.delays.botDelayMs,
+          nextPuzzleDelayMs: rawBackendPrefs.delays?.nextPuzzleDelayMs ?? DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
+          restartDelayMs: rawBackendPrefs.delays?.restartDelayMs ?? DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
+          crashtestDelayMs: rawBackendPrefs.delays?.autoPlayDelayMs ?? DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
+        },
+      }
+
+      preferences.value = deepMerge(DEFAULT_USER_PREFERENCES, mappedPrefs)
       saveLocal()
       logger.info('[PreferencesStore] Preferences loaded from backend.')
     } catch (err) {
@@ -201,9 +261,30 @@ export const usePreferencesStore = defineStore('preferences', () => {
       }
       saveTimeout = window.setTimeout(async () => {
         try {
-          await apiClient<UserPreferencesDto>('/users/me/preferences', {
+          const backendDto: DeepPartial<BackendUserPreferencesDto> = {}
+          if (updateDto.theme) backendDto.theme = updateDto.theme
+          if (updateDto.engine) backendDto.engine = updateDto.engine
+          if (updateDto.audio) backendDto.audio = updateDto.audio
+          if (updateDto.gameplay) {
+            backendDto.gameplay = {
+              language: updateDto.gameplay.language,
+              botEngine: updateDto.gameplay.botEngine,
+              global_autoplay: updateDto.gameplay.global_crashtest,
+            }
+          }
+          if (updateDto.delays) {
+            backendDto.delays = {
+              initialBotDelayMs: updateDto.delays.initialBotDelayMs,
+              botDelayMs: updateDto.delays.botDelayMs,
+              nextPuzzleDelayMs: updateDto.delays.nextPuzzleDelayMs,
+              restartDelayMs: updateDto.delays.restartDelayMs,
+              autoPlayDelayMs: updateDto.delays.crashtestDelayMs,
+            }
+          }
+
+          await apiClient<BackendUserPreferencesDto>('/users/me/preferences', {
             method: 'PATCH',
-            body: JSON.stringify(updateDto),
+            body: JSON.stringify(backendDto),
           })
           logger.info('[PreferencesStore] Preferences successfully updated on backend.')
         } catch (err) {
@@ -248,5 +329,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
     coachTakebackEnabled,
     coachTakebackDelay,
     updateCoachTakeback,
+    isDemoplayEnabled,
   }
 })
