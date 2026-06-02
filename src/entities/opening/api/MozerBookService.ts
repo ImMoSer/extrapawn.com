@@ -25,6 +25,26 @@ export interface MozerStyleMove {
   uci: string
 }
 
+export interface WikiForwardMove {
+  uci: string
+  san: string
+  name: string | null
+  eco: string | null
+  child_id: number
+  is_nearest_descendant?: boolean
+}
+
+export interface WikiInfoResponse {
+  node_id: number
+  name: string
+  eco: string
+  canonical_uci_path: string[]
+  canonical_san_path: string[]
+  canonical_slug: string
+  wikibooks_url: string
+  forward_moves: WikiForwardMove[]
+}
+
 export interface MozerBookResponse {
   summary: {
     total: number
@@ -40,6 +60,7 @@ export interface MozerBookResponse {
     hustler: MozerStyleMove
     schuler: MozerStyleMove
   }
+  wiki?: WikiInfoResponse | null
 }
 
 class MozerBookService {

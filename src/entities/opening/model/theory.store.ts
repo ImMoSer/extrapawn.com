@@ -34,13 +34,56 @@ export const useTheoryStore = defineStore('openingTheory', () => {
     forceSkipDebounceGlobal.value = val
   }
 
+  const emptyMozerResponse: MozerBookResponse = {
+    summary: null,
+    moves: [],
+    theory: [],
+    styles: undefined,
+    wiki: null,
+  }
+
+  // Check if FEN is known to be out of book based on PGN parent state
+  function checkIfFenIsOutOfBook(fen: string): boolean {
+    const currentNode = pgnService.getCurrentNode()
+    if (currentNode && currentNode.fenAfter === fen) {
+      const parentEmptyCount = currentNode.parent?.metadata?.consecutiveEmptyMoves || 0
+      if (currentNode.parent && parentEmptyCount >= 3) {
+        currentNode.metadata = { 
+          ...currentNode.metadata, 
+          consecutiveEmptyMoves: parentEmptyCount + 1 
+        }
+        return true
+      }
+    }
+    return false
+  }
+
   // Reactive Fetchers (For UI)
   async function fetchMozerStats(fen: string): Promise<MozerBookResponse | null> {
+    if (checkIfFenIsOutOfBook(fen)) {
+      if (fen === currentFen.value) {
+        currentMozerStats.value = emptyMozerResponse
+      }
+      return emptyMozerResponse
+    }
+
     isMozerLoading.value = true
     try {
       const data = await theoryRepository.getMozerBookStats(fen, {
         skipDebounce: forceSkipDebounceGlobal.value,
       })
+      
+      // Update consecutiveEmptyMoves counter on the node
+      const currentNode = pgnService.getCurrentNode()
+      if (currentNode && currentNode.fenAfter === fen) {
+        const parentEmptyCount = currentNode.parent?.metadata?.consecutiveEmptyMoves || 0
+        const currentEmptyCount = (data && data.moves && data.moves.length > 0) ? 0 : parentEmptyCount + 1
+        currentNode.metadata = { 
+          ...currentNode.metadata, 
+          consecutiveEmptyMoves: currentEmptyCount 
+        }
+      }
+
       // Only set to state if the FEN hasn't changed while we were fetching
       if (fen === currentFen.value) {
         currentMozerStats.value = data
@@ -82,7 +125,21 @@ export const useTheoryStore = defineStore('openingTheory', () => {
     fen: string,
     skipDebounce = false,
   ): Promise<MozerBookResponse | null> {
-    return await theoryRepository.getMozerBookStats(fen, { skipDebounce })
+    if (checkIfFenIsOutOfBook(fen)) {
+      return emptyMozerResponse
+    }
+    const data = await theoryRepository.getMozerBookStats(fen, { skipDebounce })
+    
+    const currentNode = pgnService.getCurrentNode()
+    if (currentNode && currentNode.fenAfter === fen) {
+      const parentEmptyCount = currentNode.parent?.metadata?.consecutiveEmptyMoves || 0
+      const currentEmptyCount = (data && data.moves && data.moves.length > 0) ? 0 : parentEmptyCount + 1
+      currentNode.metadata = { 
+        ...currentNode.metadata, 
+        consecutiveEmptyMoves: currentEmptyCount 
+      }
+    }
+    return data
   }
 
   async function awaitLichessStatsForFen(

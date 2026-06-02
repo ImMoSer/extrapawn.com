@@ -1,7 +1,6 @@
 import type { IGameplayStrategy } from '@/entities/game'
 import { enginePlayService } from '@/entities/game'
 import { theoryRepository } from '@/entities/opening'
-import { useOpeningExplorerStore } from '@/features/opening-explorer'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
 
@@ -37,13 +36,11 @@ export class SparringStrategy implements IGameplayStrategy {
       logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
     }
 
-    const explorerStore = useOpeningExplorerStore()
-    // 1. Try Lichess Book directly from Repository (bypass UI store delay/debounce)
+    // 1. Try MozerBook directly from Repository (bypass UI store delay/debounce)
     if (!this.isBookExhausted) {
       try {
-        const stats = await theoryRepository.getLichessStats(
+        const stats = await theoryRepository.getMozerBookStats(
           fen,
-          { ratingRange: explorerStore.ratingRange },
           { skipDebounce: true }
         )
 

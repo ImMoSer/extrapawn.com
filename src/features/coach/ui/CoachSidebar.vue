@@ -49,7 +49,6 @@
           <CoachLastMove />
           <CoachTopMoves />
           <CoachPositionSummary />
-          <CoachBook />
         </div>
       </div>
 
@@ -65,7 +64,6 @@ import { EyeOffOutline, EyeOutline } from '@vicons/ionicons5'
 import { NIcon, NTabs, NTab } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachAvatar from './CoachAvatar.vue'
-import CoachBook from './CoachBook.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachSettings from './CoachSettings.vue'

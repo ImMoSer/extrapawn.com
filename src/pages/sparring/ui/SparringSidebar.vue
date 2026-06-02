@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { LichessOpeningExplorer } from '@/features/sparring';
+import { MozerBook } from '@/features/mozer-book';
 import { NText } from 'naive-ui';
-
-// Component is now self-contained using OpeningExplorerStore
 </script>
 
 <template>
@@ -14,7 +12,7 @@ import { NText } from 'naive-ui';
     <div class="sidebar-content">
       <div class="active-game-section">
         <div class="coach-stats-section">
-          <LichessOpeningExplorer :max-moves="10" />
+          <MozerBook />
         </div>
       </div>
     </div>
