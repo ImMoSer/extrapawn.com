@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { usePuzzleStore } from '../model/puzzle.store'
-import { useI18n } from 'vue-i18n'
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { usePuzzleStore } from '../model/puzzle.store';
 
 const props = defineProps<{
   submode: string
@@ -105,12 +105,12 @@ function formatSubTheme(subTheme: string): string {
 <template>
   <div class="hallo-header-container">
     <!-- Large, prominent active puzzle card (styled like a docked modal window) -->
-    <div v-if="puzzle && puzzle.puzzle_type === props.submode" 
+    <div v-if="puzzle && puzzle.puzzle_type === props.submode"
          class="active-puzzle-card"
          :style="{ '--glow-color': puzzleMeta.glowColor, '--border-color': puzzleMeta.borderColor }"
     >
       <div class="card-glow-overlay"></div>
-      
+
       <!-- Top Title Tag -->
       <div class="card-header-badge" :style="{ background: puzzleMeta.gradient }">
         {{ puzzleMeta.label }}
@@ -137,9 +137,9 @@ function formatSubTheme(subTheme: string): string {
         <div v-if="categoriesList.length > 0" class="motifs-section">
           <div class="motifs-label">{{ t('features.puzzle.header.motifs', 'Tactical Motifs') }}</div>
           <div class="chips-container">
-            <span 
-              v-for="cat in categoriesList" 
-              :key="cat" 
+            <span
+              v-for="cat in categoriesList"
+              :key="cat"
               class="theme-chip"
             >
               {{ formatThemeName(cat) }}
@@ -169,9 +169,9 @@ function formatSubTheme(subTheme: string): string {
   box-sizing: border-box;
   background: linear-gradient(135deg, rgba(23, 28, 48, 0.95) 0%, rgba(15, 18, 36, 0.98) 100%);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 10px;
   padding: 24px 12px 16px 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5),
               0 0 12px var(--glow-color),
               inset 0 0 15px rgba(255, 255, 255, 0.02);
   margin-top: 10px;
@@ -195,7 +195,7 @@ function formatSubTheme(subTheme: string): string {
   left: 50%;
   transform: translateX(-50%);
   padding: 3px 14px;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -218,6 +218,7 @@ function formatSubTheme(subTheme: string): string {
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
+  display: none;
 }
 
 .rating-badge {
@@ -283,6 +284,7 @@ function formatSubTheme(subTheme: string): string {
   color: #64748b;
   letter-spacing: 0.08em;
   text-align: center;
+  display: none;
 }
 
 .chips-container {
@@ -298,7 +300,7 @@ function formatSubTheme(subTheme: string): string {
   color: #cbd5e1;
   padding: 3px 8px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 30px;
   font-weight: 500;
   transition: all 0.2s ease;
 }

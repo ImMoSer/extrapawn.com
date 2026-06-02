@@ -22,10 +22,7 @@ export async function apiClient<T>(
   const url = `${BACKEND_API_URL}${endpoint}`
 
   const defaultHeaders: Record<string, string> = {}
-  if (
-    options.body !== undefined ||
-    (options.method && ['POST', 'PUT', 'PATCH'].includes(options.method.toUpperCase()))
-  ) {
+  if (options.body !== undefined) {
     defaultHeaders['Content-Type'] = 'application/json'
   }
 

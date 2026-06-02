@@ -24,9 +24,9 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
       </div>
 
       <div class="welcome-section">
-        <h2 class="welcome-title">{{ t('app.login.welcomeTitle') }}</h2>
+        <h2 class="welcome-title">{{ t('pages.login.welcomeTitle') }}</h2>
         <p class="welcome-text">
-          {{ t('app.login.welcomeText') }}
+          {{ t('pages.login.welcomeText') }}
         </p>
       </div>
 

@@ -45,7 +45,8 @@ Die JSON-Dateien (`en.json`, `de.json`, `ru.json`) sind in folgende Top-Level-Be
     "pricing": {},
     "bonus": {},
     "puzzle": {},
-    "recordsPage": {}
+    "recordsPage": {},
+    "login": {}
   },
   "features": {
     "coach": {},

@@ -592,7 +592,11 @@
         "playBlack": "Schwarz"
       }
     },
-    "recordsPage": {}
+    "recordsPage": {},
+    "login": {
+      "welcomeTitle": "Willkommen bei EXTRAPAWN",
+      "welcomeText": "Dein ultimatives Labor für Schachtraining und Tiefenanalyse. Melde dich über Lichess an, um alle Profi-Funktionen zu nutzen."
+    }
   },
   "features": {
     "coach": {

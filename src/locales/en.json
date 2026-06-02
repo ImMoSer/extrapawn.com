@@ -592,7 +592,11 @@
         "playBlack": "Black"
       }
     },
-    "recordsPage": {}
+    "recordsPage": {},
+    "login": {
+      "welcomeTitle": "Welcome to EXTRAPAWN",
+      "welcomeText": "Your ultimate laboratory for chess training and deep analysis. Log in via Lichess to access all professional features."
+    }
   },
   "features": {
     "coach": {
