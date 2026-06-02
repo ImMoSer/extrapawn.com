@@ -24,11 +24,11 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '../index'
 import { usePreferencesStore, type UserPreferencesDto } from '../model/preferences.store'
-import { useAutoplayStore } from '@/features/autoplay'
+import { useCrashtestStore } from '@/features/crashtest'
 
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
-const autoplayStore = useAutoplayStore()
+const crashtestStore = useCrashtestStore()
 const preferencesStore = usePreferencesStore()
 
 const { isAuthenticated } = storeToRefs(authStore)
@@ -228,20 +228,20 @@ const handleAuthAction = () => {
                 </div>
               </div>
 
-              <!-- Dev Autoplay Move Delay -->
-              <div v-if="autoplayStore.isMo3ep" class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.autoplayMoveDelay') }}</div>
+              <!-- Dev Crashtest Move Delay -->
+              <div v-if="crashtestStore.isMo3ep" class="settings-section-card">
+                <div class="section-label">{{ t('features.settings.crashtestDelay') }}</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.autoPlayDelayMs" :min="0" :max="2000" :step="100" />
-                  <span class="value-badge">{{ draftPreferences.delays.autoPlayDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.crashtestDelayMs" :min="0" :max="2000" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.delays.crashtestDelayMs }}ms</span>
                 </div>
               </div>
 
-              <!-- Dev Autoplay switch -->
-              <div v-if="autoplayStore.isMo3ep" class="settings-section-card dev-autoplay-card">
-                <div class="dev-autoplay-row">
-                  <span class="dev-autoplay-label">{{ t('features.settings.devAutoplay') }}</span>
-                  <n-switch v-model:value="draftPreferences.gameplay.global_autoplay" size="medium" />
+              <!-- Dev Crashtest switch -->
+              <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card">
+                <div class="dev-crashtest-row">
+                  <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
+                  <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
                 </div>
               </div>
             </n-collapse-item>
@@ -457,19 +457,19 @@ const handleAuthAction = () => {
   box-shadow: 0 0 12px rgba(217, 0, 76, 0.35);
 }
 
-/* Autoplay Row */
-.dev-autoplay-card {
+/* Crashtest Row */
+.dev-crashtest-card {
   background: rgba(217, 0, 76, 0.05);
   border: 1px dashed rgba(217, 0, 76, 0.25);
 }
 
-.dev-autoplay-row {
+.dev-crashtest-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.dev-autoplay-label {
+.dev-crashtest-label {
   font-size: 0.8rem;
   font-weight: 800;
   color: var(--neon-bordeaux, #d9004c);

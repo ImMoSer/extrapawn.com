@@ -9,7 +9,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { usePreferencesStore } from '@/features/settings'
 
-export const useAutoplayStore = defineStore('autoplay', () => {
+export const useCrashtestStore = defineStore('crashtest', () => {
   const authStore = useAuthStore()
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
@@ -23,13 +23,13 @@ export const useAutoplayStore = defineStore('autoplay', () => {
 
   const preferencesStore = usePreferencesStore()
 
-  // Use preferences store state for toggling autoplay
-  const isAutoplayEnabled = computed({
-    get: () => preferencesStore.preferences.gameplay.global_autoplay,
-    set: (val) => preferencesStore.updatePreferences({ gameplay: { global_autoplay: val } })
+  // Use preferences store state for toggling crashtest
+  const isCrashtestEnabled = computed({
+    get: () => preferencesStore.preferences.gameplay.global_crashtest,
+    set: (val) => preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } })
   })
 
-  const isAutoplayAnalyzing = ref(false)
+  const isCrashtestAnalyzing = ref(false)
   const lastPlayedOrAnalyzedFen = ref<string | null>(null)
 
   function getPromotionRole(char: string): ChessopsRole {
@@ -110,23 +110,23 @@ export const useAutoplayStore = defineStore('autoplay', () => {
     return allShapes
   }
 
-  // Trigger coach analysis and perform autoplay move
-  async function triggerAutoplay(fenToAnalyze: string) {
-    if (isAutoplayAnalyzing.value) return
-    isAutoplayAnalyzing.value = true
+  // Trigger coach analysis and perform crashtest move
+  async function triggerCrashtest(fenToAnalyze: string) {
+    if (isCrashtestAnalyzing.value) return
+    isCrashtestAnalyzing.value = true
 
     try {
-      logger.info(`[Autoplay] Starting Coach analysis for FEN: ${fenToAnalyze}`)
+      logger.info(`[Crashtest] Starting Coach analysis for FEN: ${fenToAnalyze}`)
       const explanation = await coachEngineManager.getExplanation(fenToAnalyze)
 
       // Check if state remains valid after async API request
       if (
         boardStore.fen !== fenToAnalyze ||
         gameStore.gamePhase !== 'PLAYING' ||
-        !isAutoplayEnabled.value
+        !isCrashtestEnabled.value
       ) {
-        logger.warn('[Autoplay] State or FEN changed during analysis. Aborting.')
-        isAutoplayAnalyzing.value = false
+        logger.warn('[Crashtest] State or FEN changed during analysis. Aborting.')
+        isCrashtestAnalyzing.value = false
         return
       }
 
@@ -143,30 +143,30 @@ export const useAutoplayStore = defineStore('autoplay', () => {
         boardStore.setCoachShapes([])
       }
 
-      // Wait autoplay delay from preferences before executing the move
-      const delay = preferencesStore.preferences.delays.autoPlayDelayMs
+      // Wait crashtest delay from preferences before executing the move
+      const delay = preferencesStore.preferences.delays.crashtestDelayMs
       await new Promise((resolve) => setTimeout(resolve, delay))
 
       // Check state again after delay
       if (
         boardStore.fen !== fenToAnalyze ||
         gameStore.gamePhase !== 'PLAYING' ||
-        !isAutoplayEnabled.value
+        !isCrashtestEnabled.value
       ) {
-        logger.warn('[Autoplay] State or FEN changed during wait delay. Aborting.')
-        isAutoplayAnalyzing.value = false
+        logger.warn('[Crashtest] State or FEN changed during wait delay. Aborting.')
+        isCrashtestAnalyzing.value = false
         return
       }
 
       // Get the best move from the coach
       const bestMoveUci = explanation?.engine_top_moves?.[0]?.uci
       if (!bestMoveUci || bestMoveUci.length < 4) {
-        logger.error('[Autoplay] No valid best move returned by Coach.')
-        isAutoplayAnalyzing.value = false
+        logger.error('[Crashtest] No valid best move returned by Coach.')
+        isCrashtestAnalyzing.value = false
         return
       }
 
-      logger.info(`[Autoplay] Autoplaying best move: ${bestMoveUci}`)
+      logger.info(`[Crashtest] Crashtesting best move: ${bestMoveUci}`)
       const orig = bestMoveUci.substring(0, 2) as Key
       const dest = bestMoveUci.substring(2, 4) as Key
       const promoChar = bestMoveUci.length === 5 ? bestMoveUci.charAt(4) : null
@@ -177,19 +177,19 @@ export const useAutoplayStore = defineStore('autoplay', () => {
           if (boardStore.promotionState) {
             const role = getPromotionRole(promoChar)
             boardStore.completePromotion(role)
-            logger.info(`[Autoplay] Auto-completed promotion to: ${role}`)
+            logger.info(`[Crashtest] Auto-completed promotion to: ${role}`)
           }
         }, 50)
       }
 
       // Release the analysis lock before executing the move
-      isAutoplayAnalyzing.value = false
+      isCrashtestAnalyzing.value = false
 
       // Make the move like a real user using gameStore.handleUserMove
       await gameStore.handleUserMove(orig, dest)
     } catch (e) {
-      logger.error('[Autoplay] Error during autoplay execution', e)
-      isAutoplayAnalyzing.value = false
+      logger.error('[Crashtest] Error during crashtest execution', e)
+      isCrashtestAnalyzing.value = false
     }
   }
 
@@ -200,12 +200,12 @@ export const useAutoplayStore = defineStore('autoplay', () => {
     if (isInitialized) return
     isInitialized = true
 
-    logger.info('[AutoplayStore] Initializing global autoplay watchers.')
+    logger.info('[CrashtestStore] Initializing global crashtest watchers.')
 
     watch(
-      [() => boardStore.fen, () => boardStore.turn, () => gameStore.gamePhase, isAutoplayEnabled],
-      ([newFen, newTurn, gamePhase, autoplayEnabled]) => {
-        if (!isMo3ep.value || !autoplayEnabled || gamePhase !== 'PLAYING') {
+      [() => boardStore.fen, () => boardStore.turn, () => gameStore.gamePhase, isCrashtestEnabled],
+      ([newFen, newTurn, gamePhase, crashtestEnabled]) => {
+        if (!isMo3ep.value || !crashtestEnabled || gamePhase !== 'PLAYING') {
           return
         }
 
@@ -220,16 +220,16 @@ export const useAutoplayStore = defineStore('autoplay', () => {
         }
 
         lastPlayedOrAnalyzedFen.value = newFen
-        triggerAutoplay(newFen)
+        triggerCrashtest(newFen)
       },
       { immediate: true }
     )
 
-    // Cleanup shapes when autoplay gets disabled or game finishes
+    // Cleanup shapes when crashtest gets disabled or game finishes
     watch(
-      [isAutoplayEnabled, () => gameStore.gamePhase],
-      ([autoplayEnabled, gamePhase]) => {
-        if (!autoplayEnabled || gamePhase !== 'PLAYING') {
+      [isCrashtestEnabled, () => gameStore.gamePhase],
+      ([crashtestEnabled, gamePhase]) => {
+        if (!crashtestEnabled || gamePhase !== 'PLAYING') {
           boardStore.setCoachShapes([])
         }
       }
@@ -238,7 +238,7 @@ export const useAutoplayStore = defineStore('autoplay', () => {
 
   return {
     isMo3ep,
-    isAutoplayEnabled,
+    isCrashtestEnabled,
     init,
   }
 })

@@ -3,7 +3,7 @@
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
-import { useAutoplayStore } from '@/features/autoplay'
+import { useCrashtestStore } from '@/features/crashtest'
 import { useTaskTodayStore } from '@/features/task-today'
 import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
@@ -17,7 +17,7 @@ const props = defineProps<{
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
-const autoplayStore = useAutoplayStore()
+const crashtestStore = useCrashtestStore()
 const analysisStore = useAnalysisStore()
 const taskTodayStore = useTaskTodayStore()
 const route = useRoute()
@@ -91,10 +91,10 @@ onUnmounted(() => {
           <slot name="top-info"></slot>
         </div>
 
-        <!-- Dev Autoplay Floating Switch -->
-        <div v-if="autoplayStore.isMo3ep && gameStore.gamePhase === 'PLAYING'" class="global-autoplay-overlay">
-          <span class="global-autoplay-label">Autoplay</span>
-          <n-switch v-model:value="autoplayStore.isAutoplayEnabled" size="small" />
+        <!-- Dev Crashtest Floating Switch -->
+        <div v-if="crashtestStore.isMo3ep && gameStore.gamePhase === 'PLAYING'" class="global-crashtest-overlay">
+          <span class="global-crashtest-label">Crashtest</span>
+          <n-switch v-model:value="crashtestStore.isCrashtestEnabled" size="small" />
         </div>
 
         <div class="board-section">
@@ -314,7 +314,7 @@ onUnmounted(() => {
   }
 }
 
-.global-autoplay-overlay {
+.global-crashtest-overlay {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -331,12 +331,12 @@ onUnmounted(() => {
   transition: all 0.2s ease;
 }
 
-.global-autoplay-overlay:hover {
+.global-crashtest-overlay:hover {
   border-color: var(--neon-bordeaux, #d9004c);
   box-shadow: 0 0 15px rgba(217, 0, 76, 0.25);
 }
 
-.global-autoplay-label {
+.global-crashtest-label {
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
@@ -28,7 +28,7 @@ export interface AudioPreferences {
 export interface GameplayPreferences {
   language: 'en' | 'de' | 'ru'
   botEngine: string
-  global_autoplay: boolean
+  global_crashtest: boolean
 }
 
 export interface DelayPreferences {
@@ -36,7 +36,7 @@ export interface DelayPreferences {
   botDelayMs: number
   nextPuzzleDelayMs: number
   restartDelayMs: number
-  autoPlayDelayMs: number
+  crashtestDelayMs: number
 }
 
 export interface UserPreferencesDto {
@@ -69,14 +69,14 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   gameplay: {
     language: 'en',
     botEngine: 'maia-2200',
-    global_autoplay: false,
+    global_crashtest: false,
   },
   delays: {
     initialBotDelayMs: 100,
     botDelayMs: 100,
     nextPuzzleDelayMs: 100,
     restartDelayMs: 100,
-    autoPlayDelayMs: 100,
+    crashtestDelayMs: 100,
   },
 }
 
@@ -98,7 +98,29 @@ function deepMerge<T extends object>(target: T, source: DeepPartial<T>): T {
 
 export const usePreferencesStore = defineStore('preferences', () => {
   const authStore = useAuthStore()
-  const preferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
+  const rawPreferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
+
+  const preferences = computed<UserPreferencesDto>({
+    get: () => {
+      if (rawPreferences.value.gameplay.global_crashtest) {
+        return {
+          ...rawPreferences.value,
+          delays: {
+            initialBotDelayMs: 50,
+            botDelayMs: 50,
+            nextPuzzleDelayMs: 50,
+            restartDelayMs: 50,
+            crashtestDelayMs: 50,
+          },
+        }
+      }
+      return rawPreferences.value
+    },
+    set: (val) => {
+      rawPreferences.value = val
+    },
+  })
+
   const isLoaded = ref(false)
 
   // Local-only preferences (not synced to backend)

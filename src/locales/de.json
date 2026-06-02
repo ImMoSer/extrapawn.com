@@ -747,9 +747,9 @@
       "selectBoard": "Schachbrett",
       "selectPieces": "Figuren",
       "language": "Sprache",
-      "autoplayMoveDelay": "Verzögerung für automatischen Zug",
+      "crashtestDelay": "Crashtest-Verzögerung",
       "botThinkingDelay": "Bot-Bedenkzeit",
-      "devAutoplay": "Entwickler-Autoplay",
+      "devCrashtest": "Entwickler-Crashtest",
       "gameplayBotDelays": "Gameplay- & Bot-Verzögerungen",
       "initialBotDelay": "Erste Bot-Verzögerung",
       "nextPuzzleDelay": "Verzögerung bis zum nächsten Puzzle",
@@ -764,7 +764,7 @@
       "board": "Brett-Design",
       "pieces": "Figuren-Stil"
     },
-    "autoplay": {},
+    "crashtest": {},
     "analysis": {
       "mateInShort": "M{value}",
       "move": "Zug",

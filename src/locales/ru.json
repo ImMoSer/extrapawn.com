@@ -747,9 +747,9 @@
       "selectBoard": "Доска",
       "selectPieces": "Фигуры",
       "language": "Язык",
-      "autoplayMoveDelay": "Задержка автохода",
+      "crashtestDelay": "Задержка краштеста",
       "botThinkingDelay": "Задержка бота",
-      "devAutoplay": "Автоплей разработчика",
+      "devCrashtest": "Краштест разработчика",
       "gameplayBotDelays": "Задержки геймплея и бота",
       "initialBotDelay": "Начальная задержка бота",
       "nextPuzzleDelay": "Задержка следующей задачи",
@@ -764,7 +764,7 @@
       "board": "Дизайн доски",
       "pieces": "Стиль фигур"
     },
-    "autoplay": {},
+    "crashtest": {},
     "analysis": {
       "mateInShort": "M{value}",
       "move": "Ход",

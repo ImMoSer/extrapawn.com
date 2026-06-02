@@ -14,10 +14,10 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
-import { useAutoplayStore } from '@/features/autoplay'
+import { useCrashtestStore } from '@/features/crashtest'
 
 const gameStore = useGameStore()
-const autoplayStore = useAutoplayStore()
+const crashtestStore = useCrashtestStore()
 const route = useRoute()
 const { t, locale } = useI18n()
 
@@ -97,7 +97,7 @@ onMounted(() => {
   mediaQuery.addEventListener('change', updateLandscape)
   updateLandscape() // Initial check
   window.addEventListener('beforeunload', beforeUnloadHandler)
-  autoplayStore.init()
+  crashtestStore.init()
 })
 
 onUnmounted(() => {

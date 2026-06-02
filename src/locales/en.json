@@ -747,9 +747,9 @@
       "selectBoard": "Board",
       "selectPieces": "Pieces",
       "language": "Language",
-      "autoplayMoveDelay": "Autoplay Move Delay",
+      "crashtestDelay": "Crashtest Delay",
       "botThinkingDelay": "Bot Thinking Delay",
-      "devAutoplay": "Developer Autoplay",
+      "devCrashtest": "Developer Crashtest",
       "gameplayBotDelays": "Gameplay & Bot Delays",
       "initialBotDelay": "Initial Bot Delay",
       "nextPuzzleDelay": "Next Puzzle Delay",
@@ -764,7 +764,7 @@
       "board": "Board Design",
       "pieces": "Pieces Style"
     },
-    "autoplay": {},
+    "crashtest": {},
     "analysis": {
       "mateInShort": "M{value}",
       "move": "Move",
