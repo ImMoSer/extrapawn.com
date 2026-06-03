@@ -4,17 +4,8 @@ import { changeLang } from '@/shared/config/i18n'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-    BookOutline,
-    ExtensionPuzzleOutline,
-    FlashOutline,
-    GridOutline,
-    HardwareChipOutline,
-    LogInOutline,
-    PersonOutline,
-    SkullOutline,
-    TrophyOutline,
-} from '@vicons/ionicons5'
+import { LogInOutline } from '@vicons/ionicons5'
+import { GAME_MODES } from '@/shared/config/gameModes.config'
 
 // Инициализируем хранилище, роутер и i18n
 const authStore = useAuthStore()
@@ -38,54 +29,14 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
-  {
-    path: '/theory-endings',
-    icon: BookOutline,
-    labelKey: 'shared.nav.theoryEndgames',
-    color: 'var(--neon-yellow)',
-  },
-  {
-    path: '/finish-him',
-    icon: SkullOutline,
-    labelKey: 'shared.nav.finishHim',
-    color: 'var(--neon-purple)',
-  },
-  {
-    path: '/practical-chess',
-    icon: GridOutline,
-    labelKey: 'shared.nav.practicalChess',
-    color: 'var(--neon-blue)',
-  },
-  {
-    path: '/tactics',
-    icon: ExtensionPuzzleOutline,
-    labelKey: 'shared.nav.tactics',
-    color: 'var(--neon-pink)',
-  },
-  {
-    path: '/task-today',
-    icon: FlashOutline,
-    labelKey: 'shared.nav.taskToday',
-    color: 'var(--neon-cyan)',
-  },
-  {
-    path: '/sparring',
-    icon: HardwareChipOutline,
-    labelKey: 'shared.nav.sparring',
-    color: 'var(--neon-lime)',
-  },
-  {
-    path: '/user-cabinet',
-    icon: PersonOutline,
-    labelKey: 'shared.nav.userCabinet',
-    color: 'var(--neon-orange)',
-  },
-  {
-    path: '/records',
-    icon: TrophyOutline,
-    labelKey: 'shared.nav.leaderboards',
-    color: 'var(--neon-bordeaux)',
-  },
+  GAME_MODES.theory_endings,
+  GAME_MODES.finish_him,
+  GAME_MODES.practical_chess,
+  GAME_MODES.tactics,
+  GAME_MODES.task_today,
+  GAME_MODES.sparring,
+  GAME_MODES.user_cabinet,
+  GAME_MODES.records,
 ]
 
 // Mobile detection logic

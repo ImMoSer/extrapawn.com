@@ -17,12 +17,13 @@ import {
   NSpace,
   NTag,
   NText,
-  NThing,
   NTooltip,
+  NIcon,
   useMessage,
 } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { GAME_MODES } from '@/shared/config/gameModes.config'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -179,12 +180,10 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
 
 const gameCosts = computed(() => {
   return [
-    { name: t('shared.nav.theoryEndgames'), icon: '📚', cost: 5 },
-    { name: t('shared.nav.practicalChess'), icon: '♟️', cost: 5 },
-    { name: t('shared.nav.finishHim'), icon: '🎯', cost: 10 },
-    { name: t('features.study.replyTraining.title', 'Reply Training'), icon: '🔁', cost: 25 },
-    { name: t('shared.nav.speedrun'), icon: '🏃', cost: 25 },
-    { name: t('pages.pricing.repertoireGenerator'), icon: '📖', cost: 50 },
+    { ...GAME_MODES.theory_endings, cost: 5 },
+    { ...GAME_MODES.practical_chess, cost: 5 },
+    { ...GAME_MODES.finish_him, cost: 5 },
+    { ...GAME_MODES.tactics, cost: 1 },
   ]
 })
 
@@ -309,10 +308,10 @@ const handleCheckout = async (tier: SubscriptionTier) => {
           </n-h2>
         </n-divider>
 
-        <n-alert type="info" :show-icon="false" style="margin-bottom: 8px">
+        <n-alert :show-icon="false" class="bonus-alert">
           <n-space justify="space-between" align="center">
-            <n-text>{{ t('pages.pricing.bonusInfo.alertText') }}</n-text>
-            <n-button type="primary" secondary size="small" @click="$router.push('/bonus')">
+            <n-text class="bonus-alert-text">{{ t('pages.pricing.bonusInfo.alertText') }}</n-text>
+            <n-button size="small" @click="$router.push('/bonus')" class="bonus-alert-btn">
               {{ t('pages.pricing.bonusInfo.alertButton') }}
             </n-button>
           </n-space>
@@ -320,52 +319,48 @@ const handleCheckout = async (tier: SubscriptionTier) => {
 
         <n-grid cols="1 600:2 900:3 1400:6" x-gap="16" y-gap="16">
           <n-gi v-for="tier in subscriptionTiers" :key="tier.name">
-            <n-card hoverable class="tier-card" @click="handleTierClick(tier)">
+            <n-card
+              hoverable
+              class="tier-card"
+              :class="{ 'active-tier': tier.isCurrent }"
+              @click="handleTierClick(tier)"
+              :style="{ borderTopColor: tier.color, borderTopWidth: '4px' }"
+            >
               <template #header>
-                <n-space vertical :size="0">
-                  <n-text strong>{{ tier.name }}</n-text>
-                  <n-text v-if="tier.role" depth="3" style="font-size: 0.75em; font-weight: normal">
-                    {{ tier.role }}
-                  </n-text>
-                </n-space>
-              </template>
-              <template #header-extra>
-                <img :src="tier.icon" :alt="tier.name" style="width: 32px; height: 32px" />
+                <div class="tier-card-header">
+                  <div class="tier-header-info">
+                    <span class="tier-card-name" :style="{ color: tier.color }">{{ tier.name }}</span>
+                    <span v-if="tier.role" class="tier-card-role">
+                      {{ tier.role }}
+                    </span>
+                  </div>
+                  <img :src="tier.icon" :alt="tier.name" class="tier-card-icon" />
+                </div>
               </template>
 
-              <n-thing>
-                <template #description>
-                  <n-tooltip v-if="tier.isLimitless" trigger="hover">
-                    <template #trigger>
-                      <n-text class="rainbow-text limitless-symbol"> ∞ </n-text>
-                    </template>
-                    {{ t('shared.app.limitless') }}
-                  </n-tooltip>
-                  <n-text v-else depth="3" style="font-size: 0.9em">
-                    {{ t('pages.pricing.tiers.pawn.description').split('{pawncoins}')[0] }}
-                    <n-text :style="{ color: tier.color, fontWeight: 'bold', fontSize: '1.2em' }">
-                      {{ tier.pawncoins }}
-                    </n-text>
-                    {{ t('pages.pricing.tiers.pawn.description').split('{pawncoins}')[1] }}
-                  </n-text>
-                </template>
-                <n-divider dashed style="margin: 5px 0" />
+              <div class="tier-card-body">
+                <div class="pawncoins-container" :style="{ '--tier-color': tier.color }">
+                  <div v-if="tier.isLimitless" class="limitless-wrapper">
+                    <span class="rainbow-text limitless-symbol">∞</span>
+                    <span class="limitless-label">{{ t('shared.app.limitless') }}</span>
+                  </div>
+                  <template v-else>
+                    <span class="pawncoins-val">{{ tier.pawncoins }}</span>
+                    <span class="pawncoins-lbl">PawnCoins / {{ t('shared.app.global', 'Tag').toLowerCase() }}</span>
+                  </template>
+                </div>
 
-                <div
-                  style="
-                    min-height: 48px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                  "
-                >
+                <n-divider dashed style="margin: 12px 0" />
+
+                <!-- Action Button or Status Badge -->
+                <div class="tier-action-container">
                   <n-button
                     v-if="tier.canBuy"
                     block
-                    type="primary"
                     @click.stop="initiateCheckout(tier)"
                     :loading="loadingTier === tier.id"
                     :disabled="loadingTier !== null"
+                    class="checkout-btn"
                   >
                     {{
                       tier.isUpgrade
@@ -375,7 +370,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                   </n-button>
                   <n-tooltip v-else-if="tier.isBlockedByCancel" trigger="hover">
                     <template #trigger>
-                      <n-button block disabled>
+                      <n-button block disabled class="checkout-btn disabled-btn">
                         {{ t('pages.pricing.upgrade.title') }}
                       </n-button>
                     </template>
@@ -386,24 +381,16 @@ const handleCheckout = async (tier: SubscriptionTier) => {
                       )
                     }}
                   </n-tooltip>
-                  <n-text
-                    v-else-if="tier.isCurrent"
-                    strong
-                    type="success"
-                    style="font-size: 1.1em; text-align: center"
-                  >
-                    Current Tier
-                  </n-text>
-                  <n-text
-                    v-else-if="!tier.isPurchasable"
-                    strong
-                    type="success"
-                    style="font-size: 1.1em; text-align: center"
-                  >
-                    {{ tier.price }}
-                  </n-text>
+                  <div v-else-if="tier.isCurrent" class="current-tier-badge">
+                    <n-tag type="success" size="medium" class="pulse-tag active-tag">
+                      {{ t('features.taskToday.completedStatus', 'Active') }}
+                    </n-tag>
+                  </div>
+                  <div v-else-if="!tier.isPurchasable" class="bonus-tier-badge">
+                    <span class="bonus-price-text">{{ tier.price }}</span>
+                  </div>
                 </div>
-              </n-thing>
+              </div>
             </n-card>
           </n-gi>
         </n-grid>
@@ -414,28 +401,25 @@ const handleCheckout = async (tier: SubscriptionTier) => {
           </n-h2>
         </n-divider>
 
-        <n-grid cols="1 500:2 800:4" x-gap="16" y-gap="16">
-          <n-gi v-for="game in gameCosts" :key="game.name">
-            <n-card hoverable class="game-cost-card">
-              <template #header>
-                <n-space align="center">
-                  <n-text style="font-size: 1.5em">{{ game.icon }}</n-text>
-                  <n-text strong style="font-size: 0.9em">{{ game.name }}</n-text>
-                </n-space>
-              </template>
-              <n-thing>
-                <template #description>
-                  <n-space justify="space-between" align="center">
-                    <n-text depth="3">{{ t('pages.pricing.costs.pawncoinLabel') }}</n-text>
-                    <n-text strong type="warning" style="font-size: 1.4em">
-                      {{ game.cost }}
-                    </n-text>
-                  </n-space>
-                </template>
-              </n-thing>
-            </n-card>
-          </n-gi>
-        </n-grid>
+        <div class="pricing-game-costs-list">
+          <div
+            v-for="game in gameCosts"
+            :key="game.key"
+            class="cost-item"
+            :style="{ borderLeftColor: game.color }"
+          >
+            <div class="cost-item-left">
+              <n-icon size="26" :color="game.color" class="cost-item-icon">
+                <component :is="game.icon" />
+              </n-icon>
+              <span class="cost-item-name">{{ t(game.labelKey) }}</span>
+            </div>
+            <div class="cost-item-right">
+              <span class="cost-coin-value" :style="{ color: game.color }">{{ game.cost }}</span>
+              <span class="cost-coin-label">PC</span>
+            </div>
+          </div>
+        </div>
       </n-space>
     </n-layout-content>
 
@@ -613,43 +597,316 @@ const handleCheckout = async (tier: SubscriptionTier) => {
   text-transform: uppercase;
 }
 
+.bonus-alert {
+  background: linear-gradient(135deg, rgba(9, 9, 11, 0.65), rgba(18, 18, 22, 0.65)) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 12px 20px !important;
+  margin-bottom: 12px;
+}
+
+.bonus-alert-text {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.bonus-alert-btn {
+  --n-border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  --n-border-hover: 1px solid #ffd700 !important;
+  --n-border-pressed: 1px solid #ffd700 !important;
+  --n-border-focus: 1px solid rgba(255, 215, 0, 0.25) !important;
+  --n-ripple-color: #ffd700 !important;
+
+  background: linear-gradient(135deg, #09090b, #121216) !important;
+  color: var(--neon-gold) !important;
+  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  border-radius: 6px !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+.bonus-alert-btn:hover {
+  background: linear-gradient(135deg, #121217, #1b1b22) !important;
+  color: #ffffff !important;
+  border-color: var(--neon-gold) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3) !important;
+}
+
+.bonus-alert-btn:active {
+  transform: translateY(0);
+}
+
+.pricing-page-layout {
+  --neon-gold: #ffd700;
+}
+
 .tier-card {
   height: 100%;
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--panel-border-radius);
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 16px !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 .tier-card:hover {
-  border-color: var(--neon-cyan);
-  background-color: var(--glass-bg-hover);
-  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
 }
 
-.clickable-tier {
-  cursor: pointer;
+.tier-card.active-tier {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15) !important;
+  border-color: rgba(0, 229, 255, 0.2) !important;
 }
 
-.highlight-tier {
-  border: 1px solid var(--neon-cyan) !important;
-  box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+.tier-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
 }
 
-.game-cost-card {
+.tier-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tier-card-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.tier-card-role {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: var(--text-color-3);
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.tier-card-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.1));
+}
+
+.tier-card-body {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--panel-border-radius);
-  transition: all 0.3s ease;
 }
 
-.game-cost-card:hover {
-  border-color: var(--neon-cyan);
-  background-color: var(--glass-bg-hover);
+.pawncoins-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  margin: 12px 0;
+}
+
+.limitless-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.limitless-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-color-3);
+  margin-top: -5px;
+}
+
+.pawncoins-val {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--tier-color);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.08);
+  font-family: 'Fira Code', monospace;
+  line-height: 1;
+}
+
+.pawncoins-lbl {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-color-3);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.tier-action-container {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.checkout-btn {
+  --n-border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  --n-border-hover: 1px solid #ffd700 !important;
+  --n-border-pressed: 1px solid #ffd700 !important;
+  --n-border-focus: 1px solid rgba(255, 215, 0, 0.25) !important;
+  --n-ripple-color: #ffd700 !important;
+
+  background: linear-gradient(135deg, #09090b, #121216) !important;
+  color: var(--neon-gold) !important;
+  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.5px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.checkout-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #121217, #1b1b22) !important;
+  color: #ffffff !important;
+  border-color: var(--neon-gold) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.35) !important;
+}
+
+.checkout-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.checkout-btn:disabled,
+.checkout-btn.disabled-btn {
+  --n-border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  --n-border-hover: 1px solid rgba(255, 255, 255, 0.04) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.current-tier-badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.active-tag {
+  font-weight: 900 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase;
+  animation: pulse-opacity 1.5s infinite ease-in-out;
+}
+
+.bonus-tier-badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  font-weight: 800;
+}
+
+.bonus-price-text {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--neon-lime);
+}
+
+/* Premium game costs list styles */
+.pricing-game-costs-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .pricing-game-costs-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.cost-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.cost-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cost-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.05));
+  transition: transform 0.3s ease;
+}
+
+.cost-item:hover .cost-item-icon {
+  transform: scale(1.15);
+}
+
+.cost-item-name {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #eee;
+  letter-spacing: 0.5px;
+}
+
+.cost-item-right {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.cost-coin-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-family: 'Fira Code', monospace;
+}
+
+.cost-coin-label {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--text-color-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 @media (max-width: 768px) {
@@ -690,5 +947,11 @@ const handleCheckout = async (tier: SubscriptionTier) => {
   to {
     background-position: 200% center;
   }
+}
+
+@keyframes pulse-opacity {
+  0% { opacity: 0.65; }
+  50% { opacity: 1; }
+  100% { opacity: 0.65; }
 }
 </style>
