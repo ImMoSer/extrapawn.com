@@ -46,6 +46,8 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   // Demoplay status
   const isDemoplayAnalyzing = ref(false)
   const lastPlayedOrAnalyzedFen = ref<string | null>(null)
+  const demoplayCount = ref(1)
+  const hasJustReset = ref(true)
 
   const isMo3ep = computed(() => {
     const profile = authStore.userProfile
@@ -437,6 +439,8 @@ export const useDemoplayStore = defineStore('demoplay', () => {
     isMo3ep,
     isDemoplayEnabled,
     isInitialDelayActive,
+    demoplayCount,
+    hasJustReset,
     init,
   }
 })

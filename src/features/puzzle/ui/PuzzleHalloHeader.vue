@@ -2,14 +2,16 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePuzzleStore } from '../model/puzzle.store';
-
+import { useDemoplayStore } from '@/features/demoplay';
+ 
 const props = defineProps<{
   submode: string
 }>()
-
+ 
 const puzzleStore = usePuzzleStore()
+const demoplayStore = useDemoplayStore()
 const { t } = useI18n()
-
+ 
 const puzzle = computed(() => puzzleStore.activePuzzle)
 
 // Map submode to correct shared.gameModes translation key (camelCase)
@@ -113,96 +115,97 @@ function formatSubTheme(subTheme: string): string {
 
       <!-- Top Title Tag -->
       <div class="card-header-badge" :style="{ background: puzzleMeta.gradient }">
-        {{ puzzleMeta.label }}
+        {{ puzzleMeta.label }}<template v-if="demoplayStore.isDemoplayEnabled"> ({{ demoplayStore.demoplayCount }}/100)</template>
       </div>
-
-      <!-- Content Grid -->
-      <div class="card-body">
-        <div class="meta-row">
-          <!-- Rating badge -->
-          <span v-if="puzzle.rating" class="rating-badge">
-            <span class="star-icon">⭐</span>
-            <span class="rating-label">{{ t('features.puzzle.header.rating', 'Rating') }}:</span>
-            <span class="rating-num">{{ puzzle.rating }}</span>
-          </span>
-
-          <!-- Subcategory / Style -->
-          <span v-if="puzzle.sub_category" class="style-badge">
-            <span class="pawn-icon">♟️</span>
-            {{ formatSubTheme(puzzle.sub_category) }}
-          </span>
-        </div>
-
-        <!-- Tactical Motifs / Themes List -->
-        <div v-if="categoriesList.length > 0" class="motifs-section">
-          <div class="motifs-label">{{ t('features.puzzle.header.motifs', 'Tactical Motifs') }}</div>
-          <div class="chips-container">
-            <span
-              v-for="cat in categoriesList"
-              :key="cat"
-              class="theme-chip"
-            >
-              {{ formatThemeName(cat) }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Default Fallback Header Title -->
-    <div v-else class="default-title">
-      {{ puzzleMeta.label }}
-    </div>
-  </div>
-</template>
-
-<style scoped>
-.hallo-header-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-/* Large Modal-Like Header Card */
-.active-puzzle-card {
-  position: relative;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(23, 28, 48, 0.95) 0%, rgba(15, 18, 36, 0.98) 100%);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 24px 12px 16px 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5),
-              0 0 12px var(--glow-color),
-              inset 0 0 15px rgba(255, 255, 255, 0.02);
-  margin-top: 10px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.card-glow-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-}
-
-/* Top Floating Tag */
-.card-header-badge {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 3px 14px;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #ffffff;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
+ 
+       <!-- Content Grid -->
+       <div class="card-body">
+         <div class="meta-row">
+           <!-- Rating badge -->
+           <span v-if="puzzle.rating" class="rating-badge">
+             <span class="star-icon">⭐</span>
+             <span class="rating-label">{{ t('features.puzzle.header.rating', 'Rating') }}:</span>
+             <span class="rating-num">{{ puzzle.rating }}</span>
+           </span>
+ 
+           <!-- Subcategory / Style -->
+           <span v-if="puzzle.sub_category" class="style-badge">
+             <span class="pawn-icon">♟️</span>
+             {{ formatSubTheme(puzzle.sub_category) }}
+           </span>
+         </div>
+ 
+         <!-- Tactical Motifs / Themes List -->
+         <div v-if="categoriesList.length > 0" class="motifs-section">
+           <div class="motifs-label">{{ t('features.puzzle.header.motifs', 'Tactical Motifs') }}</div>
+           <div class="chips-container">
+             <span
+               v-for="cat in categoriesList"
+               :key="cat"
+               class="theme-chip"
+             >
+               {{ formatThemeName(cat) }}
+             </span>
+           </div>
+         </div>
+       </div>
+     </div>
+ 
+     <!-- Default Fallback Header Title -->
+     <div v-else class="default-title">
+       {{ puzzleMeta.label }}
+     </div>
+   </div>
+ </template>
+ 
+ <style scoped>
+ .hallo-header-container {
+   display: flex;
+   flex-direction: column;
+   width: 100%;
+ }
+ 
+ /* Large Modal-Like Header Card */
+ .active-puzzle-card {
+   position: relative;
+   box-sizing: border-box;
+   background: linear-gradient(135deg, rgba(23, 28, 48, 0.95) 0%, rgba(15, 18, 36, 0.98) 100%);
+   border: 1px solid var(--border-color);
+   border-radius: 10px;
+   padding: 24px 12px 16px 12px;
+   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5),
+               0 0 12px var(--glow-color),
+               inset 0 0 15px rgba(255, 255, 255, 0.02);
+   margin-top: 10px;
+   overflow: hidden;
+   transition: all 0.3s ease;
+ }
+ 
+ .card-glow-overlay {
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   height: 4px;
+   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+ }
+ 
+ /* Top Floating Tag */
+ .card-header-badge {
+   position: absolute;
+   top: 0;
+   left: 50%;
+   transform: translateX(-50%);
+   padding: 3px 14px;
+   font-size: 15px;
+   font-weight: 800;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: #ffffff;
+   border-radius: 0 0 8px 8px;
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+   white-space: nowrap;
+ }
 
 .card-body {
   display: flex;

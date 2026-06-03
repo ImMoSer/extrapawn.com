@@ -18,6 +18,7 @@ import {
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
 import { usePuzzleStore, type PuzzleSubmode, PuzzleHalloHeader } from '@/features/puzzle'
+import { useDemoplayStore } from '@/features/demoplay'
 
 const props = defineProps<{
   submode: PuzzleSubmode
@@ -114,11 +115,14 @@ const themeOptions = computed(() => {
 })
 
 const puzzleStore = usePuzzleStore()
+const demoplayStore = useDemoplayStore()
 const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
   set: (newDiff) => {
+    demoplayStore.demoplayCount = 1
+    demoplayStore.hasJustReset = true
     puzzleStore.activeParams.difficulty = newDiff
     if (isDiscoveryModeActive.value) {
       puzzleStore.startDiscovery(props.submode)
@@ -131,6 +135,8 @@ const selectedDifficulty = computed({
 const activeThemeValue = computed({
   get: () => puzzleStore.isDiscoveryMode ? '' : (puzzleStore.activeParams.category || ''),
   set: (val) => {
+    demoplayStore.demoplayCount = 1
+    demoplayStore.hasJustReset = true
     puzzleStore.isDiscoveryMode = false
     puzzleStore.discoveryQueue = []
     puzzleStore.activeParams.category = val
@@ -138,6 +144,8 @@ const activeThemeValue = computed({
 })
 
 function toggleDiscovery() {
+  demoplayStore.demoplayCount = 1
+  demoplayStore.hasJustReset = true
   if (isDiscoveryModeActive.value) {
     puzzleStore.isDiscoveryMode = false
     puzzleStore.discoveryQueue = []

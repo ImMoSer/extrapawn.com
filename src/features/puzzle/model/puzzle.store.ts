@@ -19,6 +19,7 @@ import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
 import { PuzzleStrategy } from './PuzzleStrategy'
+import { useDemoplayStore } from '@/features/demoplay'
 
 const t = i18n.global.t
 
@@ -100,6 +101,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     // Clear stale puzzle if the submode changed
     if (activePuzzle.value && activePuzzle.value.puzzle_type !== submode) {
       activePuzzle.value = null
+      const demoplayStore = useDemoplayStore()
+      demoplayStore.demoplayCount = 1
+      demoplayStore.hasJustReset = true
     }
     activeSubmode.value = submode
     soundService.playSound('app_game_entry')
@@ -290,6 +294,28 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       throw new Error(`[PuzzleStore] Invalid submode requested for puzzle loading: "${type}". Fail-Fast!`)
     }
     activeSubmode.value = type as PuzzleSubmode
+
+    const demoplayStore = useDemoplayStore()
+    if (demoplayStore.isDemoplayEnabled) {
+      if (demoplayStore.hasJustReset) {
+        demoplayStore.hasJustReset = false
+      } else {
+        if (demoplayStore.demoplayCount >= 100) {
+          demoplayStore.isDemoplayEnabled = false
+          uiStore.showConfirmation(
+            'Demo Play Complete',
+            'Thank you for watching! I look forward to seeing you in training.',
+            {
+              confirmText: 'OK',
+              showCancel: false,
+              persistent: true
+            }
+          )
+          return
+        }
+        demoplayStore.demoplayCount++
+      }
+    }
 
     if (authStore.isDailyLimitExceeded()) {
       const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
