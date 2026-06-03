@@ -48,6 +48,7 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   const lastPlayedOrAnalyzedFen = ref<string | null>(null)
   const demoplayCount = ref(1)
   const hasJustReset = ref(true)
+  const initialMateMoves = ref<number | null>(null)
 
   const isMo3ep = computed(() => {
     const profile = authStore.userProfile
@@ -196,9 +197,26 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       let delay = prefetchedExplanation ? 0 : preferencesStore.preferences.delays.demoPlayMoveMs
       const topMove = explanation?.engine_top_moves?.[0]
       if (!prefetchedExplanation && topMove && topMove.mate !== null) {
-        const mValue = Math.abs(topMove.mate)
-        delay = mValue * preferencesStore.preferences.delays.demopMateMultiplierMs
-        logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected. Dynamic delay scaled to ${delay}ms.`)
+        const n = Math.abs(topMove.mate)
+        if (initialMateMoves.value === null) {
+          initialMateMoves.value = n
+        }
+        const PM = preferencesStore.preferences.delays.demoPlayMoveMs
+        const MM = preferencesStore.preferences.delays.demopMateMultiplierMs
+        const N = initialMateMoves.value
+
+        if (N > 0) {
+          const BZ = (PM - MM) / N
+          const calculatedDelay = MM + (n - 1) * BZ
+          const minDelay = Math.min(PM, MM)
+          const maxDelay = Math.max(PM, MM)
+          delay = Math.max(minDelay, Math.min(maxDelay, calculatedDelay))
+        } else {
+          delay = MM
+        }
+        logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected (initial N=${N}). Dynamic delay scaled to ${delay}ms.`)
+      } else if (topMove && topMove.mate === null) {
+        initialMateMoves.value = null
       }
 
       if (delay > 0) {
@@ -295,6 +313,7 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       // Start initial delay!
       lastDelayedPuzzleId.value = newPuzzle.puzzle_id
       lastPlayedOrAnalyzedFen.value = null // Reset last played FEN for the new puzzle!
+      initialMateMoves.value = null // Reset initial mate moves for the new puzzle!
       isInitialDelayActive.value = true
 
       logger.info(`[Demoplay] New puzzle ${newPuzzle.puzzle_id} loaded on board. Starting user thinking delay of ${USER_THINKING_TIME.value}ms.`)
@@ -424,6 +443,7 @@ export const useDemoplayStore = defineStore('demoplay', () => {
             initialDelayTimer.value = null
           }
           isInitialDelayActive.value = false
+          initialMateMoves.value = null
         }
         if (!demoplayEnabled) {
           if (colorGuessTimer) {
