@@ -85,6 +85,11 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const isWaitingForColorSelection = ref(false)
   const currentUserColor = ref<ChessgroundColor>('white')
 
+  const correctColor = computed<'white' | 'black'>(() => {
+    if (!activePuzzle.value) return 'white'
+    return determineHumanColor(activePuzzle.value)
+  })
+
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
 
@@ -462,6 +467,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     initialize,
     loadNewPuzzle,
     guessColor,
+    correctColor,
     handleRestart,
     handleExit,
     reset,

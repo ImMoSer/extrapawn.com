@@ -358,6 +358,7 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   )
 
   let isInitialized = false
+  let colorGuessTimer: number | null = null
 
   function init() {
     if (isInitialized) return
@@ -386,6 +387,30 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       { immediate: true }
     )
 
+    // Automatisches Raten der Farbe bei aktivem Demoplay nach der eingestellten Verzögerung
+    watch(
+      [() => puzzleStore.isWaitingForColorGuess, isDemoplayEnabled],
+      ([isWaiting, demoplayEnabled]) => {
+        if (colorGuessTimer) {
+          clearTimeout(colorGuessTimer)
+          colorGuessTimer = null
+        }
+
+        if (isWaiting && demoplayEnabled && isMo3ep.value) {
+          const delay = USER_THINKING_TIME.value
+          logger.info(`[Demoplay] Puzzle is waiting for color guess. Autoselecting correct side in ${delay}ms.`)
+          colorGuessTimer = window.setTimeout(() => {
+            if (puzzleStore.isWaitingForColorGuess && isDemoplayEnabled.value && isMo3ep.value) {
+              const correctColor = puzzleStore.correctColor
+              logger.info(`[Demoplay] Autoselected color guess: ${correctColor}`)
+              puzzleStore.guessColor(correctColor)
+            }
+          }, delay)
+        }
+      },
+      { immediate: true }
+    )
+
     // Cleanup shapes and timers when demoplay gets disabled or game finishes
     watch(
       [isDemoplayEnabled, () => gameStore.gamePhase],
@@ -397,6 +422,12 @@ export const useDemoplayStore = defineStore('demoplay', () => {
             initialDelayTimer.value = null
           }
           isInitialDelayActive.value = false
+        }
+        if (!demoplayEnabled) {
+          if (colorGuessTimer) {
+            clearTimeout(colorGuessTimer)
+            colorGuessTimer = null
+          }
         }
       }
     )

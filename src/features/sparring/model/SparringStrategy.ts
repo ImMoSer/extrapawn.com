@@ -1,5 +1,6 @@
 import type { IGameplayStrategy } from '@/entities/game'
-import { enginePlayService } from '@/entities/game'
+import { enginePlayService, useBoardStore, useGameStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
 import { theoryRepository } from '@/entities/opening'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
@@ -15,6 +16,7 @@ export class SparringStrategy implements IGameplayStrategy {
 
   private readonly ENGINE_ID: import('@/shared/types/api.types').EngineId = 'maia-2200'
   private isBookExhausted = false
+  private restartTimeout: number | null = null
 
   onGameStart() {
     logger.info('[SparringStrategy] Game started')
@@ -22,6 +24,10 @@ export class SparringStrategy implements IGameplayStrategy {
 
   onDestroy() {
     logger.info('[SparringStrategy] Strategy destroyed')
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout)
+      this.restartTimeout = null
+    }
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
@@ -109,6 +115,37 @@ export class SparringStrategy implements IGameplayStrategy {
 
   onGameOver(status: import('@/entities/game').GameStatusInfo) {
     logger.info('[SparringStrategy] Game over:', status)
+
+    const preferencesStore = usePreferencesStore()
+    const isCrashtest = preferencesStore.preferences.gameplay.global_crashtest
+    const isDemoplay = preferencesStore.isDemoplayEnabled
+    const authStore = useAuthStore()
+    const profile = authStore.userProfile
+    const isMo3ep = profile && (profile.id === 'mo3ep' || profile.username === 'MO3EP')
+
+    if ((isCrashtest || isDemoplay) && isMo3ep) {
+      const delay = isCrashtest
+        ? preferencesStore.preferences.delays.crashtestDelayMs
+        : preferencesStore.preferences.delays.demoStayBeforNextMs
+
+      logger.info(`[SparringStrategy] Auto-restart triggered (isCrashtest=${isCrashtest}, isDemoplay=${isDemoplay}). Restarting in ${delay}ms.`)
+
+      if (this.restartTimeout) {
+        clearTimeout(this.restartTimeout)
+      }
+
+      this.restartTimeout = window.setTimeout(() => {
+        const boardStore = useBoardStore()
+        const gameStore = useGameStore()
+        const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        gameStore.startWithStrategy(
+          initialFen,
+          new SparringStrategy(),
+          boardStore.orientation,
+          false
+        )
+      }, delay)
+    }
   }
 
   checkWinCondition(status: import('@/entities/game').GameStatusInfo): boolean {

@@ -73,6 +73,7 @@ class TheoryRepository {
   ): Promise<MozerBookResponse | null> {
     const cleanFen = this.toCleanFen(fen)
     const cacheSource = 'mozerBook'
+    void options
 
     this.latestMozerFenRequest = cleanFen
 
@@ -86,15 +87,6 @@ class TheoryRepository {
         if (cached) {
           this.activeMozerRequests.delete(cleanFen)
           return cached
-        }
-
-        if (!options.skipDebounce) {
-          // Debounce network requests by 350ms
-          await new Promise((resolve) => setTimeout(resolve, 350))
-          if (this.latestMozerFenRequest !== cleanFen) {
-            this.activeMozerRequests.delete(cleanFen)
-            return null
-          }
         }
 
         const data = await mozerBookService.fetchStats(cleanFen)
