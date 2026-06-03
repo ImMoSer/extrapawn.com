@@ -1,6 +1,7 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { usePuzzleStore } from '@/features/puzzle'
+import { useTaskTodayStore } from '@/features/task-today'
 import { usePreferencesStore } from '@/features/settings'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
@@ -17,10 +18,18 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   const gameStore = useGameStore()
   const preferencesStore = usePreferencesStore()
   const puzzleStore = usePuzzleStore()
+  const taskTodayStore = useTaskTodayStore()
+
+  const activePuzzle = computed(() => {
+    if (taskTodayStore.isPlaying && taskTodayStore.currentPuzzle) {
+      return taskTodayStore.currentPuzzle
+    }
+    return puzzleStore.activePuzzle
+  })
 
   // Configurable delays for the first demo move in the new position
-  const USER_THINKING_TIME = 7500
-  const COACH_VISUALIZE_TIME = 2500
+  const USER_THINKING_TIME = computed(() => preferencesStore.preferences.delays.demoThinkingBeforVisualizeMs)
+  const COACH_VISUALIZE_TIME = computed(() => preferencesStore.preferences.delays.demoFirstVisualizeMs)
 
   // Link isDemoplayEnabled directly to preferencesStore to maintain a single source of truth
   const isDemoplayEnabled = computed({
@@ -182,11 +191,11 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       }
 
       // Calculate move delay dynamically (skip if we already visualized during prefetched delay)
-      let delay = prefetchedExplanation ? 0 : 1250
+      let delay = prefetchedExplanation ? 0 : preferencesStore.preferences.delays.demoPlayMoveMs
       const topMove = explanation?.engine_top_moves?.[0]
       if (!prefetchedExplanation && topMove && topMove.mate !== null) {
         const mValue = Math.abs(topMove.mate)
-        delay = mValue * 100
+        delay = mValue * preferencesStore.preferences.delays.demopMateMultiplierMs
         logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected. Dynamic delay scaled to ${delay}ms.`)
       }
 
@@ -252,72 +261,99 @@ export const useDemoplayStore = defineStore('demoplay', () => {
     }
   }
 
-  // Trigger initial delay when active puzzle changes
-  watch(
-    () => puzzleStore.activePuzzle,
-    (newPuzzle) => {
-      if (isDemoplayEnabled.value && newPuzzle && !isCrashtestEnabled.value) {
-        isInitialDelayActive.value = true
-        logger.info(`[Demoplay] New puzzle loaded. Starting user thinking delay of ${USER_THINKING_TIME}ms.`)
+  const lastDelayedPuzzleId = ref<string | null>(null)
 
-        if (initialDelayTimer.value) {
-          clearTimeout(initialDelayTimer.value)
+  function cleanFen(fen: string): string {
+    return fen.split(' ').slice(0, 4).join(' ')
+  }
+
+  // Trigger initial delay when active puzzle is loaded on the board
+  watch(
+    [activePuzzle, () => boardStore.fen, () => gameStore.gamePhase],
+    ([newPuzzle, currentFen, gamePhase]) => {
+      if (gamePhase !== 'PLAYING') {
+        lastDelayedPuzzleId.value = null
+        return
+      }
+
+      if (!isDemoplayEnabled.value || !newPuzzle || isCrashtestEnabled.value) {
+        return
+      }
+
+      // Check if this puzzle's position has actually been loaded on the board yet
+      if (cleanFen(currentFen) !== cleanFen(newPuzzle.initial_fen)) {
+        return
+      }
+
+      // Check if we already started the initial delay for this puzzle
+      if (lastDelayedPuzzleId.value === newPuzzle.puzzle_id) {
+        return
+      }
+
+      // Start initial delay!
+      lastDelayedPuzzleId.value = newPuzzle.puzzle_id
+      lastPlayedOrAnalyzedFen.value = null // Reset last played FEN for the new puzzle!
+      isInitialDelayActive.value = true
+
+      logger.info(`[Demoplay] New puzzle ${newPuzzle.puzzle_id} loaded on board. Starting user thinking delay of ${USER_THINKING_TIME.value}ms.`)
+
+      if (initialDelayTimer.value) {
+        clearTimeout(initialDelayTimer.value)
+        initialDelayTimer.value = null
+      }
+
+      initialDelayTimer.value = window.setTimeout(async () => {
+        // Verify demoplay is still active before proceeding to Phase 2 (visualization)
+        if (!isDemoplayEnabled.value || gameStore.gamePhase !== 'PLAYING' || isCrashtestEnabled.value) {
+          isInitialDelayActive.value = false
           initialDelayTimer.value = null
+          return
         }
 
-        initialDelayTimer.value = window.setTimeout(async () => {
-          // Verify demoplay is still active before proceeding to Phase 2 (visualization)
-          if (!isDemoplayEnabled.value || gameStore.gamePhase !== 'PLAYING' || isCrashtestEnabled.value) {
-            isInitialDelayActive.value = false
-            initialDelayTimer.value = null
-            return
-          }
+        logger.info(`[Demoplay] User thinking delay ended. Fetching and showing coach visualizations for ${COACH_VISUALIZE_TIME.value}ms.`)
 
-          logger.info(`[Demoplay] User thinking delay ended. Fetching and showing coach visualizations for ${COACH_VISUALIZE_TIME}ms.`)
+        const fenToAnalyze = boardStore.fen
+        let explanation: CoachExplanation | null = null
 
-          const fenToAnalyze = boardStore.fen
-          let explanation: CoachExplanation | null = null
+        if (boardStore.turn === boardStore.orientation) {
+          try {
+            explanation = await coachEngineManager.getExplanation(fenToAnalyze)
 
-          if (boardStore.turn === boardStore.orientation) {
-            try {
-              explanation = await coachEngineManager.getExplanation(fenToAnalyze)
-
-              // Draw the visualizations on the board
-              if (explanation?.visual_commands) {
-                const commands = Object.values(explanation.visual_commands).flat().join(';')
-                if (commands) {
-                  const shapes = parseVisualCommands(commands)
-                  boardStore.setCoachShapes(shapes)
-                } else {
-                  boardStore.setCoachShapes([])
-                }
+            // Draw the visualizations on the board
+            if (explanation?.visual_commands) {
+              const commands = Object.values(explanation.visual_commands).flat().join(';')
+              if (commands) {
+                const shapes = parseVisualCommands(commands)
+                boardStore.setCoachShapes(shapes)
               } else {
                 boardStore.setCoachShapes([])
               }
-            } catch (err) {
-              logger.error('[Demoplay] Error fetching explanation during initial delay:', err)
+            } else {
+              boardStore.setCoachShapes([])
             }
+          } catch (err) {
+            logger.error('[Demoplay] Error fetching explanation during initial delay:', err)
           }
+        }
 
-          // Start the visualization phase timer
-          initialDelayTimer.value = window.setTimeout(async () => {
-            isInitialDelayActive.value = false
-            initialDelayTimer.value = null
-            logger.info('[Demoplay] Initial delay ended. Proceeding with gameplay.')
+        // Start the visualization phase timer
+        initialDelayTimer.value = window.setTimeout(async () => {
+          isInitialDelayActive.value = false
+          initialDelayTimer.value = null
+          logger.info('[Demoplay] Initial delay ended. Proceeding with gameplay.')
 
-            if (
-              isDemoplayEnabled.value &&
-              gameStore.gamePhase === 'PLAYING' &&
-              !isCrashtestEnabled.value &&
-              boardStore.turn === boardStore.orientation &&
-              boardStore.fen !== lastPlayedOrAnalyzedFen.value
-            ) {
-              lastPlayedOrAnalyzedFen.value = boardStore.fen
-              await triggerDemoplay(boardStore.fen, explanation)
-            }
-          }, COACH_VISUALIZE_TIME)
-        }, USER_THINKING_TIME)
-      }
+          if (
+            isDemoplayEnabled.value &&
+            gameStore.gamePhase === 'PLAYING' &&
+            !isCrashtestEnabled.value &&
+            boardStore.turn === boardStore.orientation &&
+            boardStore.fen !== lastPlayedOrAnalyzedFen.value
+          ) {
+            lastPlayedOrAnalyzedFen.value = boardStore.fen
+            await triggerDemoplay(boardStore.fen, explanation)
+          }
+        }, COACH_VISUALIZE_TIME.value)
+      }, USER_THINKING_TIME.value)
     }
   )
 

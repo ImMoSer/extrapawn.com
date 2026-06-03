@@ -149,6 +149,15 @@ export const useGameStore = defineStore('game', () => {
         await new Promise((resolve) => setTimeout(resolve, remainingDelay))
       }
 
+      // Ensure the previous move's animation is fully completed before showing the bot's response
+      const elapsedSinceMove = Date.now() - boardStore.lastMoveTimestamp
+      const animationDuration = boardStore.animationDurationMs
+      if (elapsedSinceMove < animationDuration) {
+        const remainingAnimationDelay = animationDuration - elapsedSinceMove
+        logger.info(`[GameStore] Delaying bot move by ${remainingAnimationDelay}ms to let previous move animation finish.`)
+        await new Promise((resolve) => setTimeout(resolve, remainingAnimationDelay))
+      }
+
       // Race condition protection
       if (boardStore.fen !== fenAtRequest) {
         logger.warn('[GameStore] Bot move discarded due to position change (race condition protected).')

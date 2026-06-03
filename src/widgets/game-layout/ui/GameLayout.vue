@@ -3,12 +3,9 @@
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
 import { useThemeStore } from '@/features/settings'
-import { useCrashtestStore } from '@/features/crashtest'
-import { useDemoplayStore } from '@/features/demoplay'
 import { useTaskTodayStore } from '@/features/task-today'
-import { NSwitch } from 'naive-ui'
 import type { Key } from '@lichess-org/chessground/types'
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const props = defineProps<{
@@ -18,29 +15,9 @@ const props = defineProps<{
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
-const crashtestStore = useCrashtestStore()
-const demoplayStore = useDemoplayStore()
 const analysisStore = useAnalysisStore()
 const taskTodayStore = useTaskTodayStore()
 const route = useRoute()
-
-// Mutual exclusion between Crashtest and Demoplay modes (Crashtest always has priority)
-watch(
-  () => crashtestStore.isCrashtestEnabled,
-  (val) => {
-    if (val) {
-      demoplayStore.isDemoplayEnabled = false
-    }
-  }
-)
-watch(
-  () => demoplayStore.isDemoplayEnabled,
-  (val) => {
-    if (val && crashtestStore.isCrashtestEnabled) {
-      demoplayStore.isDemoplayEnabled = false
-    }
-  }
-)
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
 
@@ -109,19 +86,6 @@ onUnmounted(() => {
       <div class="center-stage" ref="centerColumnRef">
         <div class="cb-top-panel">
           <slot name="top-info"></slot>
-        </div>
-
-        <!-- Dev Testing Floating Switches -->
-        <div v-if="crashtestStore.isMo3ep && gameStore.gamePhase === 'PLAYING'" class="global-crashtest-overlay">
-          <div class="dev-switch-wrapper">
-            <span class="global-crashtest-label">Crashtest</span>
-            <n-switch v-model:value="crashtestStore.isCrashtestEnabled" size="small" />
-          </div>
-          <div class="dev-switch-divider"></div>
-          <div class="dev-switch-wrapper">
-            <span class="global-demoplay-label">Demo Play</span>
-            <n-switch v-model:value="demoplayStore.isDemoplayEnabled" size="small" />
-          </div>
         </div>
 
         <div class="board-section">
@@ -340,56 +304,5 @@ onUnmounted(() => {
     margin: 0;
     flex-shrink: 0;
   }
-}
-
-.global-crashtest-overlay {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 101;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(10, 11, 20, 0.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 6px 14px;
-  border-radius: 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s ease;
-}
-
-.global-crashtest-overlay:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-}
-
-.dev-switch-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dev-switch-divider {
-  width: 1px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 4px;
-}
-
-.global-crashtest-label {
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--neon-bordeaux, #d9004c);
-}
-
-.global-demoplay-label {
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--neon-cyan, #00e5ff);
 }
 </style>

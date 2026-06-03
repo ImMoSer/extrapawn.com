@@ -199,104 +199,71 @@ onUnmounted(() => {
   ground.value = null
 })
 
-// --- Atomic Watchers ---
+// --- Consolidated Watcher ---
+// To avoid sending multiple .set() calls to Chessground in the same reactive tick
+// (which cancels piece movement animations), we consolidate all props into a single batch watcher.
 
-// 1. Critical Position Update and Premove Check
-watch(
-  () => props.fen,
-  (newFen) => {
-    if (!ground.value) return
-
-    ground.value.set({
-      fen: newFen,
-      turnColor: props.turnColor, // Ensure turn color is synced with FEN
-      drawable: {
-        brushes: CHESSGROUND_BRUSHES,
-        shapes: combinedShapes.value as DrawShape[]
-      },
-    })
-  },
-)
-
-// 1b. Force sync from counter
-watch(
-  () => props.boardSyncCounter,
-  () => {
-    if (!ground.value) return
-    ground.value.set({
-      fen: props.fen,
-      lastMove: props.lastMove,
-      check: props.check,
-      turnColor: props.turnColor,
-      drawable: {
-        brushes: CHESSGROUND_BRUSHES,
-        shapes: combinedShapes.value as DrawShape[]
-      },
-    })
-  },
-)
-
-// 2. Orientation
-watch(
-  () => props.orientation,
-  (newOri) => {
-    ground.value?.set({ orientation: newOri })
-  },
-)
-
-// 3. Move Configuration
-watch(
-  [() => props.dests, () => props.turnColor, () => props.isAnalysisMode, () => props.canEdit],
-  ([dests, turnColor, isAnalysis, canEdit]) => {
-    ground.value?.set({
-      turnColor,
-      movable: {
-        color: isAnalysis ? 'both' : props.orientation,
-        dests: dests,
-        free: false,
-      },
-      drawable: {
-        enabled: canEdit as boolean,
-        brushes: CHESSGROUND_BRUSHES,
-      },
-    })
-  },
-)
-
-// 4. Visuals (Last Move, Check)
-watch(
-  () => props.lastMove,
-  (lm) => {
-    ground.value?.set({ lastMove: lm })
-  },
-)
-
-watch(
-  () => props.check,
-  (val) => {
-    ground.value?.set({ check: val })
-  },
-)
-
-// 5. Shapes
 const combinedShapes = computed(() => {
   return [...props.drawableShapes, ...boardStore.autoShapes]
 })
 
 watch(
-  combinedShapes,
-  (shapes) => {
-    ground.value?.setShapes(shapes as DrawShape[])
+  [
+    () => props.fen,
+    () => props.boardSyncCounter,
+    () => props.orientation,
+    () => props.turnColor,
+    () => props.dests,
+    () => props.lastMove,
+    () => props.check,
+    () => props.isAnalysisMode,
+    () => props.canEdit,
+    () => props.animationEnabled,
+    () => props.animationDuration,
+    combinedShapes,
+  ],
+  ([
+    fen,
+    ,
+    orientation,
+    turnColor,
+    dests,
+    lastMove,
+    check,
+    isAnalysisMode,
+    canEdit,
+    animationEnabled,
+    animationDuration,
+    shapes,
+  ]) => {
+    if (!ground.value) return
+
+    boardStore.animationDurationMs = animationEnabled ? (animationDuration as number) : 0
+
+    ground.value.set({
+      fen,
+      orientation,
+      turnColor,
+      check,
+      lastMove,
+      movable: {
+        color: isAnalysisMode ? 'both' : orientation,
+        dests: dests,
+        free: false,
+      },
+      animation: {
+        enabled: animationEnabled,
+        duration: animationDuration,
+      },
+      drawable: {
+        enabled: canEdit as boolean,
+        brushes: CHESSGROUND_BRUSHES,
+        shapes: shapes as DrawShape[],
+      },
+    })
   },
   { deep: true },
 )
-
-// 6. Animation Settings
-watch([() => props.animationEnabled, () => props.animationDuration], ([enabled, duration]) => {
-  ground.value?.set({
-    animation: { enabled, duration },
-  })
-})
 </script>
 
 <template>

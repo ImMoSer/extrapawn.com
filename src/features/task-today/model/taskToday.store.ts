@@ -14,6 +14,7 @@ import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useRouter } from 'vue-router'
 import { parseFen } from 'chessops/fen'
 import { TaskTodayStrategy } from './TaskTodayStrategy'
+import { usePreferencesStore } from '@/features/settings'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
@@ -388,7 +389,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
-    playCurrentPuzzle()
+    const preferencesStore = usePreferencesStore()
+    setTimeout(() => {
+      playCurrentPuzzle()
+    }, preferencesStore.preferences.delays.restartDelayMs)
   }
 
   async function handlePuzzleSuccess(timeNeededMs: number) {
@@ -447,7 +451,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       }
     }
 
-    playCurrentPuzzle()
+    const preferencesStore = usePreferencesStore()
+    setTimeout(() => {
+      playCurrentPuzzle()
+    }, preferencesStore.preferences.delays.nextPuzzleDelayMs)
   }
 
   async function saveCompletedPlan() {

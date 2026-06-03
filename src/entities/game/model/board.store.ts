@@ -54,6 +54,8 @@ export const useBoardStore = defineStore('board', () => {
   const coachShapes = ref<DrawShape[]>([])
   const autoShapes = computed(() => coachShapes.value)
   const lastNag = ref<NagMarker | null>(null)
+  const lastMoveTimestamp = ref<number>(0)
+  const animationDurationMs = ref<number>(200)
 
   const isGameOver = computed(() => {
     return !!chessPosition.value.outcome()
@@ -144,6 +146,7 @@ export const useBoardStore = defineStore('board', () => {
     if (isNormal(move)) {
       lastMove.value = [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key]
     }
+    lastMoveTimestamp.value = Date.now()
     boardSyncCounter.value++
     return true
   }
@@ -248,5 +251,7 @@ export const useBoardStore = defineStore('board', () => {
     resetBoardState,
     lastNag,
     chessPosition,
+    lastMoveTimestamp,
+    animationDurationMs,
   }
 })
