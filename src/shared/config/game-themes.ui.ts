@@ -14,12 +14,34 @@ export const CHESS_CATEGORY_UI: Record<string, ChessCategoryUi> = {
   rookPieces: { icon: '♖♘♗' },
   queenPieces: { icon: '♕♘♗' },
 
-  // Practical Chess Specific
-  extraPawn: { icon: '+♙' },
-  materialEquality: { icon: '⬛⬜' },
-  exchange: { icon: '♗-♖-♘' },
-
-  // Finish Him Specific
+  // Finish Him Specific / Fallbacks
   auto: { icon: '✨' },
   expert: { svg: '/svg/crown-svgrepo-com.svg' },
+
+  // === 1. Basic Tier ===
+  pawnEnding: { icon: '♔♙' },
+  rookEnding: { icon: '♖♖' },
+  bishopVsPawns: { icon: '♗♙' },
+  knightVsPawns: { icon: '♘♙' },
+  rookVsPawns: { icon: '♖♙' },
+  extraPawn: { icon: '+♙' },
+  extrapawn: { icon: '+♙' },
+
+  // === 2. Premium Tier ===
+  sameColorBishops: { icon: '♗♗' },
+  oppositeColorBishops: { icon: '♗↔♗' },
+  knightEnding: { icon: '♘♘' },
+  bishopVsKnight: { icon: '♗♘' },
+  doubleRookEnding: { icon: '♖♖♖' },
+  rookVsMinor: { icon: '♖↔♘' },
+  queenEnding: { icon: '♕♕' },
+
+  // === 3. Premium Plus Tier ===
+  queenVsRook: { icon: '♕↔♖' },
+  rookVsTwoMinors: { icon: '♖↔♗♘' },
+  queenVsMinors: { icon: '♕↔♗♘' },
+  queenVsRookMinor: { icon: '♕↔♖♘' },
+  queenMinorVsQueenMinor: { icon: '♕♗♘' },
+  rookMinorVsRook: { icon: '♘♖↔♖' },
+  rookMinorVsRookMinor: { icon: '♘♖↔♖♘' },
 }

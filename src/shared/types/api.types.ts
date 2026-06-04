@@ -8,15 +8,25 @@ export type Color = 'white' | 'black'
 // --- FINISH HIM MODE ---
 
 export const FINISH_HIM_CATEGORIES = [
-  'bishop',
-  'expert',
-  'knight',
-  'knightBishop',
-  'pawn',
-  'queen',
-  'queenPieces',
-  'rookPawn',
-  'rookPieces',
+  'bishopVsKnight',
+  'bishopVsPawns',
+  'doubleRookEnding',
+  'extraPawn',
+  'knightEnding',
+  'knightVsPawns',
+  'pawnEnding',
+  'queenEnding',
+  'queenMinorVsQueenMinor',
+  'queenVsMinors',
+  'queenVsRook',
+  'queenVsRookMinor',
+  'rookEnding',
+  'rookMinorVsRook',
+  'rookMinorVsRookMinor',
+  'rookVsMinor',
+  'rookVsPawns',
+  'rookVsTwoMinors',
+  'sameColorBishops',
 ] as const;
 export type FinishHimCategory = (typeof FINISH_HIM_CATEGORIES)[number];
 export type FinishHimDifficulty = 'Novice' | 'Pro' | 'Master';
@@ -52,15 +62,26 @@ export interface TheoryEndingResultDto {
 
 // --- PRACTICAL CHESS MODE ---
 export const PRACTICAL_CHESS_CATEGORIES = [
-  'bishop',
+  'bishopVsKnight',
+  'bishopVsPawns',
+  'doubleRookEnding',
   'extraPawn',
-  'knight',
-  'knightBishop',
-  'materialEquality',
-  'pawn',
-  'queen',
-  'rookPawn',
-  'rookPieces',
+  'knightEnding',
+  'knightVsPawns',
+  'oppositeColorBishops',
+  'pawnEnding',
+  'queenEnding',
+  'queenMinorVsQueenMinor',
+  'queenVsMinors',
+  'queenVsRook',
+  'queenVsRookMinor',
+  'rookEnding',
+  'rookMinorVsRook',
+  'rookMinorVsRookMinor',
+  'rookVsMinor',
+  'rookVsPawns',
+  'rookVsTwoMinors',
+  'sameColorBishops',
 ] as const;
 export type PracticalChessCategory =
   (typeof PRACTICAL_CHESS_CATEGORIES)[number];

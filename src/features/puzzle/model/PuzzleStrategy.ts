@@ -144,7 +144,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
           soundService.playSound('game_play_out_start')
-          window.$message?.warning('Scenario complete! Playout against engine starts now.')
+          window.$message.success('Tacktics completed! Playout starts.')
         }
       } else {
         try {

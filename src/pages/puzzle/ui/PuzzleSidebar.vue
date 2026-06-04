@@ -28,7 +28,7 @@ const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
 }>()
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 
 
@@ -79,10 +79,14 @@ const TACTICS_ICON_UI: Record<string, string> = {
 }
 
 const formatThemeName = (theme: string): string => {
-  const key = props.submode === 'tactics' ? `puzzleCategories.tactics.${theme}` : `puzzleCategories.themes.${theme}`
-  const translation = t(key)
-  if (translation && !translation.startsWith('chess.')) {
-    return translation
+  if (props.submode === 'tactics') {
+    const key = `puzzleCategories.tactics.${theme}`
+    if (te(key)) return t(key)
+  } else {
+    const keyTheme = `puzzleCategories.themes.${theme}`
+    if (te(keyTheme)) return t(keyTheme)
+    const keySubTheme = `puzzleCategories.subThemes.${theme}`
+    if (te(keySubTheme)) return t(keySubTheme)
   }
   return theme.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())
 }
@@ -112,6 +116,29 @@ const themeOptions = computed(() => {
     value: theme,
     ...CHESS_CATEGORY_UI[theme],
   }))
+})
+
+const basicEndgameKeys = ['pawnEnding', 'rookEnding', 'bishopVsPawns', 'knightVsPawns', 'rookVsPawns', 'extraPawn', 'extrapawn']
+const premiumEndgameKeys = ['sameColorBishops', 'oppositeColorBishops', 'knightEnding', 'bishopVsKnight', 'doubleRookEnding', 'rookVsMinor', 'queenEnding']
+const premiumPlusEndgameKeys = ['queenVsRook', 'rookVsTwoMinors', 'queenVsMinors', 'queenVsRookMinor', 'queenMinorVsQueenMinor', 'rookMinorVsRook', 'rookMinorVsRookMinor']
+
+const basicTacticKeys = ['hangingPiece', 'fork', 'pin', 'backRankMate', 'skewer', 'discoveredAttack']
+const premiumTacticKeys = ['capturingDefender', 'attraction', 'deflection', 'trappedPiece', 'kingAttack', 'advancedPawn', 'xRayAttack']
+const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interference', 'quietMove', 'defensiveMove', 'zugzwang']
+
+const basicTierOptions = computed(() => {
+  const keys = props.submode === 'tactics' ? basicTacticKeys : basicEndgameKeys
+  return themeOptions.value.filter(opt => keys.includes(opt.value))
+})
+
+const premiumTierOptions = computed(() => {
+  const keys = props.submode === 'tactics' ? premiumTacticKeys : premiumEndgameKeys
+  return themeOptions.value.filter(opt => keys.includes(opt.value))
+})
+
+const premiumPlusTierOptions = computed(() => {
+  const keys = props.submode === 'tactics' ? premiumPlusTacticKeys : premiumPlusEndgameKeys
+  return themeOptions.value.filter(opt => keys.includes(opt.value))
 })
 
 const puzzleStore = usePuzzleStore()
@@ -258,12 +285,41 @@ const isPuzzleActive = computed(() => {
             <n-text class="input-label">
               {{ props.submode === 'tactics' ? t('features.coach.tacticsLabel') : t('features.coach.categoryLabel') }}
             </n-text>
-            <VisualRadioGroup
-              v-model:value="activeThemeValue"
-              :options="themeOptions"
-              :columns="props.submode === 'tactics' ? 3 : 2"
-              @update:value="loadPuzzle"
-            />
+            <template v-if="props.submode === 'theory_endings'">
+              <VisualRadioGroup
+                v-model:value="activeThemeValue"
+                :options="themeOptions"
+                :columns="2"
+                @update:value="loadPuzzle"
+              />
+            </template>
+            <template v-else>
+              <div class="tiered-groups-container">
+                <VisualRadioGroup
+                  v-model:value="activeThemeValue"
+                  :options="basicTierOptions"
+                  :columns="3"
+                  class="tier-basic"
+                  @update:value="loadPuzzle"
+                />
+                <div class="group-divider"></div>
+                <VisualRadioGroup
+                  v-model:value="activeThemeValue"
+                  :options="premiumTierOptions"
+                  :columns="3"
+                  class="tier-premium"
+                  @update:value="loadPuzzle"
+                />
+                <div class="group-divider"></div>
+                <VisualRadioGroup
+                  v-model:value="activeThemeValue"
+                  :options="premiumPlusTierOptions"
+                  :columns="3"
+                  class="tier-premium-plus"
+                  @update:value="loadPuzzle"
+                />
+              </div>
+            </template>
           </div>
         </div>
       </n-scrollbar>
@@ -330,6 +386,19 @@ const isPuzzleActive = computed(() => {
   margin-top: 4px;
 }
 
+.tiered-groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.08) 80%, transparent);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
 .input-label {
   font-size: 0.8rem;
   font-weight: 700;
@@ -385,5 +454,52 @@ const isPuzzleActive = computed(() => {
   50% {
     box-shadow: 0 0 25px rgba(0, 245, 212, 0.8);
   }
+}
+
+/* Tier Colors styling */
+
+/* Basic Tier (Green) */
+:deep(.tier-basic .visual-card) {
+  border-color: rgba(99, 226, 183, 0.15) !important;
+}
+:deep(.tier-basic .visual-card:hover) {
+  background: rgba(99, 226, 183, 0.05) !important;
+  border-color: rgba(99, 226, 183, 0.6) !important;
+  box-shadow: 0 0 8px rgba(99, 226, 183, 0.2) !important;
+}
+:deep(.tier-basic .visual-card.active) {
+  background: rgba(99, 226, 183, 0.12) !important;
+  border-color: #63e2b7 !important;
+  box-shadow: 0 0 12px rgba(99, 226, 183, 0.4) !important;
+}
+
+/* Premium Tier (Yellow/Gold) */
+:deep(.tier-premium .visual-card) {
+  border-color: rgba(243, 156, 18, 0.15) !important;
+}
+:deep(.tier-premium .visual-card:hover) {
+  background: rgba(243, 156, 18, 0.05) !important;
+  border-color: rgba(243, 156, 18, 0.6) !important;
+  box-shadow: 0 0 8px rgba(243, 156, 18, 0.2) !important;
+}
+:deep(.tier-premium .visual-card.active) {
+  background: rgba(243, 156, 18, 0.12) !important;
+  border-color: #f39c12 !important;
+  box-shadow: 0 0 12px rgba(243, 156, 18, 0.4) !important;
+}
+
+/* Premium Plus Tier (Red/Rose) */
+:deep(.tier-premium-plus .visual-card) {
+  border-color: rgba(230, 57, 70, 0.15) !important;
+}
+:deep(.tier-premium-plus .visual-card:hover) {
+  background: rgba(230, 57, 70, 0.05) !important;
+  border-color: rgba(230, 57, 70, 0.6) !important;
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.2) !important;
+}
+:deep(.tier-premium-plus .visual-card.active) {
+  background: rgba(230, 57, 70, 0.12) !important;
+  border-color: #e63946 !important;
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.4) !important;
 }
 </style>

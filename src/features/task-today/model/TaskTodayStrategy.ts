@@ -88,7 +88,7 @@ export class TaskTodayStrategy implements IGameplayStrategy {
           this.isPlayoutMode = true
           this.scenarioIndex = this.scenarioMoves.length
           soundService.playSound('game_play_out_start')
-          window.$message?.warning('Deviation! Continuing against the engine.')
+          window.$message.success('Tacktics completed! Playout starts.')
         }
       }
     }
