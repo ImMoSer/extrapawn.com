@@ -195,25 +195,21 @@
       }
     },
     "modules": {
-      "study": {
-        "title": "STUDY — Analytisches Labor",
-        "text": "Ein interaktives Tool zum Aufbau und **aktiven Einprägen** deines Eröffnungsrepertoires. 1-Klick-Generator basierend auf Elite-Statistiken (MozerBook), visuelle Varianten bäume und Hardcore-Trainingsmodi wie Speedrun und Reply Training. Volle Lichess-Synchronisation."
+      "puzzlePlay": {
+        "title": "PUZZLE PLAY — Taktik & Endspiele",
+        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen die menschenähnliche Engine Maia (2200) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
       },
-      "finishHim": {
-        "title": "FINISH HIM — Die Kunst der Realisierung",
-        "text": "Zwei-Phasen-Trainer: Erst ein taktischer Schlag, dann die obligatorische Realisierung des Vorteils gegen die menschenähnliche Maia-KI (1900-2400). Meistere die Fähigkeit, gewonnene Stellungen eiskalt zu Ende zu führen."
+      "taskToday": {
+        "title": "TASK TODAY — Personalisierter Daily-Trainer",
+        "text": "Das ultimative Instrument für tägliches Training. Trainingspläne werden in den drei Schwierigkeitsgraden (Novice, Pro, Master) basierend auf drei Strategien generiert:\n\n• 💡 **Discovery**: Neue Themen lernen und Wissenslücken schließen.\n• 🔥 **Hardcore**: Beseitige deine größten Schwachstellen (wo du oft geschlagen wirst).\n• ⚡ **Warmup**: Festige dein Wissen mit deinen stärksten Themen.\n\nGelöst wird mit Stoppuhr und Progress-Recorder. Am Ende liefert ein detaillierter Bericht Übersicht über deine Performance. Alle Ergebnisse werden im Backend gespeichert und bilden das Fundament für zukünftige Pläne."
       },
-      "practicalChess": {
-        "title": "PRACTICAL CHESS — Spielszenarien",
-        "text": "Reale Partiestellungen mit Vorteil gegen die zähe Maia. Exklusive Modi: **ExtraPawn** zur Konvertierung von Materialvorteil und **Black or White** zum Training der positionellen Intuition. Nur der Sieg zählt."
-      },
-      "theoreticalEndings": {
-        "title": "THEORETICAL ENDINGS — Buch-Endspiele",
-        "text": "Prüfstand für klassische Buchendspiele. Unsere Engine provoziert und stellt Fallen selbst in Remisstellungen. Trainiere sowohl auf Sieg als auch auf Rettung mit einem eigenen Endspiel-Rating."
+      "sparring": {
+        "title": "SPARRING — Spielpraxis & Analyse",
+        "text": "Spiele freie Partien ab der Startstellung oder aus beliebigen Positionen, mit oder ohne Endspieldatenbank (Tablebase) und grafischen Hinweisen. \n\n• **Coach-Sidebar**: Auf der rechten Seite mit strategischen Informationen und Analyse-Tab.\n• **Opening Explorer**: Basiert auf Lichess-Partien von Spielern mit Rating 2000+ auf der linken Seite. Farbliche Markierungen erleichtern das Verständnis.\n• **Wikibooks-Integration**: Umfangreiche Hintergrundinformationen zu jeder gespielten Eröffnung zum Nachschlagen.\n• **KI-Trainer**: Das Modul wird weiterentwickelt und in Kürze mit einem persönlichen KI-Trainer aufgerüstet."
       },
       "userCabinet": {
-        "title": "USER CABINET — Kommandozentrale",
-        "text": "Dein interaktives Kontrollzentrum. Rose-Charts visualisieren deine technische DNA über alle Themen hinweg. Starte mit einem Klick gezieltes Training für deine Schwachstellen. Verwalte Abonnements und verfolge deinen Fortschritt."
+        "title": "USER CABINET — Deine Schach-DNA",
+        "text": "Die visuelle Kommandozentrale zur Darstellung deiner Trainingsergebnisse. Analysiere deine schachliche Entwicklung über alle Themen hinweg, erkenne deine Stärken und Schwachstellen präzise und behalte deine Performance-Daten im Blick."
       }
     },
     "techStack": {

@@ -195,25 +195,21 @@
       }
     },
     "modules": {
-      "study": {
-        "title": "STUDY — Analytical Laboratory",
-        "text": "An interactive tool for building and **actively memorizing** your opening repertoire. 1-click generator based on elite statistics (MozerBook), visual trees, and hardcore training modes like Speedrun and Reply Training. Full Lichess Study synchronization."
+      "puzzlePlay": {
+        "title": "PUZZLE PLAY — Tactics & Endgames",
+        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against the human-like Maia (2200 Elo) engine across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
       },
-      "finishHim": {
-        "title": "FINISH HIM — Art of Realization",
-        "text": "Two-phase trainer: first a tactical strike, then mandatory realization of the advantage against human-like Maia AI (1900-2400). Master the skill of coldly finishing off won positions."
+      "taskToday": {
+        "title": "TASK TODAY — Personalized Daily Trainer",
+        "text": "The ultimate tool for daily training. Training plans are generated in three difficulties (Novice, Pro, Master) based on three strategies:\n\n• 💡 **Discovery**: Learn new themes and fill gaps in your knowledge.\n• 🔥 **Hardcore**: Target and attack your biggest weaknesses (where you get beaten most often).\n• ⚡ **Warmup**: Reinforce your knowledge by sharpening your strongest themes.\n\nSolve under pressure with a timer and progress tracker. At the end, you get a detailed performance report. All results are saved on the backend and shape future plans."
       },
-      "practicalChess": {
-        "title": "PRACTICAL CHESS — Game Scenarios",
-        "text": "Real game positions with an advantage against stubborn Maia. Features exclusive modes: **ExtraPawn** for converting extra material and **Black or White** for training positional intuition. Play to win."
-      },
-      "theoreticalEndings": {
-        "title": "THEORETICAL ENDINGS — Book Master",
-        "text": "A testing ground for classic book endings. Our provocateur engine tricks and sets traps even in drawn positions. Train for both the win and the save with a dedicated endgame rating."
+      "sparring": {
+        "title": "SPARRING — Play Practice & Analysis",
+        "text": "Play free games starting from the initial position or any custom setup, with or without tablebase support and graphical hints.\n\n• **Coach Sidebar**: Features strategic information and an Analysis tab on the right.\n• **Opening Explorer**: Stats-based opening book on the left, created from Lichess games of 2000+ Elo users, using color-coded hints.\n• **Wikibooks Integration**: Access extensive theoretical guides and information on any played opening.\n• **AI Coach**: Under active development and will soon be upgraded with a personal AI sparring coach."
       },
       "userCabinet": {
-        "title": "USER CABINET — Command Center",
-        "text": "Your interactive mission control. Rose Charts visualize your technical DNA across all themes. Launch targeted training for your weak spots with one click. Manage subscriptions and track your progress."
+        "title": "USER CABINET — Your Chess DNA",
+        "text": "The visual command center for displaying your training results. Analyze your chess development across all themes, identify your strengths and weaknesses precisely, and track your performance history."
       }
     },
     "techStack": {
