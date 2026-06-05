@@ -1,6 +1,6 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
-import { usePuzzleStore } from '@/features/puzzle'
+import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { useTaskTodayStore } from '@/features/task-today'
 import { usePreferencesStore } from '@/features/settings'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
@@ -49,6 +49,67 @@ export const useDemoplayStore = defineStore('demoplay', () => {
   const demoplayCount = ref(1)
   const hasJustReset = ref(true)
   const initialMateMoves = ref<number | null>(null)
+
+  const isCompleteModalVisible = ref(false)
+
+  function showCompleteModal() {
+    isCompleteModalVisible.value = true
+  }
+
+  function hideCompleteModal() {
+    isCompleteModalVisible.value = false
+  }
+
+  async function restartDemoplay() {
+    isCompleteModalVisible.value = false
+    isDemoplayEnabled.value = true
+    demoplayCount.value = 1
+    hasJustReset.value = true
+    if (puzzleStore.activeSubmode) {
+      await puzzleStore.loadNewPuzzle(puzzleStore.activeSubmode)
+    }
+  }
+
+  const isIntroModalVisible = ref(false)
+  const hasIntroBeenShown = ref(false)
+  const introConfig = ref<{
+    submode: PuzzleSubmode | '';
+    category: string;
+    difficulty: string;
+  }>({
+    submode: '',
+    category: '',
+    difficulty: ''
+  })
+
+  watch(hasJustReset, (val) => {
+    if (val) {
+      hasIntroBeenShown.value = false
+    }
+  })
+
+  function showIntroModal(config: { submode: PuzzleSubmode; category: string; difficulty: string }) {
+    introConfig.value = { ...config }
+    isIntroModalVisible.value = true
+  }
+
+  function hideIntroModal() {
+    isIntroModalVisible.value = false
+  }
+
+  async function startIntroDemoplay() {
+    isIntroModalVisible.value = false
+    isDemoplayEnabled.value = true
+    hasIntroBeenShown.value = true
+    demoplayCount.value = 1
+    hasJustReset.value = true
+    if (introConfig.value.submode) {
+      await puzzleStore.loadNewPuzzle(introConfig.value.submode, {
+        category: introConfig.value.category,
+        difficulty: introConfig.value.difficulty
+      })
+    }
+  }
 
   const isMo3ep = computed(() => {
     const profile = authStore.userProfile
@@ -461,6 +522,16 @@ export const useDemoplayStore = defineStore('demoplay', () => {
     isInitialDelayActive,
     demoplayCount,
     hasJustReset,
+    isCompleteModalVisible,
+    showCompleteModal,
+    hideCompleteModal,
+    restartDemoplay,
+    isIntroModalVisible,
+    hasIntroBeenShown,
+    introConfig,
+    showIntroModal,
+    hideIntroModal,
+    startIntroDemoplay,
     init,
   }
 })

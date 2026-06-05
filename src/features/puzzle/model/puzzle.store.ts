@@ -297,20 +297,21 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
     const demoplayStore = useDemoplayStore()
     if (demoplayStore.isDemoplayEnabled) {
+      if (!demoplayStore.hasIntroBeenShown) {
+        demoplayStore.showIntroModal({
+          submode: type as PuzzleSubmode,
+          category: queryParams.category || activeParams.value.category || '',
+          difficulty: queryParams.difficulty || activeParams.value.difficulty || 'Novice'
+        })
+        return
+      }
+
       if (demoplayStore.hasJustReset) {
         demoplayStore.hasJustReset = false
       } else {
         if (demoplayStore.demoplayCount >= 100) {
           demoplayStore.isDemoplayEnabled = false
-          uiStore.showConfirmation(
-            'Demo Play Complete',
-            'Thank you for watching! I look forward to seeing you in training.',
-            {
-              confirmText: 'OK',
-              showCancel: false,
-              persistent: true
-            }
-          )
+          demoplayStore.showCompleteModal()
           return
         }
         demoplayStore.demoplayCount++

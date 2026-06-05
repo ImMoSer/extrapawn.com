@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { useCrashtestStore } from '@/features/crashtest'
-import { useDemoplayStore } from '@/features/demoplay'
+import { useDemoplayStore, DemoplayCompleteModal, DemoplayIntroModal } from '@/features/demoplay'
 
 const gameStore = useGameStore()
 const crashtestStore = useCrashtestStore()
@@ -216,6 +216,8 @@ onUnmounted(() => {
             </n-drawer>
 
             <ConfirmationModal />
+            <DemoplayCompleteModal />
+            <DemoplayIntroModal />
             <AppUpdateNotifier />
           </n-layout>
           <GalaxyBackground />
