@@ -58,16 +58,19 @@ watch(
 )
 
 const theoryWithChildren = computed<TheoryItemWithChildren[]>(() => {
-  if (!stats.value?.theory) return []
+  if (!stats.value?.wiki?.forward_moves) return []
 
-  return stats.value.theory
+  return stats.value.wiki.forward_moves
     .map((tItem) => {
       // Find matching move in stats to get children and statistics
       const matchingMove = stats.value?.moves.find((m) => m.uci === tItem.uci)
       const count = matchingMove ? matchingMove.total : 0
 
       return {
-        ...tItem,
+        san: tItem.san,
+        uci: tItem.uci,
+        name: tItem.name,
+        eco: tItem.eco,
         nag: matchingMove?.nag || 0,
         total: count,
         win_p: matchingMove?.win_p || 0,

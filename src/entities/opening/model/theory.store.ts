@@ -37,7 +37,6 @@ export const useTheoryStore = defineStore('openingTheory', () => {
   const emptyMozerResponse: MozerBookResponse = {
     summary: null,
     moves: [],
-    theory: [],
     styles: undefined,
     wiki: null,
   }

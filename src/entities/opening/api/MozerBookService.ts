@@ -4,8 +4,8 @@ import logger from '@/shared/lib/logger'
 export interface MozerBookTheoryItem {
   san: string
   uci: string
-  name: string
-  eco: string
+  name: string | null
+  eco: string | null
 }
 
 export interface MozerBookMove extends MozerBookTheoryItem {
@@ -54,7 +54,6 @@ export interface MozerBookResponse {
     perf?: number
   } | null
   moves: MozerBookMove[]
-  theory?: MozerBookTheoryItem[]
   styles?: {
     grossmaster: MozerStyleMove
     hustler: MozerStyleMove
