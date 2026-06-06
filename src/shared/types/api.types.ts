@@ -42,13 +42,23 @@ export interface FinishHimResultDto {
 // --- END FINISH HIM MODE ---
 // --- THEORY ENDINGS MODE ---
 export const THEORY_ENDING_CATEGORIES = [
-  'bishop',
-  'knight',
-  'knightBishop',
-  'pawn',
-  'queen',
-  'rookPawn',
-  'rookPieces',
+  'pawnEnding',
+  'rookEnding',
+  'rookVsMinor',
+  'bishopVsKnight',
+  'rookVsPawns',
+  'sameColorBishops',
+  'queenEnding',
+  'knightVsPawns',
+  'queenVsRookMinor',
+  'knightEnding',
+  'rookMinorVsRook',
+  'queenVsMinors',
+  'queenVsRook',
+  'oppositeColorBishops',
+  'rookVsTwoMinors',
+  'bishopVsPawns',
+  'doubleRookEnding',
 ] as const;
 export type TheoryEndingCategory = (typeof THEORY_ENDING_CATEGORIES)[number];
 export type TheoryEndingDifficulty = 'Novice' | 'Pro' | 'Master';

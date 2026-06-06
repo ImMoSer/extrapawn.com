@@ -195,11 +195,11 @@ function resetThemeToDefault() {
   if (props.submode === 'tactics') {
     puzzleStore.activeParams.category = 'fork'
   } else if (props.submode === 'theory_endings') {
-    puzzleStore.activeParams.category = THEORY_ENDING_CATEGORIES[0] || 'pawn'
+    puzzleStore.activeParams.category = THEORY_ENDING_CATEGORIES[0] || 'pawnEnding'
   } else if (props.submode === 'practical_chess') {
     puzzleStore.activeParams.category = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
   } else if (props.submode === 'finish_him') {
-    puzzleStore.activeParams.category = FINISH_HIM_CATEGORIES[0] || 'pawn'
+    puzzleStore.activeParams.category = FINISH_HIM_CATEGORIES[0] || 'pawnEnding'
   } else {
      throw new Error(`[PuzzleSidebar] Unsupported submode reset: ${props.submode}. Fail-Fast!`)
   }
@@ -285,41 +285,31 @@ const isPuzzleActive = computed(() => {
             <n-text class="input-label">
               {{ props.submode === 'tactics' ? t('features.coach.tacticsLabel') : t('features.coach.categoryLabel') }}
             </n-text>
-            <template v-if="props.submode === 'theory_endings'">
+            <div class="tiered-groups-container">
               <VisualRadioGroup
                 v-model:value="activeThemeValue"
-                :options="themeOptions"
-                :columns="2"
+                :options="basicTierOptions"
+                :columns="3"
+                class="tier-basic"
                 @update:value="loadPuzzle"
               />
-            </template>
-            <template v-else>
-              <div class="tiered-groups-container">
-                <VisualRadioGroup
-                  v-model:value="activeThemeValue"
-                  :options="basicTierOptions"
-                  :columns="3"
-                  class="tier-basic"
-                  @update:value="loadPuzzle"
-                />
-                <div class="group-divider"></div>
-                <VisualRadioGroup
-                  v-model:value="activeThemeValue"
-                  :options="premiumTierOptions"
-                  :columns="3"
-                  class="tier-premium"
-                  @update:value="loadPuzzle"
-                />
-                <div class="group-divider"></div>
-                <VisualRadioGroup
-                  v-model:value="activeThemeValue"
-                  :options="premiumPlusTierOptions"
-                  :columns="3"
-                  class="tier-premium-plus"
-                  @update:value="loadPuzzle"
-                />
-              </div>
-            </template>
+              <div class="group-divider"></div>
+              <VisualRadioGroup
+                v-model:value="activeThemeValue"
+                :options="premiumTierOptions"
+                :columns="3"
+                class="tier-premium"
+                @update:value="loadPuzzle"
+              />
+              <div class="group-divider"></div>
+              <VisualRadioGroup
+                v-model:value="activeThemeValue"
+                :options="premiumPlusTierOptions"
+                :columns="3"
+                class="tier-premium-plus"
+                @update:value="loadPuzzle"
+              />
+            </div>
           </div>
         </div>
       </n-scrollbar>
