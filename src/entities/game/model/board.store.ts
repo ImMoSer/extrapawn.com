@@ -81,46 +81,50 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
+  function syncVisualCues() {
+    // Sync visual cues from PgnService
+    const lastPgnMove = pgnService.getLastMove()
+    if (lastPgnMove && lastPgnMove.uci) {
+      lastMove.value = [lastPgnMove.uci.slice(0, 2) as Key, lastPgnMove.uci.slice(2, 4) as Key]
+    } else {
+      lastMove.value = undefined
+    }
+
+    const currentNode = pgnService.getCurrentNode()
+    const meta = currentNode.metadata
+    if (meta && meta.nag && meta.nag !== 'OK') {
+      lastNag.value = {
+        square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
+        nag: meta.nag,
+        quality: meta.quality || 'good',
+      }
+    } else if (currentNode.nag) {
+      const mapping = NAG_MAPPING[currentNode.nag]
+      if (mapping) {
+        lastNag.value = {
+          square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
+          nag: mapping.symbol,
+          quality: mapping.quality,
+        }
+      } else {
+        lastNag.value = null
+      }
+    } else {
+      lastNag.value = null
+    }
+
+    drawableShapes.value = (currentNode.shapes as DrawShape[]) || []
+    coachShapes.value = []
+    boardSyncCounter.value++
+  }
+
   function loadPosition(newFen: string) {
     try {
       const setup = parseFen(newFen).unwrap()
       chessPosition.value = Chess.fromSetup(setup).unwrap()
       fen.value = makeFen(chessPosition.value.toSetup())
 
-      // Sync visual cues from PgnService
-      const lastPgnMove = pgnService.getLastMove()
-      if (lastPgnMove && lastPgnMove.uci) {
-        lastMove.value = [lastPgnMove.uci.slice(0, 2) as Key, lastPgnMove.uci.slice(2, 4) as Key]
-      } else {
-        lastMove.value = undefined
-      }
-
-      const currentNode = pgnService.getCurrentNode()
-      const meta = currentNode.metadata
-      if (meta && meta.nag && meta.nag !== 'OK') {
-        lastNag.value = {
-          square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
-          nag: meta.nag,
-          quality: meta.quality || 'good',
-        }
-      } else if (currentNode.nag) {
-        const mapping = NAG_MAPPING[currentNode.nag]
-        if (mapping) {
-          lastNag.value = {
-            square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
-            nag: mapping.symbol,
-            quality: mapping.quality,
-          }
-        } else {
-          lastNag.value = null
-        }
-      } else {
-        lastNag.value = null
-      }
-
-      drawableShapes.value = (currentNode.shapes as DrawShape[]) || []
-      coachShapes.value = []
-      boardSyncCounter.value++
+      syncVisualCues()
       
       // Play load sound if we just loaded a position (not triggered by a move, though navigating might trigger it).
       // If we want to strictly emulate old behavior, this might play on every undo/redo. 
@@ -253,5 +257,6 @@ export const useBoardStore = defineStore('board', () => {
     chessPosition,
     lastMoveTimestamp,
     animationDurationMs,
+    syncVisualCues,
   }
 })

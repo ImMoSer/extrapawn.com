@@ -19,6 +19,7 @@ import { SparringPage } from '@/pages/sparring'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 
 import { UserCabinetPage } from '@/pages/user-cabinet'
+import { RepertoireTrainingPage } from '@/pages/repertoire-training'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,6 +81,20 @@ const router = createRouter({
       name: 'sparring',
       component: SparringPage,
       meta: { isGame: true, requiresAuth: true, game: 'sparring' },
+    },
+    {
+      path: '/repertoire-training',
+      name: 'repertoire-training',
+      component: RepertoireTrainingPage,
+      meta: {
+        isGame: true,
+        requiresAuth: true,
+        game: 'repertoire-training',
+        seo: {
+          titleKey: 'seo.repertoireTraining.title',
+          descriptionKey: 'seo.repertoireTraining.description',
+        },
+      },
     },
     {
       path: '/user-cabinet/:id?',

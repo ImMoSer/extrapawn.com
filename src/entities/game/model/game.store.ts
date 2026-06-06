@@ -175,6 +175,7 @@ export const useGameStore = defineStore('game', () => {
           
           const fenAfter = boardStore.fen
           pgnService.addNode({ san, uci, fenBefore, fenAfter })
+          boardStore.syncVisualCues()
           
           GameAudioEngine.playMoveSoundFromSan(san, true)
         } else {
@@ -328,6 +329,7 @@ export const useGameStore = defineStore('game', () => {
       const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
       const fenAfter = boardStore.fen
       pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
+      boardStore.syncVisualCues()
       
       GameAudioEngine.playMoveSoundFromSan(san, false)
     }

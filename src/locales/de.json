@@ -33,6 +33,10 @@
     "pricing": {
       "title": "Preise & Pläne — Werde Teil des ExtraPawn Clubs",
       "description": "Entdecke unsere Abonnements: Pawn, Knight, Bishop, Rook, Queen und King. Wähle den besten Plan für dein Wachstum."
+    },
+    "repertoireTraining": {
+      "title": "Repertoire-Training — Spaced Repetition",
+      "description": "Trainiere dein Eröffnungsrepertoire mit Lichess-Studien. Meistere deine Varianten gegen eine adaptive KI, die deine Schwachstellen ausnutzt."
     }
   },
   "legal": {
@@ -819,6 +823,65 @@
         "message": "Bist du sicher, dass du die aktuelle Stellung verlassen möchtest? Dein Fortschritt geht verloren.",
         "browserMessage": "Bist du sicher, dass du das Spiel verlassen möchtest? Dein aktueller Fortschritt geht verloren."
       }
+    },
+    "study": {
+      "replyTraining": {
+        "title": "Studien Repertoire-Training",
+        "variationFinished": "Variante erfolgreich beendet!",
+        "session": {
+          "gardenCleanliness": "Sauberkeit des Kapitels",
+          "sessionTotal": "Session-Fortschritt",
+          "variantsPlayed": "Varianten gespielt",
+          "variantsSolved": "Perfekte Durchläufe",
+          "currentVariant": "Aktueller Versuch",
+          "errors": "Fehler",
+          "accuracy": "Genauigkeit",
+          "exitButton": "Training beenden",
+          "exitDialog": {
+            "title": "Trainingssession beenden?",
+            "content": "Bist du sicher, dass du die aktuelle Trainingssession beenden möchtest? Deine aktuellen Session-Statistiken gehen verloren.",
+            "confirm": "Ja, beenden",
+            "cancel": "Abbrechen"
+          },
+          "lockedLibrary": "Die Bibliothek ist während eines aktiven Trainings gesperrt. Beende das Training, um ein anderes Kapitel zu wählen.",
+          "started": "Training gestartet für Kapitel: {name}",
+          "startFailed": "Fehler beim Starten des Trainings"
+        },
+        "status": {
+          "training": "TRAINING AKTIV",
+          "idle": "WÄHLE EIN KAPITEL ZUM TRAINIEREN"
+        },
+        "intro": {
+          "title": "Repertoire-Training",
+          "desc1": "Teste und festige dein Eröffnungsrepertoire gegen eine adaptive KI basierend auf Spaced-Repetition. Erhöhe deine Genauigkeit, indem du deine schwächsten Varianten gezielt wiederholst.",
+          "step1": "Füge links den Link einer öffentlichen Lichess-Studie ein, um sie zu importieren.",
+          "step2": "Wähle ein Kapitel aus, das aus der schachlichen Startaufstellung beginnt.",
+          "step3": "Spiele deine Repertoire-Züge. Der Bot führt dich automatisch zu deinen unvollständig gelernten Varianten."
+        },
+        "import": {
+          "emptyUrl": "Bitte gib eine gültige Lichess-Studien-URL oder ID ein.",
+          "success": "Studie \"{name}\" erfolgreich importiert!",
+          "failed": "Import fehlgeschlagen"
+        },
+        "delete": {
+          "title": "Studie löschen",
+          "confirm": "Bist du sicher, dass du diese Studie und alle zugehörigen Trainingsdaten löschen möchtest?",
+          "success": "Studie aus der lokalen Bibliothek gelöscht."
+        },
+        "errors": {
+          "repertoireOnly": "Nur Kapitel, die aus der Standard-Startaufstellung beginnen, können trainiert werden."
+        },
+        "library": {
+          "title": "Studien-Bibliothek",
+          "importBtn": "Importieren",
+          "loading": "Importiere Studiendaten von Lichess...",
+          "empty": "Noch keine Studien importiert. Füge oben einen Lichess-Studien-Link ein.",
+          "chapters": "Kapitel",
+          "selectChapter": "Wähle ein Kapitel zum Trainieren:",
+          "trainBtn": "Trainieren",
+          "linesCount": "{count} Linien"
+        }
+      }
     }
   },
   "shared": {
@@ -856,7 +919,11 @@
       "confirm": "Bestätigen",
       "copyLink": "Link kopieren",
       "help": "Hilfe",
-      "retry": "Wiederholen"
+      "retry": "Wiederholen",
+      "start": "Start",
+      "continue": "Fortsetzen",
+      "reset": "Zurücksetzen",
+      "delete": "Löschen"
     },
     "board": {
       "copied": "Kopiert!"

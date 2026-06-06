@@ -35,6 +35,7 @@ const menuItems = [
   GAME_MODES.tactics,
   GAME_MODES.task_today,
   GAME_MODES.sparring,
+  GAME_MODES.repertoire_training,
   GAME_MODES.user_cabinet,
   GAME_MODES.records,
 ]

@@ -33,6 +33,10 @@
     "pricing": {
       "title": "Pricing & Plans — Join the ExtraPawn Club",
       "description": "Explore our subscription tiers: Pawn, Knight, Bishop, Rook, Queen, and King. Choose the best plan for your chess growth."
+    },
+    "repertoireTraining": {
+      "title": "Repertoire Training — Spaced Repetition",
+      "description": "Practice your opening repertoire using public Lichess studies. Master your lines against adaptive AI that exploits your weakest nodes."
     }
   },
   "legal": {
@@ -819,6 +823,65 @@
         "message": "Are you sure you want to quit the current position? Your progress will be lost.",
         "browserMessage": "Are you sure you want to leave the game? Your current progress will be lost."
       }
+    },
+    "study": {
+      "replyTraining": {
+        "title": "Study Reply Training",
+        "variationFinished": "Variation completed!",
+        "session": {
+          "gardenCleanliness": "Chapter Cleanliness",
+          "sessionTotal": "Session Progress",
+          "variantsPlayed": "Variations Played",
+          "variantsSolved": "Perfect Runs (0 mistakes)",
+          "currentVariant": "Current Attempt",
+          "errors": "Mistakes",
+          "accuracy": "Accuracy",
+          "exitButton": "Exit Training",
+          "exitDialog": {
+            "title": "Exit Training Session?",
+            "content": "Are you sure you want to exit the current training session? Your session stats will be reset.",
+            "confirm": "Yes, Exit",
+            "cancel": "Cancel"
+          },
+          "lockedLibrary": "Library is locked during active training session. Exit training to select another chapter.",
+          "started": "Training started for chapter: {name}",
+          "startFailed": "Failed to start training"
+        },
+        "status": {
+          "training": "TRAINING IN PROGRESS",
+          "idle": "SELECT A CHAPTER TO TRAIN"
+        },
+        "intro": {
+          "title": "Repertoire Reply Training",
+          "desc1": "Test and reinforce your opening repertoire against spaced-repetition AI resistance. Build mastery by focusing on your weakest variations.",
+          "step1": "Paste a public Lichess Study URL on the left panel to import it.",
+          "step2": "Select a chapter starting from the standard starting position.",
+          "step3": "Play your repertoire moves. The bot will automatically guide you down your weakest/untrained variations."
+        },
+        "import": {
+          "emptyUrl": "Please enter a valid Lichess study URL or ID.",
+          "success": "Study \"{name}\" imported successfully!",
+          "failed": "Import failed"
+        },
+        "delete": {
+          "title": "Delete Study",
+          "confirm": "Are you sure you want to delete this study and all its training statistics?",
+          "success": "Study deleted from local library."
+        },
+        "errors": {
+          "repertoireOnly": "Only chapters starting from the standard initial chess position can be trained."
+        },
+        "library": {
+          "title": "Studies Library",
+          "importBtn": "Import",
+          "loading": "Importing study data from Lichess...",
+          "empty": "No studies imported yet. Paste a Lichess Study link above to get started.",
+          "chapters": "Chapters",
+          "selectChapter": "Select Chapter to Train:",
+          "trainBtn": "Train",
+          "linesCount": "{count} lines"
+        }
+      }
     }
   },
   "shared": {
@@ -856,7 +919,11 @@
       "confirm": "Confirm",
       "copyLink": "Copy link",
       "help": "Help",
-      "retry": "Retry"
+      "retry": "Retry",
+      "start": "Start",
+      "continue": "Continue",
+      "reset": "Reset",
+      "delete": "Delete"
     },
     "board": {
       "copied": "Copied!"

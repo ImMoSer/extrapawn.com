@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '@/entities/game'
-import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { pgnService, pgnTreeVersion, NAG_MAPPING, type PgnNode } from '@/shared/lib/pgn/PgnService'
 
-const props = defineProps<{
-  node: PgnNode
-  isMainline?: boolean
-  depth?: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    node: PgnNode
+    isMainline?: boolean
+    depth?: number
+    readOnly?: boolean
+  }>(),
+  {
+    isMainline: false,
+    depth: 0,
+    readOnly: false,
+  }
+)
 
 const gameStore = useGameStore()
 
@@ -49,7 +57,23 @@ const children = computed(() => {
 const mainlineChild = computed(() => children.value[0])
 const variations = computed(() => children.value.slice(1))
 
+const nagInfo = computed(() => {
+  if (props.node.nag !== undefined) {
+    const mapping = NAG_MAPPING[props.node.nag]
+    if (mapping) return mapping
+  }
+  const meta = props.node.metadata
+  if (meta && meta.nag && meta.nag !== 'OK') {
+    return {
+      symbol: meta.nag,
+      quality: meta.quality || 'good'
+    }
+  }
+  return null
+})
+
 const navigate = () => {
+  if (props.readOnly) return
   gameStore.navigateToNode(props.node)
 }
 </script>
@@ -60,10 +84,10 @@ const navigate = () => {
     <span v-if="node.ply > 0" class="move-item">
       <span v-if="moveNumber" class="move-number">{{ moveNumber }}</span>
       <span 
-        :class="['move-san', { 'is-active': isActive }]" 
+        :class="['move-san', { 'is-active': isActive, 'read-only': readOnly }, nagInfo?.quality]" 
         @click="navigate"
       >
-        {{ node.san }}
+        {{ node.san }}{{ nagInfo ? nagInfo.symbol : '' }}
       </span>
     </span>
 
@@ -73,7 +97,7 @@ const navigate = () => {
       <div v-if="variations.length > 0" class="variations-container">
         <div v-for="(vNode, idx) in variations" :key="idx" class="variation-block">
           <span class="variation-bracket">(</span>
-          <PgnTreeNode :node="vNode" :depth="(depth || 0) + 1" />
+          <PgnTreeNode :node="vNode" :depth="(depth || 0) + 1" :read-only="readOnly" />
           <span class="variation-bracket">)</span>
         </div>
       </div>
@@ -84,6 +108,7 @@ const navigate = () => {
         :node="mainlineChild" 
         :depth="depth" 
         :is-mainline="true" 
+        :read-only="readOnly"
       />
     </div>
   </div>
@@ -120,9 +145,32 @@ const navigate = () => {
   border: 1px solid transparent;
 }
 
-.move-san:hover {
+.move-san:not(.read-only):hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+}
+
+.move-san.read-only {
+  cursor: default;
+}
+
+/* NAG colors */
+.move-san.best,
+.move-san.brilliant {
+  color: #26a69a !important; /* Greenish/Teal */
+}
+
+.move-san.mistake,
+.move-san.inaccuracy {
+  color: #ffb300 !important; /* Yellow/Orange */
+}
+
+.move-san.blunder {
+  color: #e53935 !important; /* Red */
+}
+
+.move-san.interesting {
+  color: #b39ddb !important; /* Purple/Magenta */
 }
 
 .move-san.is-active {

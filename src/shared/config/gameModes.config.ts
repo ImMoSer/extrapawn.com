@@ -7,6 +7,7 @@ import {
   HardwareChipOutline,
   PersonOutline,
   TrophyOutline,
+  SchoolOutline,
 } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
@@ -25,6 +26,7 @@ export type GameModeKey =
   | 'tactics'
   | 'task_today'
   | 'sparring'
+  | 'repertoire_training'
   | 'user_cabinet'
   | 'records'
 
@@ -70,6 +72,13 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     icon: HardwareChipOutline,
     labelKey: 'shared.nav.sparring',
     color: 'var(--neon-lime)',
+  },
+  repertoire_training: {
+    key: 'repertoire_training',
+    path: '/repertoire-training',
+    icon: SchoolOutline,
+    labelKey: 'shared.nav.repertoire',
+    color: 'var(--neon-green)',
   },
   user_cabinet: {
     key: 'user_cabinet',

@@ -1,0 +1,14 @@
+[Event "1.d4 / Blackmar-Diemer Gambit: Lemberger Countergambit"]
+[Date "2026.04.14"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "D00"]
+[Opening "Blackmar-Diemer Gambit: Lemberger Countergambit, Sneiders Attack"]
+[StudyName "1.d4 / Blackmar-Diemer Gambit"]
+[ChapterName "Lemberger Countergambit"]
+[ChapterURL "https://lichess.org/study/LceA4puv/grt14WUL"]
+[Annotator "https://lichess.org/@/ExtraPawnCOM"]
+[UTCDate "2026.04.14"]
+[UTCTime "07:33:47"]
+
+1. d4 d5 2. e4 dxe4 3. Nc3 e5 { [%csl Bh5][%cal Bd1h5] } 4. Qh5 exd4 { [%csl Rf7,Rc4][%cal Rh5f7,Rc4f7,Bf1c4] } 5. Bc4! g6? { [%csl Rh8,Re5][%cal Bh5e5,Re5e8,Re5h8] } (5... Qe7 { [%csl Gf6,Ge7,Gc7,Gd5][%cal Gc3d5,Gd5c7,Gd5e7,Gd5f6] } 6. Nd5!? Qd7?? { [%csl Re5,Re8,Yc7][%cal Bh5e5,Re5e8,Re5c7,Yd5c7] } (6... Qd6?? { [%csl Re8,Ra8,Rc7,Yf4][%cal Rd5c7,Rc7a8,Rc7e8,Yc1f4,Yf4c7,Gd5f4] } 7. Bf4 Nf6 { [%csl Be2][%cal Bh5e2] } 8. Qe2! Qxd5 9. Bxd5 Nxd5 10. Qxe4+ Be6 11. O-O-O $18) 7. Qe5+ Ne7?? { [%csl Re8,Rc7,Ra8][%cal Rd5c7,Rc7a8,Rc7e8,Ye5c7] } (7... Kd8 { [%csl Rg5,Yf6][%cal Rc1g5,Rg5d8,Yd5f6,Be5f6] } 8. Bg5+ f6 9. Nxf6 Nxf6 10. Bxf6+ gxf6 { [%csl Rd8,Rf6,Rh8][%cal Re5f6,Rf6d8,Rf6h8] } 11. Qxf6+ Qe7 { [%csl Rd4,Bh8][%cal Bf6h8,Rf6d4,Rd4d8] } 12. Qxd4+! Bd7 13. Qxh8 $18) 8. Nxc7+ Kd8 9. Nxa8 Nbc6 10. Qxe4 $18) 6. Qe5+ Qe7 { [%csl Gc3,Gh8][%cal Ge5h8,Gh8c3] } 7. Qxh8 dxc3 8. Qxc3 $16 *
