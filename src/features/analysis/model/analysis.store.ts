@@ -11,6 +11,8 @@ const ARROW_STYLES = [
   { brush: 'blue', lineWidth: 14 },
   { brush: 'blue', lineWidth: 10 },
   { brush: 'blue', lineWidth: 8 },
+  { brush: 'blue', lineWidth: 6 },
+  { brush: 'blue', lineWidth: 4 },
 ]
 
 export const useAnalysisStore = defineStore('analysis', () => {
@@ -33,6 +35,9 @@ export const useAnalysisStore = defineStore('analysis', () => {
     maxThreads,
     numThreads,
     playerColor,
+    multiPv,
+    searchTime,
+    showArrows,
   } = storeToRefs(engineStore)
 
   // --- LOGIC ---
@@ -54,7 +59,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
         fenDebounceTimer = setTimeout(() => {
           logger.debug(`[AnalysisFeature] FEN changed (debounced). Restarting analysis.`)
           lastRenderedDepth = 0
-          // Delegate to engineStore
           engineStore.startAnalysis(newFen)
         }, 250)
       }
@@ -70,18 +74,29 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   // Watch lines to update board arrows (Pure Feature Logic)
   watch(analysisLines, (lines) => {
-    // Only draw arrows if this feature is "active" (panel visible or toggled on)
     if (isAnalysisActive.value && lines.length > 0) {
       const currentDepth = lines[0]!.depth
       if (shouldUpdateBoard(currentDepth)) {
-        drawAnalysisArrows(lines)
+        if (showArrows.value) {
+          drawAnalysisArrows(lines)
+        } else {
+          boardStore.setDrawableShapes([])
+        }
         lastRenderedDepth = currentDepth
       }
     }
   })
 
+  watch(showArrows, (newVal) => {
+    if (!newVal) {
+      boardStore.setDrawableShapes([])
+      lastArrowsSignature = ''
+    } else if (isAnalysisActive.value && analysisLines.value.length > 0) {
+      drawAnalysisArrows(analysisLines.value)
+    }
+  })
+
   function shouldUpdateBoard(depth: number): boolean {
-    // Render milestones: 1, 10, 15, 20, 21, 22, ...
     if (depth === 1) return true
     if (lastRenderedDepth < 10 && depth >= 10) return true
     if (lastRenderedDepth < 15 && depth >= 15) return true
@@ -126,8 +141,9 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
-    const topMoves = lines.slice(0, 3)
-    const signature = topMoves.map((l) => l.pvUci[0] || '').join(',')
+    // Only draw as many arrows as configured by MultiPV
+    const topMoves = lines.slice(0, multiPv.value)
+    const signature = topMoves.map((l) => (l.pvUci && l.pvUci[0]) || '').join(',')
 
     if (signature === lastArrowsSignature) {
       return
@@ -186,12 +202,18 @@ export const useAnalysisStore = defineStore('analysis', () => {
     maxThreads,
     numThreads,
     playerColor,
+    multiPv,
+    searchTime,
+    showArrows,
 
     // Actions
     showPanel,
     hidePanel,
     toggleAnalysis,
     setThreads,
+    setMultiPv: engineStore.setMultiPv,
+    setSearchTime: engineStore.setSearchTime,
+    setShowArrows: engineStore.setShowArrows,
     resetAnalysisState,
     setPlayerColor,
   }

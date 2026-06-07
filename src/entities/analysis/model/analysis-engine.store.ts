@@ -12,6 +12,11 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
   const numThreads = ref(1)
   const playerColor = ref<'white' | 'black' | null>(null)
 
+  // Options
+  const multiPv = ref(3)
+  const searchTime = ref(5) // 99 represents Infinity
+  const showArrows = ref(true)
+
   // Internal versioning to prevent race conditions
   let analysisVersion = 0
 
@@ -27,8 +32,18 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
       ? Math.min(parseInt(savedThreads, 10), maxThreads.value)
       : defaultThreads
 
+    // Load options
+    const savedMultiPv = localStorage.getItem('analysis_multi_pv')
+    multiPv.value = savedMultiPv ? parseInt(savedMultiPv, 10) : 3
+
+    const savedSearchTime = localStorage.getItem('analysis_search_time')
+    searchTime.value = savedSearchTime ? parseInt(savedSearchTime, 10) : 5
+
+    const savedShowArrows = localStorage.getItem('analysis_show_arrows')
+    showArrows.value = savedShowArrows !== 'false'
+
     logger.info(
-      `[AnalysisEngineStore] Initialized. Threads: ${numThreads.value}/${maxThreads.value}`,
+      `[AnalysisEngineStore] Initialized. Threads: ${numThreads.value}/${maxThreads.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
     )
   }
 
@@ -40,16 +55,41 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     localStorage.setItem('analysis_threads', String(newCount))
 
     if (isAnalysisActive.value) {
-      // First stop the engine properly
       await analysisService.stopAnalysis()
-      // Then set the option (which now internally waits for readyok)
       await analysisService.setThreads(newCount)
-      // The consumer or a higher-level watch will likely trigger startAnalysis again
-      // with the current FEN to resume.
     } else {
-      // If not active, just pre-set the option for the next start
       await analysisService.setThreads(newCount)
     }
+  }
+
+  async function triggerRestart() {
+    if (isAnalysisActive.value) {
+      const currentFen = analysisLines.value[0]?.startingFen
+      if (currentFen) {
+        await startAnalysis(currentFen)
+      }
+    }
+  }
+
+  async function setMultiPv(value: number) {
+    const val = Math.max(1, Math.min(value, 5))
+    if (multiPv.value === val) return
+    multiPv.value = val
+    localStorage.setItem('analysis_multi_pv', String(val))
+    await triggerRestart()
+  }
+
+  async function setSearchTime(value: number) {
+    if (searchTime.value === value) return
+    searchTime.value = value
+    localStorage.setItem('analysis_search_time', String(value))
+    await triggerRestart()
+  }
+
+  function setShowArrows(value: boolean) {
+    if (showArrows.value === value) return
+    showArrows.value = value
+    localStorage.setItem('analysis_show_arrows', String(value))
   }
 
   async function startNewGame() {
@@ -71,7 +111,10 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     isLoading.value = true
     analysisLines.value = []
 
-    // REMOVED redundant setThreads call. Threads are now set only during init or manual change.
+    const options = {
+      multiPv: multiPv.value,
+      movetime: (searchTime.value === 99 || searchTime.value <= 0) ? 0 : searchTime.value * 1000,
+    }
 
     await analysisService.startAnalysis(fen, (lines) => {
       if (!isAnalysisActive.value || analysisVersion !== currentVersion) return
@@ -88,11 +131,8 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
       if (onLinesUpdate) {
         onLinesUpdate(sortedLines)
       }
-    })
+    }, options)
 
-    // RACE CONDITION GUARD: If stopAnalysis or another startAnalysis was called
-    // while we were waiting for the asyc operations above, we must abort and
-    // NOT set the active flag back to true.
     if (analysisVersion !== currentVersion) {
       logger.info(`[AnalysisEngineStore] Aborted start for FEN: ${fen} due to version change.`)
       return
@@ -123,8 +163,14 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     maxThreads,
     numThreads,
     playerColor,
+    multiPv,
+    searchTime,
+    showArrows,
     initialize,
     setThreads,
+    setMultiPv,
+    setSearchTime,
+    setShowArrows,
     startNewGame,
     startAnalysis,
     stopAnalysis,

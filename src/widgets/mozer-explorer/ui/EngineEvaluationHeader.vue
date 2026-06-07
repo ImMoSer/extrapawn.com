@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NSwitch, NButton, NIcon, NPopover, NSelect, NText } from 'naive-ui'
+import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { useAnalysisStore } from '@/features/analysis'
 import { EngineLines } from '@/features/analysis'
@@ -14,18 +14,10 @@ const {
   isAnalysisActive,
   isLoading,
   analysisLines,
-  maxThreads,
-  numThreads,
+  multiPv,
+  searchTime,
+  showArrows,
 } = storeToRefs(analysisStore)
-
-// Options for Threads Select
-const threadOptions = computed(() => {
-  const options = []
-  for (let i = 1; i <= maxThreads.value; i++) {
-    options.push({ label: `${i} Thread${i > 1 ? 's' : ''}`, value: i })
-  }
-  return options
-})
 
 // Current best score formatted
 const bestScore = computed(() => {
@@ -68,8 +60,34 @@ const handleToggle = () => {
   analysisStore.toggleAnalysis()
 }
 
-const handleThreadsChange = (value: number) => {
-  analysisStore.setThreads(value)
+const handlePvChange = (value: number) => {
+  analysisStore.setMultiPv(value)
+}
+
+const handleShowArrowsChange = (value: boolean) => {
+  analysisStore.setShowArrows(value)
+}
+
+// Search Time slider helper
+const sliderSearchTime = computed({
+  get() {
+    return searchTime.value === 99 ? 35 : searchTime.value
+  },
+  set(val: number) {
+    analysisStore.setSearchTime(val === 35 ? 99 : val)
+  }
+})
+
+const searchTimeMarks = {
+  5: '5s',
+  15: '15s',
+  25: '25s',
+  35: '∞'
+}
+
+const formatSearchTimeTooltip = (value: number) => {
+  if (value === 35) return '∞'
+  return `${value}s`
 }
 </script>
 
@@ -109,15 +127,48 @@ const handleThreadsChange = (value: number) => {
           
           <div class="settings-content">
             <n-text strong class="settings-title">{{ t('features.analysis.engineSettings') || 'Engine-Optionen' }}</n-text>
+            
+            <!-- MultiPV Slider -->
             <div class="settings-field">
-              <span class="field-label">Threads</span>
-              <n-select
-                :value="numThreads"
-                :options="threadOptions"
-                size="small"
-                class="settings-select"
-                @update:value="handleThreadsChange"
+              <div class="field-label-row">
+                <span class="field-label">MultiPV</span>
+                <span class="field-value">{{ multiPv }} Lines</span>
+              </div>
+              <n-slider
+                v-model:value="multiPv"
+                :min="1"
+                :max="5"
+                :step="1"
+                class="settings-slider"
+                @update:value="handlePvChange"
               />
+            </div>
+
+            <!-- Search Time Slider -->
+            <div class="settings-field">
+              <div class="field-label-row">
+                <span class="field-label">Suchzeit</span>
+                <span class="field-value">{{ searchTime === 99 ? 'Unbegrenzt (∞)' : `${searchTime}s` }}</span>
+              </div>
+              <n-slider
+                v-model:value="sliderSearchTime"
+                :min="5"
+                :max="35"
+                :step="5"
+                :marks="searchTimeMarks"
+                :format-tooltip="formatSearchTimeTooltip"
+                class="settings-slider"
+              />
+            </div>
+
+            <!-- Show Arrows Checkbox -->
+            <div class="settings-field checkbox-field">
+              <n-checkbox
+                :checked="showArrows"
+                @update:checked="handleShowArrowsChange"
+              >
+                Pfeile auf Brett anzeigen
+              </n-checkbox>
             </div>
           </div>
         </n-popover>
@@ -237,12 +288,19 @@ const handleThreadsChange = (value: number) => {
   }
 }
 
+.popup-settings {
+  background: var(--glass-bg, #0b0d17) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: var(--glass-blur);
+  border-radius: 8px;
+}
+
 .settings-content {
-  padding: 10px;
-  min-width: 180px;
+  padding: 12px 8px;
+  min-width: 220px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .settings-title {
@@ -250,22 +308,41 @@ const handleThreadsChange = (value: number) => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 6px;
   margin-bottom: 4px;
+  color: #fff;
 }
 
 .settings-field {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label-row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
 }
 
 .field-label {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--text-secondary, #a1a1aa);
 }
 
-.settings-select {
-  width: 100px;
+.field-value {
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: var(--neon-cyan, #1890ff);
+  font-weight: 700;
+}
+
+.settings-slider {
+  padding: 4px 0 16px; /* give room for marks */
+}
+
+.checkbox-field {
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.05);
 }
 
 .pv-lines-container {

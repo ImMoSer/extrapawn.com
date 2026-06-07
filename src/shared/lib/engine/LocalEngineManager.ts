@@ -243,7 +243,11 @@ export class LocalEngineManager {
     }
   }
 
-  public async startAnalysis(fen: string, callback: AnalysisUpdateCallback): Promise<void> {
+  public async startAnalysis(
+    fen: string,
+    callback: AnalysisUpdateCallback,
+    options: { multiPv?: number; movetime?: number } = {},
+  ): Promise<void> {
     await this.ensureReady()
     if (!this.engine) return
 
@@ -257,10 +261,18 @@ export class LocalEngineManager {
       await this.setThreads(this.preferredAnalysisThreads)
     }
 
+    if (options.multiPv !== undefined) {
+      await this.setOption('MultiPV', options.multiPv)
+    }
+
     this.infiniteAnalysisCallback = callback
     this.isSearching = true
     this.sendCommand(`position fen ${fen}`)
-    this.sendCommand(`go depth ${MAX_ANALYSIS_DEPTH}`)
+    if (options.movetime && options.movetime > 0) {
+      this.sendCommand(`go movetime ${options.movetime}`)
+    } else {
+      this.sendCommand(`go depth ${MAX_ANALYSIS_DEPTH}`)
+    }
   }
 
   public async getBestMoveOnly(

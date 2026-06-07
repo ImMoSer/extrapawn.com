@@ -63,7 +63,7 @@ class AnalysisServiceController {
   public async startAnalysis(
     fen: string,
     callback: (lines: EvaluatedLineWithSan[]) => void,
-    multiPV = 3,
+    options: { multiPv?: number; movetime?: number } = {},
   ) {
     if (!this.activeEngineManager) {
       logger.info('[AnalysisService] Engine manager not active. Waiting for initialization...')
@@ -83,8 +83,7 @@ class AnalysisServiceController {
       }
     }
 
-    await this.activeEngineManager.setOption('MultiPV', multiPV)
-    await this.activeEngineManager.startAnalysis(fen, analysisUpdateCallback)
+    await this.activeEngineManager.startAnalysis(fen, analysisUpdateCallback, options)
   }
 
   public async calculateFixedDepth(
