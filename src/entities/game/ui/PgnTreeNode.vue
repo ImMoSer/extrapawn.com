@@ -72,6 +72,10 @@ const nagInfo = computed(() => {
   return null
 })
 
+const emit = defineEmits<{
+  (e: 'contextmenu', payload: { event: MouseEvent; node: PgnNode }): void
+}>()
+
 const navigate = () => {
   if (props.readOnly) return
   gameStore.navigateToNode(props.node)
@@ -86,8 +90,12 @@ const navigate = () => {
       <span 
         :class="['move-san', { 'is-active': isActive, 'read-only': readOnly }, nagInfo?.quality]" 
         @click="navigate"
+        @contextmenu.prevent="emit('contextmenu', { event: $event, node: props.node })"
       >
         {{ node.san }}{{ nagInfo ? nagInfo.symbol : '' }}
+      </span>
+      <span v-if="node.comment" class="move-comment" :title="node.comment">
+        {{ node.comment }}
       </span>
     </span>
 
@@ -97,7 +105,7 @@ const navigate = () => {
       <div v-if="variations.length > 0" class="variations-container">
         <div v-for="(vNode, idx) in variations" :key="idx" class="variation-block">
           <span class="variation-bracket">(</span>
-          <PgnTreeNode :node="vNode" :depth="(depth || 0) + 1" :read-only="readOnly" />
+          <PgnTreeNode :node="vNode" :depth="(depth || 0) + 1" :read-only="readOnly" @contextmenu="emit('contextmenu', $event)" />
           <span class="variation-bracket">)</span>
         </div>
       </div>
@@ -109,6 +117,7 @@ const navigate = () => {
         :depth="depth" 
         :is-mainline="true" 
         :read-only="readOnly"
+        @contextmenu="emit('contextmenu', $event)"
       />
     </div>
   </div>
@@ -210,5 +219,21 @@ const navigate = () => {
 
 .is-variation {
   color: var(--color-text-muted);
+}
+
+.move-comment {
+  font-family: var(--font-sans, sans-serif);
+  font-style: italic;
+  font-size: 0.82em;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border-left: 2px solid var(--neon-cyan, #1890ff);
+  margin-left: 6px;
+  display: inline-block;
+  white-space: normal;
+  max-width: 320px;
+  vertical-align: middle;
 }
 </style>

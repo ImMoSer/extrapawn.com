@@ -9,19 +9,23 @@ import {
   TrainingStatsPanel,
   useRepertoireTrainingStore
 } from '@/features/repertoire-training'
-import { useGameStore, PgnTree } from '@/entities/game'
+import { useGameStore } from '@/entities/game'
+import { MozerExplorerWidget } from '@/widgets/mozer-explorer'
+import { useAnalysisStore } from '@/features/analysis'
 
 const { t } = useI18n()
 const trainingStore = useRepertoireTrainingStore()
 const gameStore = useGameStore()
+const analysisStore = useAnalysisStore()
 const dialog = useDialog()
 
 onMounted(() => {
   trainingStore.resetSession()
 })
 
-onUnmounted(() => {
+onUnmounted(async () => {
   gameStore.stop()
+  await analysisStore.hidePanel()
 })
 
 const isTrainingActive = computed(() => trainingStore.isTrainingActive)
@@ -77,41 +81,15 @@ onBeforeRouteLeave((to, from, next) => {
         <NText strong class="mode-label">
           {{
             isTrainingActive
-              ? t('features.study.replyTraining.status.training')
-              : t('features.study.replyTraining.status.idle')
+               ? t('features.study.replyTraining.status.training')
+               : t('features.study.replyTraining.status.idle')
           }}
         </NText>
       </div>
     </template>
 
     <template #right-panel>
-      <div v-if="isTrainingActive" class="active-tree-panel">
-        <PgnTree :read-only="true" />
-      </div>
-      <div v-else class="intro-sidebar">
-        <div class="intro-card">
-          <NText strong class="intro-title">
-            {{ t('features.study.replyTraining.intro.title') }}
-          </NText>
-          <p class="intro-desc">
-            {{ t('features.study.replyTraining.intro.desc1') }}
-          </p>
-          <div class="steps-list">
-            <div class="step-item">
-              <span class="step-num">1</span>
-              <span>{{ t('features.study.replyTraining.intro.step1') }}</span>
-            </div>
-            <div class="step-item">
-              <span class="step-num">2</span>
-              <span>{{ t('features.study.replyTraining.intro.step2') }}</span>
-            </div>
-            <div class="step-item">
-              <span class="step-num">3</span>
-              <span>{{ t('features.study.replyTraining.intro.step3') }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MozerExplorerWidget />
     </template>
   </GameLayout>
 </template>

@@ -240,7 +240,7 @@ const openingNameParts = computed(() => {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
-  height: 100%;
+  max-height: 100%;
   min-height: 0;
   position: relative;
 }
@@ -349,7 +349,7 @@ const openingNameParts = computed(() => {
 }
 
 .book-body {
-  flex: 1;
+  max-height: 310px;
   overflow-y: auto;
   position: relative;
   background: transparent;

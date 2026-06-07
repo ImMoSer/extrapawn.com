@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import PgnTreeNode from './PgnTreeNode.vue'
 
 const rootNode = computed(() => {
@@ -8,12 +8,15 @@ const rootNode = computed(() => {
   const v = pgnTreeVersion.value
   return pgnService.getRootNode()
 })
+const emit = defineEmits<{
+  (e: 'contextmenu', payload: { event: MouseEvent; node: PgnNode }): void
+}>()
 </script>
 
 <template>
   <div class="pgn-tree-view">
     <div v-if="rootNode && rootNode.children.length > 0" class="tree-content">
-      <PgnTreeNode :node="rootNode" :depth="0" />
+      <PgnTreeNode :node="rootNode" :depth="0" @contextmenu="emit('contextmenu', $event)" />
     </div>
     <div v-else class="empty-pgn">
       Keine Züge vorhanden

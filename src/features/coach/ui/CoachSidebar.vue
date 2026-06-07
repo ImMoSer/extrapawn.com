@@ -18,27 +18,9 @@
       </div>
     </div>
 
-    <!-- Tab Bar -->
-    <div class="tab-switcher-container">
-      <n-tabs
-        :value="activeTab"
-        @update:value="emit('update:activeTab', $event)"
-        type="segment"
-        animated
-        class="mode-tabs"
-      >
-        <n-tab name="coach">
-          Coach
-        </n-tab>
-        <n-tab name="analyse">
-          Analyse
-        </n-tab>
-      </n-tabs>
-    </div>
-
     <!-- Content area -->
     <div class="sidebar-content-wrapper">
-      <div v-show="activeTab === 'coach'" class="coach-content-scroll">
+      <div class="coach-content-scroll">
         <div v-if="coachStore.isAnalyzing && !coachStore.currentExplanation" class="coach-loading">
           <div class="spinner"></div>
           <p>Analyzing position...</p>
@@ -51,36 +33,19 @@
           <CoachPositionSummary />
         </div>
       </div>
-
-      <div v-show="activeTab === 'analyse'" class="analyse-content-scroll">
-        <slot name="analyse"></slot>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { EyeOffOutline, EyeOutline } from '@vicons/ionicons5'
-import { NIcon, NTabs, NTab } from 'naive-ui'
+import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachAvatar from './CoachAvatar.vue'
 import CoachLastMove from './CoachLastMove.vue'
 import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachSettings from './CoachSettings.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
-
-withDefaults(
-  defineProps<{
-    activeTab?: string
-  }>(),
-  {
-    activeTab: 'coach',
-  }
-)
-
-const emit = defineEmits<{
-  (e: 'update:activeTab', value: string): void
-}>()
 
 const coachStore = useCoachStore()
 

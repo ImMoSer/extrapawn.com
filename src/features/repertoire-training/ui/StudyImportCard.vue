@@ -19,6 +19,7 @@ import { useGameStore, useBoardStore } from '@/entities/game'
 import { RepertoireTrainingStrategy } from '../model/RepertoireTrainingStrategy'
 import { srsService } from '../lib/SrsService'
 import logger from '@/shared/lib/logger'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 
 const { t } = useI18n()
 const studyStore = useStudyStore()
@@ -126,6 +127,21 @@ const handleStartTraining = async (chapterId: string) => {
     message.error(`${t('features.study.replyTraining.session.startFailed')}: ${errorMsg}`)
   }
 }
+
+const handleSelectChapter = async (studyId: string, chapterId: string) => {
+  try {
+    await studyStore.selectChapter(studyId, chapterId)
+    const chapter = studyStore.activeChapter
+    if (chapter) {
+      const userColor = chapter.color || 'white'
+      const boardStore = useBoardStore()
+      boardStore.setupPosition(pgnService.getCurrentNavigatedFen(), userColor)
+    }
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    message.error(`Kapitel konnte nicht geladen werden: ${errorMsg}`)
+  }
+}
 </script>
 
 <template>
@@ -202,7 +218,8 @@ const handleStartTraining = async (chapterId: string) => {
                 <div
                   v-for="ch in study.chapters"
                   :key="ch.id"
-                  :class="['chapter-row', { disabled: ch.chapter_type !== 'repertoire' }]"
+                  :class="['chapter-row', { disabled: ch.chapter_type !== 'repertoire', active: studyStore.activeChapter?.id === ch.id }]"
+                  @click="ch.chapter_type === 'repertoire' && handleSelectChapter(study.id, ch.id)"
                 >
                   <div class="ch-info">
                     <span class="ch-name">{{ ch.name }}</span>
@@ -363,6 +380,22 @@ const handleStartTraining = async (chapterId: string) => {
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chapter-row:not(.disabled) {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chapter-row:not(.disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.chapter-row.active {
+  background: rgba(24, 144, 255, 0.15);
+  border-color: var(--neon-cyan, #1890ff);
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.1);
 }
 
 .chapter-row.disabled {
