@@ -164,6 +164,7 @@ class PgnServiceController {
       // logger.debug(`[PgnService] Node with ID ${nodeId} (UCI: ${data.uci}) already exists as a child. Navigating to it.`)
       this.currentNode = existingChild
       this.currentPath = this.buildPath(this.currentNode)
+      treeVersion.value++
       return this.currentNode
     }
 

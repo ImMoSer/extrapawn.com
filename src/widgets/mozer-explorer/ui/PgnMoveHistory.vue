@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore, PgnTree } from '@/entities/game'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { NText, NIcon } from 'naive-ui'
@@ -10,6 +10,21 @@ import {
 } from '@vicons/ionicons5'
 
 const gameStore = useGameStore()
+const scrollContainer = ref<HTMLElement | null>(null)
+
+watch(
+  pgnTreeVersion,
+  () => {
+    nextTick(() => {
+      const activeEl = scrollContainer.value?.querySelector('.move-san.is-active')
+      activeEl?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      })
+    })
+  },
+  { immediate: true }
+)
 
 // Context Menu State
 const showMenu = ref(false)
@@ -86,7 +101,7 @@ const deleteMove = () => {
       <n-text class="header-title" depth="3">Partieverlauf</n-text>
     </div>
     
-    <div class="history-content-scroll">
+    <div ref="scrollContainer" class="history-content-scroll">
       <PgnTree :key="pgnTreeVersion" @contextmenu="handleContextMenu" />
     </div>
 
