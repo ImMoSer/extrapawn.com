@@ -97,6 +97,18 @@ const router = createRouter({
       },
     },
     {
+      path: '/open-check',
+      name: 'open-check',
+      component: () => import('@/pages/open-check/ui/OpenCheckPage.vue'),
+      meta: {
+        requiresAuth: true,
+        seo: {
+          titleKey: 'seo.openCheck.title',
+          descriptionKey: 'seo.openCheck.description',
+        },
+      },
+    },
+    {
       path: '/user-cabinet/:id?',
       name: 'user-cabinet',
       component: UserCabinetPage,

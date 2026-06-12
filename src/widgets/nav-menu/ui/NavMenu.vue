@@ -12,6 +12,7 @@ import {
   SkullOutline,
   TrophyOutline,
   SchoolOutline,
+  AnalyticsOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
 import { computed, h, type Component } from 'vue'
@@ -82,6 +83,11 @@ const menuOptions: MenuOption[] = [
     label: () => t('shared.nav.repertoire'),
     key: '/repertoire-training',
     icon: renderIcon(SchoolOutline),
+  },
+  {
+    label: () => t('shared.nav.openCheck'),
+    key: '/open-check',
+    icon: renderIcon(AnalyticsOutline),
   },
   {
     label: () => t('shared.nav.leaderboards'),

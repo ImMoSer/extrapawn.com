@@ -37,6 +37,10 @@
     "repertoireTraining": {
       "title": "Repertoire-Training — Spaced Repetition",
       "description": "Trainiere dein Eröffnungsrepertoire mit Lichess-Studien. Meistere deine Varianten gegen eine adaptive KI, die deine Schwachstellen ausnutzt."
+    },
+    "openCheck": {
+      "title": "Open Check — Eröffnungsrepertoire-Analyse",
+      "description": "Analysiere deine gespielten Partien, identifiziere Lücken in deinem Eröffnungsrepertoire, sieh dir Empfehlungen von Großmeistern an und entdecke Theorie."
     }
   },
   "legal": {
@@ -899,6 +903,7 @@
       "about": "Über uns",
       "legal": "Rechtliches",
       "repertoire": "Study",
+      "openCheck": "Open Check",
       "login": "Anmelden",
       "logout": "Abmelden",
       "loginWithLichess": "Mit Lichess anmelden"
