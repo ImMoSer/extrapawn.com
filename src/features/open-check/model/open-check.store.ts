@@ -361,7 +361,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
         rootMove: displayRootMove,
       }
 
-      await studyDb.open_check_analyses.put(analysis)
+      await studyDb.open_check_analyses.put(JSON.parse(JSON.stringify(analysis)))
       await loadHistory()
 
       // Set active
