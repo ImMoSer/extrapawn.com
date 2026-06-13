@@ -312,7 +312,7 @@ const handleManageSubscription = async () => {
 <style scoped>
 .user-cabinet-container {
   padding: 24px;
-  max-width: 100%;
+  max-width: 85%;
   margin: 20px auto;
 }
 
@@ -359,6 +359,7 @@ const handleManageSubscription = async () => {
   .user-cabinet-container {
     padding: 4px;
     margin: 10px auto;
+    max-width: 100%;
   }
 }
 
