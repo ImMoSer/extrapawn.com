@@ -59,3 +59,17 @@ Für die Leistungsbewertung (Performance) einer Eröffnung wird das durchschnitt
   * Grün: `#18a058` (Siege)
   * Grau: `rgba(255, 255, 255, 0.2)` (Remis)
   * Rot: `#d03050` (Niederlagen)
+
+---
+
+## 5. Entwickler-Modus & Benutzer-Umschaltung
+
+Um dem Entwickler (`lichess_id=mo3ep`) die Möglichkeit zu geben, Spieldatenbanken beliebiger Lichess-Nutzer herunterzuladen, zu verwalten und zu analysieren, wurde folgende Logik implementiert:
+
+* **Sicherheits- & Aktivierungs-Check**: In `LichessGamesCacheSettings.vue` und bei den `onMounted`-Hooks der Seiten (`UserCabinetView.vue`, `OpenCheckPage.vue`) wird geprüft, ob die aktive Profil-ID `mo3ep` entspricht.
+* **Dynamische Eingabe**: Für den Benutzer `mo3ep` rendert das Cache-Settings-Panel anstelle eines statischen Labels ein Text-Eingabefeld (`NInput`) sowie einen "Reset"-Button.
+* **Reaktivität**:
+  * Sobald ein anderer Benutzername eingetippt und bestätigt (Enter/Blur) wird, aktualisiert sich `openCheckStore.targetUsername`.
+  * Das Umschalten stößt über einen Watcher sofort den Ladevorgang der lokalen IndexedDB-Statistiken für den neuen Benutzer an.
+  * Alle Statistiken, das Rose Chart und der Open Check Analyzer reagieren synchron auf den neu gewählten Spieler.
+  * Über den "Reset"-Button kann der Entwickler jederzeit zu seiner eigenen Profil-Statistik zurückkehren.

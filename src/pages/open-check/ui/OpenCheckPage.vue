@@ -54,7 +54,8 @@ onMounted(async () => {
   gameStore.setGamePhase('PLAYING')
 
   // Initialize input fields with profile lichess username if present
-  if (authStore.userProfile?.id) {
+  const isDev = authStore.userProfile?.id?.toLowerCase() === 'mo3ep'
+  if (authStore.userProfile?.id && (!isDev || !openCheckStore.targetUsername)) {
     openCheckStore.targetUsername = authStore.userProfile.id
   }
 

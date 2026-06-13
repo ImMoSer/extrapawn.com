@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useLichessGamesDbStore } from '../model/lichess-games-db.store'
 import { useOpenCheckStore } from '@/features/open-check'
+import { useAuthStore } from '@/entities/user'
 import { useI18n } from 'vue-i18n'
 import {
   NButton,
@@ -9,6 +10,7 @@ import {
   NText,
   NProgress,
   NSpace,
+  NInput,
   useMessage,
 } from 'naive-ui'
 import {
@@ -34,6 +36,7 @@ const emit = defineEmits<{
 
 const store = useLichessGamesDbStore()
 const openCheckStore = useOpenCheckStore()
+const authStore = useAuthStore()
 const message = useMessage()
 const { t } = useI18n()
 
@@ -41,6 +44,29 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 // Bind username from openCheckStore so they are in sync
 const username = computed(() => openCheckStore.targetUsername)
+
+const isDeveloper = computed(() => authStore.userProfile?.id?.toLowerCase() === 'mo3ep')
+const editableUsername = ref(username.value)
+
+watch(username, (newVal) => {
+  editableUsername.value = newVal
+})
+
+function saveUsername() {
+  const clean = editableUsername.value.trim().toLowerCase()
+  if (clean) {
+    openCheckStore.targetUsername = clean
+  } else {
+    resetToSelf()
+  }
+}
+
+function resetToSelf() {
+  if (authStore.userProfile?.id) {
+    openCheckStore.targetUsername = authStore.userProfile.id
+    editableUsername.value = authStore.userProfile.id
+  }
+}
 
 async function refreshStats() {
   if (username.value) {
@@ -142,9 +168,19 @@ const syncProgressPercentage = computed(() => {
     <div class="content-container">
       <!-- Active User Profile Display -->
       <NCard class="panel-card user-status-card" size="small">
-        <div class="username-display">
+        <div class="username-display" style="display: flex; align-items: center; justify-content: space-between; width: 100%">
           <span class="username-label">{{ $t('features.lichessGamesDb.cacheSettings.username') }}</span>
-          <span class="username-value">{{ username || $t('features.lichessGamesDb.cacheSettings.noUserSelected') }}</span>
+          <div v-if="isDeveloper" style="display: flex; gap: 8px; align-items: center; flex-grow: 1; margin-left: 12px; max-width: 250px">
+            <NInput
+              v-model:value="editableUsername"
+              size="small"
+              placeholder="Username..."
+              @blur="saveUsername"
+              @keyup.enter="saveUsername"
+            />
+            <NButton size="small" secondary @click="resetToSelf">Reset</NButton>
+          </div>
+          <span v-else class="username-value">{{ username || $t('features.lichessGamesDb.cacheSettings.noUserSelected') }}</span>
         </div>
       </NCard>
 

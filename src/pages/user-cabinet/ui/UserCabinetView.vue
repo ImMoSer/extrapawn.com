@@ -60,7 +60,8 @@ const openCheckStore = useOpenCheckStore()
 const showPolarSuccessModal = ref(false)
 
 onMounted(() => {
-  if (authStore.userProfile?.id) {
+  const isDev = authStore.userProfile?.id?.toLowerCase() === 'mo3ep'
+  if (authStore.userProfile?.id && (!isDev || !openCheckStore.targetUsername)) {
     openCheckStore.targetUsername = authStore.userProfile.id
   }
 
