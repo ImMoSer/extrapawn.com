@@ -196,6 +196,38 @@ const chartOption = computed(() => {
         },
         data: chartData.value
       }
+    ],
+    media: [
+      {
+        query: {
+          maxWidth: 450
+        },
+        option: {
+          series: [
+            {
+              radius: ['10%', '50%'],
+              label: {
+                fontSize: 9
+              }
+            }
+          ]
+        }
+      },
+      {
+        query: {
+          maxWidth: 350
+        },
+        option: {
+          series: [
+            {
+              radius: ['5%', '42%'],
+              label: {
+                fontSize: 8
+              }
+            }
+          ]
+        }
+      }
     ]
   }
 })
@@ -643,10 +675,11 @@ const wdlGlobalPercentage = computed(() => {
 /* Rose Chart */
 .chart-wrapper {
   width: 100%;
-  height: 600px;
+  aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .chart {

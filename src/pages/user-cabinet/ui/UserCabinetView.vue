@@ -326,11 +326,15 @@ const handleManageSubscription = async () => {
 .user-cabinet-left {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
 }
 
 .user-cabinet-right {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
