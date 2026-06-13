@@ -267,6 +267,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       throw new Error('Lichess-Benutzername ist erforderlich.')
     }
 
+    const maxGames = 10000
     isSyncing.value = true
     syncProgress.value = { current: 0, total: 0 }
     error.value = null
@@ -294,7 +295,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             .where('username')
             .equals(cleanUsername)
             .count()
-          totalExpectedNew = Math.max(0, totalGames - currentLocalCount)
+          totalExpectedNew = Math.min(maxGames, Math.max(0, totalGames - currentLocalCount))
         }
       } catch {
         logger.warn('Konnte Lichess-Profil nicht abfragen für Fortschrittsanzeige')
@@ -303,7 +304,6 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       syncProgress.value = { current: 0, total: totalExpectedNew }
 
       // 3. API-Url aufbauen
-      const maxGames = 10000
       const perfTypeParam = perfTypes.join(',')
       let url = `https://lichess.org/api/games/user/${username}?tags=true&clocks=false&evals=false&opening=true&literate=false&max=${maxGames}&perfType=${perfTypeParam}`
       if (sinceTimestamp) {
