@@ -626,6 +626,7 @@
     "lichessGamesDb": {
       "statistics": {
         "title": "Spieldatenbank-Statistiken",
+        "total": "Gesamt",
         "tabAll": "ALLE",
         "tabWhite": "WEISS",
         "tabBlack": "SCHWARZ",

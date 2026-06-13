@@ -313,6 +313,19 @@ const wdlGlobalPercentage = computed(() => {
     loss: (currentStats.value.losses / total) * 100
   }
 })
+
+const totalAvgRating = computed(() => {
+  if (!currentStats.value || !currentStats.value.perfStats) return 0
+  let totalRatingSum = 0
+  let totalGamesCount = 0
+  for (const perf of currentStats.value.perfStats) {
+    if (perf.gamesCount > 0) {
+      totalRatingSum += perf.avgRating * perf.gamesCount
+      totalGamesCount += perf.gamesCount
+    }
+  }
+  return totalGamesCount > 0 ? Math.round(totalRatingSum / totalGamesCount) : 0
+})
 </script>
 
 <template>
@@ -328,42 +341,8 @@ const wdlGlobalPercentage = computed(() => {
 
       <template v-if="hasData && currentStats">
         <div class="stats-overview">
-          <!-- Overall stats summary -->
-          <div class="overall-summary-card">
-            <div class="games-count-row">
-              <span class="label">{{ $t('features.lichessGamesDb.statistics.totalGames') }}</span>
-              <span class="val">{{ currentStats.gamesCount }}</span>
-            </div>
-
-            <div class="wdl-bar-container global-bar">
-              <div class="wdl-bar">
-                <div class="wdl-segment win" :style="{ width: wdlGlobalPercentage.win + '%' }">
-                  <span class="wdl-val" v-if="wdlGlobalPercentage.win > 12">
-                    {{ currentStats.wins }} ({{ Math.round(wdlGlobalPercentage.win) }}%)
-                  </span>
-                </div>
-                <div class="wdl-segment draw" :style="{ width: wdlGlobalPercentage.draw + '%' }">
-                  <span class="wdl-val" v-if="wdlGlobalPercentage.draw > 12">
-                    {{ currentStats.draws }} ({{ Math.round(wdlGlobalPercentage.draw) }}%)
-                  </span>
-                </div>
-                <div class="wdl-segment loss" :style="{ width: wdlGlobalPercentage.loss + '%' }">
-                  <span class="wdl-val" v-if="wdlGlobalPercentage.loss > 12">
-                    {{ currentStats.losses }} ({{ Math.round(wdlGlobalPercentage.loss) }}%)
-                  </span>
-                </div>
-              </div>
-              <div class="wdl-labels">
-                <span class="wdl-label-item win-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.wins') }}</span>
-                <span class="wdl-label-item draw-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.draws') }}</span>
-                <span class="wdl-label-item loss-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.losses') }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Speed WDL horizontal bars table -->
+          <!-- Combined WDL horizontal bars table -->
           <div class="section-container">
-            <h4 class="section-subtitle">{{ $t('features.lichessGamesDb.statistics.performanceBySpeed') }}</h4>
             <div class="speed-wdl-table">
               <div v-for="perf in currentStats.perfStats" :key="perf.speed" class="speed-row">
                 <div class="speed-header-row">
@@ -390,6 +369,37 @@ const wdlGlobalPercentage = computed(() => {
                   {{ $t('features.lichessGamesDb.statistics.noGamesPlayed') }}
                 </div>
               </div>
+
+              <!-- Total row -->
+              <div class="speed-row total-row">
+                <div class="speed-header-row">
+                  <span class="speed-name">{{ $t('features.lichessGamesDb.statistics.total') }}</span>
+                  <div class="speed-meta">
+                    <span class="speed-rating" v-if="currentStats.gamesCount > 0">{{ totalAvgRating }} {{ $t('features.lichessGamesDb.statistics.avgRating') }}</span>
+                    <span class="speed-games-count">({{ $t('features.lichessGamesDb.statistics.gamesCount', { count: currentStats.gamesCount }) }})</span>
+                  </div>
+                </div>
+                <div v-if="currentStats.gamesCount > 0" class="wdl-bar-container row-bar">
+                  <div class="wdl-bar">
+                    <div class="wdl-segment win" :style="{ width: wdlGlobalPercentage.win + '%' }">
+                      <span class="wdl-val" v-if="wdlGlobalPercentage.win > 15">{{ Math.round(wdlGlobalPercentage.win) }}% W</span>
+                    </div>
+                    <div class="wdl-segment draw" :style="{ width: wdlGlobalPercentage.draw + '%' }">
+                      <span class="wdl-val" v-if="wdlGlobalPercentage.draw > 15">{{ Math.round(wdlGlobalPercentage.draw) }}% D</span>
+                    </div>
+                    <div class="wdl-segment loss" :style="{ width: wdlGlobalPercentage.loss + '%' }">
+                      <span class="wdl-val" v-if="wdlGlobalPercentage.loss > 15">{{ Math.round(wdlGlobalPercentage.loss) }}% L</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unified WDL Labels -->
+            <div class="wdl-labels" style="margin-top: 8px; margin-bottom: 8px; display: flex; justify-content: center; gap: 16px;">
+              <span class="wdl-label-item win-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.wins') }}</span>
+              <span class="wdl-label-item draw-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.draws') }}</span>
+              <span class="wdl-label-item loss-label"><span class="dot"></span>{{ $t('features.lichessGamesDb.statistics.losses') }}</span>
             </div>
           </div>
 
@@ -632,6 +642,12 @@ const wdlGlobalPercentage = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.total-row {
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 10px;
+  margin-top: 2px;
 }
 
 .speed-header-row {
