@@ -304,9 +304,9 @@ const syncProgressPercentage = computed(() => {
 }
 
 .panel-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-hover);
 }
 
 .user-status-card {

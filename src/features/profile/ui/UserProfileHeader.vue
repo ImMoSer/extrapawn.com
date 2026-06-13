@@ -200,7 +200,7 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
       <!-- Right: Best Ratings (taking remaining space) -->
       <div class="ratings-section">
         <div class="section-title">{{ t('pages.userCabinet.stats.bestRatingsTitle') }}</div>
-        <n-grid :cols="2" :x-gap="12" :y-gap="12">
+        <n-grid :cols="isMobile ? 2 : 4" :x-gap="12" :y-gap="12">
           <n-grid-item v-for="stat in gameModeScores" :key="stat.key">
             <div class="score-item" :style="{ borderColor: stat.color }">
               <div class="mode-emoji-icon" style="font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px;">
@@ -227,8 +227,8 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
 
 .header-main-grid {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 48px;
+  grid-template-columns: 1fr;
+  gap: 24px;
 }
 
 .profile-basic-info {
@@ -311,12 +311,7 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
   color: var(--color-accent-warning);
 }
 
-@media (max-width: 1100px) {
-  .header-main-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-}
+
 
 @media (max-width: 768px) {
   .header-card :deep(.n-card-content) {
