@@ -173,7 +173,7 @@ const chartOption = computed(() => {
       {
         name: 'Top Openings',
         type: 'pie',
-        radius: ['10%', '65%'],
+        radius: ['10%', '70%'],
         center: ['50%', '50%'],
         roseType: 'radius',
         itemStyle: {
@@ -683,7 +683,7 @@ const totalAvgRating = computed(() => {
 /* Rose Chart */
 .chart-wrapper {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 70vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -693,6 +693,12 @@ const totalAvgRating = computed(() => {
 .chart {
   width: 100%;
   height: 100%;
+}
+
+@media (max-width: 768px) {
+  .chart-wrapper {
+    height: 350px;
+  }
 }
 
 .chart-tip {
