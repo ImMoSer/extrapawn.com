@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useOpenCheckStore, getFenAfterMove } from '@/features/open-check'
+import { useOpenCheckStore, getFenAfterMove, type OpenCheckTreeNode } from '@/features/open-check'
 import { ChevronDownOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 
 const props = defineProps<{
-  node: any
+  node: OpenCheckTreeNode
   isUserMove: boolean
   moveLabel: string
   parentFen: string
@@ -138,7 +138,7 @@ function selectNode() {
           :key="child.move_uci"
           :node="child"
           :is-user-move="true"
-          :move-label="child.move_san"
+          :move-label="child.move_san || child.move_uci || ''"
           :parent-fen="nodeFen"
           :depth="depth + 1"
         />

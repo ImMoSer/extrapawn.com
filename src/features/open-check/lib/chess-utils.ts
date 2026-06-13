@@ -40,8 +40,9 @@ export function validateAndCleanMoves(movesStr: string, gameId: string): string[
     try {
       const result = chess.move(m)
       validatedMoves.push(result.san)
-    } catch (err: any) {
-      throw new Error(`[Fail-Fast] Game ${gameId} has illegal or invalid moves: "${m}". Error: ${err.message}`)
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Invalid move'
+      throw new Error(`[Fail-Fast] Game ${gameId} has illegal or invalid moves: "${m}". Error: ${errMsg}`)
     }
   }
 

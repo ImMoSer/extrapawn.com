@@ -49,6 +49,7 @@ Die JSON-Dateien (`en.json`, `de.json`, `ru.json`) sind in folgende Top-Level-Be
     "login": {}
   },
   "features": {
+    "lichessGamesDb": {},
     "coach": {},
     "leaderboards": {},
     "taskToday": {},

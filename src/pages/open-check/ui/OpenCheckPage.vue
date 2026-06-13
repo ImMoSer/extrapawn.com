@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch, ref } from 'vue'
-import { useOpenCheckStore, getFenAfterMove } from '@/features/open-check'
+import { onMounted, onUnmounted, watch, computed } from 'vue'
+import { useOpenCheckStore, getFenAfterMove, type OpenCheckTreeNode as OpenCheckTreeNodeType } from '@/features/open-check'
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { GameLayout } from '@/widgets/game-layout'
-import OpenCheckTreeNode from './OpenCheckTreeNode.vue'
-import OpenCheckHistoryList from './OpenCheckHistoryList.vue'
 import OpenCheckImportWizard from './OpenCheckImportWizard.vue'
+import OpenCheckTreeNode from './OpenCheckTreeNode.vue'
 import {
   NCard,
   NButton,
@@ -26,9 +25,6 @@ const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
 const message = useMessage()
-
-// Side panel view state: 'history' or 'import'
-const currentSidebarView = ref<'history' | 'import'>('history')
 
 // Keyboard arrow keys traversal for Open Check history
 function handleArrowKeys(event: KeyboardEvent) {
@@ -118,8 +114,15 @@ watch(() => boardStore.fen, (newFen) => {
   }
 })
 
+
+
+const rootNode = computed<OpenCheckTreeNodeType | null>(() => {
+  if (!openCheckStore.currentAnalysis?.tree) return null
+  return openCheckStore.currentAnalysis.tree as OpenCheckTreeNodeType
+})
+
 // Helper to look up children by FEN
-function findChildNodeByFen(node: any, targetFen: string, parentFen: string): any | null {
+function findChildNodeByFen(node: OpenCheckTreeNodeType | null, targetFen: string, parentFen: string): OpenCheckTreeNodeType | null {
   if (!node) return null
   const norm = (f: string) => f.split(' ').slice(0, 4).join(' ')
   const targetNorm = norm(targetFen)
@@ -140,7 +143,7 @@ function findChildNodeByFen(node: any, targetFen: string, parentFen: string): an
   if (node.opponent_moves) {
     for (const key in node.opponent_moves) {
       const child = node.opponent_moves[key]
-      if (child.fen && norm(child.fen) === targetNorm) {
+      if (child && child.fen && norm(child.fen) === targetNorm) {
         return child
       }
     }
@@ -154,17 +157,20 @@ function handlePlayRecommendation(moveSan: string) {
   if (!openCheckStore.activeNode) return
   
   // Find move in user_moves or opponent_moves
-  let nextNode: any = null
+  let nextNode: OpenCheckTreeNodeType | null = null
   
   if (openCheckStore.activeNode.user_moves) {
-    nextNode = openCheckStore.activeNode.user_moves.find((m: any) => m.move_san === moveSan)
+    nextNode = (openCheckStore.activeNode.user_moves as OpenCheckTreeNodeType[]).find((m) => m.move_san === moveSan) || null
   }
   
   if (!nextNode && openCheckStore.activeNode.opponent_moves) {
     // Search opponent moves keys
     for (const key in openCheckStore.activeNode.opponent_moves) {
       if (key.includes(moveSan)) {
-        nextNode = openCheckStore.activeNode.opponent_moves[key]
+        const child = openCheckStore.activeNode.opponent_moves[key]
+        if (child) {
+          nextNode = child as OpenCheckTreeNodeType
+        }
         break
       }
     }
@@ -190,17 +196,9 @@ function handlePlayRecommendation(moveSan: string) {
       </div>
     </template>
 
-    <!-- LEFT PANEL: History / Import Wizard -->
+    <!-- LEFT PANEL: Open Check Import Wizard -->
     <template #left-panel>
-      <OpenCheckHistoryList
-        v-if="currentSidebarView === 'history'"
-        @new-analysis="currentSidebarView = 'import'"
-      />
-      <OpenCheckImportWizard
-        v-else-if="currentSidebarView === 'import'"
-        @cancel="currentSidebarView = 'history'"
-        @success="currentSidebarView = 'history'"
-      />
+      <OpenCheckImportWizard />
     </template>
 
     <!-- RIGHT PANEL: Position intelligence & Opening tree -->
@@ -366,8 +364,9 @@ function handlePlayRecommendation(moveSan: string) {
           </div>
           <div v-else class="tree-wrapper scrollable-container">
             <OpenCheckTreeNode
-              :node="openCheckStore.currentAnalysis.tree"
-              :is-user-move="openCheckStore.currentAnalysis.tree.user_moves ? true : false"
+              v-if="rootNode"
+              :node="rootNode"
+              :is-user-move="rootNode.user_moves ? true : false"
               :move-label="openCheckStore.currentAnalysis.rootMove"
               :parent-fen="openCheckStore.currentAnalysis.rootFen"
               :depth="0"

@@ -4,7 +4,8 @@ import { useAuthStore } from '@/entities/user'
 import { studyDb, type OpenCheckAnalysis } from '@/entities/study'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
-import { validateAndCleanMoves, formatToPgn } from '../lib/chess-utils'
+import { formatToPgn } from '../lib/chess-utils'
+import type { OpenCheckTreeNode } from './types'
 
 export interface DownloadedGame {
   id: string
@@ -23,7 +24,6 @@ export const useOpenCheckStore = defineStore('open-check', () => {
 
   // --- STATE ---
   const isLoading = ref(false)
-  const isDownloading = ref(false)
   const isAnalyzing = ref(false)
   const error = ref<string | null>(null)
 
@@ -32,9 +32,9 @@ export const useOpenCheckStore = defineStore('open-check', () => {
   const userColor = ref<'white' | 'black'>('white')
   const maxDepth = ref(10) // default setting (ply depth 10)
   const gamesCount = ref(100) // default number of games to analyze
-  const perfTypes = ref<string[]>(['blitz', 'rapid', 'classical'])
+  const perfTypes = ref<string[]>(['bullet', 'blitz', 'rapid', 'classical'])
 
-  // Downloaded games store state
+  // Temporary list of games mapped from local cache for active analysis
   const downloadedGames = ref<DownloadedGame[]>([])
 
   // Active analysis results
@@ -42,7 +42,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
   const analysesHistory = ref<OpenCheckAnalysis[]>([])
 
   // Selected node info in the tree
-  const activeNode = ref<any | null>(null)
+  const activeNode = ref<OpenCheckTreeNode | null>(null)
   
   // Board / Move history navigation stack
   const historyFen = ref<string[]>([])
@@ -60,11 +60,11 @@ export const useOpenCheckStore = defineStore('open-check', () => {
   })
 
   const allowedDepthRange = computed(() => {
-    return isPremium.value ? { min: 10, max: 40, step: 5 } : { min: 10, max: 10, step: 0 }
+    return isPremium.value ? { min: 10, max: 30, step: 5 } : { min: 10, max: 10, step: 5 }
   })
 
   const allowedGamesCountRange = computed(() => {
-    return isPremium.value ? { min: 100, max: 1000, step: 100 } : { min: 100, max: 100, step: 0 }
+    return isPremium.value ? { min: 100, max: 1000, step: 100 } : { min: 100, max: 100, step: 100 }
   })
 
   const currentBoardFen = computed(() => {
@@ -103,7 +103,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
       const records = await studyDb.open_check_analyses.toArray()
       // sort by timestamp desc
       analysesHistory.value = records.sort((a, b) => b.timestamp - a.timestamp)
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[OpenCheckStore] Failed to load analyses history:', err)
       error.value = 'Failed to load analysis history.'
     } finally {
@@ -121,7 +121,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
         currentFenIndex.value = -1
       }
       await loadHistory()
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[OpenCheckStore] Failed to delete analysis:', err)
       error.value = 'Failed to delete analysis.'
     }
@@ -129,12 +129,13 @@ export const useOpenCheckStore = defineStore('open-check', () => {
 
   async function selectAnalysis(analysis: OpenCheckAnalysis) {
     currentAnalysis.value = analysis
-    activeNode.value = analysis.tree
-    historyFen.value = [analysis.tree.fen]
+    const tree = analysis.tree as OpenCheckTreeNode
+    activeNode.value = tree
+    historyFen.value = [tree.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']
     currentFenIndex.value = 0
   }
 
-  function setBoardPosition(fen: string, node: any) {
+  function setBoardPosition(fen: string, node: OpenCheckTreeNode) {
     activeNode.value = node
     
     const index = historyFen.value.indexOf(fen)
@@ -162,20 +163,28 @@ export const useOpenCheckStore = defineStore('open-check', () => {
 
     const targetFen = historyFen.value[currentFenIndex.value]
     if (targetFen && currentAnalysis.value?.tree) {
-      const found = findNodeByFen(currentAnalysis.value.tree, targetFen)
+      const found = findNodeByFen(currentAnalysis.value.tree as OpenCheckTreeNode, targetFen)
       if (found) {
         activeNode.value = found
       }
     }
   }
 
-  function findNodeByFen(root: any, fen: string): any | null {
+  function findNodeByFen(root: OpenCheckTreeNode, fen: string): OpenCheckTreeNode | null {
     const norm = (f: string) => f.split(' ').slice(0, 4).join(' ')
-    if (norm(root.fen) === norm(fen)) {
+    if (root.fen && norm(root.fen) === norm(fen)) {
       return root
     }
-    if (root.children) {
-      for (const child of root.children) {
+    // Check user_moves
+    if (root.user_moves) {
+      for (const child of root.user_moves) {
+        const found = findNodeByFen(child, fen)
+        if (found) return found
+      }
+    }
+    // Check opponent_moves
+    if (root.opponent_moves) {
+      for (const child of Object.values(root.opponent_moves)) {
         const found = findNodeByFen(child, fen)
         if (found) return found
       }
@@ -183,109 +192,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
     return null
   }
 
-  // STEP 1: Download games from Lichess public API
-  async function downloadLichessGames() {
-    isDownloading.value = true
-    error.value = null
-    downloadedGames.value = []
-
-    const finalColor = isPremium.value ? userColor.value : 'white'
-    const finalGamesCount = isPremium.value ? gamesCount.value : 100
-    const finalPerfTypes = isPremium.value ? perfTypes.value : ['blitz', 'rapid', 'classical']
-
-    if (!targetUsername.value.trim()) {
-      error.value = 'Lichess username is required.'
-      isDownloading.value = false
-      return
-    }
-
-    try {
-      // Query exactly the gamesCount selected by the user
-      const lichessUrl = `https://lichess.org/api/games/user/${encodeURIComponent(
-        targetUsername.value.trim()
-      )}?max=${finalGamesCount}&perfType=${finalPerfTypes.join(
-        ','
-      )}&color=${finalColor}&moves=true`
-
-      logger.info(`[OpenCheckStore] Downloading up to ${finalGamesCount} games from Lichess: ${lichessUrl}`)
-      
-      const response = await fetch(lichessUrl, {
-        headers: {
-          Accept: 'application/x-ndjson',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to download games from Lichess: HTTP ${response.status} ${response.statusText}`)
-      }
-
-      const text = await response.text()
-      const lines = text.split('\n').filter((l) => l.trim() !== '')
-
-      if (lines.length === 0) {
-        throw new Error(`No games found on Lichess for user "${targetUsername.value}" matching criteria.`)
-      }
-
-      logger.info(`[OpenCheckStore] Downloaded ${lines.length} games. Parsing...`)
-
-      const parsed = lines.map((line) => {
-        try {
-          const g = JSON.parse(line)
-          if (g.variant !== 'standard') {
-            return null
-          }
-          const rawMoves = g.moves || ''
-          if (!rawMoves.trim()) {
-            return null
-          }
-
-          let result = '1/2-1/2'
-          if (g.winner === 'white') result = '1-0'
-          else if (g.winner === 'black') result = '0-1'
-
-          const gameId = g.id || String(Math.random())
-          const validatedMoves = validateAndCleanMoves(rawMoves, gameId)
-          const firstMoveSan = validatedMoves[0] || ''
-
-          if (!firstMoveSan) {
-            return null
-          }
-
-          return {
-            id: gameId,
-            white: g.players?.white?.user?.name || 'White',
-            black: g.players?.black?.user?.name || 'Black',
-            result,
-            white_elo: g.players?.white?.rating || 1500,
-            black_elo: g.players?.black?.rating || 1500,
-            moves: rawMoves,
-            firstMoveSan,
-            validatedMoves,
-          }
-        } catch (e: any) {
-          if (e.message && e.message.includes('[Fail-Fast]')) {
-            throw e
-          }
-          logger.warn('[OpenCheckStore] Skip unparseable game line:', line, e)
-          return null
-        }
-      }).filter((g): g is DownloadedGame => g !== null)
-
-      if (parsed.length === 0) {
-        throw new Error('Could not parse any chess games with valid first moves from the Lichess API response.')
-      }
-
-      downloadedGames.value = parsed
-      logger.info(`[OpenCheckStore] Successfully loaded ${parsed.length} games with valid first moves.`)
-    } catch (err: any) {
-      logger.error('[OpenCheckStore] Download failed:', err)
-      error.value = err.message || 'An error occurred during download.'
-    } finally {
-      isDownloading.value = false
-    }
-  }
-
-  // STEP 2: Filter, slice, clean, and send games to backend for analysis
+  // Filter, slice, clean, and send games to backend for analysis
   async function runAnalysis(selectedRootMove: string) {
     isAnalyzing.value = true
     error.value = null
@@ -295,7 +202,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
     const finalGamesCount = isPremium.value ? gamesCount.value : 100
 
     if (downloadedGames.value.length === 0) {
-      error.value = 'No games downloaded yet.'
+      error.value = 'No games selected for analysis.'
       isAnalyzing.value = false
       return
     }
@@ -309,7 +216,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
       logger.info(`[OpenCheckStore] Selected ${matchingGames.length} games for root move "${selectedRootMove}"`)
 
       if (matchingGames.length === 0) {
-        throw new Error(`No games matching starting move "${selectedRootMove}" were found in the downloaded set.`)
+        throw new Error(`No games matching starting move "${selectedRootMove}" were found.`)
       }
 
       // 2. Clean and truncate UCI moves to SAN string to max ply
@@ -339,7 +246,7 @@ export const useOpenCheckStore = defineStore('open-check', () => {
         games: cleanGames,
       }
 
-      const treeResult = await apiClient<any>('/opening/open-check', {
+      const treeResult = await apiClient<OpenCheckTreeNode>('/opening/open-check', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
@@ -366,13 +273,15 @@ export const useOpenCheckStore = defineStore('open-check', () => {
 
       // Set active
       currentAnalysis.value = analysis
-      activeNode.value = treeResult
-      historyFen.value = [treeResult.fen]
+      const tree = treeResult
+      activeNode.value = tree
+      historyFen.value = [tree.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1']
       currentFenIndex.value = 0
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[OpenCheckStore] Analysis failed:', err)
-      error.value = err.message || 'An error occurred during analysis.'
+      const errMsg = err instanceof Error ? err.message : 'An error occurred during analysis.'
+      error.value = errMsg
     } finally {
       isAnalyzing.value = false
     }
@@ -381,7 +290,6 @@ export const useOpenCheckStore = defineStore('open-check', () => {
   return {
     // State
     isLoading,
-    isDownloading,
     isAnalyzing,
     error,
     targetUsername,
@@ -410,7 +318,6 @@ export const useOpenCheckStore = defineStore('open-check', () => {
     selectAnalysis,
     setBoardPosition,
     navigateHistory,
-    downloadLichessGames,
     runAnalysis,
   }
 })

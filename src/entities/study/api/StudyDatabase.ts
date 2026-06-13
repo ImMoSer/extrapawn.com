@@ -38,7 +38,7 @@ export interface OpenCheckAnalysis {
   maxDepth: number
   gamesCount: number
   perfTypes: string[]
-  tree: any // Hierarchical opening tree
+  tree: unknown // Hierarchical opening tree
   rootFen: string
   rootMove: string
 }

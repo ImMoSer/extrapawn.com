@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useOpenCheckStore } from '@/features/open-check'
+import { gamesDb } from '@/entities/game'
 import {
   NButton,
   NCard,
@@ -14,9 +16,11 @@ import {
 } from 'naive-ui'
 import {
   ArrowBackOutline,
-  CloudDownloadOutline,
   PlayOutline,
+  SettingsOutline,
 } from '@vicons/ionicons5'
+
+const router = useRouter()
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -26,9 +30,10 @@ const emit = defineEmits<{
 const openCheckStore = useOpenCheckStore()
 const message = useMessage()
 
-// Steps: 1 = Configure & Download, 2 = Select Root Move & Analyze
+// Steps: 1 = Configure & Select Games, 2 = Select Root Move & Analyze
 const step = ref<1 | 2>(1)
 const selectedRootMove = ref<string | null>(null)
+const localGamesCountInDb = ref(0)
 
 // Sliders temp state
 const localGamesCount = ref(openCheckStore.gamesCount)
@@ -54,30 +59,96 @@ function onDepthChange(val: number) {
   openCheckStore.maxDepth = val
 }
 
-// Download action (Step 1 -> Step 2)
-async function handleDownload() {
+// Reactively count matching games in local database
+async function updateLocalGamesCount() {
+  const user = openCheckStore.targetUsername.trim().toLowerCase()
+  if (!user) {
+    localGamesCountInDb.value = 0
+    return
+  }
+
+  try {
+    const games = await gamesDb.lichess_games
+      .where('username')
+      .equals(user)
+      .toArray()
+
+    const filtered = games.filter(g =>
+      g.variant === 'standard' &&
+      g.userColor === openCheckStore.userColor &&
+      openCheckStore.perfTypes.includes(g.perf)
+    )
+
+    localGamesCountInDb.value = filtered.length
+  } catch {
+    localGamesCountInDb.value = 0
+  }
+}
+
+watch(
+  () => [openCheckStore.targetUsername, openCheckStore.userColor, openCheckStore.perfTypes],
+  () => {
+    updateLocalGamesCount()
+  },
+  { deep: true, immediate: true }
+)
+
+// Proceed to Step 2: Load local games matching filters, sort by date (newest first), respect max games limit
+async function handleProceed() {
   if (!openCheckStore.targetUsername.trim()) {
     message.error('Please enter a Lichess username.')
     return
   }
 
-  await openCheckStore.downloadLichessGames()
+  const user = openCheckStore.targetUsername.trim().toLowerCase()
+  const games = await gamesDb.lichess_games
+    .where('username')
+    .equals(user)
+    .toArray()
 
-  if (openCheckStore.error) {
-    message.error(openCheckStore.error)
-  } else if (openCheckStore.downloadedGames.length > 0) {
-    message.success(`Successfully downloaded ${openCheckStore.downloadedGames.length} games.`)
-    
-    // Automatically select the most frequent root move if available
-    const stats = openCheckStore.rootMoveStats
-    if (stats && stats.length > 0 && stats[0]) {
-      selectedRootMove.value = stats[0].value
-    } else {
-      selectedRootMove.value = null
-    }
+  // Filter games based on color & active speed perf modes
+  let filtered = games.filter(g =>
+    g.variant === 'standard' &&
+    g.userColor === openCheckStore.userColor &&
+    openCheckStore.perfTypes.includes(g.perf)
+  )
 
-    step.value = 2
+  if (filtered.length === 0) {
+    message.error('No games found locally for this configuration. Please sync your games database.')
+    return
   }
+
+  // Sort by createdAt descending (newest first)
+  filtered.sort((a, b) => b.createdAt - a.createdAt)
+
+  // Respect max games limit (take the newest N games)
+  const limit = localGamesCount.value
+  if (filtered.length > limit) {
+    filtered = filtered.slice(0, limit)
+  }
+
+  // Map to openCheckStore downloadedGames format to reuse the rootMoveStats computation
+  openCheckStore.downloadedGames = filtered.map(g => ({
+    id: g.id,
+    white: g.players.white.user?.name || 'White',
+    black: g.players.black.user?.name || 'Black',
+    result: g.winner ? (g.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2',
+    white_elo: g.players.white.rating,
+    black_elo: g.players.black.rating,
+    moves: g.moves,
+    firstMoveSan: g.rootMove.replace('1. ', ''), // strip prefix for processing
+    validatedMoves: g.moves.split(' ').filter(Boolean)
+  }))
+
+  // Automatically select the most frequent root move
+  const stats = openCheckStore.rootMoveStats
+  if (stats && stats.length > 0 && stats[0]) {
+    selectedRootMove.value = stats[0].value
+  } else {
+    selectedRootMove.value = null
+  }
+
+  step.value = 2
 }
 
 // Analysis action (Step 2 -> Complete)
@@ -106,6 +177,10 @@ function handleGoBack() {
     emit('cancel')
   }
 }
+
+function handleGoToCabinet() {
+  router.push('/user-cabinet')
+}
 </script>
 
 <template>
@@ -113,23 +188,23 @@ function handleGoBack() {
     <!-- Header banner with back button -->
     <div class="sidebar-header-banner">
       <div class="header-action-row">
-        <NButton quaternary circle size="small" @click="handleGoBack">
+        <NButton v-if="step === 2" quaternary circle size="small" @click="handleGoBack">
           <template #icon>
             <ArrowBackOutline />
           </template>
         </NButton>
         <span class="wizard-title">
-          {{ step === 1 ? 'Import Games' : 'Select Opening' }}
+          {{ step === 1 ? 'Configure Analysis' : 'Select Opening' }}
         </span>
         <span class="step-badge">Step {{ step }} of 2</span>
       </div>
     </div>
 
-    <!-- Step 1: Lichess Config & Download -->
+    <!-- Step 1: Filter Configuration -->
     <NCard
       v-if="step === 1"
       class="panel-card"
-      title="Step 1: Download from Lichess"
+      title="Step 1: Configuration"
       size="small"
     >
       <div class="form-container">
@@ -140,7 +215,7 @@ function handleGoBack() {
             v-model:value="openCheckStore.targetUsername"
             placeholder="Enter Lichess ID"
             size="medium"
-            clearable
+            disabled
           />
         </div>
 
@@ -160,7 +235,7 @@ function handleGoBack() {
         <!-- Max games count slider -->
         <div class="form-group">
           <div class="label-with-badge">
-            <label class="form-label">Max Games to Fetch</label>
+            <label class="form-label">Max Games to Analyze</label>
             <NTag size="small" type="info">{{ localGamesCount }}</NTag>
           </div>
           <NSlider
@@ -191,19 +266,44 @@ function handleGoBack() {
 
         <div class="action-divider"></div>
 
-        <!-- Trigger Download Button -->
+        <!-- Local Cache Status Display -->
+        <div class="cache-status-box" :class="{ empty: localGamesCountInDb === 0 }">
+          <div class="status-header">Local Game Cache Status</div>
+          <div class="status-content">
+            <template v-if="localGamesCountInDb > 0">
+              <span class="highlight-green">{{ localGamesCountInDb }}</span> games found matching these filters.
+            </template>
+            <template v-else>
+              No games found. Please sync your database cache first.
+            </template>
+          </div>
+          <NButton
+            v-if="localGamesCountInDb === 0"
+            text
+            type="info"
+            class="cache-link"
+            @click="handleGoToCabinet"
+          >
+            <template #icon>
+              <SettingsOutline />
+            </template>
+            Open Database Cache Settings
+          </NButton>
+        </div>
+
+        <!-- Trigger local games proceed button -->
         <NButton
           type="primary"
           block
           size="large"
           class="glow-btn-teal"
-          :loading="openCheckStore.isDownloading"
-          @click="handleDownload"
+          :disabled="localGamesCountInDb === 0"
+          @click="handleProceed"
         >
           <template #icon>
-            <CloudDownloadOutline />
+            <PlayOutline />
           </template>
-          Download Games
+          Proceed to Move Selection
         </NButton>
       </div>
     </NCard>
@@ -216,15 +316,15 @@ function handleGoBack() {
       size="small"
     >
       <div class="form-container">
-        <!-- Download stats summary -->
+        <!-- Stats summary -->
         <div class="download-stats-summary">
           <div class="stat-bubble">
             <div class="bubble-val">{{ openCheckStore.downloadedGames.length }}</div>
-            <div class="bubble-lbl">Games parsed</div>
+            <div class="bubble-lbl">Games Selected</div>
           </div>
         </div>
 
-        <!-- Root Move select dropdown populated dynamically from download stats -->
+        <!-- Root Move select dropdown populated dynamically from local stats -->
         <div class="form-group">
           <label class="form-label">Root Opening Move</label>
           <NSelect
@@ -381,40 +481,31 @@ function handleGoBack() {
   align-items: center;
 }
 
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.action-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 4px 0;
+}
+
 .input-lock-hint {
   font-size: 0.75rem;
-  color: var(--neon-orange, #ff5500);
-  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
 }
 
 .help-hint {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
-  margin-top: 2px;
-}
-
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.action-divider {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: 4px;
-}
-
-.glow-btn-teal {
-  background-color: transparent !important;
-  border: 1px solid #00f5d4 !important;
-  color: #00f5d4 !important;
-  transition: all 0.3s ease;
-  font-weight: 700;
-}
-
-.glow-btn-teal:hover {
-  background-color: rgba(0, 245, 212, 0.1) !important;
-  box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
 }
 
 .download-stats-summary {
@@ -424,35 +515,67 @@ function handleGoBack() {
 }
 
 .stat-bubble {
-  background: rgba(0, 245, 212, 0.05);
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.1) 0%, rgba(0, 245, 212, 0.02) 100%);
   border: 1px solid rgba(0, 245, 212, 0.2);
-  border-radius: 8px;
-  padding: 10px 20px;
+  border-radius: 12px;
+  padding: 12px 24px;
   text-align: center;
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .bubble-val {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-size: 1.8rem;
+  font-weight: 900;
   color: #00f5d4;
-  line-height: 1.2;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
 .bubble-lbl {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cache-status-box {
+  background: rgba(24, 160, 88, 0.06);
+  border: 1px solid rgba(24, 160, 88, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cache-status-box.empty {
+  background: rgba(208, 48, 80, 0.06);
+  border-color: rgba(208, 48, 80, 0.2);
+}
+
+.status-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.5px;
 }
 
-.form-container::-webkit-scrollbar {
-  width: 4px;
+.status-content {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
 }
 
-.form-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+.highlight-green {
+  color: #18a058;
+  font-weight: 700;
+}
+
+.cache-link {
+  align-self: flex-start;
+  font-size: 12px !important;
 }
 </style>

@@ -31,6 +31,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ThemeRoseChart, UserProfileHeader } from '@/features/profile'
 import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
+import { LichessGamesCacheSettings, LichessGamesStatistics } from '@/features/lichess-games-db'
+import { useOpenCheckStore } from '@/features/open-check'
 
 
 const { t } = useI18n()
@@ -54,9 +56,14 @@ const route = useRoute()
 const router = useRouter()
 const isExample = computed(() => route.params.id === 'example')
 
+const openCheckStore = useOpenCheckStore()
 const showPolarSuccessModal = ref(false)
 
 onMounted(() => {
+  if (authStore.userProfile?.id) {
+    openCheckStore.targetUsername = authStore.userProfile.id
+  }
+
   if (route.query.status === 'success') {
     showPolarSuccessModal.value = true
 
@@ -178,75 +185,86 @@ const handleManageSubscription = async () => {
     </div>
 
     <div class="user-cabinet-content">
-      <n-space vertical size="large">
-        <UserProfileHeader
-          :profile-override="displayProfile"
-          :profile-stats="displayStats"
-          @reactivate="handleManageSubscription"
-        />
+      <div class="user-cabinet-layout-grid">
+        <div class="user-cabinet-left">
+          <n-space vertical size="large">
+            <UserProfileHeader
+              :profile-override="displayProfile"
+              :profile-stats="displayStats"
+              @reactivate="handleManageSubscription"
+            />
 
 
-        <div class="charts-grid-unified">
-          <ThemeRoseChart
-            v-if="detailedStats"
-            :stats="detailedStats"
-            :title="t('pages.userCabinet.stats.title')"
-            @improve="launchGame"
-          />
+            <div class="charts-grid-unified">
+              <ThemeRoseChart
+                v-if="detailedStats"
+                :stats="detailedStats"
+                :title="t('pages.userCabinet.stats.title')"
+                @improve="launchGame"
+              />
+            </div>
+
+
+            <!-- Gift Code Redeem Area -->
+            <n-card :bordered="false" class="gift-redeem-card" embedded>
+              <n-space vertical>
+                <n-h3 style="margin-bottom: 0">🎁 {{ t('pages.userCabinet.gift.title') }}</n-h3>
+                <n-text depth="3">{{ t('pages.userCabinet.gift.description') }}</n-text>
+                <n-input-group style="margin-top: 8px">
+                  <n-input
+                    v-model:value="giftCode"
+                    :placeholder="t('pages.userCabinet.gift.placeholder')"
+                    :maxlength="8"
+                    size="large"
+                    style="max-width: 250px"
+                    @keyup.enter="handleRedeem"
+                  />
+                  <n-button
+                    type="primary"
+                    size="large"
+                    :loading="isRedeeming"
+                    :disabled="giftCode.length !== 8"
+                    @click="handleRedeem"
+                  >
+                    {{ t('pages.userCabinet.gift.activate') }}
+                  </n-button>
+                </n-input-group>
+              </n-space>
+            </n-card>
+
+            <!-- Manage Subscription Area -->
+            <n-card
+              v-if="userProfile?.isPolarCustomer"
+              :bordered="false"
+              class="gift-redeem-card"
+              embedded
+            >
+              <n-space vertical>
+                <n-h3 style="margin-bottom: 0"
+                  >⚙️ {{ t('pages.userCabinet.subscription.title') }}</n-h3
+                >
+                <n-text depth="3">{{ t('pages.userCabinet.subscription.description') }}</n-text>
+                <n-button
+                  type="primary"
+                  size="large"
+                  :loading="isManagingSubscription"
+                  @click="handleManageSubscription"
+                  style="margin-top: 8px; width: fit-content"
+                >
+                  {{ t('pages.userCabinet.subscription.openPortal') }}
+                </n-button>
+              </n-space>
+            </n-card>
+          </n-space>
         </div>
 
-
-        <!-- Gift Code Redeem Area -->
-        <n-card :bordered="false" class="gift-redeem-card" embedded>
-          <n-space vertical>
-            <n-h3 style="margin-bottom: 0">🎁 {{ t('pages.userCabinet.gift.title') }}</n-h3>
-            <n-text depth="3">{{ t('pages.userCabinet.gift.description') }}</n-text>
-            <n-input-group style="margin-top: 8px">
-              <n-input
-                v-model:value="giftCode"
-                :placeholder="t('pages.userCabinet.gift.placeholder')"
-                :maxlength="8"
-                size="large"
-                style="max-width: 250px"
-                @keyup.enter="handleRedeem"
-              />
-              <n-button
-                type="primary"
-                size="large"
-                :loading="isRedeeming"
-                :disabled="giftCode.length !== 8"
-                @click="handleRedeem"
-              >
-                {{ t('pages.userCabinet.gift.activate') }}
-              </n-button>
-            </n-input-group>
+        <div class="user-cabinet-right">
+          <n-space vertical size="large" style="width: 100%">
+            <LichessGamesStatistics />
+            <LichessGamesCacheSettings :show-back="false" />
           </n-space>
-        </n-card>
-
-        <!-- Manage Subscription Area -->
-        <n-card
-          v-if="userProfile?.isPolarCustomer"
-          :bordered="false"
-          class="gift-redeem-card"
-          embedded
-        >
-          <n-space vertical>
-            <n-h3 style="margin-bottom: 0"
-              >⚙️ {{ t('pages.userCabinet.subscription.title') }}</n-h3
-            >
-            <n-text depth="3">{{ t('pages.userCabinet.subscription.description') }}</n-text>
-            <n-button
-              type="primary"
-              size="large"
-              :loading="isManagingSubscription"
-              @click="handleManageSubscription"
-              style="margin-top: 8px; width: fit-content"
-            >
-              {{ t('pages.userCabinet.subscription.openPortal') }}
-            </n-button>
-          </n-space>
-        </n-card>
-      </n-space>
+        </div>
+      </div>
     </div>
 
     <!-- Success Modal -->
@@ -293,8 +311,31 @@ const handleManageSubscription = async () => {
 <style scoped>
 .user-cabinet-container {
   padding: 24px;
-  max-width: 1400px;
+  max-width: 100%;
   margin: 20px auto;
+}
+
+.user-cabinet-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.user-cabinet-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-cabinet-right {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .user-cabinet-layout-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .charts-grid-unified {

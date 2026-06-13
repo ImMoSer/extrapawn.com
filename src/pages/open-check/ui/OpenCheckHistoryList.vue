@@ -2,11 +2,12 @@
 import { useOpenCheckStore } from '@/features/open-check'
 import { useAuthStore } from '@/entities/user'
 import { NButton, NCard, NTag } from 'naive-ui'
-import { TrashOutline, AddOutline, ShieldCheckmarkOutline } from '@vicons/ionicons5'
+import { TrashOutline, AddOutline, ShieldCheckmarkOutline, SettingsOutline } from '@vicons/ionicons5'
 import { computed } from 'vue'
 
 const emit = defineEmits<{
   (e: 'new-analysis'): void
+  (e: 'manage-cache'): void
 }>()
 
 const openCheckStore = useOpenCheckStore()
@@ -32,17 +33,29 @@ const isPremium = computed(() => openCheckStore.isPremium)
           {{ subscriptionTier }}
         </NTag>
       </div>
-      <NButton
-        type="primary"
-        class="new-analysis-btn glow-btn-teal"
-        block
-        @click="emit('new-analysis')"
-      >
-        <template #icon>
-          <AddOutline />
-        </template>
-        New Analysis
-      </NButton>
+      <div class="action-buttons-row">
+        <NButton
+          type="primary"
+          class="new-analysis-btn glow-btn-teal"
+          style="flex: 1;"
+          @click="emit('new-analysis')"
+        >
+          <template #icon>
+            <AddOutline />
+          </template>
+          New Analysis
+        </NButton>
+        <NButton
+          secondary
+          circle
+          title="Database Cache Settings"
+          @click="emit('manage-cache')"
+        >
+          <template #icon>
+            <SettingsOutline />
+          </template>
+        </NButton>
+      </div>
     </div>
 
     <!-- Cached analyses list -->
@@ -263,6 +276,12 @@ const isPremium = computed(() => openCheckStore.isPremium)
 
 .history-item:hover .delete-btn {
   opacity: 1;
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
 }
 
 .history-list::-webkit-scrollbar {
