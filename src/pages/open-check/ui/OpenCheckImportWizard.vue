@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOpenCheckStore } from '@/features/open-check'
 import { gamesDb } from '@/entities/game'
+import { Chess } from 'chess.js'
 import {
   NButton,
   NCard,
@@ -74,9 +75,8 @@ async function updateLocalGamesCount() {
       .toArray()
 
     const filtered = games.filter(g =>
-      g.variant === 'standard' &&
       g.userColor === openCheckStore.userColor &&
-      openCheckStore.perfTypes.includes(g.perf)
+      openCheckStore.perfTypes.includes(g.timeControl)
     )
 
     localGamesCountInDb.value = filtered.length
@@ -108,9 +108,8 @@ async function handleProceed() {
 
   // Filter games based on color & active speed perf modes
   let filtered = games.filter(g =>
-    g.variant === 'standard' &&
     g.userColor === openCheckStore.userColor &&
-    openCheckStore.perfTypes.includes(g.perf)
+    openCheckStore.perfTypes.includes(g.timeControl)
   )
 
   if (filtered.length === 0) {
@@ -128,17 +127,26 @@ async function handleProceed() {
   }
 
   // Map to openCheckStore downloadedGames format to reuse the rootMoveStats computation
-  openCheckStore.downloadedGames = filtered.map(g => ({
-    id: g.id,
-    white: g.players.white.user?.name || 'White',
-    black: g.players.black.user?.name || 'Black',
-    result: g.winner ? (g.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2',
-    white_elo: g.players.white.rating,
-    black_elo: g.players.black.rating,
-    moves: g.moves,
-    firstMoveSan: g.rootMove.replace('1. ', ''), // strip prefix for processing
-    validatedMoves: g.moves.split(' ').filter(Boolean)
-  }))
+  openCheckStore.downloadedGames = filtered.map(g => {
+    const chess = new Chess()
+    try {
+      chess.loadPgn(g.pgn)
+    } catch {
+      // Ignore parsing errors
+    }
+    const movesList = chess.history()
+    return {
+      id: g.id,
+      white: g.white,
+      black: g.black,
+      result: g.result,
+      white_elo: g.white_elo,
+      black_elo: g.black_elo,
+      moves: movesList.join(' '),
+      firstMoveSan: g.rootMove.replace('1. ', ''), // strip prefix for processing
+      validatedMoves: movesList
+    }
+  })
 
   // Automatically select the most frequent root move
   const stats = openCheckStore.rootMoveStats

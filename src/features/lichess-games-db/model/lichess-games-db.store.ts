@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { Chess } from 'chess.js'
 import { gamesDb } from '@/entities/game'
-import type { LichessGameEntity, LichessPlayer, LichessOpening, LichessClock } from '@/entities/game'
+import type { LichessGameEntity } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 
 export interface CacheStats {
@@ -22,7 +21,6 @@ interface LichessGameResponse {
   createdAt?: number
   lastMoveAt?: number
   status?: string
-  rated?: boolean
   winner?: 'white' | 'black'
   players?: {
     white?: { user?: { id?: string; name?: string }; rating?: number; ratingDiff?: number }
@@ -30,6 +28,7 @@ interface LichessGameResponse {
   }
   opening?: { eco?: string; name?: string; ply?: number }
   moves?: string
+  pgn?: string
   clock?: { initial?: number; increment?: number; totalTime?: number }
 }
 
@@ -67,6 +66,19 @@ export interface DetailedDashboardStats {
   black: TabStats
 }
 
+function formatMovesStringToPgn(movesStr: string, result: string): string {
+  const movesList = movesStr.trim().split(/\s+/).filter(Boolean)
+  const pairs: string[] = []
+  for (let i = 0; i < movesList.length; i += 2) {
+    const moveNum = Math.floor(i / 2) + 1
+    const whiteMove = movesList[i]
+    const blackMove = movesList[i + 1] ? ` ${movesList[i + 1]}` : ''
+    pairs.push(`${moveNum}. ${whiteMove}${blackMove}`)
+  }
+  const formatted = pairs.join(' ')
+  return result ? `${formatted} ${result}` : formatted
+}
+
 export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
   const isSyncing = ref(false)
   const syncProgress = ref({ current: 0, total: 0 })
@@ -95,15 +107,15 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       else if (result === 'draw') draws++
       else if (result === 'loss') losses++
 
-      const speedKey = (g.speed || 'other').toLowerCase()
+      const speedKey = (g.timeControl || 'other').toLowerCase()
       if (speedKey === 'bullet' || speedKey === 'blitz' || speedKey === 'rapid' || speedKey === 'classical') {
-        const grp = speedGroups[speedKey]
+        const grp = speedGroups[speedKey as 'bullet' | 'blitz' | 'rapid' | 'classical']
         grp.games.push(g)
         if (result === 'win') grp.wins++
         else if (result === 'draw') grp.draws++
         else if (result === 'loss') grp.losses++
         
-        const rating = g.players[g.userColor]?.rating || 1500
+        const rating = g.userColor === 'white' ? g.white_elo : g.black_elo
         grp.totalRating += rating
       }
 
@@ -125,13 +137,12 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       else if (result === 'draw') opGrp.draws++
       else if (result === 'loss') opGrp.losses++
 
-      const userRating = g.players[g.userColor]?.rating || 1500
-      const oppColor = g.userColor === 'white' ? 'black' : 'white'
-      const oppRating = g.players[oppColor]?.rating || 1500
+      const userRating = g.userColor === 'white' ? g.white_elo : g.black_elo
+      const oppRating = g.userColor === 'white' ? g.black_elo : g.white_elo
       opGrp.totalUserRating += userRating
       opGrp.totalOpponentRating += oppRating
 
-      const speed = g.speed || 'other'
+      const speed = g.timeControl || 'other'
       opGrp.speedCounts[speed] = (opGrp.speedCounts[speed] || 0) + 1
     }
 
@@ -228,7 +239,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       }
 
       for (const g of games) {
-        const s = g.speed || 'other'
+        const s = (g.timeControl || 'other').toLowerCase()
         if (s in countBySpeed) {
           countBySpeed[s as keyof typeof countBySpeed]++
         } else {
@@ -305,7 +316,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
 
       // 3. API-Url aufbauen
       const perfTypeParam = perfTypes.join(',')
-      let url = `https://lichess.org/api/games/user/${username}?tags=true&clocks=false&evals=false&opening=true&literate=false&max=${maxGames}&perfType=${perfTypeParam}`
+      let url = `https://lichess.org/api/games/user/${username}?tags=false&clocks=false&evals=false&opening=true&literate=false&max=${maxGames}&perfType=${perfTypeParam}&pgnInJson=true`
       if (sinceTimestamp) {
         url += `&since=${sinceTimestamp}`
       }
@@ -378,84 +389,43 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             userResult = winnerIsUser ? 'win' : 'loss'
           }
 
-          // chess.js Validierung ohne Regex
-          const movesList = game.moves ? game.moves.trim().split(' ').filter(Boolean) : []
-          const chess = new Chess()
-          let movesValid = true
-          for (const m of movesList) {
-            try {
-              chess.move(m)
-            } catch {
-              movesValid = false
-              break
-            }
-          }
-
-          if (!movesValid) {
+          const movesList = game.moves ? game.moves.trim().split(/\s+/).filter(Boolean) : []
+          if (movesList.length === 0) {
             continue
           }
 
-          const movesCount = chess.history().length
-          const firstMove = chess.history()[0] || ''
+          const movesCount = movesList.length
+          const firstMove = movesList[0] || ''
           const rootMove = firstMove ? `1. ${firstMove}` : ''
           const openingNameBase = ((game.opening?.name || '').split(':')[0] || '').trim()
 
-          const whitePlayer: LichessPlayer = {
-            user: {
-              id: game.players.white.user.id,
-              name: game.players.white.user.name || game.players.white.user.id
-            },
-            rating: game.players.white.rating || 1500,
-            ratingDiff: game.players.white.ratingDiff
-          }
+          const whitePlayerName = game.players.white.user.name || game.players.white.user.id
+          const blackPlayerName = game.players.black.user.name || game.players.black.user.id
+          const resultVal = game.winner ? (game.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
 
-          const blackPlayer: LichessPlayer = {
-            user: {
-              id: game.players.black.user.id,
-              name: game.players.black.user.name || game.players.black.user.id
-            },
-            rating: game.players.black.rating || 1500,
-            ratingDiff: game.players.black.ratingDiff
-          }
-
-          const openingEntity: LichessOpening = {
-            eco: game.opening.eco || '',
-            name: game.opening.name,
-            ply: game.opening.ply || 0
-          }
-
-          let clockEntity: LichessClock | undefined = undefined
-          if (game.clock) {
-            clockEntity = {
-              initial: game.clock.initial || 0,
-              increment: game.clock.increment || 0,
-              totalTime: game.clock.totalTime || 0
-            }
-          }
+          // Clean PGN from Lichess (just append result)
+          const cleanPgn = game.pgn ? `${game.pgn.trim()} ${resultVal}` : ''
 
           const gameEntity: LichessGameEntity = {
             id: game.id || '',
             username: cleanUsername,
-            rated: !!game.rated,
-            variant: 'standard',
-            speed: game.speed || 'other',
-            perf: game.perf || 'other',
-            createdAt: game.createdAt || Date.now(),
-            lastMoveAt: game.lastMoveAt || Date.now(),
-            status: game.status || '',
-            winner: game.winner,
             userColor,
             userResult,
+            white: whitePlayerName,
+            black: blackPlayerName,
+            white_elo: game.players.white.rating || 1500,
+            black_elo: game.players.black.rating || 1500,
+            result: resultVal,
+            status: game.status || '',
+            timeControl: (game.speed || 'other').toLowerCase(),
+            createdAt: game.createdAt || Date.now(),
+            lastMoveAt: game.lastMoveAt || Date.now(),
             rootMove,
             movesCount,
             openingNameBase,
-            players: {
-              white: whitePlayer,
-              black: blackPlayer
-            },
-            opening: openingEntity,
-            moves: game.moves || '',
-            clock: clockEntity
+            eco: game.opening.eco || '',
+            opening: game.opening.name || '',
+            pgn: cleanPgn
           }
 
           await gamesDb.lichess_games.put(gameEntity)
@@ -489,80 +459,40 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
                 userResult = winnerIsUser ? 'win' : 'loss'
               }
 
-              const movesList = game.moves ? game.moves.trim().split(' ').filter(Boolean) : []
-              const chess = new Chess()
-              let movesValid = true
-              for (const m of movesList) {
-                try {
-                  chess.move(m)
-                } catch {
-                  movesValid = false
-                  break
-                }
-              }
-
-              if (movesValid) {
-                const movesCount = chess.history().length
-                const firstMove = chess.history()[0] || ''
+              const movesList = game.moves ? game.moves.trim().split(/\s+/).filter(Boolean) : []
+              if (movesList.length > 0) {
+                const movesCount = movesList.length
+                const firstMove = movesList[0] || ''
                 const rootMove = firstMove ? `1. ${firstMove}` : ''
                 const openingNameBase = ((game.opening?.name || '').split(':')[0] || '').trim()
 
-                const whitePlayer: LichessPlayer = {
-                  user: {
-                    id: game.players.white.user.id,
-                    name: game.players.white.user.name || game.players.white.user.id
-                  },
-                  rating: game.players.white.rating || 1500,
-                  ratingDiff: game.players.white.ratingDiff
-                }
+                const whitePlayerName = game.players.white.user.name || game.players.white.user.id
+                const blackPlayerName = game.players.black.user.name || game.players.black.user.id
+                const resultVal = game.winner ? (game.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
 
-                const blackPlayer: LichessPlayer = {
-                  user: {
-                    id: game.players.black.user.id,
-                    name: game.players.black.user.name || game.players.black.user.id
-                  },
-                  rating: game.players.black.rating || 1500,
-                  ratingDiff: game.players.black.ratingDiff
-                }
-
-                const openingEntity: LichessOpening = {
-                  eco: game.opening.eco || '',
-                  name: game.opening.name,
-                  ply: game.opening.ply || 0
-                }
-
-                let clockEntity: LichessClock | undefined = undefined
-                if (game.clock) {
-                  clockEntity = {
-                    initial: game.clock.initial || 0,
-                    increment: game.clock.increment || 0,
-                    totalTime: game.clock.totalTime || 0
-                  }
-                }
+                // Clean PGN from Lichess (just append result)
+                const cleanPgn = game.pgn ? `${game.pgn.trim()} ${resultVal}` : ''
 
                 const gameEntity: LichessGameEntity = {
                   id: game.id || '',
                   username: cleanUsername,
-                  rated: !!game.rated,
-                  variant: 'standard',
-                  speed: game.speed || 'other',
-                  perf: game.perf || 'other',
-                  createdAt: game.createdAt || Date.now(),
-                  lastMoveAt: game.lastMoveAt || Date.now(),
-                  status: game.status || '',
-                  winner: game.winner,
                   userColor,
                   userResult,
+                  white: whitePlayerName,
+                  black: blackPlayerName,
+                  white_elo: game.players.white.rating || 1500,
+                  black_elo: game.players.black.rating || 1500,
+                  result: resultVal,
+                  status: game.status || '',
+                  timeControl: (game.speed || 'other').toLowerCase(),
+                  createdAt: game.createdAt || Date.now(),
+                  lastMoveAt: game.lastMoveAt || Date.now(),
                   rootMove,
                   movesCount,
                   openingNameBase,
-                  players: {
-                    white: whitePlayer,
-                    black: blackPlayer
-                  },
-                  opening: openingEntity,
-                  moves: game.moves || '',
-                  clock: clockEntity
+                  eco: game.opening.eco || '',
+                  opening: game.opening.name || '',
+                  pgn: cleanPgn
                 }
                 await gamesDb.lichess_games.put(gameEntity)
                 count++
@@ -615,6 +545,32 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     URL.revokeObjectURL(url)
   }
 
+interface LegacyLichessGame {
+  id: string
+  username: string
+  userColor: 'white' | 'black'
+  userResult: 'win' | 'loss' | 'draw'
+  rootMove: string
+  movesCount: number
+  openingNameBase: string
+  winner?: 'white' | 'black'
+  status?: string
+  speed?: string
+  perf?: string
+  createdAt: number
+  lastMoveAt: number
+  moves: string
+  players: {
+    white: { user?: { id: string; name: string }; rating: number; ratingDiff?: number }
+    black: { user?: { id: string; name: string }; rating: number; ratingDiff?: number }
+  }
+  opening: {
+    eco: string
+    name: string
+    ply: number
+  }
+}
+
   async function importBackup(username: string, file: File) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
@@ -629,7 +585,42 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       if (!g.id || !g.username || g.username.toLowerCase() !== cleanUsername) {
         throw new Error(`Backup enthält ungültige Daten oder Daten eines anderen Spielers (ID: ${g.id || 'unknown'}).`)
       }
-      await gamesDb.lichess_games.put(g)
+      
+      // Migrate legacy backup format to version 2 on the fly if needed
+      if ('players' in g && g.players) {
+        const legacy = g as unknown as LegacyLichessGame
+        const whiteName = legacy.players?.white?.user?.name || legacy.players?.white?.user?.id || 'White'
+        const blackName = legacy.players?.black?.user?.name || legacy.players?.black?.user?.id || 'Black'
+        const resultVal = legacy.winner ? (legacy.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
+        
+        // Build moves-only PGN from legacy moves
+        const cleanPgn = formatMovesStringToPgn(legacy.moves || '', resultVal)
+
+        const migratedGame: LichessGameEntity = {
+          id: legacy.id,
+          username: legacy.username.toLowerCase(),
+          userColor: legacy.userColor,
+          userResult: legacy.userResult,
+          white: whiteName,
+          black: blackName,
+          white_elo: legacy.players?.white?.rating || 1500,
+          black_elo: legacy.players?.black?.rating || 1500,
+          result: resultVal,
+          status: legacy.status || '',
+          timeControl: (legacy.speed || legacy.perf || 'other').toLowerCase(),
+          createdAt: legacy.createdAt || Date.now(),
+          lastMoveAt: legacy.lastMoveAt || Date.now(),
+          rootMove: legacy.rootMove,
+          movesCount: legacy.movesCount,
+          openingNameBase: legacy.openingNameBase,
+          eco: legacy.opening?.eco || '',
+          opening: legacy.opening?.name || '',
+          pgn: cleanPgn
+        }
+        await gamesDb.lichess_games.put(migratedGame)
+      } else {
+        await gamesDb.lichess_games.put(g as LichessGameEntity)
+      }
     }
 
     await loadStats(username)
