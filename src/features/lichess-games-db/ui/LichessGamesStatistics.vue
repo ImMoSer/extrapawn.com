@@ -52,6 +52,7 @@ const hasData = computed(() => {
 
           <!-- Top Openings Rose Chart uses white and black stats independently -->
           <LichessGamesTopOpenings
+            :username="username"
             :white-stats="store.detailedStats.white"
             :black-stats="store.detailedStats.black"
           />

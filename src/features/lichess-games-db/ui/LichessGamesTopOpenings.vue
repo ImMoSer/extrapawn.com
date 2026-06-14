@@ -8,6 +8,8 @@ import VChart from 'vue-echarts'
 import { NButton, NIcon, NTabs, NTab, NText } from 'naive-ui'
 import { CloseOutline } from '@vicons/ionicons5'
 import type { TabStats } from '../model/lichess-games-db.store'
+import { gamesDb } from '@/entities/game'
+import { exportGamesAsJSON } from '../model/open-export'
 
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent, TitleComponent])
 
@@ -46,6 +48,7 @@ interface PopupData {
 }
 
 const props = defineProps<{
+  username: string
   whiteStats: TabStats
   blackStats: TabStats
 }>()
@@ -283,6 +286,26 @@ const onChartClick = (params: unknown) => {
     }
   })
 }
+
+async function exportOpeningGames() {
+  if (!props.username || !activePopup.value.data) return
+  
+  try {
+    const cleanUsername = props.username.trim().toLowerCase()
+    const openingName = activePopup.value.data.openingName
+    const color = activeTab.value
+
+    const games = await gamesDb.lichess_games
+      .where('username')
+      .equals(cleanUsername)
+      .filter(g => g.userColor === color && g.openingNameBase === openingName)
+      .toArray()
+
+    exportGamesAsJSON(props.username, color, openingName, games)
+  } catch (err) {
+    console.error('Failed to export opening games:', err)
+  }
+}
 </script>
 
 <template>
@@ -365,6 +388,11 @@ const onChartClick = (params: unknown) => {
           <div class="popup-row border-top-row">
             <span>{{ $t('features.lichessGamesDb.statistics.performanceTpr') }}</span>
             <span class="perf-val">{{ activePopup.data.performance }}</span>
+          </div>
+          <div class="popup-actions">
+            <NButton size="small" type="primary" secondary block @click="exportOpeningGames">
+              Export JSON
+            </NButton>
           </div>
         </div>
       </div>
@@ -524,6 +552,12 @@ const onChartClick = (params: unknown) => {
 .perf-val {
   color: #f39c12;
   text-shadow: 0 0 8px rgba(243, 156, 18, 0.3);
+}
+
+.popup-actions {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
 }
 
 .close-btn {
