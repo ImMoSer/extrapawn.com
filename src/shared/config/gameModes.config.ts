@@ -8,7 +8,6 @@ import {
   PersonOutline,
   TrophyOutline,
   SchoolOutline,
-  AnalyticsOutline,
 } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
@@ -28,7 +27,6 @@ export type GameModeKey =
   | 'task_today'
   | 'sparring'
   | 'repertoire_training'
-  | 'open_check'
   | 'user_cabinet'
   | 'records'
 
@@ -81,13 +79,6 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     icon: SchoolOutline,
     labelKey: 'shared.nav.repertoire',
     color: 'var(--neon-green)',
-  },
-  open_check: {
-    key: 'open_check',
-    path: '/open-check',
-    icon: AnalyticsOutline,
-    labelKey: 'shared.nav.openCheck',
-    color: 'var(--neon-teal)',
   },
   user_cabinet: {
     key: 'user_cabinet',

@@ -32,7 +32,6 @@ import { ThemeRoseChart, UserProfileHeader } from '@/features/profile'
 import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
 import { LichessGamesCacheSettings, LichessGamesStatistics } from '@/features/lichess-games-db'
-import { useOpenCheckStore } from '@/features/open-check'
 
 
 const { t } = useI18n()
@@ -56,15 +55,9 @@ const route = useRoute()
 const router = useRouter()
 const isExample = computed(() => route.params.id === 'example')
 
-const openCheckStore = useOpenCheckStore()
 const showPolarSuccessModal = ref(false)
 
 onMounted(() => {
-  const isDev = authStore.userProfile?.id?.toLowerCase() === 'mo3ep'
-  if (authStore.userProfile?.id && (!isDev || !openCheckStore.targetUsername)) {
-    openCheckStore.targetUsername = authStore.userProfile.id
-  }
-
   if (route.query.status === 'success') {
     showPolarSuccessModal.value = true
 

@@ -30,23 +30,9 @@ export interface SrsProgressEntity {
   mastery: number
 }
 
-export interface OpenCheckAnalysis {
-  id: string // e.g. `${username}:${color}:${timestamp}`
-  username: string
-  color: 'white' | 'black'
-  timestamp: number
-  maxDepth: number
-  gamesCount: number
-  perfTypes: string[]
-  tree: unknown // Hierarchical opening tree
-  rootFen: string
-  rootMove: string
-}
-
 class UserStudyDatabase extends Dexie {
   studies!: Table<StudyEntity, string>
   srs_progress!: Table<SrsProgressEntity, string>
-  open_check_analyses!: Table<OpenCheckAnalysis, string>
 
   constructor() {
     super('ExtrapawnUserStudyDatabase')
@@ -57,7 +43,6 @@ class UserStudyDatabase extends Dexie {
     this.version(2).stores({
       studies: 'id, importedAt',
       srs_progress: 'id, [studyId+chapterId], lastTrained',
-      open_check_analyses: 'id, username, timestamp',
     })
   }
 }

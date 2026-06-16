@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLichessGamesDbStore } from '../model/lichess-games-db.store'
-import { useOpenCheckStore } from '@/features/open-check'
 import { useAuthStore } from '@/entities/user'
 import { useI18n } from 'vue-i18n'
 import {
@@ -37,7 +36,6 @@ const emit = defineEmits<{
 }>()
 
 const store = useLichessGamesDbStore()
-const openCheckStore = useOpenCheckStore()
 const authStore = useAuthStore()
 const message = useMessage()
 const { t } = useI18n()
@@ -49,8 +47,8 @@ function goToEndgameAnalysis() {
 
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// Bind username from openCheckStore so they are in sync
-const username = computed(() => openCheckStore.targetUsername)
+// Bind username from authStore so they are in sync
+const username = computed(() => authStore.effectiveLichessUsername)
 
 const isDeveloper = computed(() => authStore.userProfile?.id?.toLowerCase() === 'mo3ep')
 const editableUsername = ref(username.value)
@@ -62,7 +60,7 @@ watch(username, (newVal) => {
 function saveUsername() {
   const clean = editableUsername.value.trim().toLowerCase()
   if (clean) {
-    openCheckStore.targetUsername = clean
+    authStore.targetLichessUsername = clean
   } else {
     resetToSelf()
   }
@@ -70,7 +68,7 @@ function saveUsername() {
 
 function resetToSelf() {
   if (authStore.userProfile?.id) {
-    openCheckStore.targetUsername = authStore.userProfile.id
+    authStore.targetLichessUsername = authStore.userProfile.id
     editableUsername.value = authStore.userProfile.id
   }
 }

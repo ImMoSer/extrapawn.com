@@ -66,10 +66,10 @@ Für die Leistungsbewertung (Performance) einer Eröffnung wird das durchschnitt
 
 Um dem Entwickler (`lichess_id=mo3ep`) die Möglichkeit zu geben, Spieldatenbanken beliebiger Lichess-Nutzer herunterzuladen, zu verwalten und zu analysieren, wurde folgende Logik implementiert:
 
-* **Sicherheits- & Aktivierungs-Check**: In `LichessGamesCacheSettings.vue` und bei den `onMounted`-Hooks der Seiten (`UserCabinetView.vue`, `OpenCheckPage.vue`) wird geprüft, ob die aktive Profil-ID `mo3ep` entspricht.
+* **Sicherheits- & Aktivierungs-Check**: In `LichessGamesCacheSettings.vue` und bei den `onMounted`-Hooks der Seiten (z.B. `UserCabinetView.vue`) wird geprüft, ob die aktive Profil-ID `mo3ep` entspricht.
 * **Dynamische Eingabe**: Für den Benutzer `mo3ep` rendert das Cache-Settings-Panel anstelle eines statischen Labels ein Text-Eingabefeld (`NInput`) sowie einen "Reset"-Button.
 * **Reaktivität**:
-  * Sobald ein anderer Benutzername eingetippt und bestätigt (Enter/Blur) wird, aktualisiert sich `openCheckStore.targetUsername`.
+  * Sobald ein anderer Benutzername eingetippt und bestätigt (Enter/Blur) wird, aktualisiert sich `authStore.targetLichessUsername`.
   * Das Umschalten stößt über einen Watcher sofort den Ladevorgang der lokalen IndexedDB-Statistiken für den neuen Benutzer an.
-  * Alle Statistiken, das Rose Chart und der Open Check Analyzer reagieren synchron auf den neu gewählten Spieler.
+  * Alle Statistiken und das Rose Chart reagieren synchron auf den neu gewählten Spieler.
   * Über den "Reset"-Button kann der Entwickler jederzeit zu seiner eigenen Profil-Statistik zurückkehren.

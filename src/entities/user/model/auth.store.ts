@@ -12,12 +12,18 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref<boolean>(true)
   const error = ref<string | null>(null)
   const isLoginModalVisible = ref<boolean>(false)
+  
+  // Developer/Test username override
+  const targetLichessUsername = ref<string>('')
 
   // --- GETTERS ---
   const getUserProfile = computed(() => userProfile.value)
   const getIsAuthenticated = computed(() => isAuthenticated.value)
   const getIsLoading = computed(() => isLoading.value)
   const getError = computed(() => error.value)
+  const effectiveLichessUsername = computed(() => {
+    return targetLichessUsername.value || userProfile.value?.id || ''
+  })
 
   // --- ACTIONS ---
 
@@ -89,6 +95,8 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading,
     error,
     isLoginModalVisible,
+    targetLichessUsername,
+    effectiveLichessUsername,
     // Getters
     getUserProfile,
     getIsAuthenticated,

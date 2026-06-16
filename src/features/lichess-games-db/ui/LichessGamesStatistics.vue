@@ -2,13 +2,13 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { NCard, NEmpty, NTab, NTabs } from 'naive-ui'
 import { useLichessGamesDbStore } from '../model/lichess-games-db.store'
-import { useOpenCheckStore } from '@/features/open-check'
+import { useAuthStore } from '@/entities/user'
 import LichessGamesWdlTable from './LichessGamesWdlTable.vue'
 import LichessGamesTopOpenings from './LichessGamesTopOpenings.vue'
 
 const store = useLichessGamesDbStore()
-const openCheckStore = useOpenCheckStore()
-const username = computed(() => openCheckStore.targetUsername)
+const authStore = useAuthStore()
+const username = computed(() => authStore.effectiveLichessUsername)
 
 const activeTab = ref<'all' | 'white' | 'black'>('all')
 

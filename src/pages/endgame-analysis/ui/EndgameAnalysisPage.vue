@@ -3,17 +3,15 @@ import { computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { LichessEndgameDashboard, useLichessEndgameAnalysisStore } from '@/features/lichess-endgame-analysis'
 import { useLichessGamesDbStore } from '@/features/lichess-games-db'
-import { useOpenCheckStore } from '@/features/open-check'
 import { useAuthStore } from '@/entities/user'
 
 const message = useMessage()
 const gamesStore = useLichessGamesDbStore()
 const endgameStore = useLichessEndgameAnalysisStore()
-const openCheckStore = useOpenCheckStore()
 const authStore = useAuthStore()
 
 // Benutzername ermitteln
-const username = computed(() => openCheckStore.targetUsername || authStore.userProfile?.id || '')
+const username = computed(() => authStore.userProfile?.id || '')
 
 // Anzahl der lokalen Spiele im Cache
 const localGamesCount = computed(() => {

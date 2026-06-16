@@ -37,10 +37,6 @@
     "repertoireTraining": {
       "title": "Repertoire Training — Spaced Repetition",
       "description": "Practice your opening repertoire using public Lichess studies. Master your lines against adaptive AI that exploits your weakest nodes."
-    },
-    "openCheck": {
-      "title": "Open Check — Opening Repertoire Analysis",
-      "description": "Analyze your played games, identify gaps in your opening repertoire, view Grandmaster recommendations, and explore theory."
     }
   },
   "legal": {
@@ -956,7 +952,6 @@
       "about": "About",
       "legal": "Legal",
       "repertoire": "Study",
-      "openCheck": "Open Check",
       "login": "Login",
       "logout": "Logout",
       "loginWithLichess": "Login with Lichess"
