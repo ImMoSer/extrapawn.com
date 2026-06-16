@@ -54,7 +54,7 @@ const props = defineProps<{
 }>()
 
 const activeTab = ref<'white' | 'black'>('white')
-const sortBy = ref<'games' | 'winRate' | 'performance'>('games')
+const sortBy = ref<'games' | 'performance'>('games')
 
 const currentStats = computed(() => {
   return activeTab.value === 'white' ? props.whiteStats : props.blackStats
@@ -111,18 +111,12 @@ function getOpeningPerformance(op: { wins: number; draws: number; losses: number
   return op.avgOpponentRating + diff
 }
 
-function getOpeningWinRate(op: { wins: number; gamesCount: number }): number {
-  return op.gamesCount > 0 ? (op.wins / op.gamesCount) * 100 : 0
-}
-
 const sortedOpeningsForChart = computed(() => {
   if (!currentStats.value) return []
   const list = [...currentStats.value.topOpenings]
   
   if (sortBy.value === 'games') {
     list.sort((a, b) => b.gamesCount - a.gamesCount)
-  } else if (sortBy.value === 'winRate') {
-    list.sort((a, b) => getOpeningWinRate(b) - getOpeningWinRate(a))
   } else if (sortBy.value === 'performance') {
     list.sort((a, b) => getOpeningPerformance(b) - getOpeningPerformance(a))
   }
@@ -324,7 +318,6 @@ async function exportOpeningGames() {
       <div class="sort-tabs-container">
         <NTabs type="segment" size="small" v-model:value="sortBy">
           <NTab name="games">{{ $t('features.lichessGamesDb.statistics.sortByGames') }}</NTab>
-          <NTab name="winRate">{{ $t('features.lichessGamesDb.statistics.sortByWinRate') }}</NTab>
           <NTab name="performance">{{ $t('features.lichessGamesDb.statistics.sortByPerformance') }}</NTab>
         </NTabs>
       </div>

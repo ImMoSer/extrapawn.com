@@ -172,6 +172,12 @@ const router = createRouter({
       meta: { isGame: true, requiresAuth: true, game: 'task-today' },
     },
     {
+      path: '/endgame-analysis',
+      name: 'endgame-analysis',
+      component: () => import('@/pages/endgame-analysis/ui/EndgameAnalysisPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/practical-chess',
       redirect: '/endgames',
     },

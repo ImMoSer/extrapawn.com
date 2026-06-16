@@ -534,11 +534,15 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       .equals(cleanUsername)
       .toArray()
 
-    const blob = new Blob([JSON.stringify(games, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+    const jsonString = JSON.stringify(games, null, 2)
+    const originalBlob = new Blob([jsonString], { type: 'application/json' })
+    const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
+    const compressedBlob = await new Response(stream).blob()
+
+    const url = URL.createObjectURL(compressedBlob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `extrapawn_games_backup_${cleanUsername}_${Date.now()}.json`
+    a.download = `extrapawn_games_backup_${cleanUsername}_${Date.now()}.json.gz`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -574,7 +578,16 @@ interface LegacyLichessGame {
   async function importBackup(username: string, file: File) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
-    const text = await file.text()
+    
+    let text: string
+    if (file.name.endsWith('.gz') || file.name.endsWith('.gzip')) {
+      const stream = file.stream().pipeThrough(new DecompressionStream('gzip'))
+      const decompressedBlob = await new Response(stream).blob()
+      text = await decompressedBlob.text()
+    } else {
+      text = await file.text()
+    }
+
     const games = JSON.parse(text)
 
     if (!Array.isArray(games)) {
@@ -626,6 +639,23 @@ interface LegacyLichessGame {
     await loadStats(username)
   }
 
+  async function getCompressedBackupBuffer(username: string): Promise<ArrayBuffer | null> {
+    if (!username) return null
+    const cleanUsername = username.trim().toLowerCase()
+    const games = await gamesDb.lichess_games
+      .where('username')
+      .equals(cleanUsername)
+      .toArray()
+
+    if (games.length === 0) return null
+
+    const jsonString = JSON.stringify(games, null, 2)
+    const originalBlob = new Blob([jsonString], { type: 'application/json' })
+    const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
+    const compressedBlob = await new Response(stream).blob()
+    return await compressedBlob.arrayBuffer()
+  }
+
   return {
     isSyncing,
     syncProgress,
@@ -636,6 +666,7 @@ interface LegacyLichessGame {
     syncGames,
     wipeCache,
     exportBackup,
-    importBackup
+    importBackup,
+    getCompressedBackupBuffer
   }
 })

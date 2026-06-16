@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useLichessGamesDbStore } from '../model/lichess-games-db.store'
 import { useOpenCheckStore } from '@/features/open-check'
 import { useAuthStore } from '@/entities/user'
@@ -19,6 +20,7 @@ import {
   TrashOutline,
   DownloadOutline,
   CloudUploadOutline,
+  StatsChartOutline,
 } from '@vicons/ionicons5'
 
 withDefaults(
@@ -39,6 +41,11 @@ const openCheckStore = useOpenCheckStore()
 const authStore = useAuthStore()
 const message = useMessage()
 const { t } = useI18n()
+const router = useRouter()
+
+function goToEndgameAnalysis() {
+  router.push('/endgame-analysis')
+}
 
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -231,6 +238,19 @@ const syncProgressPercentage = computed(() => {
             {{ $t('features.lichessGamesDb.cacheSettings.exportBtn') }}
           </NButton>
 
+          <!-- Endgame Analysis -->
+          <NButton
+            type="info"
+            secondary
+            block
+            @click="goToEndgameAnalysis"
+          >
+            <template #icon>
+              <StatsChartOutline />
+            </template>
+            Endspiel-Analyse
+          </NButton>
+
           <!-- Import Backup -->
           <NButton
             secondary
@@ -246,7 +266,7 @@ const syncProgressPercentage = computed(() => {
           <input
             type="file"
             ref="fileInput"
-            accept=".json"
+            accept=".json,.json.gz,.gz"
             style="display: none"
             @change="handleImport"
           />
