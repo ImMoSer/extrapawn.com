@@ -204,6 +204,8 @@ const openingNameParts = computed(() => {
       <div class="col-pct">WDL</div>
       <div class="col-n-pct">N%</div>
       <div class="col-perf">Perf</div>
+      <div class="col-cp">cp</div>
+      <div class="col-wp">WP</div>
     </div>
 
     <div class="book-body">
@@ -345,6 +347,16 @@ const openingNameParts = computed(() => {
 
 .col-perf {
   width: 50px;
+  padding-right: 4px;
+}
+
+.col-cp {
+  width: 50px;
+  padding-right: 4px;
+}
+
+.col-wp {
+  width: 45px;
   padding-right: 4px;
 }
 

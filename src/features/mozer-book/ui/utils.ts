@@ -7,6 +7,8 @@ export const getNagSymbol = (nag: number) => {
     5: '!?',
     6: '?!',
     7: '□',
+    8: '!??',
+    9: '!!?',
     255: '!!!',
   }
   return map[nag] || ''
@@ -28,6 +30,10 @@ export const getNagColor = (nag: number) => {
       return '#ff9800' // Orange
     case 7:
       return '#3f51b5' // Blue
+    case 8:
+      return '#00bcd4' // Cyan for SwindlesMove (!??)
+    case 9:
+      return '#9c27b0' // Violet/Purple for Very Interesting Move (!!?)
     case 255:
       return 'var(--color-nag-255, #ff0496)'
     default:

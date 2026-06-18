@@ -28,8 +28,19 @@ const nPercentage = computed(() => {
   return pct < 0.1 ? '<0.1%' : `${pct.toFixed(1)}%`
 })
 
+const isTheoretical = computed(() => {
+  return !!props.move.name || !!props.move.eco
+})
+
 function handleClick() {
   emit('select', props.move.uci)
+}
+
+function getEvalColor(rel_cp?: number) {
+  if (rel_cp === undefined || rel_cp === null) return 'inherit'
+  if (rel_cp > 50) return '#4caf50'
+  if (rel_cp < -50) return '#f44336'
+  return 'inherit'
 }
 </script>
 
@@ -39,6 +50,7 @@ function handleClick() {
       <n-tooltip
         trigger="hover"
         placement="right"
+        :disabled="!isTheoretical"
         :style="{
           width: 'max-content',
           maxWidth: 'none',
@@ -47,7 +59,11 @@ function handleClick() {
         }"
       >
         <template #trigger>
-          <span class="move-text" :style="{ color: getNagColor(move.nag) }">
+          <span
+            class="move-text"
+            :class="{ 'theoretical-move': isTheoretical }"
+            :style="{ color: getNagColor(move.nag) }"
+          >
             {{ formatMove }}
           </span>
         </template>
@@ -83,6 +99,14 @@ function handleClick() {
     <div class="col-n-pct">{{ nPercentage }}</div>
 
     <div class="col-perf">{{ move.perf }}</div>
+
+    <div class="col-cp" :style="{ color: getEvalColor(move.rel_cp) }">
+      {{ move.cp_str || 'NR' }}
+    </div>
+
+    <div class="col-wp">
+      {{ move.wp_str || 'NR' }}
+    </div>
   </div>
 </template>
 
@@ -136,9 +160,27 @@ function handleClick() {
   font-weight: bold;
 }
 
+.col-cp {
+  width: 50px;
+  padding-right: 4px;
+  font-weight: bold;
+}
+
+.col-wp {
+  width: 45px;
+  padding-right: 4px;
+}
+
 .move-text {
   font-weight: bold;
   font-size: 14px;
+}
+
+.move-text.theoretical-move {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  padding: 1px 4px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .hierarchy-tooltip {

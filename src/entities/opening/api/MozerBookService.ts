@@ -17,6 +17,9 @@ export interface MozerBookMove extends MozerBookTheoryItem {
   nag: number
   wt?: number
   bt?: number
+  cp_str?: string
+  wp_str?: string
+  rel_cp?: number
   children?: MozerBookTheoryItem[]
 }
 
