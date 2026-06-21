@@ -16,6 +16,7 @@ export interface ExportedOpeningGames {
     rootMove: string
     eco: string
     opening: string
+    ply: number
     pgn: string
   }>
 }
@@ -42,6 +43,7 @@ export function exportGamesAsJSON(
       rootMove: g.rootMove,
       eco: g.eco,
       opening: g.opening,
+      ply: g.ply,
       pgn: g.pgn
     }))
   }

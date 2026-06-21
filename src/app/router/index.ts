@@ -170,6 +170,11 @@ const router = createRouter({
       redirect: '/endgames',
     },
     {
+      path: '/open-flow-test',
+      name: 'open-flow-test',
+      component: () => import('@/pages/open-flow-test/ui/OpenFlowTestPage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       redirect: '/about',

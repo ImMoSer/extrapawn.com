@@ -22,6 +22,7 @@ export interface LichessGameEntity {
   openingNameBase: string     // Extrahiert (z.B. "French Defense")
   eco: string
   opening: string
+  ply: number
   pgn: string                 // Züge im standardisierten PGN-Format
 }
 

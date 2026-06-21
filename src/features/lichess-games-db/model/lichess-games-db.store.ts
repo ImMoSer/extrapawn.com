@@ -26,7 +26,7 @@ interface LichessGameResponse {
     white?: { user?: { id?: string; name?: string }; rating?: number; ratingDiff?: number }
     black?: { user?: { id?: string; name?: string }; rating?: number; ratingDiff?: number }
   }
-  opening?: { eco?: string; name?: string; ply?: number }
+  opening?: { eco?: string; name?: string; ply: number }
   moves?: string
   pgn?: string
   clock?: { initial?: number; increment?: number; totalTime?: number }
@@ -368,6 +368,10 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             continue
           }
 
+          if (game.opening.ply === undefined) {
+            throw new Error(`Game ${game.id || 'unknown'} is missing required 'ply' parameter in opening.`)
+          }
+
           if (!game.players?.white?.user?.id || !game.players?.black?.user?.id) {
             continue
           }
@@ -425,6 +429,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             openingNameBase,
             eco: game.opening.eco || '',
             opening: game.opening.name || '',
+            ply: game.opening.ply,
             pgn: cleanPgn
           }
 
@@ -446,6 +451,9 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             game.players?.white?.user?.id &&
             game.players?.black?.user?.id
           ) {
+            if (game.opening.ply === undefined) {
+              throw new Error(`Game ${game.id || 'unknown'} is missing required 'ply' parameter in opening.`)
+            }
             const whiteId = game.players.white.user.id.toLowerCase()
             const blackId = game.players.black.user.id.toLowerCase()
             const isWhite = whiteId === cleanUsername
@@ -492,6 +500,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
                   openingNameBase,
                   eco: game.opening.eco || '',
                   opening: game.opening.name || '',
+                  ply: game.opening.ply,
                   pgn: cleanPgn
                 }
                 await gamesDb.lichess_games.put(gameEntity)
@@ -602,6 +611,9 @@ interface LegacyLichessGame {
       // Migrate legacy backup format to version 2 on the fly if needed
       if ('players' in g && g.players) {
         const legacy = g as unknown as LegacyLichessGame
+        if (legacy.opening?.ply === undefined) {
+          throw new Error(`Legacy game ${legacy.id} is missing required 'ply' parameter in opening.`)
+        }
         const whiteName = legacy.players?.white?.user?.name || legacy.players?.white?.user?.id || 'White'
         const blackName = legacy.players?.black?.user?.name || legacy.players?.black?.user?.id || 'Black'
         const resultVal = legacy.winner ? (legacy.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
@@ -626,13 +638,18 @@ interface LegacyLichessGame {
           rootMove: legacy.rootMove,
           movesCount: legacy.movesCount,
           openingNameBase: legacy.openingNameBase,
-          eco: legacy.opening?.eco || '',
-          opening: legacy.opening?.name || '',
+          eco: legacy.opening.eco || '',
+          opening: legacy.opening.name || '',
+          ply: legacy.opening.ply,
           pgn: cleanPgn
         }
         await gamesDb.lichess_games.put(migratedGame)
       } else {
-        await gamesDb.lichess_games.put(g as LichessGameEntity)
+        const entity = g as LichessGameEntity
+        if (entity.ply === undefined) {
+          throw new Error(`Imported game ${entity.id} is missing required 'ply' parameter.`)
+        }
+        await gamesDb.lichess_games.put(entity)
       }
     }
 
