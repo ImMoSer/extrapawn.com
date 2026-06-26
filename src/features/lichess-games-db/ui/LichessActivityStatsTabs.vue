@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const activeTab = ref<'today' | 'week' | 'month'>('today')
+const activeTab = ref<'today' | 'week'>('today')
 
 interface PerfStats {
   games: number
@@ -33,7 +33,6 @@ const statsForPeriod = computed(() => {
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const startOf7DaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000
-  const startOf31DaysAgo = now.getTime() - 31 * 24 * 60 * 60 * 1000
 
   const getStats = (minTimestamp: number): PeriodStats => {
     const createEmptyStats = (): PerfStats => ({
@@ -96,8 +95,7 @@ const statsForPeriod = computed(() => {
 
   return {
     today: getStats(startOfToday),
-    week: getStats(startOf7DaysAgo),
-    month: getStats(startOf31DaysAgo)
+    week: getStats(startOf7DaysAgo)
   }
 })
 
@@ -109,7 +107,6 @@ const currentStats = computed(() => statsForPeriod.value[activeTab.value])
     <NTabs type="segment" size="small" v-model:value="activeTab">
       <NTab name="today">{{ t('features.lichessGamesDb.cacheSettings.tabToday') }}</NTab>
       <NTab name="week">{{ t('features.lichessGamesDb.cacheSettings.tabWeek') }}</NTab>
-      <NTab name="month">{{ t('features.lichessGamesDb.cacheSettings.tabMonth') }}</NTab>
     </NTabs>
 
     <div class="activity-stats-content" style="margin-top: 14px;">

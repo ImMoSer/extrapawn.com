@@ -647,6 +647,7 @@
         "clickToView": "Klicke auf ein Segment für Details zur Eröffnung",
         "noLocalDb": "Keine lokalen Statistiken. Bitte synchronisieren oder Benutzer auswählen.",
         "openingDetails": "Details zur Eröffnung",
+        "variants": "Varianten",
         "winRate": "Siegesquote:",
         "avgUserRating": "Ø Eigene Wertung:",
         "avgOpponentRating": "Ø Gegnerische Wertung:",

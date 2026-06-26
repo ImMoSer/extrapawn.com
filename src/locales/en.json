@@ -647,6 +647,7 @@
         "clickToView": "Click on a sector to view detailed opening stats",
         "noLocalDb": "No local database stats. Please synchronize or select user.",
         "openingDetails": "Opening Details",
+        "variants": "Variants",
         "winRate": "Win Rate:",
         "avgUserRating": "Avg User Rating:",
         "avgOpponentRating": "Avg Opponent Rating:",
