@@ -1,18 +1,7 @@
 <script setup lang="ts">
-import { SchoolOutline, CompassOutline } from '@vicons/ionicons5'
-import {
-  NIcon,
-  NRadioButton,
-  NRadioGroup,
-  NScrollbar,
-  NText,
-  NButton,
-  useDialog,
-} from 'naive-ui'
-import { computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
-import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
+import { useAuthStore } from '@/entities/user'
+import { useDemoplayStore } from '@/features/demoplay'
+import { PuzzleHalloHeader, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
   FINISH_HIM_CATEGORIES,
@@ -20,9 +9,20 @@ import {
   THEORY_ENDING_CATEGORIES,
   type SubscriptionTier,
 } from '@/shared/types/api.types'
-import { usePuzzleStore, type PuzzleSubmode, PuzzleHalloHeader } from '@/features/puzzle'
-import { useDemoplayStore } from '@/features/demoplay'
-import { useAuthStore } from '@/entities/user'
+import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
+import { CompassOutline, SchoolOutline } from '@vicons/ionicons5'
+import {
+  NButton,
+  NIcon,
+  NRadioButton,
+  NRadioGroup,
+  NScrollbar,
+  NText,
+  useDialog,
+} from 'naive-ui'
+import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   submode: PuzzleSubmode
@@ -368,7 +368,7 @@ const isPuzzleActive = computed(() => {
               <VisualRadioGroup
                 v-model:value="activeThemeValue"
                 :options="basicTierOptions"
-                :columns="3"
+                :min-width="115"
                 class="tier-basic"
                 @update:value="loadPuzzle"
                 @click-disabled="handleDisabledClick('basic')"
@@ -377,7 +377,7 @@ const isPuzzleActive = computed(() => {
               <VisualRadioGroup
                 v-model:value="activeThemeValue"
                 :options="premiumTierOptions"
-                :columns="3"
+                :min-width="115"
                 class="tier-premium"
                 @update:value="loadPuzzle"
                 @click-disabled="handleDisabledClick('premium')"
@@ -386,7 +386,7 @@ const isPuzzleActive = computed(() => {
               <VisualRadioGroup
                 v-model:value="activeThemeValue"
                 :options="premiumPlusTierOptions"
-                :columns="3"
+                :min-width="115"
                 class="tier-premium-plus"
                 @update:value="loadPuzzle"
                 @click-disabled="handleDisabledClick('premiumPlus')"
