@@ -66,6 +66,63 @@ export interface DetailedDashboardStats {
   black: TabStats
 }
 
+export interface LichessPerf {
+  games: number
+  rating: number
+  rd?: number
+  prog?: number
+  prov?: boolean
+}
+
+export interface LichessProfile {
+  id: string
+  username: string
+  perfs: {
+    bullet?: LichessPerf
+    blitz?: LichessPerf
+    rapid?: LichessPerf
+    classical?: LichessPerf
+    ultraBullet?: LichessPerf
+    correspondence?: LichessPerf
+    chess960?: LichessPerf
+    kingOfTheHill?: LichessPerf
+    threeCheck?: LichessPerf
+    antichess?: LichessPerf
+    atomic?: LichessPerf
+    horde?: LichessPerf
+    crazyhouse?: LichessPerf
+    puzzle?: LichessPerf
+  }
+  count: {
+    all: number
+    rated?: number
+    draw?: number
+    loss?: number
+    win?: number
+  }
+}
+
+export interface LichessActivityInterval {
+  start: number
+  end: number
+}
+
+export interface LichessActivityGames {
+  [perfKey: string]: {
+    nb: number
+    win?: number
+    loss?: number
+    draw?: number
+  }
+}
+
+export interface LichessActivityItem {
+  interval?: LichessActivityInterval
+  games?: LichessActivityGames
+  [key: string]: unknown
+}
+
+
 function formatMovesStringToPgn(movesStr: string, result: string): string {
   const movesList = movesStr.trim().split(/\s+/).filter(Boolean)
   const pairs: string[] = []
@@ -79,12 +136,32 @@ function formatMovesStringToPgn(movesStr: string, result: string): string {
   return result ? `${formatted} ${result}` : formatted
 }
 
+function transformBytes(data: Uint8Array, keyStr: string): Uint8Array {
+  const keyBytes = new TextEncoder().encode(keyStr)
+  const result = new Uint8Array(data.length)
+  for (let i = 0; i < data.length; i++) {
+    const dataByte = data[i]
+    const keyByte = keyBytes[i % keyBytes.length]
+    if (dataByte !== undefined && keyByte !== undefined) {
+      result[i] = dataByte ^ keyByte
+    }
+  }
+  return result
+}
+
 export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
   const isSyncing = ref(false)
   const syncProgress = ref({ current: 0, total: 0 })
   const error = ref<string | null>(null)
   const stats = ref<CacheStats | null>(null)
   const detailedStats = ref<DetailedDashboardStats | null>(null)
+  const lichessProfile = ref<LichessProfile | null>(null)
+  const lichessActivity = ref<LichessActivityItem[] | null>(null)
+  const latestLocalGameTimestamp = ref<number>(0)
+
+  const profileCache = ref<Record<string, { data: LichessProfile; timestamp: number }>>({})
+  const activityCache = ref<Record<string, { data: LichessActivityItem[]; timestamp: number }>>({})
+
 
   function computeTabStats(games: LichessGameEntity[]): TabStats {
     const gamesCount = games.length
@@ -221,6 +298,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     if (!username) {
       stats.value = null
       detailedStats.value = null
+      latestLocalGameTimestamp.value = 0
       return
     }
     try {
@@ -229,6 +307,14 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
         .where('username')
         .equals(cleanUsername)
         .toArray()
+
+      let latestTimestamp = 0
+      for (const g of games) {
+        if (g.createdAt > latestTimestamp) {
+          latestTimestamp = g.createdAt
+        }
+      }
+      latestLocalGameTimestamp.value = latestTimestamp
 
       const countBySpeed = {
         bullet: 0,
@@ -295,21 +381,15 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
 
       const sinceTimestamp = latestGame ? latestGame.createdAt + 1 : undefined
 
-      // 2. Lichess-Profil abrufen, um Fortschritts-Nenner zu ermitteln
+      // 2. Lichess-Profil nutzen, um Fortschritts-Nenner zu ermitteln
       let totalExpectedNew = 0
-      try {
-        const profileRes = await fetch(`https://lichess.org/api/user/${username}`)
-        if (profileRes.ok) {
-          const profile = await profileRes.json()
-          const totalGames = profile.count?.all || 0
-          const currentLocalCount = await gamesDb.lichess_games
-            .where('username')
-            .equals(cleanUsername)
-            .count()
-          totalExpectedNew = Math.min(maxGames, Math.max(0, totalGames - currentLocalCount))
-        }
-      } catch {
-        logger.warn('Konnte Lichess-Profil nicht abfragen für Fortschrittsanzeige')
+      if (lichessProfile.value) {
+        const totalGames = lichessProfile.value.count?.all || 0
+        const currentLocalCount = await gamesDb.lichess_games
+          .where('username')
+          .equals(cleanUsername)
+          .count()
+        totalExpectedNew = Math.min(maxGames, Math.max(0, totalGames - currentLocalCount))
       }
 
       syncProgress.value = { current: 0, total: totalExpectedNew }
@@ -525,9 +605,73 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     }
   }
 
+  async function loadLichessProfile(username: string): Promise<LichessProfile | null> {
+    if (!username || !username.trim()) {
+      lichessProfile.value = null
+      return null
+    }
+    const cleanUsername = username.trim().toLowerCase()
+    const now = Date.now()
+    const cached = profileCache.value[cleanUsername]
+    if (cached && (now - cached.timestamp < 60000)) {
+      lichessProfile.value = cached.data
+      return cached.data
+    }
+
+    try {
+      const profileRes = await fetch(`https://lichess.org/api/user/${cleanUsername}`)
+      if (profileRes.ok) {
+        const profile = await profileRes.json() as LichessProfile
+        lichessProfile.value = profile
+        profileCache.value[cleanUsername] = { data: profile, timestamp: Date.now() }
+        return profile
+      } else {
+        lichessProfile.value = null
+        return null
+      }
+    } catch (err) {
+      logger.error('Fehler beim Abrufen des Lichess-Profils:', err)
+      lichessProfile.value = null
+      return null
+    }
+  }
+
+  async function loadLichessActivity(username: string): Promise<LichessActivityItem[] | null> {
+    if (!username || !username.trim()) {
+      lichessActivity.value = null
+      return null
+    }
+    const cleanUsername = username.trim().toLowerCase()
+    const now = Date.now()
+    const cached = activityCache.value[cleanUsername]
+    if (cached && (now - cached.timestamp < 60000)) {
+      lichessActivity.value = cached.data
+      return cached.data
+    }
+
+    try {
+      const res = await fetch(`https://lichess.org/api/user/${cleanUsername}/activity`)
+      if (res.ok) {
+        const activity = await res.json() as LichessActivityItem[]
+        lichessActivity.value = activity
+        activityCache.value[cleanUsername] = { data: activity, timestamp: Date.now() }
+        return activity
+      } else {
+        lichessActivity.value = null
+        return null
+      }
+    } catch (err) {
+      logger.error('Fehler beim Abrufen der Lichess-Aktivität:', err)
+      lichessActivity.value = null
+      return null
+    }
+  }
+
   async function wipeCache(username: string) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
+    delete profileCache.value[cleanUsername]
+    delete activityCache.value[cleanUsername]
     await gamesDb.lichess_games
       .where('username')
       .equals(cleanUsername)
@@ -535,7 +679,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     await loadStats(username)
   }
 
-  async function exportBackup(username: string) {
+  async function exportBackup(username: string, profileCreatedAt: number) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
     const games = await gamesDb.lichess_games
@@ -547,11 +691,16 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     const originalBlob = new Blob([jsonString], { type: 'application/json' })
     const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
     const compressedBlob = await new Response(stream).blob()
+    const compressedBuffer = await compressedBlob.arrayBuffer()
+    const compressedBytes = new Uint8Array(compressedBuffer)
 
-    const url = URL.createObjectURL(compressedBlob)
+    const obfuscatedBytes = transformBytes(compressedBytes, String(profileCreatedAt))
+
+    const finalBlob = new Blob([obfuscatedBytes.buffer as ArrayBuffer], { type: 'application/octet-stream' })
+    const url = URL.createObjectURL(finalBlob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `extrapawn_games_backup_${cleanUsername}_${Date.now()}.json.gz`
+    a.download = `extrapawn_games_backup_${cleanUsername}_${Date.now()}.epb`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -584,18 +733,22 @@ interface LegacyLichessGame {
   }
 }
 
-  async function importBackup(username: string, file: File) {
+  async function importBackup(username: string, file: File, profileCreatedAt: number) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
-    
-    let text: string
-    if (file.name.endsWith('.gz') || file.name.endsWith('.gzip')) {
-      const stream = file.stream().pipeThrough(new DecompressionStream('gzip'))
-      const decompressedBlob = await new Response(stream).blob()
-      text = await decompressedBlob.text()
-    } else {
-      text = await file.text()
-    }
+
+    const arrayBuffer = await file.arrayBuffer()
+    const obfuscatedBytes = new Uint8Array(arrayBuffer)
+
+    const decompressedBytes = transformBytes(obfuscatedBytes, String(profileCreatedAt))
+
+    const ds = new DecompressionStream('gzip')
+    const writer = ds.writable.getWriter()
+    writer.write(decompressedBytes.buffer as ArrayBuffer)
+    writer.close()
+
+    const decompressedBuffer = await new Response(ds.readable).arrayBuffer()
+    const text = new TextDecoder().decode(decompressedBuffer)
 
     const games = JSON.parse(text)
 
@@ -670,7 +823,8 @@ interface LegacyLichessGame {
     const originalBlob = new Blob([jsonString], { type: 'application/json' })
     const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
     const compressedBlob = await new Response(stream).blob()
-    return await compressedBlob.arrayBuffer()
+    const compressedBuffer = await compressedBlob.arrayBuffer()
+    return compressedBuffer
   }
 
   return {
@@ -679,7 +833,12 @@ interface LegacyLichessGame {
     error,
     stats,
     detailedStats,
+    lichessProfile,
+    lichessActivity,
+    latestLocalGameTimestamp,
     loadStats,
+    loadLichessProfile,
+    loadLichessActivity,
     syncGames,
     wipeCache,
     exportBackup,

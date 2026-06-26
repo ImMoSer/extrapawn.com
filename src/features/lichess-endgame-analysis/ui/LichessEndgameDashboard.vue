@@ -3,9 +3,6 @@ import { ref, computed } from 'vue'
 import {
   NCard,
   NButton,
-  NUpload,
-  NUploadDragger,
-  NText,
   NP,
   NIcon,
   NSpin,
@@ -20,7 +17,6 @@ import {
   useMessage
 } from 'naive-ui'
 import {
-  CloudUploadOutline,
   RefreshOutline,
   CopyOutline,
   ChevronForwardOutline,
@@ -47,21 +43,6 @@ const store = useLichessEndgameAnalysisStore()
 const message = useMessage()
 
 const currentTab = ref<'dropped' | 'missed'>('dropped')
-
-// Dateiupload-Handler
-const handleUpload = async (options: { file: { file: File | null } }) => {
-  const file = options.file.file
-  if (!file) return
-
-  try {
-    const buffer = await file.arrayBuffer()
-    await store.analyzeBackupBuffer(buffer)
-    message.success('Endspiel-Analyse erfolgreich abgeschlossen!')
-  } catch (err) {
-    const errorObject = err as Error
-    message.error(errorObject.message || 'Fehler beim Analysieren des Backups.')
-  }
-}
 
 // Reset der Analyse
 const handleReset = () => {
@@ -337,7 +318,7 @@ const copyToClipboard = (text: string) => {
       </p>
     </div>
 
-    <!-- 1. INITIAL / UPLOAD STATE -->
+    <!-- 1. INITIAL STATE -->
     <div v-if="!store.analysisResult && !store.isLoading" class="upload-section">
       <NCard class="upload-card">
         <NSpace vertical size="large" align="center" style="width: 100%">
@@ -353,26 +334,16 @@ const copyToClipboard = (text: string) => {
             <NP style="color: rgba(255, 255, 255, 0.6); margin-top: 10px; font-size: 14px;">
               Es wurden {{ props.localGamesCount }} importierte Partien im Cache gefunden.
             </NP>
-            
-            <NDivider style="margin: 24px 0;">Oder manuell hochladen</NDivider>
           </div>
-
-          <NUpload
-            @change="handleUpload"
-            :show-file-list="false"
-            accept=".json.gz,.json,.gz"
-            class="uploader"
-            style="width: 100%;"
-          >
-            <NUploadDragger class="dragger-box" style="padding: 20px;">
-              <div class="icon-wrapper" style="margin-bottom: 8px;">
-                <NIcon size="36" :component="CloudUploadOutline" />
-              </div>
-              <NText style="font-size: 14px; font-weight: bold;">
-                Backup-Datei manuell hochladen
-              </NText>
-            </NUploadDragger>
-          </NUpload>
+          <div v-else style="text-align: center; width: 100%;">
+            <NIcon size="48" :component="WarningOutline" style="color: #f0a020; margin-bottom: 16px;" />
+            <NP style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">
+              Keine Partien im lokalen Cache
+            </NP>
+            <NP style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 400px; margin: 0 auto 16px auto;">
+              Bitte lade oder synchronisiere zuerst deine Partien im User Cabinet, um die Endspiel-Analyse zu nutzen.
+            </NP>
+          </div>
         </NSpace>
       </NCard>
     </div>
@@ -740,21 +711,6 @@ const copyToClipboard = (text: string) => {
 .upload-card {
   max-width: 600px;
   width: 100%;
-}
-
-.uploader :deep(.n-upload-dragger) {
-  border: 2px dashed rgba(255, 255, 255, 0.15);
-  background: rgba(20, 20, 20, 0.4);
-  border-radius: 12px;
-  transition: border-color 0.3s;
-}
-
-.uploader :deep(.n-upload-dragger:hover) {
-  border-color: #a067ff;
-}
-
-.icon-wrapper {
-  color: #a067ff;
 }
 
 .loading-section {

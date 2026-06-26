@@ -664,8 +664,8 @@
         "gamesDownloaded": "загружено: {current} / {total}",
         "actions": "Действия",
         "syncBtn": "Синхронизировать / Обновить игры",
-        "exportBtn": "Экспорт бэкапа (JSON)",
-        "importBtn": "Импорт бэкапа (JSON)",
+        "exportBtn": "Экспорт бэкапа",
+        "importBtn": "Импорт бэкапа",
         "wipeBtn": "Очистить локальный кэш",
         "enterUsernameError": "Пожалуйста, сначала укажите имя пользователя Lichess в эксплорере.",
         "syncLoading": "Синхронизация игр с Lichess...",
@@ -677,7 +677,17 @@
         "exportError": "Ошибка при экспорте бэкапа.",
         "importLoading": "Импорт файла бэкапа...",
         "importSuccess": "Бэкап успешно импортирован!",
-        "importError": "Ошибка при импорте бэкапа."
+        "importError": "Ошибка при импорте бэкапа.",
+        "onlineStatsTitle": "Онлайн-статистика Lichess",
+        "onlineActivityTitle": "Активность на Lichess",
+        "minGamesWarningTitle": "Синхронизация невозможна",
+        "minGamesWarningText": "Пожалуйста, сыграйте не менее 1000 партий на Lichess. Сейчас у вас {count} партий.",
+        "tabToday": "Сегодня",
+        "tabWeek": "Неделя",
+        "tabMonth": "Месяц",
+        "dbNotUpToDate": "База данных устарела",
+        "dbNotUpToDateDesc": "Последняя партия в вашей базе данных от {date}. С тех пор на Lichess было сыграно {count} новых партий.",
+        "syncBtnUpdate": "Обновить базу данных (+{count} партий)"
       }
     },
     "coach": {

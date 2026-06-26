@@ -12,6 +12,8 @@ import {
   NSpace,
   NInput,
   useMessage,
+  useDialog,
+  NAlert,
 } from 'naive-ui'
 import {
   ArrowBackOutline,
@@ -35,9 +37,13 @@ const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
+import LichessProfileStatsTable from './LichessProfileStatsTable.vue'
+import LichessActivityStatsTabs from './LichessActivityStatsTabs.vue'
+
 const store = useLichessGamesDbStore()
 const authStore = useAuthStore()
 const message = useMessage()
+const dialog = useDialog()
 const { t } = useI18n()
 const router = useRouter()
 
@@ -76,7 +82,68 @@ function resetToSelf() {
 async function refreshStats() {
   if (username.value) {
     await store.loadStats(username.value)
+    await store.loadLichessProfile(username.value)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await store.loadLichessActivity(username.value)
   }
+}
+
+const newGamesCount = computed(() => {
+  if (!store.latestLocalGameTimestamp || !store.lichessActivity) return 0
+
+  let count = 0
+  for (const item of store.lichessActivity) {
+    if (item.interval && item.interval.start > store.latestLocalGameTimestamp && item.games) {
+      const perfKeys = ['bullet', 'blitz', 'rapid', 'classical'] as const
+      for (const key of perfKeys) {
+        const gamesData = item.games[key]
+        if (gamesData) {
+          const nb = (gamesData.win || 0) + (gamesData.loss || 0) + (gamesData.draw || 0)
+          count += nb
+        }
+      }
+    }
+  }
+  return count
+})
+
+const formattedLatestGameDate = computed(() => {
+  if (!store.latestLocalGameTimestamp) return ''
+  const date = new Date(store.latestLocalGameTimestamp)
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+})
+
+const isSyncButtonDisabled = computed(() => {
+  if (store.isSyncing) return false
+  if (!store.lichessProfile) return false
+
+  // Wenn weniger als 1000 Spiele auf Lichess: Button deaktiviert (und zeigt beim Klick das Dialog-Modal)
+  if (store.lichessProfile.count.all < 1000) return true
+
+  // Wenn wir lokale Daten haben und keine neuen Spiele online vorhanden sind: Deaktiviert
+  if (store.stats && store.stats.total > 0 && newGamesCount.value === 0) {
+    return true
+  }
+
+  return false
+})
+
+function handleSyncWrapper() {
+  if (store.lichessProfile && store.lichessProfile.count.all < 1000) {
+    dialog.warning({
+      title: t('features.lichessGamesDb.cacheSettings.minGamesWarningTitle'),
+      content: t('features.lichessGamesDb.cacheSettings.minGamesWarningText', { count: store.lichessProfile.count.all }),
+      positiveText: t('shared.buttons.close')
+    })
+    return
+  }
+
+  if (store.stats && store.stats.total > 0 && newGamesCount.value === 0) {
+    // Datenbank ist bereits aktuell - kein Klick nötig
+    return
+  }
+
+  handleSync()
 }
 
 onMounted(() => {
@@ -118,7 +185,8 @@ async function handleClear() {
 async function handleExport() {
   if (!username.value.trim()) return
   try {
-    await store.exportBackup(username.value)
+    const keySeed = authStore.userProfile?.createdAt || 0
+    await store.exportBackup(username.value, keySeed)
     message.success(t('features.lichessGamesDb.cacheSettings.exportSuccess'))
   } catch {
     message.error(t('features.lichessGamesDb.cacheSettings.exportError'))
@@ -136,7 +204,8 @@ async function handleImport(event: Event) {
 
   try {
     message.loading(t('features.lichessGamesDb.cacheSettings.importLoading'), { duration: 0 })
-    await store.importBackup(username.value, file)
+    const keySeed = authStore.userProfile?.createdAt || 0
+    await store.importBackup(username.value, file, keySeed)
     message.destroyAll()
     message.success(t('features.lichessGamesDb.cacheSettings.importSuccess'))
   } catch (err: unknown) {
@@ -189,6 +258,26 @@ const syncProgressPercentage = computed(() => {
         </div>
       </NCard>
 
+      <!-- Lichess Online Stats -->
+      <NCard v-if="store.lichessProfile" class="panel-card online-stats-card" :title="$t('features.lichessGamesDb.cacheSettings.onlineStatsTitle')" size="small">
+        <LichessProfileStatsTable :profile="store.lichessProfile" />
+      </NCard>
+
+      <!-- Lichess Online Activity -->
+      <NCard v-if="store.lichessActivity && store.lichessActivity.length > 0" class="panel-card online-activity-card" :title="$t('features.lichessGamesDb.cacheSettings.onlineActivityTitle')" size="small">
+        <LichessActivityStatsTabs :activity="store.lichessActivity" />
+      </NCard>
+
+      <!-- Alert if local DB is outdated -->
+      <NAlert
+        v-if="newGamesCount > 0"
+        type="warning"
+        :title="$t('features.lichessGamesDb.cacheSettings.dbNotUpToDate')"
+        closable
+      >
+        {{ $t('features.lichessGamesDb.cacheSettings.dbNotUpToDateDesc', { date: formattedLatestGameDate, count: newGamesCount }) }}
+      </NAlert>
+
 
       <!-- Sync Progress Section -->
       <NCard v-if="store.isSyncing" class="panel-card progress-card" size="small">
@@ -211,17 +300,20 @@ const syncProgressPercentage = computed(() => {
       <NCard class="panel-card actions-card" :title="$t('features.lichessGamesDb.cacheSettings.actions')" size="small">
         <NSpace vertical size="medium">
           <!-- Synchronize Button -->
-          <NButton
-            type="primary"
-            block
-            :loading="store.isSyncing"
-            @click="handleSync"
-          >
-            <template #icon>
-              <CloudDownloadOutline />
-            </template>
-            {{ $t('features.lichessGamesDb.cacheSettings.syncBtn') }}
-          </NButton>
+          <div @click="handleSyncWrapper">
+            <NButton
+              :type="newGamesCount > 0 ? 'warning' : 'primary'"
+              block
+              :loading="store.isSyncing"
+              :disabled="isSyncButtonDisabled"
+              :style="{ pointerEvents: isSyncButtonDisabled ? 'none' : 'auto' }"
+            >
+              <template #icon>
+                <CloudDownloadOutline />
+              </template>
+              {{ newGamesCount > 0 ? t('features.lichessGamesDb.cacheSettings.syncBtnUpdate', { count: newGamesCount }) : t('features.lichessGamesDb.cacheSettings.syncBtn') }}
+            </NButton>
+          </div>
 
           <!-- Export Backup -->
           <NButton
@@ -264,7 +356,7 @@ const syncProgressPercentage = computed(() => {
           <input
             type="file"
             ref="fileInput"
-            accept=".json,.json.gz,.gz"
+            accept=".epb"
             style="display: none"
             @change="handleImport"
           />

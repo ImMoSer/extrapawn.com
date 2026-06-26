@@ -664,8 +664,8 @@
         "gamesDownloaded": "{current} / {total} Partien heruntergeladen",
         "actions": "Aktionen",
         "syncBtn": "Synchronisieren / Aktualisieren",
-        "exportBtn": "Backup exportieren (JSON)",
-        "importBtn": "Backup importieren (JSON)",
+        "exportBtn": "Backup exportieren",
+        "importBtn": "Backup importieren",
         "wipeBtn": "Lokalen Cache leeren",
         "enterUsernameError": "Bitte geben Sie zuerst einen Lichess-Benutzernamen im Explorer an.",
         "syncLoading": "Synchronisiere Spiele mit Lichess...",
@@ -677,7 +677,17 @@
         "exportError": "Fehler beim Exportieren des Backups.",
         "importLoading": "Importiere Backup-Datei...",
         "importSuccess": "Backup erfolgreich importiert!",
-        "importError": "Fehler beim Importieren des Backups."
+        "importError": "Fehler beim Importieren des Backups.",
+        "onlineStatsTitle": "Lichess Online-Statistiken",
+        "onlineActivityTitle": "Lichess Aktivitäten",
+        "minGamesWarningTitle": "Synchronisation nicht möglich",
+        "minGamesWarningText": "Bitte mindestens 1000 Games auf Lichess spielen. Du hast aktuell {count} Spiele.",
+        "tabToday": "Heute",
+        "tabWeek": "Woche",
+        "tabMonth": "Monat",
+        "dbNotUpToDate": "Datenbank nicht aktuell",
+        "dbNotUpToDateDesc": "Die neueste Partie in deiner Datenbank ist vom {date}. Auf Lichess wurden seitdem {count} neue Partien gespielt.",
+        "syncBtnUpdate": "Datenbank aktualisieren (+{count} Partien)"
       }
     },
     "coach": {
