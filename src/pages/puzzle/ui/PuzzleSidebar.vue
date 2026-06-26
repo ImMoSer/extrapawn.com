@@ -7,18 +7,22 @@ import {
   NScrollbar,
   NText,
   NButton,
+  useDialog,
 } from 'naive-ui'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
   FINISH_HIM_CATEGORIES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
+  type SubscriptionTier,
 } from '@/shared/types/api.types'
 import { usePuzzleStore, type PuzzleSubmode, PuzzleHalloHeader } from '@/features/puzzle'
 import { useDemoplayStore } from '@/features/demoplay'
+import { useAuthStore } from '@/entities/user'
 
 const props = defineProps<{
   submode: PuzzleSubmode
@@ -29,6 +33,35 @@ const emit = defineEmits<{
 }>()
 
 const { t, te } = useI18n()
+const authStore = useAuthStore()
+const dialog = useDialog()
+const router = useRouter()
+
+const TIER_LEVELS: Record<SubscriptionTier | 'Guest', number> = {
+  Guest: 0,
+  Pawn: 1,
+  Knight: 2,
+  Bishop: 2,
+  Rook: 3,
+  Queen: 3,
+  King: 3,
+  administrator: 4,
+}
+
+const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) {
+    return 'Guest'
+  }
+  const tier = authStore.userProfile.subscriptionTier
+  if (!(tier in TIER_LEVELS)) {
+    throw new Error(`[PuzzleSidebar] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
+  }
+  return tier as SubscriptionTier
+})
+
+const currentUserLevel = computed<number>(() => {
+  return TIER_LEVELS[currentUserTier.value] ?? 0
+})
 
 
 
@@ -128,18 +161,51 @@ const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interfer
 
 const basicTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? basicTacticKeys : basicEndgameKeys
-  return themeOptions.value.filter(opt => keys.includes(opt.value))
+  const isDisabled = currentUserLevel.value < 1
+  return themeOptions.value
+    .filter(opt => keys.includes(opt.value))
+    .map(opt => ({ ...opt, disabled: isDisabled }))
 })
 
 const premiumTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumTacticKeys : premiumEndgameKeys
-  return themeOptions.value.filter(opt => keys.includes(opt.value))
+  const isDisabled = currentUserLevel.value < 2
+  return themeOptions.value
+    .filter(opt => keys.includes(opt.value))
+    .map(opt => ({ ...opt, disabled: isDisabled }))
 })
 
 const premiumPlusTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumPlusTacticKeys : premiumPlusEndgameKeys
-  return themeOptions.value.filter(opt => keys.includes(opt.value))
+  const isDisabled = currentUserLevel.value < 3
+  return themeOptions.value
+    .filter(opt => keys.includes(opt.value))
+    .map(opt => ({ ...opt, disabled: isDisabled }))
 })
+
+function showRestrictionModal(messageText: string) {
+  dialog.warning({
+    title: t('puzzleCategories.tierRestriction.title'),
+    content: messageText,
+    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
+    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
+    onPositiveClick: () => {
+      router.push('/pricing')
+    }
+  })
+}
+
+function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
+  if (tierType === 'basic') {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+  } else if (tierType === 'premium') {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+  } else if (tierType === 'premiumPlus') {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+  } else {
+    throw new Error(`[PuzzleSidebar] Unsupported tier restriction type: "${tierType}". Fail-Fast!`)
+  }
+}
 
 const puzzleStore = usePuzzleStore()
 const demoplayStore = useDemoplayStore()
@@ -148,6 +214,19 @@ const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
   set: (newDiff) => {
+    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+      return
+    }
+    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      return
+    }
+    if (newDiff === 'Master' && currentUserLevel.value < 3) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+      return
+    }
+
     demoplayStore.demoplayCount = 1
     demoplayStore.hasJustReset = true
     puzzleStore.activeParams.difficulty = newDiff
@@ -253,13 +332,13 @@ const isPuzzleActive = computed(() => {
           <div class="form-group difficulty-section">
             <n-text class="input-label">{{ t('features.coach.difficultyLabel') }}</n-text>
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
-              <n-radio-button value="Novice">
+              <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">
                 {{ t('puzzleCategories.difficulties.level_novice') }}
               </n-radio-button>
-              <n-radio-button value="Pro">
+              <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">
                 {{ t('puzzleCategories.difficulties.level_pro') }}
               </n-radio-button>
-              <n-radio-button value="Master">
+              <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">
                 {{ t('puzzleCategories.difficulties.level_master') }}
               </n-radio-button>
             </n-radio-group>
@@ -292,6 +371,7 @@ const isPuzzleActive = computed(() => {
                 :columns="3"
                 class="tier-basic"
                 @update:value="loadPuzzle"
+                @click-disabled="handleDisabledClick('basic')"
               />
               <div class="group-divider"></div>
               <VisualRadioGroup
@@ -300,6 +380,7 @@ const isPuzzleActive = computed(() => {
                 :columns="3"
                 class="tier-premium"
                 @update:value="loadPuzzle"
+                @click-disabled="handleDisabledClick('premium')"
               />
               <div class="group-divider"></div>
               <VisualRadioGroup
@@ -308,6 +389,7 @@ const isPuzzleActive = computed(() => {
                 :columns="3"
                 class="tier-premium-plus"
                 @update:value="loadPuzzle"
+                @click-disabled="handleDisabledClick('premiumPlus')"
               />
             </div>
           </div>
@@ -491,5 +573,14 @@ const isPuzzleActive = computed(() => {
   background: rgba(230, 57, 70, 0.12) !important;
   border-color: #e63946 !important;
   box-shadow: 0 0 12px rgba(230, 57, 70, 0.4) !important;
+}
+
+/* Disabled difficulty button styling */
+:deep(.n-radio-group .n-radio-button.disabled-diff) {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+:deep(.n-radio-group .n-radio-button.disabled-diff *) {
+  cursor: not-allowed !important;
 }
 </style>

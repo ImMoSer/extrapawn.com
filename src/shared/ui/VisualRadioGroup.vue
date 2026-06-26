@@ -7,6 +7,7 @@ interface Option<V> {
   value: V
   icon?: string
   svg?: string
+  disabled?: boolean
 }
 
 const props = defineProps<{
@@ -18,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:value', val: T): void
+  (e: 'click-disabled', val: T): void
 }>()
 
 const gridStyle = computed(() => {
@@ -37,8 +39,8 @@ const gridStyle = computed(() => {
       v-for="opt in options"
       :key="String(opt.value)"
       class="visual-card"
-      :class="{ active: value === opt.value }"
-      @click="emit('update:value', opt.value)"
+      :class="{ active: value === opt.value, disabled: opt.disabled }"
+      @click="opt.disabled ? emit('click-disabled', opt.value) : emit('update:value', opt.value)"
     >
       <div v-if="opt.svg" class="icon-wrapper">
         <img :src="opt.svg" class="visual-svg" :alt="opt.label" />
@@ -83,7 +85,12 @@ const gridStyle = computed(() => {
   gap: 8px;
 }
 
-.visual-card:hover {
+.visual-card.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.visual-card:hover:not(.disabled) {
   background: var(--bg-2, rgba(255, 255, 255, 0.08));
   border-color: var(--color-primary, #63e2b7);
   transform: translateY(-2px);

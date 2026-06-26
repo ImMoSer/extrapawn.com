@@ -1,4 +1,3 @@
-<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -11,11 +10,13 @@ import {
   NButtonGroup,
   NResult,
   NModal,
-  useMessage
+  useMessage,
+  useDialog
 } from 'naive-ui'
 import { useTaskTodayStore } from '@/features/task-today'
 import { useCurrentTrainingPlanQuery } from '@/shared/api/queries/userCabinet.queries'
-import type { RecommendationEntry } from '@/shared/types/api.types'
+import type { RecommendationEntry, SubscriptionTier } from '@/shared/types/api.types'
+import { useAuthStore } from '@/entities/user'
 
 const props = defineProps<{
   isAuthenticated: boolean
@@ -24,11 +25,69 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 const taskTodayStore = useTaskTodayStore()
+const authStore = useAuthStore()
 
 const { data: currentPlanData } = useCurrentTrainingPlanQuery(props.isAuthenticated)
 
-const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+const TIER_LEVELS: Record<SubscriptionTier | 'Guest', number> = {
+  Guest: 0,
+  Pawn: 1,
+  Knight: 2,
+  Bishop: 2,
+  Rook: 3,
+  Queen: 3,
+  King: 3,
+  administrator: 4,
+}
+
+const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) {
+    return 'Guest'
+  }
+  const tier = authStore.userProfile.subscriptionTier
+  if (!(tier in TIER_LEVELS)) {
+    throw new Error(`[DailyTrainingWidget] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
+  }
+  return tier as SubscriptionTier
+})
+
+const currentUserLevel = computed<number>(() => {
+  return TIER_LEVELS[currentUserTier.value] ?? 0
+})
+
+function showRestrictionModal(messageText: string) {
+  dialog.warning({
+    title: t('puzzleCategories.tierRestriction.title'),
+    content: messageText,
+    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
+    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
+    onPositiveClick: () => {
+      router.push('/pricing')
+    }
+  })
+}
+
+const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+const selectedDifficulty = computed({
+  get: () => _selectedDifficulty.value,
+  set: (newDiff) => {
+    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+      return
+    }
+    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      return
+    }
+    if (newDiff === 'Master' && currentUserLevel.value < 3) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+      return
+    }
+    _selectedDifficulty.value = newDiff
+  }
+})
 
 const localPlan = computed(() => taskTodayStore.trainingPlan)
 const isLocalPlanActive = computed(() => taskTodayStore.isPlaying && localPlan.value)
@@ -122,6 +181,19 @@ const showOverwriteConfirm = ref(false)
 const pendingStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup' | null>(null)
 
 const confirmStartPlan = (strategyName: 'Discovery' | 'Hardcore' | 'Warmup') => {
+  if (strategyName === 'Discovery' && currentUserLevel.value < 1) {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+    return
+  }
+  if (strategyName === 'Hardcore' && currentUserLevel.value < 2) {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+    return
+  }
+  if (strategyName === 'Warmup' && currentUserLevel.value < 3) {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+    return
+  }
+
   if (isLocalPlanActive.value) {
     pendingStrategy.value = strategyName
     showOverwriteConfirm.value = true
@@ -155,6 +227,7 @@ const proceedWithOverwrite = () => {
                 size="small"
                 @click="selectedDifficulty = diff"
                 style="font-weight: bold;"
+                :class="{ 'disabled-diff': (diff === 'Novice' && currentUserLevel < 1) || (diff === 'Pro' && currentUserLevel < 2) || (diff === 'Master' && currentUserLevel < 3) }"
               >
                 {{ diff }}
               </n-button>
@@ -202,7 +275,7 @@ const proceedWithOverwrite = () => {
       <!-- Strategies Grid -->
       <div v-else class="strategies-grid">
         <!-- Discovery Strategy -->
-        <div class="strategy-card discovery">
+        <div class="strategy-card discovery" :class="{ 'disabled-strat': currentUserLevel < 1 }">
           <div class="strategy-header">
             <div class="strategy-badge">💡 DISCOVERY</div>
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.discoveryDesc', 'Lerne neue Themen kennen und fülle Wissenslücken.') }}</p>
@@ -225,7 +298,7 @@ const proceedWithOverwrite = () => {
         </div>
 
         <!-- Hardcore Strategy -->
-        <div class="strategy-card hardcore">
+        <div class="strategy-card hardcore" :class="{ 'disabled-strat': currentUserLevel < 2 }">
           <div class="strategy-header">
             <div class="strategy-badge">🔥 HARDCORE</div>
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.hardcoreDesc', 'Attackiere gezielt deine größten Schwächen.') }}</p>
@@ -248,7 +321,7 @@ const proceedWithOverwrite = () => {
         </div>
 
         <!-- Warmup Strategy -->
-        <div class="strategy-card warmup">
+        <div class="strategy-card warmup" :class="{ 'disabled-strat': currentUserLevel < 3 }">
           <div class="strategy-header">
             <div class="strategy-badge">⚡ WARMUP</div>
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.warmupDesc', 'Festige dein Wissen mit deinen stärksten Themen.') }}</p>
@@ -486,18 +559,40 @@ const proceedWithOverwrite = () => {
   font-weight: bold;
 }
 
-.discovery:hover {
+.discovery:hover:not(.disabled-strat) {
   border-color: rgba(52, 152, 219, 0.5);
   box-shadow: 0 0 15px rgba(52, 152, 219, 0.2);
 }
 
-.hardcore:hover {
+.hardcore:hover:not(.disabled-strat) {
   border-color: rgba(231, 76, 60, 0.5);
   box-shadow: 0 0 15px rgba(231, 76, 60, 0.2);
 }
 
-.warmup:hover {
+.warmup:hover:not(.disabled-strat) {
   border-color: rgba(46, 204, 113, 0.5);
   box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+/* Tier restrictions styling */
+.disabled-diff {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+.disabled-diff * {
+  cursor: not-allowed !important;
+}
+
+.strategy-card.disabled-strat {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+.strategy-card.disabled-strat * {
+  cursor: not-allowed !important;
+}
+.strategy-card.disabled-strat:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
 }
 </style>

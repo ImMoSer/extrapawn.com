@@ -29,7 +29,7 @@ interface CriticalPosition {
   coach_check: CoachMove[]
 }
 
-const positions = ref<CriticalPosition[]>(rawPositions as CriticalPosition[])
+const positions = ref<CriticalPosition[]>(rawPositions as unknown as CriticalPosition[])
 const boardStore = useBoardStore()
 
 // Clean annotations from SAN

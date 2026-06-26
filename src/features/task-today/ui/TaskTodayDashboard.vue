@@ -17,13 +17,14 @@ import {
 } from '@vicons/ionicons5'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/entities/user'
 import {
   useCurrentTrainingPlanQuery,
   useTrainingPlanHistoryQuery
 } from '@/shared/api/queries/userCabinet.queries'
 import { useQueryClient } from '@tanstack/vue-query'
-import type { DailyTrainingPlanEntity, RecommendationEntry } from '@/shared/types/api.types'
+import type { DailyTrainingPlanEntity, RecommendationEntry, SubscriptionTier } from '@/shared/types/api.types'
 
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
@@ -31,9 +32,94 @@ const authStore = useAuthStore()
 const message = useMessage()
 const dialog = useDialog()
 const queryClient = useQueryClient()
+const router = useRouter()
 
-const selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
-const selectedStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup'>('Discovery')
+const TIER_LEVELS: Record<SubscriptionTier | 'Guest', number> = {
+  Guest: 0,
+  Pawn: 1,
+  Knight: 2,
+  Bishop: 2,
+  Rook: 3,
+  Queen: 3,
+  King: 3,
+  administrator: 4,
+}
+
+const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) {
+    return 'Guest'
+  }
+  const tier = authStore.userProfile.subscriptionTier
+  if (!(tier in TIER_LEVELS)) {
+    throw new Error(`[TaskTodayDashboard] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
+  }
+  return tier as SubscriptionTier
+})
+
+const currentUserLevel = computed<number>(() => {
+  return TIER_LEVELS[currentUserTier.value] ?? 0
+})
+
+function showRestrictionModal(messageText: string) {
+  dialog.warning({
+    title: t('puzzleCategories.tierRestriction.title'),
+    content: messageText,
+    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
+    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
+    onPositiveClick: () => {
+      router.push('/pricing')
+    }
+  })
+}
+
+const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+const selectedDifficulty = computed({
+  get: () => _selectedDifficulty.value,
+  set: (newDiff) => {
+    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+      return
+    }
+    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      return
+    }
+    if (newDiff === 'Master' && currentUserLevel.value < 3) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+      return
+    }
+    _selectedDifficulty.value = newDiff
+  }
+})
+
+const _selectedStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup'>('Discovery')
+const selectedStrategy = computed({
+  get: () => _selectedStrategy.value,
+  set: (newStrat) => {
+    if (newStrat === 'Discovery' && currentUserLevel.value < 1) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+      return
+    }
+    if (newStrat === 'Hardcore' && currentUserLevel.value < 2) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      return
+    }
+    if (newStrat === 'Warmup' && currentUserLevel.value < 3) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+      return
+    }
+    _selectedStrategy.value = newStrat
+  }
+})
+
+const isDiffDisabled = (diff: 'Novice' | 'Pro' | 'Master') => {
+  const hasTierAccess = (diff === 'Novice' && currentUserLevel.value >= 1) ||
+                        (diff === 'Pro' && currentUserLevel.value >= 2) ||
+                        (diff === 'Master' && currentUserLevel.value >= 3)
+  if (!hasTierAccess) return false
+  return authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false
+}
+
 const isStartingPlan = ref(false)
 
 const isAuth = computed(() => authStore.isAuthenticated)
@@ -228,9 +314,10 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               class="diff-btn"
               :class="{ 
                 active: selectedDifficulty === diff,
-                completed: completedDifficulties.includes(diff)
+                completed: completedDifficulties.includes(diff),
+                'disabled-diff': (diff === 'Novice' && currentUserLevel < 1) || (diff === 'Pro' && currentUserLevel < 2) || (diff === 'Master' && currentUserLevel < 3)
               }"
-              :disabled="authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false"
+              :disabled="isDiffDisabled(diff)"
               @click="selectedDifficulty = diff"
             >
               <span class="diff-name">
@@ -256,7 +343,8 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               class="strategy-card-opt"
               :class="{ 
                 active: selectedStrategy === strat,
-                [strat.toLowerCase()]: true
+                [strat.toLowerCase()]: true,
+                'disabled-strat': (strat === 'Discovery' && currentUserLevel < 1) || (strat === 'Hardcore' && currentUserLevel < 2) || (strat === 'Warmup' && currentUserLevel < 3)
               }"
               @click="selectedStrategy = strat"
             >
@@ -855,5 +943,26 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
     gap: 8px;
     text-align: center;
   }
+}
+
+/* Tier restrictions styling */
+.diff-btn.disabled-diff {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+.diff-btn.disabled-diff * {
+  cursor: not-allowed !important;
+}
+
+.strategy-card-opt.disabled-strat {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+.strategy-card-opt.disabled-strat * {
+  cursor: not-allowed !important;
+}
+.strategy-card-opt.disabled-strat:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 </style>

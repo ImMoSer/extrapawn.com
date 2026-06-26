@@ -390,6 +390,14 @@
       "advantage": "Advantage",
       "whiteEndgame": "Vs White",
       "blackEndgame": "Vs Black"
+    },
+    "tierRestriction": {
+      "title": "Upgrade Required",
+      "cancelBtn": "Cancel",
+      "upgradeBtn": "Pricing",
+      "basic": "Please log in to play Basic puzzles.",
+      "premium": "You need at least Knight or Bishop tier to play Premium puzzles.",
+      "premiumPlus": "You need at least Rook, Queen, or King tier to play Premium Plus puzzles."
     }
   },
   "pages": {
