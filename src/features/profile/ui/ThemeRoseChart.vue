@@ -1,17 +1,92 @@
 <script setup lang="ts">
-import type { GameLaunchOptions, PlayPuzzleType } from '@/shared/types/api.types'
+import { useAuthStore } from '@/entities/user'
+import type { GameLaunchOptions, PlayPuzzleType, SubscriptionTier, UserProfileStatEntry } from '@/shared/types/api.types'
 import { CloseOutline, ExpandOutline } from '@vicons/ionicons5'
 import { PieChart } from 'echarts/charts'
 import { LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
+import { useDialog } from 'naive-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, type PropType } from 'vue'
 import VChart from 'vue-echarts'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent, TitleComponent])
 
 const { t, te } = useI18n()
+const authStore = useAuthStore()
+const dialog = useDialog()
+const router = useRouter()
+
+const TIER_LEVELS: Record<SubscriptionTier | 'Guest', number> = {
+  Guest: 0,
+  Pawn: 1,
+  Knight: 2,
+  Bishop: 2,
+  Rook: 3,
+  Queen: 3,
+  King: 3,
+  administrator: 4,
+}
+
+const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) {
+    return 'Guest'
+  }
+  const tier = authStore.userProfile.subscriptionTier
+  if (!(tier in TIER_LEVELS)) {
+    throw new Error(`[ThemeRoseChart] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
+  }
+  return tier as SubscriptionTier
+})
+
+const currentUserLevel = computed<number>(() => {
+  return TIER_LEVELS[currentUserTier.value] ?? 0
+})
+
+function showRestrictionModal(messageText: string) {
+  dialog.warning({
+    title: t('puzzleCategories.tierRestriction.title'),
+    content: messageText,
+    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
+    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
+    onPositiveClick: () => {
+      router.push('/pricing')
+    }
+  })
+}
+
+const basicEndgameKeys = ['pawnEnding', 'rookEnding', 'bishopVsPawns', 'knightVsPawns', 'rookVsPawns', 'extraPawn', 'extrapawn']
+const premiumEndgameKeys = ['sameColorBishops', 'oppositeColorBishops', 'knightEnding', 'bishopVsKnight', 'doubleRookEnding', 'rookVsMinor', 'queenEnding']
+const premiumPlusEndgameKeys = ['queenVsRook', 'rookVsTwoMinors', 'queenVsMinors', 'queenVsRookMinor', 'queenMinorVsQueenMinor', 'rookMinorVsRook', 'rookMinorVsRookMinor']
+
+const basicTacticKeys = ['hangingPiece', 'fork', 'pin', 'backRankMate', 'skewer', 'discoveredAttack']
+const premiumTacticKeys = ['capturingDefender', 'attraction', 'deflection', 'trappedPiece', 'kingAttack', 'advancedPawn', 'xRayAttack']
+const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interference', 'quietMove', 'defensiveMove', 'zugzwang']
+
+const PALETTE = [
+  '#00e5ff', // 1. Cyan (Extrem hell/kalt)
+  '#ff073a', // 2. Red (Dunkler/heiß) -> Maximaler Split zu Cyan
+  '#39ff14', // 3. Acid Green (Grell/Leuchtend)
+  '#7a00ff', // 4. Violet (Dunkel/Absorbierend) -> Schluckt das Grün
+  '#ffe600', // 5. Yellow (Maximaler Helligkeits-Schnitt zu Violett)
+  '#0055ff', // 6. Blue (Tiefblau gegen Gelb)
+  '#ff5500', // 7. Orange (Komplementär zu Blau)
+  '#b000ff', // 8. Purple (Wechsel zu Dunkel-Magenta-Ton)
+  '#aaff00', // 9. Toxic (Grellgelb-Grün gegen Lila)
+  '#ff00c8', // 10. Magenta (Heißer Kontrast zu Toxic)
+  '#00ffcc', // 11. Mint (Eisiger Kontrast zu Magenta)
+  '#d9004c', // 12. Bordeaux (Dunkel/Satt gegen Mint)
+  '#66ccff', // 13. Ice Blue (Hell gegen Bordeaux)
+  '#ff9900', // 14. Amber (Warm/Dunkelorange gegen Ice Blue)
+  '#ff007a', // 15. Pink (Knallig gegen Amber)
+  '#00ff99', // 16. Green Mint (Kalt gegen Pink)
+  '#ff3366', // 17. Raspberry (Dunkles Pink-Rot)
+  '#00aaff', // 18. Sky (Hellblau gegen Raspberry)
+  '#ff66cc', // 19. Bubblegum (Hellpink)
+  '#00ff55'  // 20. Lime (Grellgrün - schließt perfekt ab zu Cyan auf Position 1)
+]
 
 interface ThemeStat {
   category: string
@@ -45,7 +120,7 @@ interface PopupData {
 
 const props = defineProps({
   stats: {
-    type: Object as PropType<Record<PlayPuzzleType, { modes: Record<string, Record<string, ThemeStat[]>> }>>,
+    type: Array as PropType<UserProfileStatEntry[]>,
     required: true,
   },
   title: {
@@ -63,7 +138,25 @@ const emit = defineEmits<{
 }>()
 
 const activePuzzleType = ref<PlayPuzzleType>(props.initialPuzzleType)
-const activeDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+const _activeDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
+const activeDifficulty = computed({
+  get: () => _activeDifficulty.value,
+  set: (newDiff) => {
+    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+      return
+    }
+    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      return
+    }
+    if (newDiff === 'Master' && currentUserLevel.value < 3) {
+      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
+      return
+    }
+    _activeDifficulty.value = newDiff
+  }
+})
 
 const activePopup = ref<{ visible: boolean; x: number; y: number; data: PopupData | null }>({
   visible: false,
@@ -102,14 +195,41 @@ const viewMode = ref<'rating' | 'accuracy'>('rating')
 const showModal = ref(false)
 
 const currentThemes = computed<ThemeStat[]>(() => {
-  const puzzleData = props.stats[activePuzzleType.value]
-  if (!puzzleData || !puzzleData.modes) return []
+  const stats = props.stats || []
 
-  return puzzleData.modes['win']?.[activeDifficulty.value] || []
+  const rawThemes = stats.filter((s) => {
+    return s.game_mode === 'playPuzzle' &&
+           s.sub_mode === activePuzzleType.value &&
+           s.difficulty === activeDifficulty.value
+  })
+
+  return rawThemes.map((item) => {
+    return {
+      category: item.category,
+      rating: item.rating,
+      success: item.puzzles_solved,
+      requested: item.puzzles_solved + item.puzzles_failed,
+    }
+  }).filter((item) => {
+    const cat = item.category
+    const isTactic = activePuzzleType.value === 'tactics'
+    const tierLevel = currentUserLevel.value
+
+    const isBasic = isTactic ? basicTacticKeys.includes(cat) : basicEndgameKeys.includes(cat)
+    if (isBasic) return tierLevel >= 1
+
+    const isPremium = isTactic ? premiumTacticKeys.includes(cat) : premiumEndgameKeys.includes(cat)
+    if (isPremium) return tierLevel >= 2
+
+    const isPremiumPlus = isTactic ? premiumPlusTacticKeys.includes(cat) : premiumPlusEndgameKeys.includes(cat)
+    if (isPremiumPlus) return tierLevel >= 3
+
+    return tierLevel >= 3
+  })
 })
 
 const chartData = computed(() => {
-  return currentThemes.value
+  const baseThemes = currentThemes.value
     .map((item) => {
       const accuracy = item.requested > 0 ? (item.success / item.requested) * 100 : 0
       return {
@@ -119,6 +239,16 @@ const chartData = computed(() => {
       }
     })
     .sort((a, b) => b.value - a.value)
+
+  return baseThemes.map((item, i) => {
+    const colorIdx = i % PALETTE.length
+    return {
+      ...item,
+      itemStyle: {
+        color: PALETTE[colorIdx],
+      },
+    }
+  })
 })
 
 const option = computed(() => {
@@ -282,19 +412,27 @@ const handleTabChange = (type: PlayPuzzleType) => {
         <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
         <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
         <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
-        <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
       </n-tabs>
     </div>
 
     <div class="chart-wrapper">
-      <v-chart class="chart" :option="option" @click="onChartClick" autoresize />
+      <v-chart v-if="chartData.length > 0" class="chart" :option="option" @click="onChartClick" autoresize />
+      <div v-else class="empty-chart-container">
+        <n-empty :description="t('pages.userCabinet.stats.noData')">
+          <template #extra>
+            <n-button type="primary" size="small" @click="router.push('/task-today')">
+              {{ t('puzzleCategories.tierRestriction.makeTaskToday') }}
+            </n-button>
+          </template>
+        </n-empty>
+      </div>
     </div>
 
     <div class="chart-footer">
       <n-radio-group v-model:value="activeDifficulty" size="small">
-        <n-radio-button value="Novice">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
-        <n-radio-button value="Pro">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
-        <n-radio-button value="Master">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
+        <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
+        <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
+        <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
       </n-radio-group>
     </div>
 
@@ -306,17 +444,25 @@ const handleTabChange = (type: PlayPuzzleType) => {
             <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
             <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
             <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
-            <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
           </n-tabs>
 
           <n-radio-group v-model:value="activeDifficulty" size="medium">
-            <n-radio-button value="Novice">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
-            <n-radio-button value="Pro">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
-            <n-radio-button value="Master">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
+            <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
+            <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
+            <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
           </n-radio-group>
         </div>
         <div class="modal-chart-wrapper">
-          <v-chart class="chart" :option="option" autoresize />
+          <v-chart v-if="chartData.length > 0" class="chart" :option="option" autoresize />
+          <div v-else class="empty-chart-container">
+            <n-empty :description="t('pages.userCabinet.stats.noData')">
+              <template #extra>
+                <n-button type="primary" size="small" @click="router.push('/task-today')">
+                  {{ t('puzzleCategories.tierRestriction.makeTaskToday') }}
+                </n-button>
+              </template>
+            </n-empty>
+          </div>
         </div>
       </div>
     </n-modal>
@@ -471,5 +617,23 @@ const handleTabChange = (type: PlayPuzzleType) => {
   .chart-wrapper {
     height: 300px;
   }
+}
+
+/* Disabled difficulty button styling */
+:deep(.n-radio-group .n-radio-button.disabled-diff) {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+:deep(.n-radio-group .n-radio-button.disabled-diff *) {
+  cursor: not-allowed !important;
+}
+
+.empty-chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
 }
 </style>

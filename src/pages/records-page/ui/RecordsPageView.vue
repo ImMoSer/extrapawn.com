@@ -4,10 +4,8 @@ import {
   useTopTodayLeaderboardQuery,
   useUnifiedDashboardQuery,
 } from '@/shared/api/queries/leaderboard.queries'
-import { generateRandomHallOfFame } from '@/shared/lib/statsRandomizer'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 
 // Import child components
 import {
@@ -18,22 +16,19 @@ import {
 
 const { t } = useI18n()
 
-const route = useRoute()
-const isExample = computed(() => route.params.id === 'example')
-
 // Vue Query fetching
 const { data: dashboardData, isFetching: isDashboardLoading } = useUnifiedDashboardQuery(
-  !isExample.value,
+  true,
 )
 
 // Top Today Query
 const { data: topTodayResponse, isFetching: isTopTodayLoading } = useTopTodayLeaderboardQuery(
-  !isExample.value,
+  true,
 )
 
 // Plan Streak Query
 const { data: planStreakResponse, isFetching: isPlanStreakLoading } = usePlanStreakLeaderboardQuery(
-  !isExample.value,
+  true,
 )
 
 const strategicTabs = computed(() => [
@@ -43,10 +38,7 @@ const strategicTabs = computed(() => [
   { id: 'tactics', name: t('shared.gameModes.tactics'), icon: '' },
 ])
 
-const exampleData = computed(() => (isExample.value ? generateRandomHallOfFame() : null))
-
 const isLoading = computed(() => {
-  if (isExample.value) return false
   return isTopTodayLoading.value || isDashboardLoading.value || isPlanStreakLoading.value
 })
 </script>
@@ -72,10 +64,7 @@ const isLoading = computed(() => {
 
           <SkillLeaderboardTable
             :title="t('features.leaderboards.titles.topToday')"
-            :entries="
-              (isExample ? exampleData?.topTodayLeaderboard.entries : topTodayResponse?.entries) ||
-              []
-            "
+            :entries="topTodayResponse?.entries || []"
             color-class="topToday"
             :is-loading="isTopTodayLoading"
           />
@@ -83,7 +72,7 @@ const isLoading = computed(() => {
 
         <TimedModeLeaderboardTable
           :title="t('features.leaderboards.titles.overallSkill')"
-          :data="isExample ? exampleData?.overallLeaderboard : dashboardData"
+          :data="dashboardData"
           :tabs="[{ id: 'overall', name: t('shared.app.global', 'Global'), icon: '' }]"
           :is-loading="isDashboardLoading"
           color-class="topToday"
@@ -97,7 +86,7 @@ const isLoading = computed(() => {
           <!-- Strategic Mastery -->
           <TimedModeLeaderboardTable
             title="Puzzle Master"
-            :data="isExample ? exampleData?.strategicLeaderboard : dashboardData"
+            :data="dashboardData"
             :tabs="strategicTabs"
             :is-loading="isDashboardLoading"
             color-class="theoryLeaderboard"

@@ -1,0 +1,132 @@
+
+<style>
+body{margin:0}
+.seg-label{font-family:monospace;font-size:11px;fill:#e0e0e0}
+</style>
+<svg viewBox="0 0 680 600" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Cyberpunk Rose Chart Palette</title>
+<desc>20 Neon-Farben für Dark Theme Rose Chart, angeordnet als Vorschau und Farbstreifen</desc>
+<rect width="680" height="600" fill="#0a0a0f"/>
+
+<text x="340" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#00e5ff">CYBERPUNK PALETTE — 20 FARBEN</text>
+
+<g id="rose"></g>
+<g id="strips"></g>
+
+<script>
+const palette = [
+  { hex: '#00e5ff', name: 'neon-cyan' },
+  { hex: '#00b8cc', name: 'cyan-deep' },
+  { hex: '#b000ff', name: 'neon-purple' },
+  { hex: '#7a00cc', name: 'purple-deep' },
+  { hex: '#ff007a', name: 'neon-pink' },
+  { hex: '#ff4da6', name: 'pink-light' },
+  { hex: '#00ff55', name: 'neon-lime' },
+  { hex: '#00cc44', name: 'lime-deep' },
+  { hex: '#ffe600', name: 'neon-yellow' },
+  { hex: '#ccb800', name: 'yellow-deep' },
+  { hex: '#ff5500', name: 'neon-orange' },
+  { hex: '#ff8800', name: 'orange-warm' },
+  { hex: '#ff073a', name: 'neon-red' },
+  { hex: '#d9004c', name: 'neon-bordeaux' },
+  { hex: '#0055ff', name: 'neon-blue' },
+  { hex: '#3d8bff', name: 'blue-light' },
+  { hex: '#00ffcc', name: 'neon-mint' },
+  { hex: '#ff00c8', name: 'neon-magenta' },
+  { hex: '#ff9900', name: 'amber' },
+  { hex: '#39ff14', name: 'acid-green' },
+];
+
+const cx = 200, cy = 330, r = 230;
+const n = 20;
+const step = (2 * Math.PI) / n;
+const radii = [0.72,0.58,0.85,0.65,0.92,0.55,0.78,0.88,0.62,0.95,
+               0.70,0.82,0.60,0.90,0.75,0.68,0.88,0.55,0.80,0.65];
+
+const rose = document.getElementById('rose');
+const strips = document.getElementById('strips');
+
+for (let i = 0; i < n; i++) {
+  const startAngle = i * step - Math.PI / 2;
+  const endAngle = startAngle + step;
+  const ri = r * radii[i];
+
+  const x1 = cx + Math.cos(startAngle) * ri;
+  const y1 = cy + Math.sin(startAngle) * ri;
+  const x2 = cx + Math.cos(endAngle) * ri;
+  const y2 = cy + Math.sin(endAngle) * ri;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${cx} ${cy} L ${x1} ${y1} A ${ri} ${ri} 0 0 1 ${x2} ${y2} Z`);
+  path.setAttribute('fill', palette[i].hex);
+  path.setAttribute('stroke', '#0a0a0f');
+  path.setAttribute('stroke-width', '1.5');
+  rose.appendChild(path);
+
+  // outer label
+  const midAngle = startAngle + step / 2;
+  const labelR = ri + 14;
+  const lx = cx + Math.cos(midAngle) * labelR;
+  const ly = cy + Math.sin(midAngle) * labelR;
+  const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+  num.setAttribute('x', lx);
+  num.setAttribute('y', ly);
+  num.setAttribute('text-anchor','middle');
+  num.setAttribute('dominant-baseline','middle');
+  num.setAttribute('font-family','monospace');
+  num.setAttribute('font-size','9');
+  num.setAttribute('fill', palette[i].hex);
+  num.textContent = i+1;
+  rose.appendChild(num);
+}
+
+// color strips on the right
+const stripX = 440;
+const stripW = 200;
+const stripH = 22;
+const gap = 4;
+const startY = 55;
+
+for (let i = 0; i < n; i++) {
+  const y = startY + i * (stripH + gap);
+
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x', stripX);
+  rect.setAttribute('y', y);
+  rect.setAttribute('width', stripW);
+  rect.setAttribute('height', stripH);
+  rect.setAttribute('rx', '3');
+  rect.setAttribute('fill', palette[i].hex);
+  strips.appendChild(rect);
+
+  const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+  num.setAttribute('x', stripX + 8);
+  num.setAttribute('y', y + 14);
+  num.setAttribute('font-family','monospace');
+  num.setAttribute('font-size','10');
+  num.setAttribute('fill','#0a0a0f');
+  num.setAttribute('font-weight','700');
+  num.textContent = (i+1).toString().padStart(2,'0');
+  strips.appendChild(num);
+
+  const name = document.createElementNS('http://www.w3.org/2000/svg','text');
+  name.setAttribute('x', stripX + 28);
+  name.setAttribute('y', y + 14);
+  name.setAttribute('font-family','monospace');
+  name.setAttribute('font-size','10');
+  name.setAttribute('fill','#0a0a0f');
+  name.textContent = palette[i].name;
+  strips.appendChild(name);
+
+  const hex = document.createElementNS('http://www.w3.org/2000/svg','text');
+  hex.setAttribute('x', stripX + stripW - 6);
+  hex.setAttribute('y', y + 14);
+  hex.setAttribute('text-anchor','end');
+  hex.setAttribute('font-family','monospace');
+  hex.setAttribute('font-size','10');
+  hex.setAttribute('fill','#0a0a0f');
+  hex.textContent = palette[i].hex;
+  strips.appendChild(hex);
+}
+</script>
+</svg>

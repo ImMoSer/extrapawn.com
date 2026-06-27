@@ -397,7 +397,8 @@
       "upgradeBtn": "Preise",
       "basic": "Bitte logge dich ein, um Basic-Rätsel zu spielen.",
       "premium": "Du benötigst mindestens die Stufe Springer (Knight) oder Läufer (Bishop), um Premium-Rätsel zu spielen.",
-      "premiumPlus": "Du benötigst mindestens die Stufe Turm (Rook), Dame (Queen) oder König (King), um Premium-Plus-Rätsel zu spielen."
+      "premiumPlus": "Du benötigst mindestens die Stufe Turm (Rook), Dame (Queen) oder König (King), um Premium-Plus-Rätsel zu spielen.",
+      "makeTaskToday": "Tagesaufgabe starten"
     }
   },
   "pages": {

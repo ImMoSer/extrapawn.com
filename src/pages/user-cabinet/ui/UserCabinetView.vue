@@ -6,11 +6,6 @@ import {
   useDetailedStatsQuery,
 } from '@/shared/api/queries/userCabinet.queries'
 import {
-  generateRandomDetailedStats,
-  generateRandomUserProfile,
-} from '@/shared/lib/statsRandomizer'
-import type { UserProfileStatsDto } from '@/shared/types/api.types'
-import {
   NAlert,
   NButton,
   NCard,
@@ -29,7 +24,6 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { ThemeRoseChart, UserProfileHeader } from '@/features/profile'
-import { normalizeProfileStats } from '@/shared/lib/statsNormalizer'
 import { useGameLauncher } from '../lib/composables/useGameLauncher'
 import { LichessGamesCacheSettings, LichessGamesStatistics } from '@/features/lichess-games-db'
 
@@ -53,8 +47,6 @@ const { userProfile, isAuthenticated } = storeToRefs(authStore)
 
 const route = useRoute()
 const router = useRouter()
-const isExample = computed(() => route.params.id === 'example')
-
 const showPolarSuccessModal = ref(false)
 
 onMounted(() => {
@@ -73,38 +65,9 @@ const {
   data: detailedStatsData,
   isError: isDetailedStatsError,
   error: detailedError,
-} = useDetailedStatsQuery(!isExample.value && isAuthenticated.value)
-
-// Computed wrappers to support Example Mode
-const displayProfile = computed(() => {
-  if (isExample.value) return generateRandomUserProfile()
-  return userProfile.value
-})
-
-const detailedStats = computed(() => {
-  if (isExample.value) {
-    return generateRandomDetailedStats(displayProfile.value?.base_puzzle_rating || 1500)
-  }
-  const stats = detailedStatsData.value
-  const baseRating = displayProfile.value?.base_puzzle_rating || 1000
-  return normalizeProfileStats(stats || null, baseRating)
-})
-const displayStats = computed<UserProfileStatsDto | null>(() => {
-  if (isExample.value) {
-    return {
-      user: {
-        id: 'example_user',
-        username: displayProfile.value?.username || 'ExampleUser',
-        tier: displayProfile.value?.subscriptionTier || 'Pawn',
-      },
-      stats: [],
-    }
-  }
-  return detailedStatsData.value || null
-})
+} = useDetailedStatsQuery(isAuthenticated.value)
 
 const error = computed(() => {
-  if (isExample.value) return null
   if (!isAuthenticated.value) return null // Handled by login-prompt
   if (isDetailedStatsError.value) return detailedError.value?.message
   return null
@@ -164,7 +127,7 @@ const handleManageSubscription = async () => {
       {{ error }}
     </n-alert>
 
-    <div v-else-if="!isExample && (!isAuthenticated || !userProfile)" class="login-prompt">
+    <div v-else-if="!isAuthenticated || !userProfile" class="login-prompt">
       <n-result
         status="403"
         :title="t('pages.userCabinet.title')"
@@ -183,16 +146,16 @@ const handleManageSubscription = async () => {
         <div class="user-cabinet-left">
           <n-space vertical size="large">
             <UserProfileHeader
-              :profile-override="displayProfile"
-              :profile-stats="displayStats"
+              :profile-override="userProfile"
+              :profile-stats="detailedStatsData"
               @reactivate="handleManageSubscription"
             />
 
 
             <div class="charts-grid-unified">
               <ThemeRoseChart
-                v-if="detailedStats"
-                :stats="detailedStats"
+                v-if="detailedStatsData?.stats"
+                :stats="detailedStatsData.stats"
                 :title="t('pages.userCabinet.stats.title')"
                 @improve="launchGame"
               />

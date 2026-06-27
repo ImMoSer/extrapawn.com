@@ -214,10 +214,6 @@ router.beforeEach(async (to, from, next) => {
     return next('/pricing')
   }
 
-  // Bypass auth for "example" mode
-  if (to.params.id === 'example') {
-    return next()
-  }
 
   if (requiresAuth && !isAuthenticated) {
     localStorage.setItem('redirect_after_login', to.fullPath)

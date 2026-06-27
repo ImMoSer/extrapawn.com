@@ -79,6 +79,29 @@ const sortedOpeningsForChart = computed(() => {
   return list
 })
 
+const PALETTE = [
+  '#00e5ff', // 1. Cyan (Extrem hell/kalt)
+  '#ff073a', // 2. Red (Dunkler/heiß) -> Maximaler Split zu Cyan
+  '#39ff14', // 3. Acid Green (Grell/Leuchtend)
+  '#7a00ff', // 4. Violet (Dunkel/Absorbierend) -> Schluckt das Grün
+  '#ffe600', // 5. Yellow (Maximaler Helligkeits-Schnitt zu Violett)
+  '#0055ff', // 6. Blue (Tiefblau gegen Gelb)
+  '#ff5500', // 7. Orange (Komplementär zu Blau)
+  '#b000ff', // 8. Purple (Wechsel zu Dunkel-Magenta-Ton)
+  '#aaff00', // 9. Toxic (Grellgelb-Grün gegen Lila)
+  '#ff00c8', // 10. Magenta (Heißer Kontrast zu Toxic)
+  '#00ffcc', // 11. Mint (Eisiger Kontrast zu Magenta)
+  '#d9004c', // 12. Bordeaux (Dunkel/Satt gegen Mint)
+  '#66ccff', // 13. Ice Blue (Hell gegen Bordeaux)
+  '#ff9900', // 14. Amber (Warm/Dunkelorange gegen Ice Blue)
+  '#ff007a', // 15. Pink (Knallig gegen Amber)
+  '#00ff99', // 16. Green Mint (Kalt gegen Pink)
+  '#ff3366', // 17. Raspberry (Dunkles Pink-Rot)
+  '#00aaff', // 18. Sky (Hellblau gegen Raspberry)
+  '#ff66cc', // 19. Bubblegum (Hellpink)
+  '#00ff55'  // 20. Lime (Grellgrün - schließt perfekt ab zu Cyan auf Position 1)
+]
+
 const chartData = computed(() => {
   const list = sortedOpeningsForChart.value
   const N = list.length
@@ -87,10 +110,14 @@ const chartData = computed(() => {
     if (N > 1) {
       visualValue = 100 - (i * 50) / (N - 1)
     }
+    const colorIdx = i % PALETTE.length
     return {
       name: op.openingNameBase,
       value: visualValue,
-      raw: op
+      raw: op,
+      itemStyle: {
+        color: PALETTE[colorIdx]
+      }
     }
   })
 })
