@@ -15,6 +15,11 @@ const scrollContainer = ref<HTMLElement | null>(null)
 watch(
   pgnTreeVersion,
   () => {
+    // Skip autoscrolling in portrait orientation (vertical/mobile stacked layout)
+    if (window.matchMedia('(orientation: portrait)').matches) {
+      return
+    }
+
     nextTick(() => {
       const activeEl = scrollContainer.value?.querySelector('.move-san.is-active')
       activeEl?.scrollIntoView({
