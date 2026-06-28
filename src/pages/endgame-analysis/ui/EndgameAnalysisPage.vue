@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
-import { LichessEndgameDashboard, useLichessEndgameAnalysisStore } from '@/features/lichess-endgame-analysis'
+import {
+  LichessEndgameDashboard,
+  useLichessEndgameAnalysisStore,
+  EndgameTrainingSidebar,
+  EndgameTrainingTopInfo,
+  EndgameTrainingRightPanel
+} from '@/features/lichess-endgame-analysis'
 import { useLichessGamesDbStore } from '@/features/lichess-games-db'
 import { useAuthStore } from '@/entities/user'
+import { GameLayout } from '@/widgets/game-layout'
 
 const message = useMessage()
 const gamesStore = useLichessGamesDbStore()
@@ -55,9 +62,24 @@ const handleAnalyzeLocal = async () => {
 <template>
   <div class="page-container">
     <LichessEndgameDashboard 
+      v-if="!endgameStore.isPlaying"
       :local-games-count="localGamesCount" 
       @analyze-local="handleAnalyzeLocal" 
     />
+    <GameLayout v-else>
+      <template #left-panel>
+        <EndgameTrainingSidebar />
+      </template>
+      <template #top-info>
+        <EndgameTrainingTopInfo />
+      </template>
+      <template #center-column>
+        <!-- Board is handled by GameLayout -->
+      </template>
+      <template #right-panel>
+        <EndgameTrainingRightPanel />
+      </template>
+    </GameLayout>
   </div>
 </template>
 
@@ -67,3 +89,4 @@ const handleAnalyzeLocal = async () => {
   background-color: #0b0c14;
 }
 </style>
+

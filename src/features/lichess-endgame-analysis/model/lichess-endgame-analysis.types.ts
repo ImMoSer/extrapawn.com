@@ -1,19 +1,3 @@
-export interface EndgameDetail {
-  fen: string;
-  playedMove: string;
-  pieceType: string;
-  classification: string;
-  gaviota_result: "win" | "loss" | "draw";
-  gaviota_dtm: number;
-}
-
-export interface CheckedGame {
-  game_id: string;
-  userResult: "win" | "loss" | "draw";
-  userColor: "white" | "black";
-  founded_endings: EndgameDetail[];
-}
-
 export interface EndgameCategoryStats {
   total: number;
   win_perfect?: number;
@@ -35,28 +19,39 @@ export interface EndgameStats {
   [endgameType: string]: EndgameCategoryStats;
 }
 
-export type TaskType = 
-  | "dropped_win_to_draw"
-  | "dropped_win_to_loss"
-  | "dropped_draw_to_loss"
-  | "missed_winning_chance"
-  | "missed_saving_chance";
-
-export interface MissedChance {
-  task_type: TaskType;
-  classification: string;
-  chance_fen: string;
-  user_played_move: string;
-  correct_move: string;
-  target_eval: "win" | "draw" | "loss";
+export interface EndgamePuzzle {
+  puzzle_id: string;
   game_id: string;
+  puzzle_type: 'my_dropps' | 'opp_blunders';
+  category: string;
+  strategy: 'playOutOnly';
+  first_move: 'user' | 'bot';
+  user_target: 'win' | 'draw';
+  ply: number;
+  correct_move_san: string;
+  correct_move_uci: string;
+  // Für my_dropps
+  dropped_fen?: string;
+  dropped_move_san?: string;
+  dropped_move_uci?: string;
+  // Für opp_blunders
   opp_blunder_fen?: string;
-  opp_blunder_move?: string;
+  opp_blunder_move_san?: string;
+  opp_blunder_move_uci?: string;
+  // Debug / Zusatzinfo
+  chance_fen?: string;
+  user_played_move_san?: string;
+  user_played_move_uci?: string;
+  white_player?: string;
+  black_player?: string;
+  speed?: string;
 }
 
 export interface EndgameAnalysisResponse {
-  total_games?: number;
+  total_games: number;
+  games_with_endings: number;
+  total_endings: number;
   stats: EndgameStats;
-  checked_games: CheckedGame[];
-  missed_chances: MissedChance[];
+  puzzles: EndgamePuzzle[];
 }
+

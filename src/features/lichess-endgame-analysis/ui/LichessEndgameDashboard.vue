@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
+
+const { t } = useI18n()
 import {
   NCard,
   NButton,
@@ -7,24 +10,18 @@ import {
   NIcon,
   NSpin,
   NTable,
-  NTag,
   NDivider,
   NSpace,
   NStatistic,
-  NTabs,
-  NTabPane,
-  NProgress,
-  useMessage
+  NProgress
 } from 'naive-ui'
 import {
   RefreshOutline,
-  CopyOutline,
-  ChevronForwardOutline,
   WarningOutline,
-  FlameOutline
+  FlameOutline,
+  PlayOutline
 } from '@vicons/ionicons5'
 import { useLichessEndgameAnalysisStore } from '../model/lichess-endgame-analysis.store'
-import type { MissedChance, TaskType } from '../model/lichess-endgame-analysis.types'
 
 const props = withDefaults(
   defineProps<{
@@ -40,147 +37,38 @@ const emit = defineEmits<{
 }>()
 
 const store = useLichessEndgameAnalysisStore()
-const message = useMessage()
-
-const currentTab = ref<'dropped' | 'missed'>('dropped')
 
 // Reset der Analyse
 const handleReset = () => {
   store.resetResult()
 }
 
-// Berechne die Halbzugnummer (Ply) aus der FEN
-const calculatePlyFromFen = (fen?: string): number => {
-  if (!fen) return 0
-  const parts = fen.trim().split(/\s+/)
-  if (parts.length < 6) return 0
-  const activeColor = parts[1] // 'w' oder 'b'
-  const fullmoveStr = parts[5]
-  if (!fullmoveStr || !activeColor) return 0
-  const fullmove = parseInt(fullmoveStr, 10)
-  if (isNaN(fullmove)) return 0
-  
-  if (activeColor === 'w') {
-    return (fullmove - 1) * 2
-  } else {
-    return (fullmove - 1) * 2 + 1
-  }
-}
+// Metadaten für das Dashboard
+const totalGames = computed(() => store.analysisResult?.total_games || 0)
+const gamesWithEndings = computed(() => store.analysisResult?.games_with_endings || 0)
+const totalEndings = computed(() => store.analysisResult?.total_endings || 0)
 
-interface DashboardMissedChance extends MissedChance {
-  ply: number
-  lichessUrl: string
-}
-
-const parsedMissedChances = computed<DashboardMissedChance[]>(() => {
-  const result = store.analysisResult
-  if (!result || !result.missed_chances) return []
-
-  return result.missed_chances.map(task => {
-    const ply = calculatePlyFromFen(task.chance_fen)
-    return {
-      ...task,
-      ply,
-      lichessUrl: `https://lichess.org/${task.game_id}#${ply}`
-    }
-  }).sort((a, b) => a.classification.localeCompare(b.classification))
+// Gesamtanzahl der verpassten Siege (dropped_win und missed_winning_chance)
+const totalMissedWins = computed(() => {
+  if (!store.analysisResult?.puzzles) return 0
+  return store.analysisResult.puzzles.filter(p => p.user_target === 'win').length
 })
 
-const filteredChances = computed<DashboardMissedChance[]>(() => {
-  if (currentTab.value === 'dropped') {
-    return parsedMissedChances.value.filter(c =>
-      c.task_type === 'dropped_win_to_draw' ||
-      c.task_type === 'dropped_win_to_loss' ||
-      c.task_type === 'dropped_draw_to_loss'
-    )
-  } else {
-    return parsedMissedChances.value.filter(c =>
-      c.task_type === 'missed_winning_chance' ||
-      c.task_type === 'missed_saving_chance'
-    )
-  }
+// Gesamtanzahl der verpassten Remis (dropped_draw und missed_saving_chance)
+const totalMissedDraws = computed(() => {
+  if (!store.analysisResult?.puzzles) return 0
+  return store.analysisResult.puzzles.filter(p => p.user_target === 'draw').length
 })
 
-const countDroppedWinToDraw = computed(() => parsedMissedChances.value.filter(c => c.task_type === 'dropped_win_to_draw').length)
-const countDroppedWinToLoss = computed(() => parsedMissedChances.value.filter(c => c.task_type === 'dropped_win_to_loss').length)
-const countDroppedDrawToLoss = computed(() => parsedMissedChances.value.filter(c => c.task_type === 'dropped_draw_to_loss').length)
-const countMissedWinningChance = computed(() => parsedMissedChances.value.filter(c => c.task_type === 'missed_winning_chance').length)
-const countMissedSavingChance = computed(() => parsedMissedChances.value.filter(c => c.task_type === 'missed_saving_chance').length)
-
-const countDropped = computed(() => countDroppedWinToDraw.value + countDroppedWinToLoss.value + countDroppedDrawToLoss.value)
-const countMissed = computed(() => countMissedWinningChance.value + countMissedSavingChance.value)
-
-const totalMissedWins = computed(() => countDroppedWinToDraw.value + countDroppedWinToLoss.value + countMissedWinningChance.value)
-const totalMissedDraws = computed(() => countDroppedDrawToLoss.value + countMissedSavingChance.value)
-
-const formatVerlauf = (taskType: TaskType): { text: string; type: 'success' | 'warning' | 'error' | 'default' } => {
-  switch (taskType) {
-    case 'dropped_win_to_draw':
-      return { text: 'Win ➔ Draw', type: 'warning' }
-    case 'dropped_win_to_loss':
-      return { text: 'Win ➔ Loss', type: 'error' }
-    case 'dropped_draw_to_loss':
-      return { text: 'Draw ➔ Loss', type: 'error' }
-    case 'missed_winning_chance':
-      return { text: 'Win verpasst', type: 'success' }
-    case 'missed_saving_chance':
-      return { text: 'Draw verpasst', type: 'warning' }
-    default:
-      return { text: '', type: 'default' }
-  }
-}
-
-const totalGames = computed(() => store.analysisResult?.total_games || store.analysisResult?.checked_games.length || 0)
-const gamesWithEndings = computed(() => store.analysisResult?.checked_games.filter(g => g.founded_endings.length > 0).length || 0)
-const totalEndings = computed(() => {
-  if (!store.analysisResult) return 0
-  return store.analysisResult.checked_games.reduce((sum, g) => sum + g.founded_endings.length, 0)
-})
 const successRate = computed(() => {
   if (totalEndings.value === 0) return 0
-  const missed = parsedMissedChances.value.length
+  const missed = store.analysisResult?.puzzles.length || 0
   return Math.round(((totalEndings.value - missed) / totalEndings.value) * 100)
 })
 
 const successRateColor = computed(() => {
   if (successRate.value > 80) return '#18a058'
   if (successRate.value > 50) return '#f0a020'
-  return '#d03050'
-})
-
-const globalWinStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.winStarts, 0))
-const globalRealizedWins = computed(() => detailedStats.value.reduce((sum, s) => sum + s.realizedWins, 0))
-const globalWinRate = computed(() => {
-  if (globalWinStarts.value === 0) return 0
-  return Math.round((globalRealizedWins.value / globalWinStarts.value) * 100)
-})
-const globalWinRateColor = computed(() => {
-  if (globalWinRate.value > 80) return '#18a058'
-  if (globalWinRate.value > 50) return '#f0a020'
-  return '#d03050'
-})
-
-const globalDrawStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.drawStarts, 0))
-const globalSavedDraws = computed(() => detailedStats.value.reduce((sum, s) => sum + s.savedDraws, 0))
-const globalDrawRate = computed(() => {
-  if (globalDrawStarts.value === 0) return 0
-  return Math.round((globalSavedDraws.value / globalDrawStarts.value) * 100)
-})
-const globalDrawRateColor = computed(() => {
-  if (globalDrawRate.value > 80) return '#18a058'
-  if (globalDrawRate.value > 50) return '#f0a020'
-  return '#d03050'
-})
-
-const globalLossStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.lossStarts, 0))
-const globalSavedLosses = computed(() => detailedStats.value.reduce((sum, s) => sum + s.savedLosses, 0))
-const globalLossRate = computed(() => {
-  if (globalLossStarts.value === 0) return 0
-  return Math.round((globalSavedLosses.value / globalLossStarts.value) * 100)
-})
-const globalLossRateColor = computed(() => {
-  if (globalLossRate.value > 80) return '#18a058'
-  if (globalLossRate.value > 50) return '#f0a020'
   return '#d03050'
 })
 
@@ -248,51 +136,44 @@ const detailedStats = computed<EndgameDetailedRow[]>(() => {
     }
   })
   .filter((row): row is EndgameDetailedRow => row !== null)
-  .sort((a, b) => b.total - a.total) // Oben die Gruppe, die am meisten Stellungen hat
+  .sort((a, b) => b.total - a.total)
 })
 
-interface GroupedChances {
-  classification: string
-  totalCount: number
-  missedCount: number
-  chances: DashboardMissedChance[]
-}
+const globalWinStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.winStarts, 0))
+const globalRealizedWins = computed(() => detailedStats.value.reduce((sum, s) => sum + s.realizedWins, 0))
+const globalWinRate = computed(() => {
+  if (globalWinStarts.value === 0) return 0
+  return Math.round((globalRealizedWins.value / globalWinStarts.value) * 100)
+})
+const globalWinRateColor = computed(() => {
+  if (globalWinRate.value > 80) return '#18a058'
+  if (globalWinRate.value > 50) return '#f0a020'
+  return '#d03050'
+})
 
-const groupChances = (chances: DashboardMissedChance[]): GroupedChances[] => {
-  const groupsMap: Record<string, DashboardMissedChance[]> = {}
-  chances.forEach(c => {
-    const key = c.classification
-    if (!groupsMap[key]) {
-      groupsMap[key] = []
-    }
-    const group = groupsMap[key]
-    if (group) {
-      group.push(c)
-    }
-  })
+const globalDrawStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.drawStarts, 0))
+const globalSavedDraws = computed(() => detailedStats.value.reduce((sum, s) => sum + s.savedDraws, 0))
+const globalDrawRate = computed(() => {
+  if (globalDrawStarts.value === 0) return 0
+  return Math.round((globalSavedDraws.value / globalDrawStarts.value) * 100)
+})
+const globalDrawRateColor = computed(() => {
+  if (globalDrawRate.value > 80) return '#18a058'
+  if (globalDrawRate.value > 50) return '#f0a020'
+  return '#d03050'
+})
 
-  return Object.entries(groupsMap).map(([classification, list]) => {
-    const typeStat = detailedStats.value.find(s => s.name === classification)
-    const sortedList = [...list].sort((a, b) => {
-      const order: Record<TaskType, number> = {
-        'dropped_win_to_draw': 1,
-        'dropped_win_to_loss': 2,
-        'dropped_draw_to_loss': 3,
-        'missed_winning_chance': 4,
-        'missed_saving_chance': 5
-      }
-      return (order[a.task_type] || 99) - (order[b.task_type] || 99)
-    })
-    return {
-      classification,
-      totalCount: typeStat?.total || list.length,
-      missedCount: list.length,
-      chances: sortedList
-    }
-  }).sort((a, b) => b.missedCount - a.missedCount)
-}
-
-const groupedFilteredChances = computed(() => groupChances(filteredChances.value))
+const globalLossStarts = computed(() => detailedStats.value.reduce((sum, s) => sum + s.lossStarts, 0))
+const globalSavedLosses = computed(() => detailedStats.value.reduce((sum, s) => sum + s.savedLosses, 0))
+const globalLossRate = computed(() => {
+  if (globalLossStarts.value === 0) return 0
+  return Math.round((globalSavedLosses.value / globalLossStarts.value) * 100)
+})
+const globalLossRateColor = computed(() => {
+  if (globalLossRate.value > 80) return '#18a058'
+  if (globalLossRate.value > 50) return '#f0a020'
+  return '#d03050'
+})
 
 // Formatierung des Endspielnamens
 const formatEndgameName = (name: string): string => {
@@ -301,20 +182,14 @@ const formatEndgameName = (name: string): string => {
     .replace(/^./, str => str.toUpperCase())
     .replace('Vs', 'vs.')
 }
-
-// FEN kopieren
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text)
-  message.success('FEN in die Zwischenablage kopiert!')
-}
 </script>
 
 <template>
   <div class="endgame-analysis-container">
     <div class="dashboard-header">
-      <h2 class="title">Lichess Endgame Performance Analyzer</h2>
+      <h2 class="title">{{ t('features.lichessEndgameAnalysis.title') }}</h2>
       <p class="subtitle">
-        Analysiere deine Endspiel-Performance basierend auf deinen Lichess-Partien.
+        {{ t('features.lichessEndgameAnalysis.subtitle') }}
       </p>
     </div>
 
@@ -329,19 +204,19 @@ const copyToClipboard = (text: string) => {
               @click="emit('analyzeLocal')" 
               style="width: 280px; height: 50px; font-size: 16px; font-weight: bold; border-radius: 8px;"
             >
-              Analyse starten
+              {{ t('features.lichessEndgameAnalysis.startAnalysis') }}
             </NButton>
             <NP style="color: rgba(255, 255, 255, 0.6); margin-top: 10px; font-size: 14px;">
-              Es wurden {{ props.localGamesCount }} importierte Partien im Cache gefunden.
+              {{ t('features.lichessEndgameAnalysis.localGamesFound', { count: props.localGamesCount }) }}
             </NP>
           </div>
           <div v-else style="text-align: center; width: 100%;">
             <NIcon size="48" :component="WarningOutline" style="color: #f0a020; margin-bottom: 16px;" />
             <NP style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">
-              Keine Partien im lokalen Cache
+              {{ t('features.lichessEndgameAnalysis.noGamesInCache') }}
             </NP>
             <NP style="color: rgba(255, 255, 255, 0.6); font-size: 14px; max-width: 400px; margin: 0 auto 16px auto;">
-              Bitte lade oder synchronisiere zuerst deine Partien im User Cabinet, um die Endspiel-Analyse zu nutzen.
+              {{ t('features.lichessEndgameAnalysis.noGamesInCacheDesc') }}
             </NP>
           </div>
         </NSpace>
@@ -354,9 +229,9 @@ const copyToClipboard = (text: string) => {
         <NSpace vertical align="center" size="large">
           <NSpin size="large" />
           <div style="text-align: center;">
-            <h3 class="loading-text">Analysiere Spiele...</h3>
+            <h3 class="loading-text">{{ t('features.lichessEndgameAnalysis.analyzingGames') }}</h3>
             <p class="loading-sub">
-              Deine Partien werden analysiert und bewertet. Bitte hab einen Augenblick Geduld...
+              {{ t('features.lichessEndgameAnalysis.analyzingGamesDesc') }}
             </p>
           </div>
         </NSpace>
@@ -371,38 +246,37 @@ const copyToClipboard = (text: string) => {
           <template #icon>
             <NIcon><RefreshOutline /></NIcon>
           </template>
-          Neue Analyse starten
+          {{ t('features.lichessEndgameAnalysis.startNewAnalysis') }}
         </NButton>
       </div>
 
       <!-- General Statistics Grid -->
       <NSpace class="stats-overview" justify="space-around" style="width: 100%; margin-bottom: 32px;">
         <NCard class="metric-card header-stat" style="width: 220px;">
-          <NStatistic label="Analysierte Spiele" :value="totalGames" />
+          <NStatistic :label="t('features.lichessEndgameAnalysis.gamesAnalyzed')" :value="totalGames" />
         </NCard>
         <NCard class="metric-card header-stat" style="width: 220px;">
-          <NStatistic label="Spiele mit Endspielen" :value="gamesWithEndings" />
+          <NStatistic :label="t('features.lichessEndgameAnalysis.gamesWithEndgames')" :value="gamesWithEndings" />
         </NCard>
         <NCard class="metric-card header-stat" style="width: 220px;">
-          <NStatistic label="Endspiel Stellungen" :value="totalEndings" />
+          <NStatistic :label="t('features.lichessEndgameAnalysis.endgamePositions')" :value="totalEndings" />
         </NCard>
         <NCard class="metric-card header-stat error-stat" style="width: 220px;">
           <template #header-extra>
             <NIcon color="#d03050" size="18"><FlameOutline /></NIcon>
           </template>
-          <NStatistic label="Verpasste Gewinne" :value="totalMissedWins" />
+          <NStatistic :label="t('features.lichessEndgameAnalysis.missedWins')" :value="totalMissedWins" />
         </NCard>
         <NCard class="metric-card header-stat warning-stat" style="width: 220px;">
           <template #header-extra>
             <NIcon color="#f0a020" size="18"><WarningOutline /></NIcon>
           </template>
-          <NStatistic label="Verpasste Rettungen" :value="totalMissedDraws" />
+          <NStatistic :label="t('features.lichessEndgameAnalysis.missedDraws')" :value="totalMissedDraws" />
         </NCard>
       </NSpace>
 
       <!-- 4. ENDGAME-PERFORMANCE SUMMARY -->
-      <NCard title="📊 Endspiel-Performance Übersicht (Summary)" class="summary-card" style="margin-bottom: 32px;">
-        <!-- 4 Kreisdiagramme nebeneinander -->
+      <NCard :title="t('features.lichessEndgameAnalysis.performanceOverview')" class="summary-card" style="margin-bottom: 32px;">
         <div style="display: flex; justify-content: space-around; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; padding: 12px 0;">
           <!-- 1. Zug-Präzision -->
           <div style="text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 150px;">
@@ -416,11 +290,11 @@ const copyToClipboard = (text: string) => {
             >
               <div style="text-align: center">
                 <div style="font-size: 18px; font-weight: bold;">{{ successRate }}%</div>
-                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">Zug-Präzision</div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">{{ t('features.lichessEndgameAnalysis.movePrecision') }}</div>
               </div>
             </NProgress>
             <div style="color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-top: 8px; font-weight: 500;">
-              {{ totalEndings - parsedMissedChances.length }} / {{ totalEndings }} Züge
+              {{ t('features.lichessEndgameAnalysis.puzzlesLeft', { left: totalEndings - (store.analysisResult?.puzzles.length || 0), total: totalEndings }) }}
             </div>
           </div>
 
@@ -436,11 +310,11 @@ const copyToClipboard = (text: string) => {
             >
               <div style="text-align: center">
                 <div style="font-size: 18px; font-weight: bold;">{{ globalWinRate }}%</div>
-                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">Gewinnstarts</div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">{{ t('features.lichessEndgameAnalysis.winStarts') }}</div>
               </div>
             </NProgress>
             <div style="color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-top: 8px; font-weight: 500;">
-              {{ globalRealizedWins }} / {{ globalWinStarts }} realisiert
+              {{ globalRealizedWins }} / {{ globalWinStarts }} {{ t('features.lichessEndgameAnalysis.realized') }}
             </div>
           </div>
 
@@ -456,11 +330,11 @@ const copyToClipboard = (text: string) => {
             >
               <div style="text-align: center">
                 <div style="font-size: 18px; font-weight: bold;">{{ globalDrawRate }}%</div>
-                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">Remisstarts</div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">{{ t('features.lichessEndgameAnalysis.drawStarts') }}</div>
               </div>
             </NProgress>
             <div style="color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-top: 8px; font-weight: 500;">
-              {{ globalSavedDraws }} / {{ globalDrawStarts }} gehalten
+              {{ globalSavedDraws }} / {{ globalDrawStarts }} {{ t('features.lichessEndgameAnalysis.saved') }}
             </div>
           </div>
 
@@ -476,33 +350,31 @@ const copyToClipboard = (text: string) => {
             >
               <div style="text-align: center">
                 <div style="font-size: 18px; font-weight: bold;">{{ globalLossRate }}%</div>
-                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">Rettungen</div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.5)">{{ t('features.lichessEndgameAnalysis.rescues') }}</div>
               </div>
             </NProgress>
             <div style="color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-top: 8px; font-weight: 500;">
-              {{ globalSavedLosses }} / {{ globalLossStarts }} gerettet
+              {{ globalSavedLosses }} / {{ globalLossStarts }} {{ t('features.lichessEndgameAnalysis.rescued') }}
             </div>
           </div>
         </div>
 
         <NDivider style="margin: 24px 0; background-color: rgba(255,255,255,0.08);" />
 
-        <!-- Tabelle über die volle Breite -->
+        <!-- Detaillierte Tabelle -->
         <div>
-          <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-            <span>📊 Detaillierte Statistik nach Endspiel-Klassifizierung</span>
+          <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">
+            {{ t('features.lichessEndgameAnalysis.detailedStats') }}
           </div>
-          <div v-if="detailedStats.length === 0" class="empty-state" style="padding: 20px;">
-            <NP>Keine Endspieldaten zur Auswertung vorhanden.</NP>
-          </div>
-          <NTable v-else striped size="small" class="summary-table" style="background: transparent;">
+          <NTable striped size="small" class="summary-table" style="background: transparent;">
             <thead>
               <tr>
-                <th>Endspieltyp</th>
-                <th style="width: 100px; text-align: center;">Vorkommen</th>
-                <th style="width: 140px; text-align: center;">Gewinnstarts</th>
-                <th style="width: 140px; text-align: center;">Remisstarts</th>
-                <th style="width: 140px; text-align: center;">Rettungen</th>
+                <th>{{ t('features.lichessEndgameAnalysis.endgameType') }}</th>
+                <th style="width: 100px; text-align: center;">{{ t('features.lichessEndgameAnalysis.occurrences') }}</th>
+                <th style="width: 140px; text-align: center;">{{ t('features.lichessEndgameAnalysis.winStarts') }}</th>
+                <th style="width: 140px; text-align: center;">{{ t('features.lichessEndgameAnalysis.drawStarts') }}</th>
+                <th style="width: 140px; text-align: center;">{{ t('features.lichessEndgameAnalysis.rescues') }}</th>
+                <th style="width: 130px; text-align: center;">{{ t('features.lichessEndgameAnalysis.action') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -529,147 +401,23 @@ const copyToClipboard = (text: string) => {
                   </span>
                   <span v-else style="color: rgba(255,255,255,0.2)">-</span>
                 </td>
+                <td style="text-align: center;">
+                  <NButton 
+                    type="primary" 
+                    size="tiny" 
+                    secondary 
+                    @click="store.startTraining(stat.name)"
+                  >
+                    <template #icon>
+                      <NIcon><PlayOutline /></NIcon>
+                    </template>
+                    {{ t('features.lichessEndgameAnalysis.train') }}
+                  </NButton>
+                </td>
               </tr>
             </tbody>
           </NTable>
         </div>
-      </NCard>
-
-      <NCard class="report-card">
-        <NTabs v-model:value="currentTab" type="segment" animated class="custom-tabs">
-          <!-- Tab 1: Verpatzt (Dropped) -->
-          <NTabPane name="dropped" :tab="`⚠️ Verpatzt (Dropped) (${countDropped})`">
-            <div class="tab-content">
-              <div v-if="groupedFilteredChances.length === 0" class="empty-state">
-                <NP>Keine verpatzten Endspiel-Stellungen gefunden.</NP>
-              </div>
-              <div v-else>
-                <div v-for="group in groupedFilteredChances" :key="group.classification" class="endgame-group-section" style="margin-bottom: 32px;">
-                  <div class="endgame-group-header" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 16px; font-weight: bold; color: rgba(255,255,255,0.9);">
-                      {{ formatEndgameName(group.classification) }}
-                    </span>
-                    <NTag size="small" type="error" :bordered="false">{{ group.missedCount }} Fehler</NTag>
-                  </div>
-                  
-                  <NTable striped class="report-table">
-                    <thead>
-                      <tr>
-                        <th style="width: 140px;">Verlauf</th>
-                        <th>Dein Fehlerzug</th>
-                        <th>Richtiger Zug</th>
-                        <th>FEN</th>
-                        <th>Partie-Link</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(chance, index) in group.chances" :key="index">
-                        <td>
-                          <NTag size="small" :type="formatVerlauf(chance.task_type).type" :bordered="false" style="font-weight: bold;">
-                            {{ formatVerlauf(chance.task_type).text }}
-                          </NTag>
-                        </td>
-                        <td>
-                          <span style="color: #d03050; font-weight: bold; font-family: monospace;">{{ chance.user_played_move }}</span>
-                        </td>
-                        <td>
-                          <NTag size="small" type="success" :bordered="false" style="font-weight: bold; font-family: monospace;">
-                            {{ chance.correct_move }}
-                          </NTag>
-                        </td>
-                        <td>
-                          <div class="fen-copy-wrapper">
-                            <code class="fen-text">{{ chance.chance_fen.substring(0, 35) }}...</code>
-                            <NButton size="tiny" quaternary circle @click="copyToClipboard(chance.chance_fen)">
-                              <template #icon>
-                                <NIcon><CopyOutline /></NIcon>
-                              </template>
-                            </NButton>
-                          </div>
-                        </td>
-                        <td>
-                          <a :href="chance.lichessUrl" target="_blank" class="lichess-action-link">
-                            Lichess (Zug {{ Math.floor(chance.ply / 2) + 1 }})
-                            <NIcon :component="ChevronForwardOutline" size="12" />
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </NTable>
-                </div>
-              </div>
-            </div>
-          </NTabPane>
-
-          <!-- Tab 2: Verpasste Chancen (Missed) -->
-          <NTabPane name="missed" :tab="`🎯 Verpasste Chancen (Missed) (${countMissed})`">
-            <div class="tab-content">
-              <div v-if="groupedFilteredChances.length === 0" class="empty-state">
-                <NP>Keine verpassten Chancen nach gegnerischen Patzern gefunden.</NP>
-              </div>
-              <div v-else>
-                <div v-for="group in groupedFilteredChances" :key="group.classification" class="endgame-group-section" style="margin-bottom: 32px;">
-                  <div class="endgame-group-header" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 16px; font-weight: bold; color: rgba(255,255,255,0.9);">
-                      {{ formatEndgameName(group.classification) }}
-                    </span>
-                    <NTag size="small" type="error" :bordered="false">{{ group.missedCount }} Fehler</NTag>
-                  </div>
-                  
-                  <NTable striped class="report-table">
-                    <thead>
-                      <tr>
-                        <th style="width: 140px;">Verlauf</th>
-                        <th>Dein Fehlerzug</th>
-                        <th>Richtiger Zug</th>
-                        <th>FEN</th>
-                        <th>Partie-Link</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(chance, index) in group.chances" :key="index">
-                        <td>
-                          <NTag size="small" :type="formatVerlauf(chance.task_type).type" :bordered="false" style="font-weight: bold;">
-                            {{ formatVerlauf(chance.task_type).text }}
-                          </NTag>
-                        </td>
-                        <td>
-                          <div>
-                            <span style="color: #d03050; font-weight: bold; font-family: monospace;">{{ chance.user_played_move }}</span>
-                            <div v-if="chance.opp_blunder_move" style="font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px;">
-                              Gegner patzte mit <span style="font-family: monospace; color: #f0a020;">{{ chance.opp_blunder_move }}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <NTag size="small" type="success" :bordered="false" style="font-weight: bold; font-family: monospace;">
-                            {{ chance.correct_move }}
-                          </NTag>
-                        </td>
-                        <td>
-                          <div class="fen-copy-wrapper">
-                            <code class="fen-text">{{ chance.chance_fen.substring(0, 35) }}...</code>
-                            <NButton size="tiny" quaternary circle @click="copyToClipboard(chance.chance_fen)">
-                              <template #icon>
-                                <NIcon><CopyOutline /></NIcon>
-                              </template>
-                            </NButton>
-                          </div>
-                        </td>
-                        <td>
-                          <a :href="chance.lichessUrl" target="_blank" class="lichess-action-link">
-                            Lichess (Zug {{ Math.floor(chance.ply / 2) + 1 }})
-                            <NIcon :component="ChevronForwardOutline" size="12" />
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </NTable>
-                </div>
-              </div>
-            </div>
-          </NTabPane>
-        </NTabs>
       </NCard>
     </div>
   </div>
@@ -713,6 +461,11 @@ const copyToClipboard = (text: string) => {
   width: 100%;
 }
 
+.local-analyze-box {
+  text-align: center;
+  width: 100%;
+}
+
 .loading-section {
   display: flex;
   justify-content: center;
@@ -743,10 +496,19 @@ const copyToClipboard = (text: string) => {
   margin-bottom: 24px;
 }
 
+.stats-overview {
+  width: 100%;
+  margin-bottom: 32px;
+}
+
 .metric-card {
   background: rgba(30, 30, 30, 0.4);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-stat {
+  width: 220px;
 }
 
 .error-stat :deep(.n-statistic-value) {
@@ -757,95 +519,14 @@ const copyToClipboard = (text: string) => {
   color: #f0a020;
 }
 
-.report-card {
-  background: rgba(30, 30, 30, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 16px;
-}
-
 .summary-card {
   background: rgba(30, 30, 30, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
+  margin-bottom: 32px;
 }
 
-.precision-box {
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding-right: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (max-width: 768px) {
-  .precision-box {
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding-right: 0;
-    padding-bottom: 24px;
-    margin-bottom: 24px;
-  }
-}
-
-.custom-tabs :deep(.n-tabs-tab) {
-  font-size: 16px;
-  font-weight: 600;
-  padding: 12px 20px;
-}
-
-.tab-content {
-  padding-top: 20px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.report-table {
+.summary-table {
   background: transparent;
-}
-
-.report-table th {
-  background: rgba(255, 255, 255, 0.03) !important;
-  font-weight: 600;
-}
-
-.dtm-val {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.fen-copy-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(20, 20, 20, 0.4);
-  padding: 4px 8px;
-  border-radius: 6px;
-  max-width: 320px;
-}
-
-.fen-text {
-  font-family: monospace;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.lichess-action-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #a067ff;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.lichess-action-link:hover {
-  color: #b78eff;
 }
 </style>
