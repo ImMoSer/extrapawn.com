@@ -32,7 +32,7 @@ export class SparringStrategy implements IGameplayStrategy {
 
   async requestBotMove(fen: string): Promise<string | null> {
     try {
-      const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+      const { useCoachFeedbackStore } = await import('@/features/coach')
       const feedbackStore = useCoachFeedbackStore()
       if (feedbackStore.isTakebackPending) {
         logger.info('[SparringStrategy] requestBotMove returned null due to pending coach takeback.')
@@ -98,7 +98,7 @@ export class SparringStrategy implements IGameplayStrategy {
 
   async onUserMoveExecuted() {
     try {
-      const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+      const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
       await waitForCoachAndCheckTakeback()
     } catch (err) {
       logger.error('[SparringStrategy] Error waiting for coach analysis:', err)

@@ -71,40 +71,61 @@ export default defineConfigWithVueTs(
       }
     },
     rules: {
-      'boundaries/element-types': [
+      'boundaries/dependencies': [
         'error',
         {
           default: 'disallow',
-          message: '${file.type} is not allowed to import ${dependency.type}',
-          rules: [
+          message: '{{file.type}} is not allowed to import {{dependency.type}}',
+          policies: [
             {
-              from: 'shared',
-              allow: ['shared']
+              from: { element: { type: 'shared' } },
+              allow: { to: { element: { type: 'shared' } } }
             },
             {
-              from: 'entities',
-              allow: ['shared', ['entities', { entityName: '${from.entityName}' }]]
-            },
-            {
-              from: 'features',
+              from: { element: { type: 'entities' } },
               allow: [
-                'shared',
-                'entities',
-                'features',
-                ['features', { featureName: '${from.featureName}' }]
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'entities', captured: { entityName: '{{from.entityName}}' } } } }
               ]
             },
             {
-              from: 'widgets',
-              allow: ['shared', 'entities', 'features', 'widgets']
+              from: { element: { type: 'features' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'entities' } } },
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'features', captured: { featureName: '{{from.featureName}}' } } } }
+              ]
             },
             {
-              from: 'pages',
-              allow: ['shared', 'entities', 'features', 'widgets', 'pages']
+              from: { element: { type: 'widgets' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'entities' } } },
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'widgets' } } }
+              ]
             },
             {
-              from: 'app',
-              allow: ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
+              from: { element: { type: 'pages' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'entities' } } },
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'widgets' } } },
+                { to: { element: { type: 'pages' } } }
+              ]
+            },
+            {
+              from: { element: { type: 'app' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'entities' } } },
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'widgets' } } },
+                { to: { element: { type: 'pages' } } },
+                { to: { element: { type: 'app' } } }
+              ]
             }
           ]
         }
@@ -113,32 +134,32 @@ export default defineConfigWithVueTs(
       'boundaries/entry-point': [
         'error',
         {
-          rules: [
+          policies: [
             {
-              target: 'features',
+              target: { element: { type: 'features' } },
               allow: ['index.ts', 'index.js'],
               disallow: ['**/*.vue']
             },
             {
-              target: 'entities',
+              target: { element: { type: 'entities' } },
               allow: ['index.ts', 'index.js'],
               disallow: ['**/*.vue']
             },
             {
-              target: 'shared',
-              allow: '**/*'
+              target: { element: { type: 'shared' } },
+              allow: ['**/*']
             },
             {
-              target: 'app',
-              allow: '**/*'
+              target: { element: { type: 'app' } },
+              allow: ['**/*']
             },
             {
-              target: 'pages',
-              allow: '**/*'
+              target: { element: { type: 'pages' } },
+              allow: ['**/*']
             },
             {
-              target: 'widgets',
-              allow: '**/*'
+              target: { element: { type: 'widgets' } },
+              allow: ['**/*']
             }
           ]
         }

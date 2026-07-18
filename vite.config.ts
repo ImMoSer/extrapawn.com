@@ -76,11 +76,26 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'naive-ui': ['naive-ui'],
-            'echarts': ['echarts', 'vue-echarts'],
-            'chess-logic': ['@lichess-org/chessground', 'chessops'],
-            'vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('naive-ui')) {
+                return 'naive-ui'
+              }
+              if (id.includes('echarts') || id.includes('vue-echarts')) {
+                return 'echarts'
+              }
+              if (id.includes('@lichess-org/chessground') || id.includes('chessops')) {
+                return 'chess-logic'
+              }
+              if (
+                id.includes('vue') ||
+                id.includes('vue-router') ||
+                id.includes('pinia') ||
+                id.includes('vue-i18n')
+              ) {
+                return 'vendor'
+              }
+            }
           },
         },
       },

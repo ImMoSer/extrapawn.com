@@ -6,3 +6,8 @@
 4. **Validierung**: Sicherstellen, dass die Prüfungen `pnpm type-check && pnpm lint` ohne Fehler und Warnungen durchlaufen.
 5. **Technische Schulden**: Technische Schulden, Altlasten oder Architektur-Verstöße im bestehenden Code müssen sofort gemeldet werden.
 6. **Striktes Fail-Fast-Prinzip**: Keine defensiven Fallbacks, automatischen Typ-Konvertierungen, Standardwerte (Fallback-Values) oder stillschweigenden Fehlerkorrekturen bei unerwarteten, unvollständigen oder unklaren Datenzuständen einbauen. Jede Abweichung vom erwarteten Zustand muss sofort hart per Exception oder Error-Log fehlschlagen, damit Fehler direkt in der Entwicklung sichtbar und behoben werden.
+
+## Bekannte Paket-Blocker / Version Locks
+
+- **TypeScript**: Gesperrt auf Version `6.x` (aktuell `6.0.3`). TypeScript `v7.0.2` führt ein restriktives `exports`-Mapping in seiner `package.json` ein, wodurch `typescript/lib/tsc` nicht mehr exportiert wird. Da `vue-tsc` dieses intern laden muss, führt das Update zu einem Absturz (`ERR_PACKAGE_PATH_NOT_EXPORTED`). Ein Upgrade auf TS 7+ ist erst möglich, wenn eine neuere Version von `vue-tsc` veröffentlicht wird, die mit dem neuen TS-Export-Schema kompatibel ist.
+

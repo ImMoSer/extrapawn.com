@@ -101,7 +101,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     if (this.isPlayoutMode) {
       if (coachStore.isCoachEnabled) {
         try {
-          const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+          const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
           const wasTakeback = await waitForCoachAndCheckTakeback()
           if (wasTakeback) {
             return
@@ -121,7 +121,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       if (this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')
         try {
-          const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+          const { useCoachFeedbackStore } = await import('@/features/coach')
           const feedbackStore = useCoachFeedbackStore()
           feedbackStore.coachMood = 'celebrating'
           feedbackStore.takebackMessage = 'Tactical Solution Completed!'
@@ -148,7 +148,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         }
       } else {
         try {
-          const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+          const { useCoachFeedbackStore } = await import('@/features/coach')
           const feedbackStore = useCoachFeedbackStore()
           feedbackStore.coachMood = 'proud'
           feedbackStore.takebackMessage = 'Korrekt! wie gehts weiter?'
@@ -161,7 +161,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       // Deviation from the scenario
       if (coachStore.isCoachEnabled) {
         try {
-          const { waitForCoachAndCheckTakeback } = await import('@/features/coach/model/coach-gameplay')
+          const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
           const wasTakeback = await waitForCoachAndCheckTakeback()
           if (wasTakeback) {
             return
@@ -181,7 +181,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
         if (coachStore.isCoachEnabled) {
           try {
-            const { useCoachFeedbackStore } = await import('@/features/coach/model/coach-feedback.store')
+            const { useCoachFeedbackStore } = await import('@/features/coach')
             const feedbackStore = useCoachFeedbackStore()
             feedbackStore.coachMood = 'warning'
             feedbackStore.takebackMessage = this.submode === 'tactics'
