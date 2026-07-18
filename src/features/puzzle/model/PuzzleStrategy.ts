@@ -115,8 +115,14 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     // 2. In Scenario Mode (following the predefined tactical solution)
     const expectedMove = this.scenarioMoves[this.scenarioIndex]
-    if (uciMove === expectedMove) {
-      this.scenarioIndex++
+    const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+
+    if (uciMove === expectedMove || isCheckmate) {
+      if (uciMove === expectedMove) {
+        this.scenarioIndex++
+      } else {
+        this.scenarioIndex = this.scenarioMoves.length
+      }
 
       if (this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')

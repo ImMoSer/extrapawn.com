@@ -1,5 +1,6 @@
 import {
   enginePlayService,
+  useBoardStore,
   useGameStore,
   type GameStatusInfo,
   type IGameplayStrategy,
@@ -39,6 +40,10 @@ export class TaskTodayStrategy implements IGameplayStrategy {
     return useGameStore()
   }
 
+  private get boardStore() {
+    return useBoardStore()
+  }
+
   onGameStart(): void {
     this.store.startTimer()
   }
@@ -71,8 +76,14 @@ export class TaskTodayStrategy implements IGameplayStrategy {
   async onUserMoveExecuted(uciMove: string): Promise<void> {
     if (!this.isPlayoutMode) {
       const expectedMove = this.scenarioMoves[this.scenarioIndex]
-      if (uciMove === expectedMove) {
-        this.scenarioIndex++
+      const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+
+      if (uciMove === expectedMove || isCheckmate) {
+        if (uciMove === expectedMove) {
+          this.scenarioIndex++
+        } else {
+          this.scenarioIndex = this.scenarioMoves.length
+        }
 
         if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
           // Success!
