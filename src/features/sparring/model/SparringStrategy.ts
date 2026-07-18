@@ -6,6 +6,8 @@ import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
 
 export class SparringStrategy implements IGameplayStrategy {
+  readonly strategyId = 'sparring'
+
   get config() {
     const preferencesStore = usePreferencesStore()
     return {

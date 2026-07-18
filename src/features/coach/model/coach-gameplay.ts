@@ -24,6 +24,28 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
   const preferencesStore = usePreferencesStore()
 
   if (feedbackStore.isTakebackPending) {
+    const gameStore = useGameStore()
+    const isSparring = gameStore.currentStrategy?.strategyId === 'sparring'
+    const analysis = coachStore.lastMoveAnalysis
+
+    if (isSparring && analysis && analysis.fen && analysis.move) {
+      try {
+        const { theoryRepository } = await import('@/entities/opening')
+        const stats = await theoryRepository.getMozerBookStats(analysis.fen, { skipDebounce: true })
+        const isTheoryMove = stats?.moves?.some((m) => m.uci === analysis.move) ?? false
+
+        if (isTheoryMove) {
+          logger.info(`[CoachGameplay] Move ${analysis.san || analysis.move} is a theory book move. Bypassing blunder takeback.`)
+          feedbackStore.isTakebackPending = false
+          feedbackStore.pendingTakebackFen = null
+          feedbackStore.takebackMessage = null
+          return false
+        }
+      } catch (err) {
+        logger.error('[CoachGameplay] Failed to check theory book stats:', err)
+      }
+    }
+
     if (!preferencesStore.coachTakebackEnabled) {
       // Clear takeback status so it doesn't block sparring bot or other strategies
       feedbackStore.isTakebackPending = false
@@ -32,7 +54,6 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
       return false
     }
 
-    const analysis = coachStore.lastMoveAnalysis
     if (analysis) {
       const winRateDrop = (typeof analysis.winRateLoss === 'number' && analysis.winRateLoss > 0)
         ? `−${analysis.winRateLoss.toFixed(1)}%`
@@ -70,7 +91,6 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
     await new Promise((resolve) => setTimeout(resolve, delay))
 
     // Perform the actual undo
-    const gameStore = useGameStore()
     gameStore.undoLastUserMove()
     return true
   }

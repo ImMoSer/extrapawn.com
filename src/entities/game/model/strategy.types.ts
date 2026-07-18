@@ -15,6 +15,7 @@ export interface IGameCoreApi {
 }
 
 export interface IGameplayStrategy {
+  readonly strategyId?: 'sparring' | 'puzzle' | 'endgame'
   config?: {
     botDelayMs?: number
     initialBotDelayMs?: number
