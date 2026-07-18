@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { describe, it } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { Chess } from 'chess.js'
 import { initSync, analyze as wasmAnalyze } from '../wasm-rs/engine_rs.js'
 import { explainMove, see } from '../explainer.js'

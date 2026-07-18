@@ -29,6 +29,7 @@ const props = defineProps({
   animationDuration: { type: Number, default: 200 },
   boardSyncCounter: { type: Number, default: 0 },
   canEdit: { type: Boolean, default: true },
+  hideNag: { type: Boolean, default: false },
 })
 
 const emit = defineEmits<{
@@ -271,11 +272,14 @@ watch(
     <div ref="chessboardRef" class="chessboard"></div>
 
     <!-- NAG Marker Overlay -->
-    <div v-if="boardStore.lastNag && nagMarkerStyle" class="nag-container" :style="nagMarkerStyle">
+    <div v-if="!hideNag && boardStore.lastNag && nagMarkerStyle" class="nag-container" :style="nagMarkerStyle">
       <div class="nag-badge" :style="{ backgroundColor: getNagColor(boardStore.lastNag.quality) }">
         {{ boardStore.lastNag.nag }}
       </div>
     </div>
+
+    <!-- Custom overlays slot -->
+    <slot name="overlays"></slot>
 
     <PromotionDialog
       v-if="promotionState"
