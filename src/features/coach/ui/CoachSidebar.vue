@@ -30,7 +30,6 @@
           <CoachAvatar />
           <CoachLastMove />
           <CoachTopMoves />
-          <CoachPositionSummary />
         </div>
       </div>
     </div>
@@ -43,7 +42,6 @@ import { NIcon } from 'naive-ui'
 import { useCoachStore } from '../model/coach.store'
 import CoachAvatar from './CoachAvatar.vue'
 import CoachLastMove from './CoachLastMove.vue'
-import CoachPositionSummary from './CoachPositionSummary.vue'
 import CoachSettings from './CoachSettings.vue'
 import CoachTopMoves from './CoachTopMoves.vue'
 

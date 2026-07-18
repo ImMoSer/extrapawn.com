@@ -9,6 +9,15 @@
     <div class="speech-bubble">
       <div class="coach-name">Chess Coach</div>
       <div class="coach-message">{{ message }}</div>
+      <!-- Engine Plan -->
+      <div v-if="hasPlan && mood === 'neutral'" class="engine-plan">
+        <div class="section-title">
+          Engine plan{{ plan?.depth ? ` · depth ${plan.depth}` : '' }}
+        </div>
+        <div v-if="plan?.zwischenzug" class="plan-zwischenzug">
+          {{ plan.zwischenzug.description }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -20,6 +29,11 @@ import { useCoachStore } from '../model/coach.store'
 
 const feedbackStore = useCoachFeedbackStore()
 const coachStore = useCoachStore()
+
+const plan = computed(() => coachStore.currentExplanation?.principal_plan)
+const hasPlan = computed<boolean>(
+  () => !!(plan.value && Array.isArray(plan.value.moves) && plan.value.moves.length >= 2),
+)
 
 const mood = computed(() => feedbackStore.coachMood)
 
@@ -67,6 +81,9 @@ const message = computed(() => {
       return 'Schachmatt! Fantastisch zu Ende gespielt!'
     case 'neutral':
     default:
+      if (hasPlan.value && plan.value?.description) {
+        return plan.value.description
+      }
       return 'Wie lautet dein Plan für diese Stellung?'
   }
 })
@@ -207,5 +224,28 @@ const message = computed(() => {
     padding: 10px 12px;
     gap: 10px;
   }
+}
+
+.engine-plan {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.section-title {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #71717a;
+  margin-bottom: 2px;
+}
+
+.plan-zwischenzug {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #fde68a;
 }
 </style>

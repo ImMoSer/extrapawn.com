@@ -152,7 +152,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
           ...rawPreferences.value,
           delays: {
             initialBotDelayMs: 500,
-            botDelayMs: 250,
+            botDelayMs: rawPreferences.value.delays.botDelayMs,
             nextPuzzleDelayMs: 500,
             restartDelayMs: 500,
             crashtestDelayMs: 100,

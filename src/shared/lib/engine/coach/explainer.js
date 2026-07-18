@@ -338,7 +338,7 @@ function detectSacrificeViaSEE(chessAfter, toSquare, movingPiece, capturedPiece)
   const opponentGain = see(chessAfter, toSquare, opponent);
   const recovered = capturedPiece ? PIECE_VALUE[capturedPiece.type] : 0;
   const netMaterial = recovered - opponentGain; // mover's POV
-  return netMaterial <= -200;
+  return netMaterial <= -100;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -501,15 +501,11 @@ function classifyMove({
       }
     } catch { /* ignore */ }
   }
-  // Fall back to the old SEE-only check ONLY if WASM isn't ready and the
-  // caller already computed a legacy sacrifice flag for us.
-  if (!wasmReady() && legacySacrifice) {
+  // Fall back to the old SEE-only check if the Rust analyzer missed it or wasn't ready.
+  if (!realSacrifice && legacySacrifice) {
     realSacrifice = true;
   }
 
-  // Decided-position guard: brilliant requires real stakes. If the side
-  // is already winning by 600cp+ (≈90% win rate), no shot at brilliant.
-  const positionDecided = wrBefore >= 90 || wrBefore <= 10;
 
   // Detect missed mate.
   const bestHasMate = best && best.mate !== null && best.mate !== undefined;
@@ -570,7 +566,7 @@ function classifyMove({
   let quality;
   if (missedMate) {
     quality = 'missed_mate';
-  } else if (isBestMove && realSacrifice && complexity >= 2 && !positionDecided) {
+  } else if (isBestMove && realSacrifice) {
     quality = 'brilliant';
   } else if (isBestMove && (isOnlyMove || isCriticalPosition)
              && !isObviousCapture && !onlyLegalMove) {

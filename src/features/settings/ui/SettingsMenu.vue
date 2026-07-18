@@ -199,14 +199,23 @@ const handleAuthAction = () => {
               </div>
             </n-collapse-item>
 
-            <!-- 3. Gameplay & Bot Delays (Developer settings only) -->
-            <n-collapse-item v-if="crashtestStore.isMo3ep" name="gameplay">
+            <!-- 3. Gameplay & Bot Delays -->
+            <n-collapse-item name="gameplay">
               <template #header>
                 <div class="collapse-header-title">
                   <n-icon><GameControllerOutline /></n-icon>
                   <span>{{ t('features.settings.gameplayBotDelays') }}</span>
                 </div>
               </template>
+
+              <!-- Bot Thinking Delay -->
+              <div class="settings-section-card">
+                <div class="section-label">{{ t('features.settings.botThinkingDelay') }}</div>
+                <div class="slider-row">
+                  <n-slider v-model:value="draftPreferences.delays.botDelayMs" :min="250" :max="5000" :step="250" />
+                  <span class="value-badge">{{ draftPreferences.delays.botDelayMs }}ms</span>
+                </div>
+              </div>
 
 
 
