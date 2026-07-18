@@ -1,21 +1,50 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import {
   LichessEndgameDashboard,
   useLichessEndgameAnalysisStore,
   EndgameTrainingSidebar,
   EndgameTrainingTopInfo,
-  EndgameTrainingRightPanel
+  EndgameTrainingPuzzleQueue
 } from '@/features/lichess-endgame-analysis'
 import { useLichessGamesDbStore } from '@/features/lichess-games-db'
 import { useAuthStore } from '@/entities/user'
 import { GameLayout } from '@/widgets/game-layout'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
+import { useCoachStore } from '@/features/coach'
 
+const { t } = useI18n()
 const message = useMessage()
 const gamesStore = useLichessGamesDbStore()
 const endgameStore = useLichessEndgameAnalysisStore()
 const authStore = useAuthStore()
+const coachStore = useCoachStore()
+
+const activeTab = ref<'classifications' | 'queue'>('classifications')
+
+// Automatically switch to 'queue' when a category is selected and training starts
+watch(() => endgameStore.activeCategory, (newCat) => {
+  if (newCat) {
+    activeTab.value = 'queue'
+  } else {
+    activeTab.value = 'classifications'
+  }
+})
+
+// Enable coach during endgame training gameplay, disable it when not playing
+watch(() => endgameStore.isPlaying, (playing) => {
+  if (playing) {
+    coachStore.setCoachEnabled(true)
+  } else {
+    coachStore.setCoachEnabled(false)
+  }
+}, { immediate: true })
+
+onUnmounted(() => {
+  coachStore.setCoachEnabled(false)
+})
 
 // Benutzername ermitteln
 const username = computed(() => authStore.userProfile?.id || '')
@@ -68,7 +97,28 @@ const handleAnalyzeLocal = async () => {
     />
     <GameLayout v-else>
       <template #left-panel>
-        <EndgameTrainingSidebar />
+        <div class="left-panel-wrapper">
+          <div class="left-panel-tabs">
+            <button 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'classifications' }"
+              @click="activeTab = 'classifications'"
+            >
+              {{ t('features.lichessEndgameAnalysis.classifications') }}
+            </button>
+            <button 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'queue' }"
+              @click="activeTab = 'queue'"
+            >
+              {{ t('features.lichessEndgameAnalysis.puzzleQueue') }}
+            </button>
+          </div>
+          <div class="left-panel-content">
+            <EndgameTrainingSidebar v-show="activeTab === 'classifications'" />
+            <EndgameTrainingPuzzleQueue v-show="activeTab === 'queue'" />
+          </div>
+        </div>
       </template>
       <template #top-info>
         <EndgameTrainingTopInfo />
@@ -77,7 +127,7 @@ const handleAnalyzeLocal = async () => {
         <!-- Board is handled by GameLayout -->
       </template>
       <template #right-panel>
-        <EndgameTrainingRightPanel />
+        <CoachSidebarWidget />
       </template>
     </GameLayout>
   </div>
@@ -87,6 +137,62 @@ const handleAnalyzeLocal = async () => {
 .page-container {
   min-height: calc(100vh - 80px);
   background-color: #0b0c14;
+}
+
+.left-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.left-panel-tabs {
+  display: flex;
+  background: var(--bg-1, #0b0d17);
+  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  outline: none;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tab-btn.active {
+  color: var(--neon-bordeaux, #d9004c);
+  text-shadow: 0 0 10px rgba(217, 0, 76, 0.3);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: var(--neon-bordeaux, #d9004c);
+  box-shadow: 0 0 8px var(--neon-bordeaux, #d9004c);
+}
+
+.left-panel-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 </style>
 

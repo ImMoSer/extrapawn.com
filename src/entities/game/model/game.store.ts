@@ -345,16 +345,16 @@ export const useGameStore = defineStore('game', () => {
 
     const strategyAtStart = currentStrategy.value
 
+    if (strategyAtStart) {
+      await strategyAtStart.onUserMoveExecuted?.(uciMove, boardStore.fen)
+    }
+
     const isGameOver = _checkAndHandleGameOver()
 
-    if (!isGameOver && strategyAtStart) {
-      await strategyAtStart.onUserMoveExecuted?.(uciMove, boardStore.fen)
-
-      if (currentStrategy.value === strategyAtStart) {
-        const isBotTurn = boardStore.turn !== playerColor.value
-        if (isBotTurn) {
-          await triggerBotMove()
-        }
+    if (!isGameOver && strategyAtStart && currentStrategy.value === strategyAtStart) {
+      const isBotTurn = boardStore.turn !== playerColor.value
+      if (isBotTurn) {
+        await triggerBotMove()
       }
     }
   }

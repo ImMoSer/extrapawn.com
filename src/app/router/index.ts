@@ -182,7 +182,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const gameStore = useGameStore()
   const uiStore = useUiStore()
   const authStore = useAuthStore()
@@ -211,7 +211,7 @@ router.beforeEach(async (to, from, next) => {
       error,
       () => {}
     )
-    return next('/pricing')
+    return '/pricing'
   }
 
 
@@ -230,7 +230,7 @@ router.beforeEach(async (to, from, next) => {
     if (userConfirmedLogin === 'confirm') {
       authStore.login()
     }
-    return next(false)
+    return false
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {
@@ -243,17 +243,17 @@ router.beforeEach(async (to, from, next) => {
       if (userConfirmed === 'confirm') {
         const { triggerTeardown } = useGlobalTeardown()
         triggerTeardown()
-        next()
+        return
       } else {
-        next(false)
+        return false
       }
     } else {
       const { triggerTeardown } = useGlobalTeardown()
       triggerTeardown()
-      next()
+      return
     }
   } else {
-    next()
+    return
   }
 })
 

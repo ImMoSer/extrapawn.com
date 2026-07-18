@@ -21,15 +21,15 @@ export class EndgameTrainingStrategy implements IGameplayStrategy {
     }
   }
 
+  readonly strategyId = 'endgame'
+
   private puzzle: EndgamePuzzle
   private humanColor: 'white' | 'black'
-  private isPlayoutMode = false
-  private correctUciMove: string
+  private isPlayoutMode = true
 
   constructor(puzzle: EndgamePuzzle, humanColor: 'white' | 'black') {
     this.puzzle = puzzle
     this.humanColor = humanColor
-    this.correctUciMove = puzzle.correct_move_uci
   }
 
   private get store() {
@@ -47,7 +47,7 @@ export class EndgameTrainingStrategy implements IGameplayStrategy {
   onGameStart() {
     this.store.feedbackMessage = this.puzzle.puzzle_type === 'opp_blunders'
       ? 'features.lichessEndgameAnalysis.feedback.waitingForOpponent'
-      : 'features.lichessEndgameAnalysis.feedback.findCorrectMove'
+      : 'features.lichessEndgameAnalysis.feedback.correctPlayout'
 
     if (this.puzzle.puzzle_type === 'my_dropps' && this.puzzle.dropped_move_uci) {
       const orig = this.puzzle.dropped_move_uci.slice(0, 2)
@@ -80,19 +80,15 @@ export class EndgameTrainingStrategy implements IGameplayStrategy {
     return false
   }
 
-  async onUserMoveExecuted(uciMove: string): Promise<void> {
-    if (!this.isPlayoutMode) {
-      if (uciMove === this.correctUciMove) {
-        this.isPlayoutMode = true
-        soundService.playSound('game_you_move')
-        this.store.feedbackMessage = 'features.lichessEndgameAnalysis.feedback.correctPlayout'
-        this.boardStore.setDrawableShapes([])
-      } else {
-        soundService.playSound('game_training_error')
-        this.store.feedbackMessage = 'features.lichessEndgameAnalysis.feedback.wrongMove'
-        await new Promise((resolve) => setTimeout(resolve, 800))
-        this.gameStore.undoLastUserMove()
+  async onUserMoveExecuted(): Promise<void> {
+    try {
+      const { useCoachStore, waitForCoachAndCheckTakeback } = await import('@/features/coach')
+      const coachStore = useCoachStore()
+      if (coachStore.isCoachEnabled) {
+        await waitForCoachAndCheckTakeback()
       }
+    } catch (err) {
+      console.error('[EndgameTrainingStrategy] Error waiting for coach analysis in playout:', err)
     }
   }
 

@@ -48,31 +48,30 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
       const isUserMove = movingColor === boardStore.orientation
 
       // 1. Determine the coach's mood based on move quality / game state
-      if (boardStore.isGameOver) {
+      const hasHighWinRateLoss = isUserMove && analysis.quality && typeof analysis.winRateLoss === 'number' && analysis.winRateLoss >= 20
+
+      if (hasHighWinRateLoss) {
+        // Trigger Auto-Takeback
+        isTakebackPending.value = true
+        pendingTakebackFen.value = prevFen || null
+
+        if (analysis.quality === 'inaccuracy') {
+          coachMood.value = 'warning'
+          takebackMessage.value = 'Ungenauigkeit! Überleg noch mal, es gibt einen besseren Zug.'
+        } else if (analysis.quality === 'mistake') {
+          coachMood.value = 'warning'
+          takebackMessage.value = 'Das war ein Fehler! Überleg noch mal, es gibt einen besseren Zug.'
+        } else if (analysis.quality === 'missed_mate') {
+          coachMood.value = 'shocked'
+          takebackMessage.value = 'Du hast ein Matt verpasst! Überleg noch mal, es gibt einen besseren Zug.'
+        } else {
+          coachMood.value = 'shocked'
+          takebackMessage.value = 'Das war ein grober Patzer! Überleg noch mal, es gibt einen besseren Zug.'
+        }
+
+      } else if (boardStore.isGameOver) {
         coachMood.value = 'celebrating'
       } else if (isUserMove && analysis.quality) {
-        const hasHighWinRateLoss = typeof analysis.winRateLoss === 'number' && analysis.winRateLoss >= 20
-
-        if (hasHighWinRateLoss) {
-          // Trigger Auto-Takeback
-          isTakebackPending.value = true
-          pendingTakebackFen.value = prevFen || null
-
-          if (analysis.quality === 'inaccuracy') {
-            coachMood.value = 'warning'
-            takebackMessage.value = 'Ungenauigkeit! Überleg noch mal, es gibt einen besseren Zug.'
-          } else if (analysis.quality === 'mistake') {
-            coachMood.value = 'warning'
-            takebackMessage.value = 'Das war ein Fehler! Überleg noch mal, es gibt einen besseren Zug.'
-          } else if (analysis.quality === 'missed_mate') {
-            coachMood.value = 'shocked'
-            takebackMessage.value = 'Du hast ein Matt verpasst! Überleg noch mal, es gibt einen besseren Zug.'
-          } else {
-            coachMood.value = 'shocked'
-            takebackMessage.value = 'Das war ein grober Patzer! Überleg noch mal, es gibt einen besseren Zug.'
-          }
-
-        } else {
           switch (analysis.quality) {
             case 'brilliant':
             case 'great':
@@ -99,11 +98,10 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
             default:
               coachMood.value = 'neutral'
           }
+        } else if (!isTakebackPending.value) {
+          // Opponent move: Keep coach neutral
+          coachMood.value = 'neutral'
         }
-      } else if (!isTakebackPending.value) {
-        // Opponent move: Keep coach neutral
-        coachMood.value = 'neutral'
-      }
 
       // 2. Format the winRateDrop and assemble the log object
       const winRateDrop = (typeof analysis.winRateLoss === 'number' && analysis.winRateLoss > 0)

@@ -62,7 +62,7 @@ const canGoNext = computed(() => {
 </script>
 
 <template>
-  <div class="endgame-right-panel">
+  <div class="endgame-puzzle-queue">
     <div class="task-list-header">
       <NText strong>{{ t('features.lichessEndgameAnalysis.puzzleQueue') }}</NText>
     </div>
@@ -159,7 +159,7 @@ const canGoNext = computed(() => {
 </template>
 
 <style scoped>
-.endgame-right-panel {
+.endgame-puzzle-queue {
   display: flex;
   flex-direction: column;
   height: 100%;

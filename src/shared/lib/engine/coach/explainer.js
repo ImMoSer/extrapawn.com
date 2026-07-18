@@ -505,11 +505,6 @@ function classifyMove({
   }
 
 
-  // Detect missed mate.
-  const bestHasMate = best && best.mate !== null && best.mate !== undefined;
-  const playedHasMate = playedInTop && playedInTop.mate !== null && playedInTop.mate !== undefined;
-  const missedMate = bestHasMate && !playedHasMate;
-
   // Brutal threshold: dropping winning to losing is always a blunder
   // even when raw loss is small (e.g. wrBefore=92, wrPlayed=8 = -84pp).
   const lostWin = wrBefore >= 75 && wrPlayed <= 35;
@@ -562,9 +557,7 @@ function classifyMove({
   })();
 
   let quality;
-  if (missedMate) {
-    quality = 'missed_mate';
-  } else if (isBestMove && realSacrifice && wrPlayed >= 50) {
+  if (isBestMove && realSacrifice && wrPlayed >= 50) {
     quality = 'brilliant';
   } else if (isBestMove && (isOnlyMove || isCriticalPosition)
              && !isObviousCapture && !onlyLegalMove && wrPlayed >= 15) {
