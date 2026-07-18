@@ -8,7 +8,7 @@ import {
   NStatistic,
   NSwitch
 } from 'naive-ui'
-import rawPositions from '../../../../tests/open_flow/open_flow_test.json'
+import rawPositions from './open_flow_test.json'
 import { WebChessBoard, PgnTree, useBoardStore } from '@/entities/game'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { pgnParserService } from '@/shared/lib/pgn/PgnParserService'
