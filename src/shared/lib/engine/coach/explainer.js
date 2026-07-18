@@ -368,7 +368,7 @@ function getMoveMeta(fenBefore, moveUCI) {
 //
 // Quality ladder:
 //   brilliant = best move + real sacrifice + position not lost (win rate after >= 50%)
-//   great     = best move + only-move
+//   great     = best move + only-move (win rate after >= 15%)
 //   best      = engine's top choice
 //   good      = effective loss < 3 pp
 //   neutral   = effective loss < 6 pp
@@ -405,7 +405,7 @@ function moverScoreToWhite(scoreMoverPOV, moverColor) {
 //   brilliant   — best move + REAL sacrifice + position not lost (win rate after ≥ 50%).
 //                 Demands that the chosen move is the engine's top choice, offers material
 //                 (soundly verified by Rust/SEE), and does not lead to a lost position.
-//   great       — best move AND (only-move OR critical decision).
+//   great       — best move AND (only-move OR critical decision) + position not lost (win rate after ≥ 15%).
 //                 only-move:     wrBest − wrSecond ≥ 10pp
 //                 critical:      wrBefore moved by ≥ 15pp from this turn
 //   best        — engine's top choice; nothing else special.
@@ -567,7 +567,7 @@ function classifyMove({
   } else if (isBestMove && realSacrifice && wrPlayed >= 50) {
     quality = 'brilliant';
   } else if (isBestMove && (isOnlyMove || isCriticalPosition)
-             && !isObviousCapture && !onlyLegalMove) {
+             && !isObviousCapture && !onlyLegalMove && wrPlayed >= 15) {
     quality = 'great';
   } else if (isBestMove) {
     quality = 'best';
