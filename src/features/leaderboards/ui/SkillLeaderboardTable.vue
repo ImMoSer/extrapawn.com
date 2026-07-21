@@ -14,6 +14,8 @@ import { computed, onMounted, onUnmounted, ref, type PropType } from 'vue'
 import VChart from 'vue-echarts'
 import { useI18n } from 'vue-i18n'
 
+import { tokens } from '@/shared/theme/tokens'
+
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
 interface TooltipParam {
@@ -47,10 +49,10 @@ const props = defineProps({
 const { t } = useI18n()
 
 const skillModes = [
-  { key: 'finish_him', nameKey: 'shared.gameModes.finishHim', color: '#9b59b6' }, // Purple
-  { key: 'theory_endings', nameKey: 'shared.gameModes.theoryEndgames', color: '#e74c3c' }, // Red/Coral
-  { key: 'practical_chess', nameKey: 'shared.gameModes.practicalChess', color: '#3498db' }, // Blue
-  { key: 'tactics', nameKey: 'shared.gameModes.tactics', color: '#42b883' }, // Green
+  { key: 'finish_him', nameKey: 'shared.gameModes.finishHim', color: tokens.neonPurple },
+  { key: 'theory_endings', nameKey: 'shared.gameModes.theoryEndgames', color: tokens.danger },
+  { key: 'practical_chess', nameKey: 'shared.gameModes.practicalChess', color: tokens.neonCyan },
+  { key: 'tactics', nameKey: 'shared.gameModes.tactics', color: tokens.success },
 ] as const
 
 const tierToPieceMap: Record<string, string> = {
@@ -131,9 +133,9 @@ const chartOption = computed(() => {
       triggerOn: 'mousemove',
       hideDelay: 0,
       enterable: false,
-      backgroundColor: '#2a2a2e',
-      borderColor: '#5A5A5A',
-      textStyle: { color: '#CCCCCC' },
+      backgroundColor: tokens.elevated,
+      borderColor: tokens.border,
+      textStyle: { color: tokens.textPrimary },
       formatter: (params: unknown) => {
         const p = params as TooltipParam[]
         if (!p || !p[0]) return ''
@@ -148,8 +150,8 @@ const chartOption = computed(() => {
               : 'Pawn'
         const iconPath = getTierIcon(tierStr)
 
-        let html = `<div style="padding: 8px; min-width: 150px; background: rgba(10, 11, 20, 0.95); border: 1px solid var(--glass-border); border-radius: 8px;">
-                      <b style="color: #FFFFFF; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--glass-border); padding-bottom: 4px;">
+        let html = `<div style="padding: 8px; min-width: 150px; background: ${tokens.surface}; border: 1px solid ${tokens.border}; border-radius: 8px;">
+                      <b style="color: ${tokens.textPrimary}; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; border-bottom: 1px solid ${tokens.border}; padding-bottom: 4px;">
                         <img src="${iconPath}" alt="tier" class="tier-icon" /> 
                         ${entry.username}
                       </b>`
@@ -159,12 +161,12 @@ const chartOption = computed(() => {
             html += `
               <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                 <span style="color: ${item.color}; font-weight: bold;">${item.seriesName}:</span>
-                <span style="color: #FFF; margin-left: 12px;">${item.value}</span>
+                <span style="color: ${tokens.textPrimary}; margin-left: 12px;">${item.value}</span>
               </div>`
           }
         })
 
-        html += `<div style="margin-top: 8px; border-top: 1px solid #5A5A5A; padding-top: 4px; text-align: right;">
+        html += `<div style="margin-top: 8px; border-top: 1px solid ${tokens.border}; padding-top: 4px; text-align: right; color: ${tokens.warning};">
                    <b>Total: ${getTotal(entry)}</b>
                  </div></div>`
         return html
@@ -275,28 +277,28 @@ const onChartClick = (params: unknown) => {
 </script>
 
 <template>
-  <div class="records-card" :class="colorClass">
-    <div class="card-header">
-      <h3 class="card-title">
+  <div class="bg-surface border border-border rounded-xl shadow-flat overflow-hidden flex flex-col mb-5">
+    <div class="px-5 py-4 max-md:px-3.5 max-md:py-2.5 border-b border-border bg-elevated/40">
+      <h3 class="m-0 text-center font-display font-extrabold text-xl max-md:text-base tracking-wider uppercase text-warning flex justify-center items-center gap-3">
         {{ title }}
       </h3>
     </div>
 
-    <n-space vertical class="controls-area" :size="12">
-      <div class="legend-row">
-        <n-space justify="center">
-          <div v-for="mode in skillModes" :key="mode.key" class="legend-item">
-            <span class="dot" :style="{ backgroundColor: mode.color }"></span>
-            <span class="label">{{ t(mode.nameKey) }}</span>
+    <n-space vertical class="bg-elevated/20 p-4 max-md:p-3 border-b border-border" :size="12">
+      <div>
+        <n-space justify="center" align="center">
+          <div v-for="mode in skillModes" :key="mode.key" class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: mode.color }"></span>
+            <span class="text-xs text-text-secondary max-md:text-[10px]">{{ t(mode.nameKey) }}</span>
           </div>
         </n-space>
       </div>
     </n-space>
 
-    <div class="chart-container" :style="{ height: dynamicHeight }">
+    <div class="w-full relative bg-void/30 py-4 max-md:py-2.5" :style="{ height: dynamicHeight }">
       <v-chart
         v-if="entries.length > 0"
-        class="chart"
+        class="w-full h-full"
         :option="chartOption"
         @click="onChartClick"
         autoresize
@@ -305,126 +307,3 @@ const onChartClick = (params: unknown) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.records-card {
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--panel-border-radius);
-  border: 1px solid var(--glass-border);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.skillStreak .card-title {
-  color: var(--neon-cyan);
-}
-.skillStreakMega .card-title {
-  color: var(--neon-purple);
-}
-.topToday .card-title {
-  color: var(--color-accent-warning);
-}
-.overallSkill .card-title {
-  color: var(--neon-pink);
-}
-
-.card-title {
-  font-size: 1.4rem;
-  margin: 0;
-  text-align: center;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.controls-area {
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 16px;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legend-item .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.legend-item .label {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.chart-container {
-  width: 100%;
-  position: relative;
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 16px 0;
-}
-
-.chart {
-  width: 100%;
-  height: 100%;
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.is-loading {
-  filter: blur(1px);
-  pointer-events: none;
-}
-@media (max-width: 768px) {
-  .card-header {
-    padding: 11px 14px;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    letter-spacing: 1px;
-    gap: 8px;
-  }
-
-  .controls-area {
-    padding: 11px;
-  }
-
-  .legend-item .label {
-    font-size: 0.6rem;
-  }
-
-  .chart-container {
-    padding: 11px 0;
-  }
-}
-</style>

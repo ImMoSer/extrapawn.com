@@ -3,6 +3,7 @@ import type { UnifiedLeaderboardEntry, UnifiedLeaderboardResponse } from '@/shar
 import type { DataTableColumns } from 'naive-ui'
 import { computed, h, ref, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { tokens } from '@/shared/theme/tokens'
 
 export interface LeaderboardTab {
   id: string
@@ -79,7 +80,7 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
       align: 'center' as const,
       width: 90,
       render: (row) =>
-        h('span', { class: 'mode-score-value' }, isOverall ? row.score : row.maxRating),
+        h('span', { class: 'font-condensed font-bold text-warning text-base' }, isOverall ? row.score : row.maxRating),
     },
     ...(!isOverall
       ? [
@@ -89,7 +90,7 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
             align: 'center' as const,
             width: 90,
             render: (row: UnifiedLeaderboardEntry) =>
-              h('span', { style: { color: 'var(--color-text-muted)' } }, row.avgRating),
+              h('span', { style: { color: tokens.textSecondary } }, row.avgRating),
           },
         ]
       : []),
@@ -114,7 +115,7 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
             key: 'plansCount',
             align: 'center' as const,
             width: 90,
-            render: (row: UnifiedLeaderboardEntry) => h('span', { style: { fontWeight: 'bold', color: '#2ecc71' } }, row.plansCount || 0),
+            render: (row: UnifiedLeaderboardEntry) => h('span', { style: { fontWeight: 'bold', color: tokens.success } }, row.plansCount || 0),
           },
         ]
       : [
@@ -140,10 +141,10 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
             style: {
               color:
                 acc > 70
-                  ? 'var(--color-accent-success)'
+                  ? tokens.success
                   : acc > 40
-                    ? 'var(--color-accent-warning)'
-                    : 'var(--color-accent-error)',
+                    ? tokens.warning
+                    : tokens.danger,
               fontWeight: 'bold',
             },
           },
@@ -156,25 +157,25 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
 </script>
 
 <template>
-  <div class="records-card" :class="colorClass">
-    <div class="card-header main-header">
-      <h3 class="card-title">
+  <div class="bg-surface border border-border rounded-xl shadow-flat overflow-hidden flex flex-col mb-5 h-full">
+    <div class="px-5 py-4 max-md:px-3.5 max-md:py-2.5 border-b border-border bg-elevated/40">
+      <h3 class="m-0 text-center font-display font-extrabold text-xl max-md:text-sm tracking-wider uppercase text-warning flex justify-center items-center gap-3">
         {{ title }}
       </h3>
     </div>
 
-    <div class="modes-container">
-      <div v-if="isLoading" class="loading-wrapper">
+    <div class="p-3 max-md:p-0.5">
+      <div v-if="isLoading" class="flex justify-center items-center h-[200px]">
         <n-spin size="large" />
       </div>
       <n-tabs v-else v-model:value="activeTab" type="segment" animated>
         <n-tab-pane v-for="tab in tabs" :key="tab.id" :name="tab.id">
           <template #tab>
-            <div class="tab-label">
-              <span class="tab-name">{{ tab.name }}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm max-md:text-xs font-bold font-display">{{ tab.name }}</span>
             </div>
           </template>
-          <div class="mode-table-wrapper">
+          <div class="mt-4 border border-border rounded-lg overflow-hidden bg-void/40">
             <n-data-table
               :columns="columns"
               :data="
@@ -188,7 +189,6 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
               :row-key="(row: UnifiedLeaderboardEntry) => row.id"
               size="small"
               striped
-              class="records-table"
               :max-height="400"
               :scroll-x="400"
             />
@@ -198,122 +198,3 @@ const columns = computed<DataTableColumns<UnifiedLeaderboardEntry>>(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.records-card {
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--panel-border-radius);
-  border: 1px solid var(--glass-border);
-  overflow: hidden;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.main-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.finishHimLeaderboard .card-title {
-  color: var(--neon-purple);
-}
-.theoryLeaderboard .card-title {
-  color: var(--color-accent-warning);
-}
-.practicalLeaderboard .card-title {
-  color: var(--neon-lime);
-}
-
-.card-title {
-  font-size: 1.2rem;
-  margin: 0;
-  text-align: center;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.modes-container {
-  padding: 12px;
-}
-
-.loading-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.mode-table-wrapper {
-  margin-top: 16px;
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-.tab-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.mode-score-value {
-  font-weight: bold;
-  color: var(--color-accent-warning);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.1em;
-}
-
-.records-table {
-  --n-td-color-striped: rgba(255, 255, 255, 0.035);
-}
-
-:deep(.n-data-table-th) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: var(--color-text-muted) !important;
-  font-family: var(--font-family-primary);
-  font-size: 0.85rem;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-:deep(.n-data-table-td) {
-  font-family: var(--font-family-primary);
-  font-size: 0.95rem;
-  padding: 10px 4px !important;
-}
-
-:deep(.n-tabs-tab) {
-  font-family: var(--font-family-primary);
-}
-
-@media (max-width: 768px) {
-  .card-title {
-    font-size: 0.9rem;
-  }
-  .tab-name {
-    display: inline-block;
-    font-size: 0.75rem;
-  }
-  :deep(.n-data-table-th) {
-    font-size: 0.65rem;
-  }
-  :deep(.n-data-table-td) {
-    font-size: 0.75rem;
-    padding: 4px 2px !important;
-  }
-  .modes-container {
-    padding: 2px;
-  }
-}
-</style>

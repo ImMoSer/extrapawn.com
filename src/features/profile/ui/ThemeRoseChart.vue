@@ -65,23 +65,25 @@ const basicTacticKeys = ['hangingPiece', 'fork', 'pin', 'backRankMate', 'skewer'
 const premiumTacticKeys = ['capturingDefender', 'attraction', 'deflection', 'trappedPiece', 'kingAttack', 'advancedPawn', 'xRayAttack']
 const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interference', 'quietMove', 'defensiveMove', 'zugzwang']
 
+import { tokens } from '@/shared/theme/tokens'
+
 const PALETTE = [
-  '#00e5ff', // Neon Cyan
-  '#ff073a', // Neon Red
-  '#39ff14', // Acid Green
-  '#b000ff', // Neon Purple
-  '#ffe600', // Neon Yellow
-  '#0055ff', // Neon Blue
-  '#ff5500', // Orange
-  '#ff00c8', // Magenta
-  '#00ffcc', // Mint
-  '#ff9900', // Amber
-  '#ff007a', // Pink
-  '#00ff55', // Lime
-  '#ff8800', // Orange Warm
-  '#d9004c', // Bordeaux
-  '#00b8cc', // Cyan Deep
-  '#7a00cc', // Purple Deep
+  tokens.neonCyan,
+  tokens.danger,
+  tokens.acidGreen,
+  tokens.neonPurple,
+  tokens.warning,
+  tokens.info,
+  tokens.orange,
+  tokens.magenta,
+  tokens.mint,
+  tokens.amber,
+  tokens.highlight,
+  tokens.success,
+  tokens.orangeWarm,
+  tokens.dangerDeep,
+  tokens.cyanDeep,
+  tokens.purpleDeep,
 ]
 
 interface ThemeStat {

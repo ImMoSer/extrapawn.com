@@ -6,6 +6,8 @@ import { computed, h, ref, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NTabs, NTabPane, NSpin, NEmpty, NDataTable } from 'naive-ui'
 
+import { tokens } from '@/shared/theme/tokens'
+
 const props = defineProps({
   title: { type: String, required: true },
   entries: {
@@ -91,14 +93,14 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
       key: 'current_streak',
       align: 'center' as const,
       width: 95,
-      render: (row) => h('span', { style: { fontWeight: 'bold', color: '#e67e22' } }, `${row.current_streak || 0} 🔥`),
+      render: (row) => h('span', { style: { fontWeight: 'bold', color: tokens.orange } }, `${row.current_streak || 0} 🔥`),
     },
     {
       title: t('features.leaderboards.table.plans', 'Plans'),
       key: 'completed_count',
       align: 'center' as const,
       width: 90,
-      render: (row) => h('span', { style: { fontWeight: 'bold', color: '#2ecc71' } }, `${row.completed_count || 0} ✅`),
+      render: (row) => h('span', { style: { fontWeight: 'bold', color: tokens.success } }, `${row.completed_count || 0} ✅`),
     },
     {
       title: t('features.leaderboards.table.solved', 'Solved'),
@@ -128,10 +130,10 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
             style: {
               color:
                 acc > 70
-                  ? 'var(--color-accent-success)'
+                  ? tokens.success
                   : acc > 40
-                    ? 'var(--color-accent-warning)'
-                    : 'var(--color-accent-error)',
+                    ? tokens.warning
+                    : tokens.danger,
               fontWeight: 'bold',
             },
           },
@@ -144,15 +146,15 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
 </script>
 
 <template>
-  <div class="records-card" :class="colorClass">
-    <div class="card-header">
-      <h3 class="card-title">
+  <div class="bg-surface border border-border rounded-xl shadow-flat overflow-hidden flex flex-col mb-5">
+    <div class="px-5 py-4 max-md:px-3.5 max-md:py-2.5 border-b border-border bg-elevated/40">
+      <h3 class="m-0 text-center font-display font-extrabold text-xl max-md:text-base tracking-wider uppercase text-neon-purple flex justify-center items-center gap-3">
         {{ title }}
       </h3>
     </div>
 
-    <div class="modes-container">
-      <div v-if="isLoading" class="loading-wrapper">
+    <div class="p-3 max-md:p-0.5">
+      <div v-if="isLoading" class="flex justify-center items-center h-[200px]">
         <NSpin size="large" />
       </div>
       <template v-else>
@@ -161,7 +163,7 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
           <NTabPane name="Pro" tab="Pro" />
           <NTabPane name="Master" tab="Master" />
         </NTabs>
-        <div class="table-container">
+        <div class="mt-3 border border-border rounded-lg overflow-hidden bg-void/40">
           <NDataTable
             v-if="currentEntries.length > 0"
             :columns="columns"
@@ -169,7 +171,6 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
             :row-key="(row: PlanStreakLeaderboardEntry) => row.id"
             size="small"
             striped
-            class="records-table"
             :max-height="400"
             :scroll-x="400"
           />
@@ -179,109 +180,3 @@ const columns = computed<DataTableColumns<PlanStreakLeaderboardEntry>>(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.records-card {
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--panel-border-radius);
-  border: 1px solid var(--glass-border);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.planStreak .card-title {
-  color: #9b59b6;
-}
-
-.card-title {
-  font-size: 1.4rem;
-  margin: 0;
-  text-align: center;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.modes-container {
-  padding: 12px;
-}
-
-.loading-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.table-container {
-  margin-top: 12px;
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-.records-table {
-  --n-td-color-striped: rgba(255, 255, 255, 0.035);
-}
-
-:deep(.n-data-table-th) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: var(--color-text-muted) !important;
-  font-family: var(--font-family-primary);
-  font-size: 0.85rem;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-:deep(.n-data-table-td) {
-  font-family: var(--font-family-primary);
-  font-size: 0.95rem;
-  padding: 10px 4px !important;
-}
-
-:deep(.n-tabs-tab) {
-  font-family: var(--font-family-primary);
-}
-
-@media (max-width: 768px) {
-  .card-header {
-    padding: 11px 14px;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    letter-spacing: 1px;
-    gap: 8px;
-  }
-
-  :deep(.n-data-table-th) {
-    font-size: 0.65rem;
-  }
-  
-  :deep(.n-data-table-td) {
-    font-size: 0.75rem;
-    padding: 4px 2px !important;
-  }
-
-  .modes-container {
-    padding: 2px;
-  }
-}
-</style>

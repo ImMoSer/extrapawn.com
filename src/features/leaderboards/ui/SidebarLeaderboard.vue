@@ -44,237 +44,77 @@ const calculateWinRate = (solved: number, failed: number) => {
 </script>
 
 <template>
-  <div class="sidebar-leaderboard glass">
-    <div class="leaderboard-header">
-      <span class="header-title">{{
+  <div class="flex flex-col bg-surface/90 backdrop-blur-md border border-border rounded-xl overflow-hidden text-xs text-text-primary max-h-[400px] shadow-flat">
+    <div class="px-3 py-2.5 bg-elevated/50 border-b border-border flex justify-between items-center">
+      <span class="font-display font-bold uppercase tracking-wider text-neon-cyan text-[11px]">{{
         t('features.leaderboards.sidebar.title', 'Top 10 (30d)')
       }}</span>
-      <div v-if="isLoading" class="loading-spinner"></div>
+      <div v-if="isLoading" class="w-3 h-3 border-2 border-neon-cyan/30 border-t-neon-cyan rounded-full animate-spin"></div>
     </div>
 
-    <div class="leaderboard-content custom-scrollbar">
-      <table class="leaderboard-table">
+    <div class="overflow-y-auto flex-1">
+      <table class="w-full border-collapse table-fixed text-xs">
         <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th class="col-player">{{ t('features.leaderboards.table.player') }}</th>
-            <th class="col-solved">{{ t('pages.userCabinet.stats.modes.all', 'Solved') }}</th>
-            <th class="col-rate">{{ t('features.leaderboards.sidebar.winRate', 'Quote') }}</th>
-            <th class="col-score">
+          <tr class="border-b border-border text-[10px] text-text-secondary uppercase font-semibold">
+            <th class="w-6 py-2 px-1 text-center">#</th>
+            <th class="py-2 px-1 text-left">{{ t('features.leaderboards.table.player') }}</th>
+            <th class="w-11 py-2 px-1 text-center">{{ t('pages.userCabinet.stats.modes.all', 'Solved') }}</th>
+            <th class="w-11 py-2 px-1 text-center">{{ t('features.leaderboards.sidebar.winRate', 'Quote') }}</th>
+            <th class="w-12 py-2 px-1 text-right pr-2">
               {{ t('pages.userCabinet.detailedAnalytics.bestScore', 'Best') }}
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(entry, index) in data?.top10" :key="entry.id" class="entry-row">
-            <td class="col-rank">{{ index + 1 }}</td>
-            <td class="col-player">
-              <div class="player-info">
+          <tr v-for="(entry, index) in data?.top10" :key="entry.id" class="transition-colors hover:bg-elevated/40 border-b border-border/20">
+            <td class="w-6 py-1.5 px-1 text-center font-condensed font-bold">{{ index + 1 }}</td>
+            <td class="py-1.5 px-1 truncate">
+              <div class="flex items-center gap-1.5 overflow-hidden">
                 <img
                   v-if="getSubscriptionIcon(entry.tier)"
                   :src="getSubscriptionIcon(entry.tier)!"
-                  class="tier-icon"
+                  class="w-4 h-4 shrink-0"
                 />
-                <span class="username" :title="entry.username">{{ entry.username }}</span>
+                <span class="truncate font-semibold" :title="entry.username">{{ entry.username }}</span>
               </div>
             </td>
-            <td class="col-solved">{{ entry.solved }}</td>
-            <td class="col-rate">{{ calculateWinRate(entry.solved, entry.failed) }}%</td>
-            <td class="col-score">{{ entry.maxRating }}</td>
+            <td class="w-11 py-1.5 px-1 text-center font-condensed">{{ entry.solved }}</td>
+            <td class="w-11 py-1.5 px-1 text-center font-condensed font-bold text-success">{{ calculateWinRate(entry.solved, entry.failed) }}%</td>
+            <td class="w-12 py-1.5 px-1 text-right pr-2 font-condensed font-bold text-warning">{{ entry.maxRating }}</td>
           </tr>
-          <tr v-if="!isLoading && (!data?.top10 || data.top10.length === 0)" class="empty-row">
-            <td colspan="5">{{ t('pages.userCabinet.stats.noData') }}</td>
+          <tr v-if="!isLoading && (!data?.top10 || data.top10.length === 0)" class="text-center">
+            <td colspan="5" class="py-5 text-text-disabled italic">{{ t('pages.userCabinet.stats.noData') }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div v-if="data?.currentUser" class="current-user-footer">
-      <div class="footer-label">{{ t('features.leaderboards.sidebar.currentUser', 'Du') }}</div>
-      <table class="leaderboard-table">
+    <div v-if="data?.currentUser" class="pt-1 bg-neon-cyan/5 border-t-2 border-neon-cyan">
+      <div class="text-[10px] uppercase font-extrabold px-3 text-neon-cyan font-display">{{ t('features.leaderboards.sidebar.currentUser', 'Du') }}</div>
+      <table class="w-full border-collapse table-fixed text-xs">
         <tbody>
-          <tr class="entry-row current-user-row">
-            <td class="col-rank">-</td>
-            <td class="col-player">
-              <div class="player-info">
+          <tr class="bg-transparent">
+            <td class="w-6 py-1.5 px-1 text-center font-condensed">-</td>
+            <td class="py-1.5 px-1 truncate">
+              <div class="flex items-center gap-1.5 overflow-hidden">
                 <img
                   v-if="getSubscriptionIcon(data.currentUser.tier)"
                   :src="getSubscriptionIcon(data.currentUser.tier)!"
-                  class="tier-icon"
+                  class="w-4 h-4 shrink-0"
                 />
-                <span class="username" :title="data.currentUser.username">{{
+                <span class="truncate font-bold text-neon-cyan" :title="data.currentUser.username">{{
                   data.currentUser.username
                 }}</span>
               </div>
             </td>
-            <td class="col-solved">{{ data.currentUser.solved }}</td>
-            <td class="col-rate">
+            <td class="w-11 py-1.5 px-1 text-center font-condensed">{{ data.currentUser.solved }}</td>
+            <td class="w-11 py-1.5 px-1 text-center font-condensed font-bold text-success">
               {{ calculateWinRate(data.currentUser.solved, data.currentUser.failed) }}%
             </td>
-            <td class="col-score">{{ data.currentUser.maxRating }}</td>
+            <td class="w-12 py-1.5 px-1 text-right pr-2 font-condensed font-bold text-warning">{{ data.currentUser.maxRating }}</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 </template>
-
-<style scoped>
-.sidebar-leaderboard {
-  display: flex;
-  flex-direction: column;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  overflow: hidden;
-  font-size: 0.85rem;
-  color: var(--text-primary);
-  max-height: 400px;
-}
-
-.leaderboard-header {
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid var(--glass-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-title {
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--color-primary);
-  font-size: 0.75rem;
-}
-
-.leaderboard-content {
-  overflow-y: auto;
-  flex: 1;
-}
-
-.leaderboard-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.leaderboard-table th {
-  padding: 8px 4px;
-  text-align: left;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--glass-border);
-  font-weight: 600;
-}
-
-.leaderboard-table td {
-  padding: 6px 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.col-rank {
-  width: 25px;
-  text-align: center !important;
-}
-.col-player {
-  width: auto;
-}
-.col-solved {
-  width: 45px;
-  text-align: center !important;
-}
-.col-rate {
-  width: 45px;
-  text-align: center !important;
-}
-.col-score {
-  width: 50px;
-  text-align: right !important;
-  padding-right: 8px !important;
-}
-
-.player-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-}
-
-.username {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tier-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.entry-row {
-  transition: background 0.2s ease;
-}
-
-.entry-row:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.current-user-footer {
-  padding: 4px 0 0 0;
-  background: rgba(0, 229, 255, 0.05);
-  border-top: 2px solid var(--color-primary);
-}
-
-.footer-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  padding: 2px 12px;
-  color: var(--color-primary);
-  font-weight: 800;
-}
-
-.current-user-row {
-  background: transparent;
-}
-
-.empty-row td {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-disabled);
-}
-
-.loading-spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(0, 229, 255, 0.3);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-</style>

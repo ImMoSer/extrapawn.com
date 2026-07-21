@@ -93,66 +93,20 @@ const columns: DataTableColumns<FinishHimLeaderboardEntry> = [
 </script>
 
 <template>
-  <div class="records-card" :class="colorClass">
-    <div class="card-header">
-      <h3 class="card-title">
+  <div class="bg-surface border border-border rounded-xl shadow-flat overflow-hidden flex flex-col mb-5">
+    <div class="p-3.5 border-b border-border bg-elevated/40">
+      <h3 class="m-0 text-center font-display font-extrabold text-lg text-neon-cyan tracking-wider uppercase flex justify-center items-center gap-2.5">
         {{ title }}
       </h3>
     </div>
-    <n-data-table
-      :columns="columns"
-      :data="entries"
-      :row-key="(row: FinishHimLeaderboardEntry) => row.puzzle_id + row.lichess_id"
-      size="small"
-      striped
-      class="records-table"
-    />
+    <div class="p-3 border-t border-border/20">
+      <n-data-table
+        :columns="columns"
+        :data="entries"
+        :row-key="(row: FinishHimLeaderboardEntry) => row.puzzle_id + row.lichess_id"
+        size="small"
+        striped
+      />
+    </div>
   </div>
 </template>
-
-<style scoped>
-.records-card {
-  background-color: var(--color-bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-hover);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-header {
-  padding: 10px;
-  border-bottom: 1px solid var(--color-border-hover);
-}
-
-.finishHimLeaderboard .card-header {
-  background-color: var(--color-accent-secondary);
-}
-
-.card-title {
-  color: var(--color-bg-primary);
-  font-size: var(--font-size-large);
-  margin: 0;
-  text-align: center;
-  font-weight: bold;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-table {
-  --n-td-color-striped: var(--color-bg-tertiary);
-}
-
-:deep(.n-data-table-th) {
-  background-color: var(--color-bg-tertiary) !important;
-  color: var(--color-text-muted) !important;
-  font-family: var(--font-family-primary);
-}
-
-:deep(.n-data-table-td) {
-  font-family: var(--font-family-primary);
-  font-size: var(--font-size-base);
-}
-</style>
