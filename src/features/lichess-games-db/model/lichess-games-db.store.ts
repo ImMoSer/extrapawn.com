@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { userGamesRepository } from '@/entities/game'
-import type { LichessGameEntity } from '@/entities/game'
+import { userGamesRepository, type LichessGameEntity } from '@/entities/game'
+import { lichessGamesBackupService } from '../lib/LichessGamesBackupService'
+import { lichessGamesStreamSyncService } from '../lib/LichessGamesStreamSyncService'
 import logger from '@/shared/lib/logger'
 
 export interface CacheStats {
@@ -11,25 +12,6 @@ export interface CacheStats {
   rapid: number
   classical: number
   standard: number
-}
-
-interface LichessGameResponse {
-  id?: string
-  variant?: string
-  speed?: string
-  perf?: string
-  createdAt?: number
-  lastMoveAt?: number
-  status?: string
-  winner?: 'white' | 'black'
-  players?: {
-    white?: { user?: { id?: string; name?: string }; rating?: number; ratingDiff?: number }
-    black?: { user?: { id?: string; name?: string }; rating?: number; ratingDiff?: number }
-  }
-  opening?: { eco?: string; name?: string; ply: number }
-  moves?: string
-  pgn?: string
-  clock?: { initial?: number; increment?: number; totalTime?: number }
 }
 
 export interface TabStats {
@@ -90,15 +72,52 @@ export interface LichessProfile {
     antichess?: LichessPerf
     atomic?: LichessPerf
     horde?: LichessPerf
+    racingPawns?: LichessPerf
     crazyhouse?: LichessPerf
-    puzzle?: LichessPerf
   }
-  count: {
+  createdAt: number
+  seenAt: number
+  playTime?: {
+    total: number
+    tv: number
+  }
+  count?: {
     all: number
-    rated?: number
-    draw?: number
-    loss?: number
-    win?: number
+    rated: number
+    ai: number
+    draw: number
+    drawH: number
+    loss: number
+    lossH: number
+    win: number
+    winH: number
+    bookmark: number
+    playing: number
+    import: number
+    me: number
+  }
+  patron?: boolean
+  verified?: boolean
+  disabled?: boolean
+  tosViolation?: boolean
+}
+
+export interface LichessUserStats {
+  rating: number
+  progress: number
+  gamesCount: number
+}
+
+export interface LichessDashboardStats {
+  bullet?: LichessUserStats
+  blitz?: LichessUserStats
+  rapid?: LichessUserStats
+  classical?: LichessUserStats
+  overall: {
+    totalGames: number
+    winRate: number
+    drawRate: number
+    lossRate: number
   }
 }
 
@@ -122,33 +141,6 @@ export interface LichessActivityItem {
   [key: string]: unknown
 }
 
-
-function formatMovesStringToPgn(movesStr: string, result: string): string {
-  const movesList = movesStr.trim().split(/\s+/).filter(Boolean)
-  const pairs: string[] = []
-  for (let i = 0; i < movesList.length; i += 2) {
-    const moveNum = Math.floor(i / 2) + 1
-    const whiteMove = movesList[i]
-    const blackMove = movesList[i + 1] ? ` ${movesList[i + 1]}` : ''
-    pairs.push(`${moveNum}. ${whiteMove}${blackMove}`)
-  }
-  const formatted = pairs.join(' ')
-  return result ? `${formatted} ${result}` : formatted
-}
-
-function transformBytes(data: Uint8Array, keyStr: string): Uint8Array {
-  const keyBytes = new TextEncoder().encode(keyStr)
-  const result = new Uint8Array(data.length)
-  for (let i = 0; i < data.length; i++) {
-    const dataByte = data[i]
-    const keyByte = keyBytes[i % keyBytes.length]
-    if (dataByte !== undefined && keyByte !== undefined) {
-      result[i] = dataByte ^ keyByte
-    }
-  }
-  return result
-}
-
 export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
   const isSyncing = ref(false)
   const syncProgress = ref({ current: 0, total: 0 })
@@ -161,7 +153,6 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
 
   const profileCache = ref<Record<string, { data: LichessProfile; timestamp: number }>>({})
   const activityCache = ref<Record<string, { data: LichessActivityItem[]; timestamp: number }>>({})
-
 
   function computeTabStats(games: LichessGameEntity[]): TabStats {
     const gamesCount = games.length
@@ -249,7 +240,6 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
         const avgUserRating = count > 0 ? Math.round(grp.totalUserRating / count) : 0
         const avgOpponentRating = count > 0 ? Math.round(grp.totalOpponentRating / count) : 0
         
-        // Find primary speed
         let primarySpeed = 'other'
         let maxSpeedCount = -1
         for (const [sp, cnt] of Object.entries(grp.speedCounts)) {
@@ -339,7 +329,6 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
         standard: countBySpeed.standard
       }
 
-      // Compute detailed stats for tabs
       const whiteGames = games.filter(g => g.userColor === 'white')
       const blackGames = games.filter(g => g.userColor === 'black')
 
@@ -355,7 +344,6 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     }
   }
 
-
   async function syncGames(username: string, perfTypes: string[]) {
     if (!username.trim()) {
       throw new Error('Lichess-Benutzername ist erforderlich.')
@@ -369,11 +357,9 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     try {
       const cleanUsername = username.trim().toLowerCase()
 
-      // 1. Letztes Spiel ermitteln für inkrementellen Abruf (since)
       const latestTimestamp = await userGamesRepository.getLatestGameTimestamp(cleanUsername)
       const sinceTimestamp = latestTimestamp > 0 ? latestTimestamp + 1 : undefined
 
-      // 2. Lichess-Profil nutzen, um Fortschritts-Nenner zu ermitteln
       let totalExpectedNew = 0
       if (lichessProfile.value) {
         const totalGames = lichessProfile.value.count?.all || 0
@@ -383,217 +369,14 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
 
       syncProgress.value = { current: 0, total: totalExpectedNew }
 
-      // 3. API-Url aufbauen
-      const perfTypeParam = perfTypes.join(',')
-      let url = `https://lichess.org/api/games/user/${username}?tags=false&clocks=false&evals=false&opening=true&literate=false&max=${maxGames}&perfType=${perfTypeParam}&pgnInJson=true`
-      if (sinceTimestamp) {
-        url += `&since=${sinceTimestamp}`
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          Accept: 'application/x-ndjson'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`Lichess API lieferte HTTP Fehler ${response.status}: ${response.statusText}`)
-      }
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('Lichess-Stream konnte nicht gelesen werden.')
-      }
-
-      const decoder = new TextDecoder('utf-8')
-      let buffer = ''
-      let count = 0
-
-      const pendingBatch: LichessGameEntity[] = []
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-
-          let game: LichessGameResponse
-          try {
-            game = JSON.parse(line) as LichessGameResponse
-          } catch {
-            continue
-          }
-
-          // Fail-Fast Validierung & Filterung
-          if (game.variant !== 'standard') {
-            continue
-          }
-
-          // Unknown Opening aussortieren
-          if (!game.opening || !game.opening.name || game.opening.name === 'Unknown Opening') {
-            continue
-          }
-
-          if (game.opening.ply === undefined) {
-            throw new Error(`Game ${game.id || 'unknown'} is missing required 'ply' parameter in opening.`)
-          }
-
-          if (!game.players?.white?.user?.id || !game.players?.black?.user?.id) {
-            continue
-          }
-
-          const whiteId = game.players.white.user.id.toLowerCase()
-          const blackId = game.players.black.user.id.toLowerCase()
-
-          const isWhite = whiteId === cleanUsername
-          const isBlack = blackId === cleanUsername
-
-          if (!isWhite && !isBlack) {
-            continue
-          }
-
-          const userColor = isWhite ? 'white' : 'black'
-          let userResult: 'win' | 'loss' | 'draw' = 'draw'
-          if (game.winner) {
-            const winnerIsUser = (game.winner === 'white' && isWhite) || (game.winner === 'black' && isBlack)
-            userResult = winnerIsUser ? 'win' : 'loss'
-          }
-
-          const movesList = game.moves ? game.moves.trim().split(/\s+/).filter(Boolean) : []
-          if (movesList.length === 0) {
-            continue
-          }
-
-          const movesCount = movesList.length
-          const firstMove = movesList[0] || ''
-          const rootMove = firstMove ? `1. ${firstMove}` : ''
-          const openingNameBase = ((game.opening?.name || '').split(':')[0] || '').trim()
-
-          const whitePlayerName = game.players.white.user.name || game.players.white.user.id
-          const blackPlayerName = game.players.black.user.name || game.players.black.user.id
-          const resultVal = game.winner ? (game.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
-
-          // Clean PGN from Lichess (just append result)
-          const cleanPgn = game.pgn ? `${game.pgn.trim()} ${resultVal}` : ''
-
-          const gameEntity: LichessGameEntity = {
-            id: game.id || '',
-            username: cleanUsername,
-            userColor,
-            userResult,
-            white: whitePlayerName,
-            black: blackPlayerName,
-            white_elo: game.players.white.rating || 1500,
-            black_elo: game.players.black.rating || 1500,
-            result: resultVal,
-            status: game.status || '',
-            timeControl: (game.speed || 'other').toLowerCase(),
-            createdAt: game.createdAt || Date.now(),
-            lastMoveAt: game.lastMoveAt || Date.now(),
-            rootMove,
-            movesCount,
-            openingNameBase,
-            eco: game.opening.eco || '',
-            opening: game.opening.name || '',
-            ply: game.opening.ply,
-            pgn: cleanPgn
-          }
-
-          pendingBatch.push(gameEntity)
-          count++
+      await lichessGamesStreamSyncService.syncGamesStream(
+        username,
+        perfTypes,
+        sinceTimestamp,
+        (count) => {
           syncProgress.value.current = count
-
-          if (pendingBatch.length >= 50) {
-            await userGamesRepository.saveGamesBatch(pendingBatch)
-            pendingBatch.length = 0
-          }
         }
-      }
-
-      // Verarbeite verbleibenden Puffer
-      if (buffer.trim()) {
-        try {
-          const game = JSON.parse(buffer) as LichessGameResponse
-          if (
-            game.variant === 'standard' &&
-            game.opening &&
-            game.opening.name &&
-            game.opening.name !== 'Unknown Opening' &&
-            game.players?.white?.user?.id &&
-            game.players?.black?.user?.id
-          ) {
-            if (game.opening.ply === undefined) {
-              throw new Error(`Game ${game.id || 'unknown'} is missing required 'ply' parameter in opening.`)
-            }
-            const whiteId = game.players.white.user.id.toLowerCase()
-            const blackId = game.players.black.user.id.toLowerCase()
-            const isWhite = whiteId === cleanUsername
-            const isBlack = blackId === cleanUsername
-
-            if (isWhite || isBlack) {
-              const userColor = isWhite ? 'white' : 'black'
-              let userResult: 'win' | 'loss' | 'draw' = 'draw'
-              if (game.winner) {
-                const winnerIsUser = (game.winner === 'white' && isWhite) || (game.winner === 'black' && isBlack)
-                userResult = winnerIsUser ? 'win' : 'loss'
-              }
-
-              const movesList = game.moves ? game.moves.trim().split(/\s+/).filter(Boolean) : []
-              if (movesList.length > 0) {
-                const movesCount = movesList.length
-                const firstMove = movesList[0] || ''
-                const rootMove = firstMove ? `1. ${firstMove}` : ''
-                const openingNameBase = ((game.opening?.name || '').split(':')[0] || '').trim()
-
-                const whitePlayerName = game.players.white.user.name || game.players.white.user.id
-                const blackPlayerName = game.players.black.user.name || game.players.black.user.id
-                const resultVal = game.winner ? (game.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
-
-                // Clean PGN from Lichess (just append result)
-                const cleanPgn = game.pgn ? `${game.pgn.trim()} ${resultVal}` : ''
-
-                const gameEntity: LichessGameEntity = {
-                  id: game.id || '',
-                  username: cleanUsername,
-                  userColor,
-                  userResult,
-                  white: whitePlayerName,
-                  black: blackPlayerName,
-                  white_elo: game.players.white.rating || 1500,
-                  black_elo: game.players.black.rating || 1500,
-                  result: resultVal,
-                  status: game.status || '',
-                  timeControl: (game.speed || 'other').toLowerCase(),
-                  createdAt: game.createdAt || Date.now(),
-                  lastMoveAt: game.lastMoveAt || Date.now(),
-                  rootMove,
-                  movesCount,
-                  openingNameBase,
-                  eco: game.opening.eco || '',
-                  opening: game.opening.name || '',
-                  ply: game.opening.ply,
-                  pgn: cleanPgn
-                }
-                pendingBatch.push(gameEntity)
-                count++
-                syncProgress.value.current = count
-              }
-            }
-          }
-        } catch {
-          logger.warn('Fehler beim Parsen des trailing buffers')
-        }
-      }
-
-      if (pendingBatch.length > 0) {
-        await userGamesRepository.saveGamesBatch(pendingBatch)
-        pendingBatch.length = 0
-      }
+      )
 
       await loadStats(username)
     } catch (err: unknown) {
@@ -606,30 +389,31 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     }
   }
 
-  async function loadLichessProfile(username: string): Promise<LichessProfile | null> {
-    if (!username || !username.trim()) {
+  async function fetchLichessProfile(username: string): Promise<LichessProfile | null> {
+    if (!username) {
       lichessProfile.value = null
       return null
     }
+
     const cleanUsername = username.trim().toLowerCase()
     const now = Date.now()
+
     const cached = profileCache.value[cleanUsername]
-    if (cached && (now - cached.timestamp < 60000)) {
+    if (cached && now - cached.timestamp < 10 * 60 * 1000) {
       lichessProfile.value = cached.data
       return cached.data
     }
 
     try {
-      const profileRes = await fetch(`https://lichess.org/api/user/${cleanUsername}`)
-      if (profileRes.ok) {
-        const profile = await profileRes.json() as LichessProfile
-        lichessProfile.value = profile
-        profileCache.value[cleanUsername] = { data: profile, timestamp: Date.now() }
-        return profile
-      } else {
+      const response = await fetch(`https://lichess.org/api/user/${username}`)
+      if (!response.ok) {
         lichessProfile.value = null
         return null
       }
+      const data = (await response.json()) as LichessProfile
+      lichessProfile.value = data
+      profileCache.value[cleanUsername] = { data, timestamp: now }
+      return data
     } catch (err) {
       logger.error('Fehler beim Abrufen des Lichess-Profils:', err)
       lichessProfile.value = null
@@ -637,26 +421,32 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     }
   }
 
-  async function loadLichessActivity(username: string): Promise<LichessActivityItem[] | null> {
-    if (!username || !username.trim()) {
+  async function fetchLichessActivity(username: string): Promise<LichessActivityItem[] | null> {
+    if (!username) {
       lichessActivity.value = null
       return null
     }
+
     const cleanUsername = username.trim().toLowerCase()
     const now = Date.now()
+
     const cached = activityCache.value[cleanUsername]
-    if (cached && (now - cached.timestamp < 60000)) {
+    if (cached && now - cached.timestamp < 15 * 60 * 1000) {
       lichessActivity.value = cached.data
       return cached.data
     }
 
     try {
-      const res = await fetch(`https://lichess.org/api/user/${cleanUsername}/activity`)
-      if (res.ok) {
-        const activity = await res.json() as LichessActivityItem[]
-        lichessActivity.value = activity
-        activityCache.value[cleanUsername] = { data: activity, timestamp: Date.now() }
-        return activity
+      const response = await fetch(`https://lichess.org/api/user/${username}/activity`)
+      if (!response.ok) {
+        lichessActivity.value = null
+        return null
+      }
+      const data = (await response.json()) as LichessActivityItem[]
+      if (Array.isArray(data)) {
+        lichessActivity.value = data
+        activityCache.value[cleanUsername] = { data, timestamp: now }
+        return data
       } else {
         lichessActivity.value = null
         return null
@@ -678,151 +468,16 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
   }
 
   async function exportBackup(username: string, profileCreatedAt: number) {
-    if (!username) return
-    const cleanUsername = username.trim().toLowerCase()
-    const games = await userGamesRepository.getGamesForUser(cleanUsername)
-
-    const jsonString = JSON.stringify(games, null, 2)
-    const originalBlob = new Blob([jsonString], { type: 'application/json' })
-    const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
-    const compressedBlob = await new Response(stream).blob()
-    const compressedBuffer = await compressedBlob.arrayBuffer()
-    const compressedBytes = new Uint8Array(compressedBuffer)
-
-    const obfuscatedBytes = transformBytes(compressedBytes, String(profileCreatedAt))
-
-    const finalBlob = new Blob([obfuscatedBytes.buffer as ArrayBuffer], { type: 'application/octet-stream' })
-    const url = URL.createObjectURL(finalBlob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `extrapawn_games_backup_${cleanUsername}_${Date.now()}.epb`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    return lichessGamesBackupService.exportBackup(username, profileCreatedAt)
   }
-
-interface LegacyLichessGame {
-  id: string
-  username: string
-  userColor: 'white' | 'black'
-  userResult: 'win' | 'loss' | 'draw'
-  rootMove: string
-  movesCount: number
-  openingNameBase: string
-  winner?: 'white' | 'black'
-  status?: string
-  speed?: string
-  perf?: string
-  createdAt: number
-  lastMoveAt: number
-  moves: string
-  players: {
-    white: { user?: { id: string; name: string }; rating: number; ratingDiff?: number }
-    black: { user?: { id: string; name: string }; rating: number; ratingDiff?: number }
-  }
-  opening: {
-    eco: string
-    name: string
-    ply: number
-  }
-}
 
   async function importBackup(username: string, file: File, profileCreatedAt: number) {
-    if (!username) return
-    const cleanUsername = username.trim().toLowerCase()
-
-    const arrayBuffer = await file.arrayBuffer()
-    const obfuscatedBytes = new Uint8Array(arrayBuffer)
-
-    const decompressedBytes = transformBytes(obfuscatedBytes, String(profileCreatedAt))
-
-    const ds = new DecompressionStream('gzip')
-    const writer = ds.writable.getWriter()
-    writer.write(decompressedBytes.buffer as ArrayBuffer)
-    writer.close()
-
-    const decompressedBuffer = await new Response(ds.readable).arrayBuffer()
-    const text = new TextDecoder().decode(decompressedBuffer)
-
-    const games = JSON.parse(text)
-
-    if (!Array.isArray(games)) {
-      throw new Error('Ungültiges Backup-Format. Muss ein JSON-Array sein.')
-    }
-
-    const batchToSave: LichessGameEntity[] = []
-
-    for (const g of games) {
-      if (!g.id || !g.username || g.username.toLowerCase() !== cleanUsername) {
-        throw new Error(`Backup enthält ungültige Daten oder Daten eines anderen Spielers (ID: ${g.id || 'unknown'}).`)
-      }
-      
-      // Migrate legacy backup format to version 2 on the fly if needed
-      if ('players' in g && g.players) {
-        const legacy = g as unknown as LegacyLichessGame
-        if (legacy.opening?.ply === undefined) {
-          throw new Error(`Legacy game ${legacy.id} is missing required 'ply' parameter in opening.`)
-        }
-        const whiteName = legacy.players?.white?.user?.name || legacy.players?.white?.user?.id || 'White'
-        const blackName = legacy.players?.black?.user?.name || legacy.players?.black?.user?.id || 'Black'
-        const resultVal = legacy.winner ? (legacy.winner === 'white' ? '1-0' : '0-1') : '1/2-1/2'
-        
-        // Build moves-only PGN from legacy moves
-        const cleanPgn = formatMovesStringToPgn(legacy.moves || '', resultVal)
-
-        const migratedGame: LichessGameEntity = {
-          id: legacy.id,
-          username: legacy.username.toLowerCase(),
-          userColor: legacy.userColor,
-          userResult: legacy.userResult,
-          white: whiteName,
-          black: blackName,
-          white_elo: legacy.players?.white?.rating || 1500,
-          black_elo: legacy.players?.black?.rating || 1500,
-          result: resultVal,
-          status: legacy.status || '',
-          timeControl: (legacy.speed || legacy.perf || 'other').toLowerCase(),
-          createdAt: legacy.createdAt || Date.now(),
-          lastMoveAt: legacy.lastMoveAt || Date.now(),
-          rootMove: legacy.rootMove,
-          movesCount: legacy.movesCount,
-          openingNameBase: legacy.openingNameBase,
-          eco: legacy.opening.eco || '',
-          opening: legacy.opening.name || '',
-          ply: legacy.opening.ply,
-          pgn: cleanPgn
-        }
-        batchToSave.push(migratedGame)
-      } else {
-        const entity = g as LichessGameEntity
-        if (entity.ply === undefined) {
-          throw new Error(`Imported game ${entity.id} is missing required 'ply' parameter.`)
-        }
-        batchToSave.push(entity)
-      }
-    }
-
-    if (batchToSave.length > 0) {
-      await userGamesRepository.saveGamesBatch(batchToSave)
-    }
-
+    await lichessGamesBackupService.importBackup(username, file, profileCreatedAt)
     await loadStats(username)
   }
 
   async function getCompressedBackupBuffer(username: string): Promise<ArrayBuffer | null> {
-    if (!username) return null
-    const cleanUsername = username.trim().toLowerCase()
-    const games = await userGamesRepository.getGamesForUser(cleanUsername)
-
-    if (games.length === 0) return null
-
-    const jsonString = JSON.stringify(games, null, 2)
-    const originalBlob = new Blob([jsonString], { type: 'application/json' })
-    const stream = originalBlob.stream().pipeThrough(new CompressionStream('gzip'))
-    const compressedBlob = await new Response(stream).blob()
-    const compressedBuffer = await compressedBlob.arrayBuffer()
-    return compressedBuffer
+    return lichessGamesBackupService.getCompressedBackupBuffer(username)
   }
 
   return {
@@ -835,12 +490,14 @@ interface LegacyLichessGame {
     lichessActivity,
     latestLocalGameTimestamp,
     loadStats,
-    loadLichessProfile,
-    loadLichessActivity,
     syncGames,
+    fetchLichessProfile,
+    loadLichessProfile: fetchLichessProfile,
+    fetchLichessActivity,
+    loadLichessActivity: fetchLichessActivity,
     wipeCache,
     exportBackup,
     importBackup,
-    getCompressedBackupBuffer
+    getCompressedBackupBuffer,
   }
 })

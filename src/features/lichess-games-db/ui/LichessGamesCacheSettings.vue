@@ -115,10 +115,10 @@ const formattedLatestGameDate = computed(() => {
 
 const isSyncButtonDisabled = computed(() => {
   if (store.isSyncing) return false
-  if (!store.lichessProfile) return false
+  if (!store.lichessProfile || !store.lichessProfile.count) return false
 
   // Wenn weniger als 1000 Spiele auf Lichess: Button deaktiviert (und zeigt beim Klick das Dialog-Modal)
-  if (store.lichessProfile.count.all < 1000) return true
+  if ((store.lichessProfile.count.all || 0) < 1000) return true
 
   // Wenn wir lokale Daten haben und keine neuen Spiele online vorhanden sind: Deaktiviert
   if (store.stats && store.stats.total > 0 && newGamesCount.value === 0) {
@@ -129,10 +129,11 @@ const isSyncButtonDisabled = computed(() => {
 })
 
 function handleSyncWrapper() {
-  if (store.lichessProfile && store.lichessProfile.count.all < 1000) {
+  const allCount = store.lichessProfile?.count?.all || 0
+  if (store.lichessProfile && allCount < 1000) {
     dialog.warning({
       title: t('features.lichessGamesDb.cacheSettings.minGamesWarningTitle'),
-      content: t('features.lichessGamesDb.cacheSettings.minGamesWarningText', { count: store.lichessProfile.count.all }),
+      content: t('features.lichessGamesDb.cacheSettings.minGamesWarningText', { count: allCount }),
       positiveText: t('shared.buttons.close')
     })
     return
