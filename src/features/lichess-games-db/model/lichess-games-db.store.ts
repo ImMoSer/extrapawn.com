@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { gamesDb } from '@/entities/game'
+import { userGamesRepository } from '@/entities/game'
 import type { LichessGameEntity } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 
@@ -303,10 +303,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     }
     try {
       const cleanUsername = username.trim().toLowerCase()
-      const games = await gamesDb.lichess_games
-        .where('username')
-        .equals(cleanUsername)
-        .toArray()
+      const games = await userGamesRepository.getGamesForUser(cleanUsername)
 
       let latestTimestamp = 0
       for (const g of games) {
@@ -373,22 +370,14 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       const cleanUsername = username.trim().toLowerCase()
 
       // 1. Letztes Spiel ermitteln für inkrementellen Abruf (since)
-      const latestGame = await gamesDb.lichess_games
-        .where('username')
-        .equals(cleanUsername)
-        .sortBy('createdAt')
-        .then(games => games[games.length - 1])
-
-      const sinceTimestamp = latestGame ? latestGame.createdAt + 1 : undefined
+      const latestTimestamp = await userGamesRepository.getLatestGameTimestamp(cleanUsername)
+      const sinceTimestamp = latestTimestamp > 0 ? latestTimestamp + 1 : undefined
 
       // 2. Lichess-Profil nutzen, um Fortschritts-Nenner zu ermitteln
       let totalExpectedNew = 0
       if (lichessProfile.value) {
         const totalGames = lichessProfile.value.count?.all || 0
-        const currentLocalCount = await gamesDb.lichess_games
-          .where('username')
-          .equals(cleanUsername)
-          .count()
+        const currentLocalCount = await userGamesRepository.getGamesCount(cleanUsername)
         totalExpectedNew = Math.min(maxGames, Math.max(0, totalGames - currentLocalCount))
       }
 
@@ -419,6 +408,8 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
       const decoder = new TextDecoder('utf-8')
       let buffer = ''
       let count = 0
+
+      const pendingBatch: LichessGameEntity[] = []
 
       while (true) {
         const { done, value } = await reader.read()
@@ -513,9 +504,14 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
             pgn: cleanPgn
           }
 
-          await gamesDb.lichess_games.put(gameEntity)
+          pendingBatch.push(gameEntity)
           count++
           syncProgress.value.current = count
+
+          if (pendingBatch.length >= 50) {
+            await userGamesRepository.saveGamesBatch(pendingBatch)
+            pendingBatch.length = 0
+          }
         }
       }
 
@@ -583,7 +579,7 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
                   ply: game.opening.ply,
                   pgn: cleanPgn
                 }
-                await gamesDb.lichess_games.put(gameEntity)
+                pendingBatch.push(gameEntity)
                 count++
                 syncProgress.value.current = count
               }
@@ -592,6 +588,11 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
         } catch {
           logger.warn('Fehler beim Parsen des trailing buffers')
         }
+      }
+
+      if (pendingBatch.length > 0) {
+        await userGamesRepository.saveGamesBatch(pendingBatch)
+        pendingBatch.length = 0
       }
 
       await loadStats(username)
@@ -672,20 +673,14 @@ export const useLichessGamesDbStore = defineStore('lichess-games-db', () => {
     const cleanUsername = username.trim().toLowerCase()
     delete profileCache.value[cleanUsername]
     delete activityCache.value[cleanUsername]
-    await gamesDb.lichess_games
-      .where('username')
-      .equals(cleanUsername)
-      .delete()
+    await userGamesRepository.clearUserGames(cleanUsername)
     await loadStats(username)
   }
 
   async function exportBackup(username: string, profileCreatedAt: number) {
     if (!username) return
     const cleanUsername = username.trim().toLowerCase()
-    const games = await gamesDb.lichess_games
-      .where('username')
-      .equals(cleanUsername)
-      .toArray()
+    const games = await userGamesRepository.getGamesForUser(cleanUsername)
 
     const jsonString = JSON.stringify(games, null, 2)
     const originalBlob = new Blob([jsonString], { type: 'application/json' })
@@ -756,6 +751,8 @@ interface LegacyLichessGame {
       throw new Error('Ungültiges Backup-Format. Muss ein JSON-Array sein.')
     }
 
+    const batchToSave: LichessGameEntity[] = []
+
     for (const g of games) {
       if (!g.id || !g.username || g.username.toLowerCase() !== cleanUsername) {
         throw new Error(`Backup enthält ungültige Daten oder Daten eines anderen Spielers (ID: ${g.id || 'unknown'}).`)
@@ -796,14 +793,18 @@ interface LegacyLichessGame {
           ply: legacy.opening.ply,
           pgn: cleanPgn
         }
-        await gamesDb.lichess_games.put(migratedGame)
+        batchToSave.push(migratedGame)
       } else {
         const entity = g as LichessGameEntity
         if (entity.ply === undefined) {
           throw new Error(`Imported game ${entity.id} is missing required 'ply' parameter.`)
         }
-        await gamesDb.lichess_games.put(entity)
+        batchToSave.push(entity)
       }
+    }
+
+    if (batchToSave.length > 0) {
+      await userGamesRepository.saveGamesBatch(batchToSave)
     }
 
     await loadStats(username)
@@ -812,10 +813,7 @@ interface LegacyLichessGame {
   async function getCompressedBackupBuffer(username: string): Promise<ArrayBuffer | null> {
     if (!username) return null
     const cleanUsername = username.trim().toLowerCase()
-    const games = await gamesDb.lichess_games
-      .where('username')
-      .equals(cleanUsername)
-      .toArray()
+    const games = await userGamesRepository.getGamesForUser(cleanUsername)
 
     if (games.length === 0) return null
 

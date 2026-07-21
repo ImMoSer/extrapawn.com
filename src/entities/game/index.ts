@@ -8,3 +8,5 @@ export { default as WebChessBoard } from './ui/WebChessBoard.vue'
 export { default as PgnTree } from './ui/PgnTree.vue'
 export { gamesDb } from './api/GamesDatabase'
 export type { LichessGameEntity } from './api/GamesDatabase'
+export { UserGamesRepository, userGamesRepository } from './api/UserGamesRepository'
+

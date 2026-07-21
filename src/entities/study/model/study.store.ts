@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
 import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
-import { studyDb, type StudyChapter, type StudyEntity } from '../api/StudyDatabase'
+import { studyRepository, type StudyChapter, type StudyEntity } from '../index'
 import { lichessStudyService } from '../api/LichessStudyService'
 import logger from '@/shared/lib/logger'
 
@@ -16,7 +16,7 @@ export const useStudyStore = defineStore('study', () => {
    */
   async function loadLibrary() {
     try {
-      const list = await studyDb.studies.orderBy('importedAt').reverse().toArray()
+      const list = await studyRepository.getAllStudies()
       library.value = list
     } catch (error) {
       logger.error('[StudyStore] Failed to load library:', error)
@@ -36,7 +36,7 @@ export const useStudyStore = defineStore('study', () => {
       const study = await lichessStudyService.fetchStudy(studyId, chapterId)
       
       // Save in local database
-      await studyDb.studies.put(study)
+      await studyRepository.saveStudy(study)
       await loadLibrary()
       
       logger.info(`[StudyStore] Study ${study.name} (ID: ${study.id}) imported successfully.`)
@@ -54,8 +54,7 @@ export const useStudyStore = defineStore('study', () => {
    */
   async function deleteStudy(studyId: string) {
     try {
-      await studyDb.studies.delete(studyId)
-      await studyDb.srs_progress.where({ studyId }).delete()
+      await studyRepository.deleteStudy(studyId)
       
       if (activeStudy.value?.id === studyId) {
         activeStudy.value = null
@@ -98,7 +97,7 @@ export const useStudyStore = defineStore('study', () => {
     }
 
     // Enrich tree with SRS metadata from database
-    const srsList = await studyDb.srs_progress.where({ studyId, chapterId }).toArray()
+    const srsList = await studyRepository.getSrsProgress(studyId, chapterId)
     const srsMap = new Map(srsList.map((s) => [s.nodePath, s]))
 
     const mergeSrsMetadata = (node: PgnNode, path = '') => {
@@ -150,11 +149,11 @@ export const useStudyStore = defineStore('study', () => {
     const id = `${studyId}:${chapterId}:${nodePath}`
 
     if (!metadata) {
-      await studyDb.srs_progress.delete(id)
+      await studyRepository.deleteSrsProgress(id)
       return
     }
 
-    await studyDb.srs_progress.put({
+    await studyRepository.saveSrsProgress({
       id,
       studyId,
       chapterId,

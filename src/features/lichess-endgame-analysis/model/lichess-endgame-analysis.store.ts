@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
-import { useGameStore, useBoardStore, gamesDb } from '@/entities/game'
+import { useGameStore, useBoardStore, userGamesRepository } from '@/entities/game'
 import { soundService } from '@/shared/lib/sound.service'
 import { EndgameTrainingStrategy } from './EndgameTrainingStrategy'
 import type { EndgameAnalysisResponse, EndgamePuzzle } from './lichess-endgame-analysis.types'
@@ -48,7 +48,7 @@ export const useLichessEndgameAnalysisStore = defineStore('lichessEndgameAnalysi
       // Asynchrones Anreichern mit lokalen Spieldaten
       for (const puzzle of response.puzzles) {
         try {
-          const dbGame = await gamesDb.lichess_games.get(puzzle.game_id)
+          const dbGame = await userGamesRepository.getGameById(puzzle.game_id)
           if (dbGame) {
             puzzle.white_player = dbGame.white
             puzzle.black_player = dbGame.black

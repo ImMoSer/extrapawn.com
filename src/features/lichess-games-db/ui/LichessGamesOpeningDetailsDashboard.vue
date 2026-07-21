@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { NButton, NScrollbar } from 'naive-ui'
-import { gamesDb } from '@/entities/game'
+import { userGamesRepository } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { exportGamesAsBackup } from '../model/open-export'
 
@@ -61,11 +61,8 @@ async function loadData() {
     const cleanUsername = props.username.trim().toLowerCase()
     const color = props.color
 
-    const games = await gamesDb.lichess_games
-      .where('username')
-      .equals(cleanUsername)
-      .filter(g => g.userColor === color && g.openingNameBase === props.openingName)
-      .toArray()
+    const allUserGames = await userGamesRepository.getGamesForUser(cleanUsername)
+    const games = allUserGames.filter(g => g.userColor === color && g.openingNameBase === props.openingName)
 
     let totalWins = 0
     let totalDraws = 0
@@ -166,11 +163,8 @@ async function exportOpeningGames() {
     const cleanUsername = props.username.trim().toLowerCase()
     const color = props.color
 
-    const games = await gamesDb.lichess_games
-      .where('username')
-      .equals(cleanUsername)
-      .filter(g => g.userColor === color && g.openingNameBase === props.openingName)
-      .toArray()
+    const allUserGames = await userGamesRepository.getGamesForUser(cleanUsername)
+    const games = allUserGames.filter(g => g.userColor === color && g.openingNameBase === props.openingName)
 
     const authStore = useAuthStore()
     const keySeed = authStore.userProfile?.createdAt || 0
