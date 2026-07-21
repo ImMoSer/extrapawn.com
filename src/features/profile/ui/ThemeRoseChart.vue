@@ -66,26 +66,22 @@ const premiumTacticKeys = ['capturingDefender', 'attraction', 'deflection', 'tra
 const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interference', 'quietMove', 'defensiveMove', 'zugzwang']
 
 const PALETTE = [
-  '#00e5ff', // 1. Cyan (Extrem hell/kalt)
-  '#ff073a', // 2. Red (Dunkler/heiß) -> Maximaler Split zu Cyan
-  '#39ff14', // 3. Acid Green (Grell/Leuchtend)
-  '#7a00ff', // 4. Violet (Dunkel/Absorbierend) -> Schluckt das Grün
-  '#ffe600', // 5. Yellow (Maximaler Helligkeits-Schnitt zu Violett)
-  '#0055ff', // 6. Blue (Tiefblau gegen Gelb)
-  '#ff5500', // 7. Orange (Komplementär zu Blau)
-  '#b000ff', // 8. Purple (Wechsel zu Dunkel-Magenta-Ton)
-  '#aaff00', // 9. Toxic (Grellgelb-Grün gegen Lila)
-  '#ff00c8', // 10. Magenta (Heißer Kontrast zu Toxic)
-  '#00ffcc', // 11. Mint (Eisiger Kontrast zu Magenta)
-  '#d9004c', // 12. Bordeaux (Dunkel/Satt gegen Mint)
-  '#66ccff', // 13. Ice Blue (Hell gegen Bordeaux)
-  '#ff9900', // 14. Amber (Warm/Dunkelorange gegen Ice Blue)
-  '#ff007a', // 15. Pink (Knallig gegen Amber)
-  '#00ff99', // 16. Green Mint (Kalt gegen Pink)
-  '#ff3366', // 17. Raspberry (Dunkles Pink-Rot)
-  '#00aaff', // 18. Sky (Hellblau gegen Raspberry)
-  '#ff66cc', // 19. Bubblegum (Hellpink)
-  '#00ff55'  // 20. Lime (Grellgrün - schließt perfekt ab zu Cyan auf Position 1)
+  '#00e5ff', // Neon Cyan
+  '#ff073a', // Neon Red
+  '#39ff14', // Acid Green
+  '#b000ff', // Neon Purple
+  '#ffe600', // Neon Yellow
+  '#0055ff', // Neon Blue
+  '#ff5500', // Orange
+  '#ff00c8', // Magenta
+  '#00ffcc', // Mint
+  '#ff9900', // Amber
+  '#ff007a', // Pink
+  '#00ff55', // Lime
+  '#ff8800', // Orange Warm
+  '#d9004c', // Bordeaux
+  '#00b8cc', // Cyan Deep
+  '#7a00cc', // Purple Deep
 ]
 
 interface ThemeStat {
@@ -388,18 +384,18 @@ const handleTabChange = (type: PlayPuzzleType) => {
 </script>
 
 <template>
-  <div class="theme-rose-container">
-    <div class="chart-header">
-      <div class="header-left-group">
-        <h3 class="chart-title">{{ title }}</h3>
-        <n-button quaternary circle size="small" @click="showModal = true" class="zoom-btn">
+  <div class="w-full bg-surface rounded-lg p-4 border border-border flex flex-col box-border">
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center gap-2">
+        <h3 class="m-0 text-neon-cyan text-xl font-bold font-display">{{ title }}</h3>
+        <n-button quaternary circle size="small" @click="showModal = true">
           <template #icon>
             <n-icon :component="ExpandOutline" />
           </template>
         </n-button>
       </div>
 
-      <div class="header-right-group">
+      <div>
         <n-radio-group v-model:value="viewMode" size="small">
           <n-radio-button value="rating">{{ t('pages.userCabinet.analyticsTable.rating') }}</n-radio-button>
           <n-radio-button value="accuracy">{{ t('pages.userCabinet.analyticsTable.accuracy') }}</n-radio-button>
@@ -407,7 +403,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
       </div>
     </div>
 
-    <div class="puzzle-type-selector">
+    <div class="mb-2.5">
       <n-tabs type="segment" size="small" :value="activePuzzleType" @update:value="handleTabChange">
         <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
         <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
@@ -415,9 +411,9 @@ const handleTabChange = (type: PlayPuzzleType) => {
       </n-tabs>
     </div>
 
-    <div class="chart-wrapper">
-      <v-chart v-if="chartData.length > 0" class="chart" :option="option" @click="onChartClick" autoresize />
-      <div v-else class="empty-chart-container">
+    <div class="w-full h-[70vh] max-md:h-[300px]">
+      <v-chart v-if="chartData.length > 0" class="w-full h-full" :option="option" @click="onChartClick" autoresize />
+      <div v-else class="flex justify-center items-center w-full h-full min-h-[250px]">
         <n-empty :description="t('pages.userCabinet.stats.noData')">
           <template #extra>
             <n-button type="primary" size="small" @click="router.push('/task-today')">
@@ -428,33 +424,33 @@ const handleTabChange = (type: PlayPuzzleType) => {
       </div>
     </div>
 
-    <div class="chart-footer">
-      <n-radio-group v-model:value="activeDifficulty" size="small">
+    <div class="flex justify-center mt-4">
+      <n-radio-group v-model:value="activeDifficulty" size="small" class="[&_.disabled-diff]:opacity-45 [&_.disabled-diff]:cursor-not-allowed">
         <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
         <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
         <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
       </n-radio-group>
     </div>
 
-    <!-- Zoom Modal (simplified for now) -->
+    <!-- Zoom Modal -->
     <n-modal v-model:show="showModal" preset="card" class="zoom-modal" :title="title" style="width: 90vw; max-width: 1200px">
-      <div class="modal-content">
-        <div class="modal-controls">
+      <div class="flex flex-col gap-4">
+        <div class="flex justify-between items-center gap-4 flex-wrap">
            <n-tabs type="segment" :value="activePuzzleType" @update:value="handleTabChange">
             <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
             <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
             <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
           </n-tabs>
 
-          <n-radio-group v-model:value="activeDifficulty" size="medium">
+          <n-radio-group v-model:value="activeDifficulty" size="medium" class="[&_.disabled-diff]:opacity-45 [&_.disabled-diff]:cursor-not-allowed">
             <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
             <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
             <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
           </n-radio-group>
         </div>
-        <div class="modal-chart-wrapper">
-          <v-chart v-if="chartData.length > 0" class="chart" :option="option" autoresize />
-          <div v-else class="empty-chart-container">
+        <div class="w-full h-[60vh]">
+          <v-chart v-if="chartData.length > 0" class="w-full h-full" :option="option" autoresize />
+          <div v-else class="flex justify-center items-center w-full h-full min-h-[250px]">
             <n-empty :description="t('pages.userCabinet.stats.noData')">
               <template #extra>
                 <n-button type="primary" size="small" @click="router.push('/task-today')">
@@ -467,32 +463,32 @@ const handleTabChange = (type: PlayPuzzleType) => {
       </div>
     </n-modal>
 
-    <!-- Popup remains same as before -->
+    <!-- Popup -->
     <Teleport to="body">
-      <div v-if="activePopup.visible && activePopup.data" ref="popupRef" class="chart-popup" :style="{ top: `${activePopup.y}px`, left: `${activePopup.x}px` }">
-        <div class="popup-header">
-          <span class="popup-title">{{ activePopup.data.modeName }} {{ activePopup.data.subModeName }}</span>
-          <n-button circle size="tiny" type="error" ghost @click="activePopup.visible = false" class="close-btn">
+      <div v-if="activePopup.visible && activePopup.data" ref="popupRef" class="fixed z-[9999] bg-elevated/90 backdrop-blur-md border border-neon-cyan/50 rounded-lg p-3 shadow-elevated min-w-[200px]" :style="{ top: `${activePopup.y}px`, left: `${activePopup.x}px` }">
+        <div class="flex justify-between items-center mb-2 border-b border-border pb-1.5">
+          <span class="font-bold text-text-primary text-xs">{{ activePopup.data.modeName }} {{ activePopup.data.subModeName }}</span>
+          <n-button circle size="tiny" type="error" ghost @click="activePopup.visible = false">
             <template #icon><n-icon :component="CloseOutline" /></template>
           </n-button>
         </div>
-        <div class="popup-content">
-          <div class="popup-theme-name">{{ activePopup.data.themeName }}</div>
-          <div class="popup-row">
+        <div class="flex flex-col gap-1 text-sm">
+          <div class="text-base font-bold mb-2 text-neon-cyan font-display">{{ activePopup.data.themeName }}</div>
+          <div class="flex justify-between text-xs">
             <span>{{ t('pages.userCabinet.analyticsTable.rating') }}:</span>
-            <span class="rating-val">{{ activePopup.data.rating }}</span>
+            <span class="font-condensed font-bold text-warning">{{ activePopup.data.rating }}</span>
           </div>
-          <div class="popup-row">
+          <div class="flex justify-between text-xs">
             <span>{{ t('pages.userCabinet.analyticsTable.accuracy') }}:</span>
-            <span class="accuracy-val" :class="{ 'high-acc': activePopup.data.accuracy > 70, 'low-acc': activePopup.data.accuracy <= 70 }">{{ activePopup.data.accuracy }}%</span>
+            <span class="font-condensed font-bold" :class="activePopup.data.accuracy > 70 ? 'text-success' : 'text-warning'">{{ activePopup.data.accuracy }}%</span>
           </div>
-          <div class="popup-row">
+          <div class="flex justify-between text-xs text-text-secondary">
             <span>{{ t('pages.userCabinet.stats.success') }}:</span>
-            <span>{{ activePopup.data.success }} / {{ activePopup.data.requested }}</span>
+            <span class="font-condensed">{{ activePopup.data.success }} / {{ activePopup.data.requested }}</span>
           </div>
         </div>
-        <div class="popup-footer">
-          <n-button type="primary" block @click="onImproveClick" class="improve-btn" :disabled="isLocked" :class="{ 'is-locked': isLocked }">
+        <div class="mt-3">
+          <n-button type="primary" block @click="onImproveClick" class="font-bold" :disabled="isLocked">
             {{ t('pages.userCabinet.stats.improve') }}
           </n-button>
         </div>
@@ -500,140 +496,3 @@ const handleTabChange = (type: PlayPuzzleType) => {
     </Teleport>
   </div>
 </template>
-
-<style scoped>
-/* Keep existing styles, adding tab styling if needed */
-.puzzle-type-selector {
-  margin-bottom: 10px;
-}
-
-.theme-rose-container {
-  width: 100%;
-  background-color: var(--color-bg-tertiary);
-  border-radius: 12px;
-  padding: 15px;
-  border: 1px solid var(--color-border);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.header-left-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chart-title {
-  margin: 0;
-  color: var(--color-accent-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.chart-wrapper {
-  width: 100%;
-  height: 70vh;
-}
-
-.chart {
-  width: 100%;
-  height: 100%;
-}
-
-.chart-footer {
-  display: flex;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-/* Popup and other styles omitted for brevity, but should be preserved */
-.chart-popup {
-  position: fixed;
-  z-index: 9999;
-  background-color: var(--glass-bg, var(--color-bg-tertiary));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid color-mix(in srgb, var(--neon-cyan) 50%, transparent);
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  min-width: 200px;
-}
-
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 6px;
-}
-
-.popup-title {
-  font-weight: bold;
-  color: var(--color-text-primary);
-}
-
-.popup-theme-name {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: var(--neon-cyan);
-}
-
-.popup-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 0.9rem;
-}
-
-.rating-val {
-  color: #f39c12;
-  font-weight: bold;
-}
-
-.high-acc {
-  color: var(--color-success);
-}
-
-.low-acc {
-  color: #f39c12;
-}
-
-.improve-btn {
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-@media (max-width: 768px) {
-  .chart-wrapper {
-    height: 300px;
-  }
-}
-
-/* Disabled difficulty button styling */
-:deep(.n-radio-group .n-radio-button.disabled-diff) {
-  opacity: 0.45;
-  cursor: not-allowed !important;
-}
-:deep(.n-radio-group .n-radio-button.disabled-diff *) {
-  cursor: not-allowed !important;
-}
-
-.empty-chart-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  min-height: 250px;
-}
-</style>

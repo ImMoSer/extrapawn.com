@@ -8,8 +8,9 @@ import GlobalAssetLoader from './GlobalAssetLoader.vue'
 import { NavMenu } from '@/widgets/nav-menu'
 import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
 import MessageBridge from './ui/MessageBridge.vue'
+import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { MenuOutline } from '@vicons/ionicons5'
-import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
+import { darkTheme } from 'naive-ui'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
@@ -32,53 +33,7 @@ const isLandscape = ref(false)
 const isSidebarCollapsed = ref(true)
 const isDrawerOpen = ref(false)
 
-/**
- * Тема Naive UI, настроенная под CSS проекта
- */
-const themeOverrides: GlobalThemeOverrides = {
-  common: {
-    fontFamily: 'Ubuntu, sans-serif',
-    primaryColor: '#00e5ff',
-    primaryColorHover: '#00cfe6',
-    primaryColorPressed: '#00cfe6',
-    primaryColorSuppl: '#00cfe6',
-    borderRadius: '12px',
-  },
-  Card: {
-    color: '#0a0b14',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  Select: {
-    menuBoxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-    peers: {
-      InternalSelection: {
-        color: '#0a0b14',
-        colorActive: '#12141f',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderHover: '1px solid #00e5ff',
-        borderActive: '1px solid #00e5ff',
-        borderFocus: '1px solid #00e5ff',
-        boxShadowFocus: '0 0 12px rgba(0, 229, 255, 0.6)',
-        borderRadius: '12px',
-      },
-      InternalSelectMenu: {
-        color: '#0a0b14',
-        borderRadius: '12px',
-      },
-    },
-  },
-  DataTable: {
-    tdColor: 'transparent',
-    tdColorHover: '#1a1d2e',
-    tdColorStriped: '#0a0b14',
-    thColor: '#12141f',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  Drawer: {
-    color: 'rgba(10, 11, 20, 0.45)', // very translucent since we will use backdrop-filter
-    textColor: '#ffffff',
-  },
-}
+const themeOverrides = naiveThemeOverrides
 
 const openDrawer = () => {
   isDrawerOpen.value = true

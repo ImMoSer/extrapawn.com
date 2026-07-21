@@ -1,6 +1,62 @@
+@import 'tailwindcss';
 @import '@lichess-org/chessground/assets/chessground.base.css';
 @import '@lichess-org/chessground/assets/chessground.brown.css';
 @import './fonts.css';
+
+@theme {
+  --font-display: 'Ubuntu', sans-serif;
+  --font-condensed: 'Ubuntu Condensed', sans-serif;
+
+  /* Neutrals (Zen Dark Surface) */
+  --color-void: #05060a;
+  --color-surface: #0d0f16;
+  --color-elevated: #151822;
+  --color-border: #232838;
+  --color-border-hover: #333a4f;
+  --color-text-primary: #e8ecf5;
+  --color-text-secondary: #8b93a8;
+  --color-text-disabled: #4a5169;
+
+  /* Primary */
+  --color-neon-cyan: #00e5ff;
+  --color-cyan-deep: #00b8cc;
+  --color-neon-purple: #b000ff;
+  --color-purple-deep: #7a00cc;
+
+  /* Semantic */
+  --color-success: #00ff55;
+  --color-success-deep: #00cc44;
+  --color-warning: #ffe600;
+  --color-warning-deep: #ccb800;
+  --color-danger: #ff073a;
+  --color-danger-deep: #d9004c;
+  --color-info: #0055ff;
+  --color-info-deep: #3d8bff;
+  --color-highlight: #ff007a;
+  --color-highlight-light: #ff4da6;
+
+  /* Data-Viz Reserve */
+  --color-orange: #ff5500;
+  --color-orange-warm: #ff8800;
+  --color-mint: #00ffcc;
+  --color-magenta: #ff00c8;
+  --color-amber: #ff9900;
+  --color-acid-green: #39ff14;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* Animations */
+  --animate-rainbow: rainbow 3s linear infinite;
+
+  @keyframes rainbow {
+    to {
+      background-position: 200% center;
+    }
+  }
+}
 
 :root {
   /* === BRAND CORE (RAW COLORS - DO NOT USE DIRECTLY IN UI) === */

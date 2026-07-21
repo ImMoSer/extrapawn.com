@@ -35,9 +35,9 @@ const hasData = computed(() => {
 </script>
 
 <template>
-  <div class="lichess-games-statistics">
-    <NCard class="panel-card stats-dashboard-card" :title="$t('features.lichessGamesDb.statistics.title')" size="small">
-      <div class="tabs-container">
+  <div class="flex flex-col w-full">
+    <NCard class="bg-surface border border-border rounded-lg shadow-flat" :title="$t('features.lichessGamesDb.statistics.title')" size="small">
+      <div class="mb-5">
         <NTabs type="segment" size="small" v-model:value="activeTab">
           <NTab name="all">{{ $t('features.lichessGamesDb.statistics.tabAll') }}</NTab>
           <NTab name="white">{{ $t('features.lichessGamesDb.statistics.tabWhite') }}</NTab>
@@ -46,7 +46,7 @@ const hasData = computed(() => {
       </div>
 
       <template v-if="hasData && currentStats && store.detailedStats">
-        <div class="stats-overview">
+        <div class="flex flex-col gap-4">
           <!-- WDL horizontal bars table uses the active tab stats -->
           <LichessGamesWdlTable :stats="currentStats" />
 
@@ -59,7 +59,7 @@ const hasData = computed(() => {
         </div>
       </template>
       <template v-else>
-        <div class="empty-stats">
+        <div class="py-10 text-center">
           <NEmpty :description="$t('features.lichessGamesDb.statistics.noLocalDb')">
           </NEmpty>
         </div>
@@ -67,25 +67,3 @@ const hasData = computed(() => {
     </NCard>
   </div>
 </template>
-
-<style scoped>
-.lichess-games-statistics {
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-card {
-  background-color: var(--color-bg-tertiary);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-hover);
-}
-
-.tabs-container {
-  margin-bottom: 20px;
-}
-
-.empty-stats {
-  padding: 40px 0;
-  text-align: center;
-}
-</style>

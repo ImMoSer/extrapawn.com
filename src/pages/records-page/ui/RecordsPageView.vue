@@ -44,17 +44,17 @@ const isLoading = computed(() => {
 </script>
 
 <template>
-  <div class="records-page">
+  <div class="p-1.5 md:p-1.5 flex flex-col gap-6 w-full max-w-[1000px] mx-auto my-6">
     <h1 class="brand-text hall-of-fame-title">HALL OF FAME</h1>
 
-    <div v-if="isLoading" class="loading-message">
+    <div v-if="isLoading" class="p-3 text-center bg-surface border border-border rounded-md max-w-[600px] mx-auto text-text-secondary">
       <n-spin size="small" /> {{ t('shared.app.loading') }}
     </div>
 
-    <div v-else class="records-page__grid">
+    <div v-else class="flex flex-col gap-10">
       <!-- SECTION: HALL OF FAME (Overall) -->
-      <section class="records-section">
-        <div class="section-grid">
+      <section class="flex flex-col gap-5">
+        <div class="grid grid-cols-1 gap-6">
           <PlanStreakLeaderboardTable
             title="TrainingPlanStreak"
             :entries="planStreakResponse || { Novice: [], Pro: [], Master: [] }"
@@ -80,9 +80,11 @@ const isLoading = computed(() => {
       </section>
 
       <!-- SECTION: COMPETITIVE (Modes) -->
-      <section class="records-section">
-        <h2 class="section-divider">{{ t('features.leaderboards.sections.competitive') }}</h2>
-        <div class="section-grid">
+      <section class="flex flex-col gap-5">
+        <h2 class="text-xl font-bold uppercase tracking-widest text-text-secondary border-b border-border pb-3 flex items-center gap-5">
+          {{ t('features.leaderboards.sections.competitive') }}
+        </h2>
+        <div class="grid grid-cols-1 gap-6">
           <!-- Strategic Mastery -->
           <TimedModeLeaderboardTable
             title="Puzzle Master"
@@ -98,20 +100,6 @@ const isLoading = computed(() => {
 </template>
 
 <style scoped>
-/* Стили, относящиеся к макету страницы */
-.records-page {
-  padding: 5px;
-  box-sizing: border-box;
-  background-color: transparent !important;
-  color: var(--color-text-default);
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  width: 100%;
-  max-width: 1000px;
-  margin: 25px auto;
-}
-
 .hall-of-fame-title {
   margin: 0;
   font-size: clamp(2rem, 6vw, 4.5rem);
@@ -131,91 +119,10 @@ const isLoading = computed(() => {
   left: -15%;
   width: 130%;
   height: 3px;
-  background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
+  background: linear-gradient(90deg, var(--color-highlight), var(--color-neon-purple));
   filter: blur(2px);
   border-radius: 2px;
   opacity: 0.8;
-  box-shadow: 0 0 15px var(--neon-pink);
-}
-
-.records-page__error-message,
-.loading-message {
-  color: var(--color-text-error);
-  background-color: rgba(229, 57, 53, 0.15);
-  border: 1px solid var(--color-accent-error);
-  padding: 10px 15px;
-  border-radius: var(--panel-border-radius);
-  max-width: 600px;
-  text-align: center;
-  margin: 15px auto;
-}
-
-.loading-message {
-  color: var(--color-text-muted);
-  border-color: var(--color-border-hover);
-  background-color: var(--color-bg-tertiary);
-}
-
-.records-page__grid {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.records-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section-divider {
-  font-size: 1.4rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: var(--color-text-muted);
-  border-bottom: 2px solid var(--color-border);
-  padding-bottom: 12px;
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-.section-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 25px;
-}
-
-@media (max-width: 768px) {
-  .records-page {
-    width: 100%;
-    padding: 5px;
-    gap: 17px;
-    margin: 10px auto;
-  }
-
-  .records-page__banner {
-    max-height: 140px;
-  }
-
-  .records-page__grid {
-    gap: 28px;
-  }
-
-  .section-divider {
-    font-size: 1rem;
-    letter-spacing: 2px;
-    padding-bottom: 8px;
-    gap: 14px;
-  }
+  box-shadow: 0 0 15px var(--color-highlight);
 }
 </style>

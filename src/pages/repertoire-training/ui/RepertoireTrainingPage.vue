@@ -77,8 +77,8 @@ onBeforeRouteLeave((to, from, next) => {
     </template>
 
     <template #top-info>
-      <div class="active-mode-tag">
-        <NText strong class="mode-label">
+      <div class="flex items-center justify-center h-full uppercase tracking-wider">
+        <NText strong class="text-sm text-neon-cyan font-display">
           {{
             isTrainingActive
                ? t('features.study.replyTraining.status.training')
@@ -93,84 +93,3 @@ onBeforeRouteLeave((to, from, next) => {
     </template>
   </GameLayout>
 </template>
-
-<style scoped>
-.active-tree-panel {
-  padding: 16px;
-  height: 100%;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
-
-.lock-card {
-  text-align: center;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px dashed var(--color-border);
-}
-
-.active-mode-tag {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-}
-
-.mode-label {
-  font-size: 0.95rem;
-  color: var(--neon-cyan, #1890ff);
-}
-
-.intro-sidebar {
-  padding: 24px 16px;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.intro-card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.intro-title {
-  font-size: 1.2rem;
-  color: var(--neon-cyan, #1890ff);
-}
-
-.intro-desc {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--color-text-secondary, #cccccc);
-}
-
-.steps-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9rem;
-  color: var(--color-text-primary, #ffffff);
-}
-
-.step-num {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--neon-cyan, #1890ff);
-  color: #000000;
-  font-weight: bold;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-</style>

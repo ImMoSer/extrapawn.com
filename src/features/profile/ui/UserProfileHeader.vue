@@ -141,31 +141,30 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
 </script>
 
 <template>
-  <n-card v-if="userProfile" class="header-card" :bordered="false">
-    <div class="header-main-grid">
+  <n-card v-if="userProfile" class="bg-surface border border-border rounded-lg shadow-flat" :bordered="false">
+    <div class="grid grid-cols-1 gap-6">
       <!-- Left side: User Profile Info -->
-      <div class="profile-basic-info">
-        <div class="avatar-container">
-          <!-- KEEP CLEAR: No elements should be placed directly under the avatar -->
+      <div class="flex items-start gap-6 max-md:gap-4">
+        <div class="p-2.5 max-md:p-1.5 rounded-[20%] border border-neon-cyan/40 flex items-center justify-center shrink-0 box-border shadow-glow-cyan/20">
           <n-avatar
             round
             :size="avatarSize"
             :src="avatarUrl"
             fallback-src="https://lichess1.org/assets/images/avatar_default.png"
-            class="user-avatar"
+            class="bg-elevated"
           />
         </div>
 
-        <div class="user-main-info">
-          <n-h1 class="username">{{ userProfile.username }}</n-h1>
-          <n-space size="small" align="center" wrap class="tier-info">
+        <div class="flex flex-col justify-center h-full min-h-[170px] max-md:min-h-0">
+          <n-h1 class="!m-0 !mb-2 font-display text-neon-cyan text-3xl max-md:text-xl font-bold tracking-wide">{{ userProfile.username }}</n-h1>
+          <n-space size="small" align="center" wrap class="mb-3">
             <n-tag :type="getTierType(userProfile.subscriptionTier)" round size="small">
               {{ userProfile.subscriptionTier }}
             </n-tag>
             <n-tag v-if="userProfile.polarStatus" :type="polarStatusType" size="small" round ghost>
               {{ userProfile.polarStatus }}
             </n-tag>
-            <n-text depth="3" class="expire-date">
+            <n-text depth="3" class="text-xs text-text-secondary">
               {{ formatTierExpireDate(userProfile.TierExpire) }}
             </n-text>
             <n-button
@@ -180,35 +179,37 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
             </n-button>
           </n-space>
 
-          <div class="funcoins-stat">
+          <div class="mt-1">
             <n-statistic :label="t('pages.userCabinet.stats.pawncoinsLabel')">
               <template #prefix>🪙</template>
               <template #default>
-                <span v-if="isLimitless" class="rainbow-text limitless-symbol">∞</span>
-                <span v-else>{{
+                <span v-if="isLimitless" class="bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 bg-[length:200%_auto] bg-clip-text text-transparent animate-rainbow text-4xl align-middle leading-none font-bold font-condensed">∞</span>
+                <span v-else class="font-condensed font-bold text-neon-cyan">{{
                   (userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)
                 }}</span>
               </template>
               <template #suffix>
-                <span v-if="!isLimitless"> / {{ userProfile.dailyLimit || 0 }}</span>
+                <span v-if="!isLimitless" class="font-condensed text-text-secondary"> / {{ userProfile.dailyLimit || 0 }}</span>
               </template>
             </n-statistic>
           </div>
         </div>
       </div>
 
-      <!-- Right: Best Ratings (taking remaining space) -->
-      <div class="ratings-section">
-        <div class="section-title">{{ t('pages.userCabinet.stats.bestRatingsTitle') }}</div>
+      <!-- Right: Best Ratings -->
+      <div class="w-full">
+        <div class="font-display text-xs font-bold uppercase tracking-wider text-text-secondary mb-4 max-md:mb-3">
+          {{ t('pages.userCabinet.stats.bestRatingsTitle') }}
+        </div>
         <n-grid :cols="isMobile ? 2 : 4" :x-gap="12" :y-gap="12">
           <n-grid-item v-for="stat in gameModeScores" :key="stat.key">
-            <div class="score-item" :style="{ borderColor: stat.color }">
-              <div class="mode-emoji-icon" style="font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center; width: 24px;">
+            <div class="flex items-center gap-2.5 p-2 bg-elevated border-l-4 rounded-md transition-all hover:bg-border/40" :style="{ borderColor: stat.color }">
+              <div class="text-xl leading-none flex items-center justify-center w-6 shrink-0">
                 {{ stat.icon }}
               </div>
-              <div class="score-details" style="margin-left: 8px;">
-                <div class="mode-name">{{ stat.label }}</div>
-                <div class="mode-score">{{ stat.rating }}</div>
+              <div class="ml-2">
+                <div class="text-[0.75rem] text-text-secondary leading-tight">{{ stat.label }}</div>
+                <div class="font-condensed font-bold text-lg max-md:text-sm text-warning leading-tight">{{ stat.rating }}</div>
               </div>
             </div>
           </n-grid-item>
@@ -217,181 +218,3 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
     </div>
   </n-card>
 </template>
-
-<style scoped>
-.header-card {
-  background-color: var(--color-bg-tertiary);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-hover);
-}
-
-.header-main-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-}
-
-.profile-basic-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
-}
-
-.avatar-container {
-  padding: 10px;
-  border-radius: 20%;
-  border: 1px solid var(--color-blue-base);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  box-sizing: border-box;
-}
-
-.user-avatar {
-  background-color: var(--color-bg-tertiary);
-}
-
-.user-main-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-  min-height: 170px;
-}
-
-.username {
-  margin: 0 0 8px 0 !important;
-  font-family: var(--font-family-primary);
-  color: var(--color-accent-primary);
-  font-size: 2.2rem;
-}
-
-.tier-info {
-  margin-bottom: 12px;
-}
-
-.expire-date {
-  font-size: var(--font-size-tiny);
-}
-
-.funcoins-stat {
-  margin-top: 4px;
-}
-
-.section-title {
-  font-family: var(--font-family-primary);
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-  font-weight: bold;
-  margin-bottom: 16px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.score-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  background-color: var(--color-bg-secondary);
-  border-left: 4px solid;
-  border-radius: 6px;
-}
-
-.mode-name {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.mode-score {
-  font-weight: bold;
-  font-size: 1.1rem;
-  color: var(--color-accent-warning);
-}
-
-
-
-@media (max-width: 768px) {
-  .header-card :deep(.n-card-content) {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-
-  .header-main-grid {
-    gap: 17px;
-  }
-
-  .profile-basic-info {
-    gap: 17px;
-  }
-
-  .avatar-container {
-    padding: 7px;
-  }
-
-  .user-main-info {
-    min-height: auto;
-  }
-
-  .username {
-    font-size: 1.5rem;
-    margin-bottom: 4px !important;
-  }
-
-  .section-title {
-    font-size: 0.65rem;
-    margin-bottom: 11px;
-  }
-
-  .score-item {
-    gap: 7px;
-    padding: 6px;
-  }
-
-  .mode-score {
-    font-size: 0.85rem;
-  }
-}
-
-:deep(.n-statistic-label) {
-  font-family: var(--font-family-primary);
-}
-
-:deep(.n-statistic-value__content) {
-  font-family: var(--font-family-primary);
-  font-weight: bold;
-}
-
-.limitless-symbol {
-  font-size: 2.5em;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.rainbow-text {
-  background: linear-gradient(
-    to right,
-    #ff0000,
-    #ff7f00,
-    #ffff00,
-    #00ff00,
-    #0000ff,
-    #4b0082,
-    #8b00ff
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: rainbow 3s linear infinite;
-  font-weight: bold;
-}
-
-@keyframes rainbow {
-  to {
-    background-position: 200% center;
-  }
-}
-</style>

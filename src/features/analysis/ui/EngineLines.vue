@@ -65,16 +65,16 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
 </script>
 
 <template>
-  <div class="engine-lines-container">
+  <div class="flex flex-col gap-2 w-full">
     <transition name="fade-slide">
-      <div v-if="isAnalysisActive" class="lines-wrapper">
-        <div v-if="formattedLines.length > 0" class="lines-list">
-          <div v-for="line in formattedLines" :key="line.id" class="line-item">
-            <n-text class="line-depth" depth="3">{{ line.depth }}</n-text>
+      <div v-if="isAnalysisActive" class="min-h-[90px] bg-void/60 border border-border rounded-md p-1 overflow-hidden backdrop-blur-md">
+        <div v-if="formattedLines.length > 0" class="flex flex-col gap-1">
+          <div v-for="line in formattedLines" :key="line.id" class="flex items-center gap-2 px-1.5 py-0.5 rounded bg-surface/50 font-condensed">
+            <n-text class="font-condensed text-xs min-w-[20px] text-right" depth="3">{{ line.depth }}</n-text>
             <n-button
               size="tiny"
               :type="line.scoreType"
-              class="score-btn"
+              class="min-w-[54px] rounded font-condensed"
               strong
               @click="handleLineClick(line)"
             >
@@ -82,7 +82,7 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
             </n-button>
             <n-tooltip trigger="hover">
               <template #trigger>
-                <n-text class="pv-text" @click="handleLineClick(line)">{{
+                <n-text class="font-condensed text-sm whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer hover:text-neon-cyan" @click="handleLineClick(line)">{{
                   line.formattedPv
                 }}</n-text>
               </template>
@@ -91,7 +91,7 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
           </div>
         </div>
 
-        <div v-else class="empty-state">
+        <div v-else class="h-[90px] flex flex-col items-center justify-center gap-1">
           <n-text depth="3" italic>{{ t('features.analysis.makeMove') }}</n-text>
         </div>
       </div>

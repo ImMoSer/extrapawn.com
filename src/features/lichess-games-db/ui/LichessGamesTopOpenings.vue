@@ -202,11 +202,11 @@ const onChartClick = (params: unknown) => {
 </script>
 
 <template>
-  <div class="section-container border-top">
+  <div class="mb-5 flex flex-col gap-3 border-t border-border pt-4">
     <template v-if="!showDashboard">
-      <div class="header-row">
-        <h4 class="section-subtitle">{{ $t('features.lichessGamesDb.statistics.topOpenings') }}</h4>
-        <div class="opening-tabs-container">
+      <div class="flex justify-between items-center mb-3">
+        <h4 class="m-0 text-xs font-bold font-display uppercase tracking-wider text-text-secondary">{{ $t('features.lichessGamesDb.statistics.topOpenings') }}</h4>
+        <div class="w-[150px]">
           <NTabs type="segment" size="small" v-model:value="activeTab">
             <NTab name="white">{{ $t('features.lichessGamesDb.statistics.tabWhite') }}</NTab>
             <NTab name="black">{{ $t('features.lichessGamesDb.statistics.tabBlack') }}</NTab>
@@ -215,21 +215,21 @@ const onChartClick = (params: unknown) => {
       </div>
 
       <template v-if="hasData">
-        <div class="sort-tabs-container">
+        <div class="my-1">
           <NTabs type="segment" size="small" v-model:value="sortBy">
             <NTab name="games">{{ $t('features.lichessGamesDb.statistics.sortByGames') }}</NTab>
             <NTab name="performance">{{ $t('features.lichessGamesDb.statistics.sortByPerformance') }}</NTab>
           </NTabs>
         </div>
-        <div class="chart-wrapper">
-          <VChart class="chart" :option="chartOption" @click="onChartClick" autoresize />
+        <div class="w-full h-[70vh] max-md:h-[350px] flex justify-center items-center relative">
+          <VChart class="w-full h-full" :option="chartOption" @click="onChartClick" autoresize />
         </div>
-        <div class="chart-tip">
+        <div class="text-center text-[11px] -mt-2">
           <NText depth="3">{{ $t('features.lichessGamesDb.statistics.clickToView') }}</NText>
         </div>
       </template>
       <template v-else>
-        <div class="empty-openings">
+        <div class="py-10 text-center italic text-text-disabled">
           <NText depth="3">{{ $t('features.lichessGamesDb.statistics.noGamesPlayed') }}</NText>
         </div>
       </template>
@@ -245,75 +245,3 @@ const onChartClick = (params: unknown) => {
     </template>
   </div>
 </template>
-
-<style scoped>
-.section-container {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.border-top {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 16px;
-}
-
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.opening-tabs-container {
-  width: 150px;
-}
-
-.section-subtitle {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-}
-
-.sort-tabs-container {
-  margin-top: 4px;
-  margin-bottom: 4px;
-}
-
-/* Rose Chart */
-.chart-wrapper {
-  width: 100%;
-  height: 70vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-.chart {
-  width: 100%;
-  height: 100%;
-}
-
-@media (max-width: 768px) {
-  .chart-wrapper {
-    height: 350px;
-  }
-}
-
-.chart-tip {
-  text-align: center;
-  font-size: 11px;
-  margin-top: -8px;
-}
-
-.empty-openings {
-  padding: 40px 0;
-  text-align: center;
-  font-style: italic;
-}
-</style>

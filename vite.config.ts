@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
     },
     plugins: [
+      tailwindcss(),
       vue({
         template: {
           compilerOptions: {

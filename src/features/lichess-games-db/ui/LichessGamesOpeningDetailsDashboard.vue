@@ -176,9 +176,9 @@ async function exportOpeningGames() {
 </script>
 
 <template>
-  <div class="opening-details-dashboard">
-    <div class="dashboard-header">
-      <NButton secondary size="small" class="back-btn" @click="emit('back')">
+  <div class="bg-surface/90 backdrop-blur-md border border-border rounded-xl p-6 flex flex-col gap-5 transition-all animate-fadeIn">
+    <div class="flex justify-between items-center border-b border-border pb-3">
+      <NButton secondary size="small" class="font-bold" @click="emit('back')">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/>
@@ -186,41 +186,41 @@ async function exportOpeningGames() {
         </template>
         {{ $t('shared.buttons.back') }}
       </NButton>
-      <h4 class="dashboard-subtitle">{{ $t('features.lichessGamesDb.statistics.openingDetails') }}</h4>
+      <h4 class="m-0 text-xs font-bold font-display uppercase tracking-wider text-text-secondary">{{ $t('features.lichessGamesDb.statistics.openingDetails') }}</h4>
     </div>
 
-    <div v-if="loading" class="loading-container">
-      <div class="loader"></div>
+    <div v-if="loading" class="flex justify-center items-center h-[200px]">
+      <div class="w-10 h-10 border-3 border-border border-t-neon-cyan rounded-full animate-spin"></div>
     </div>
 
-    <div v-else-if="data" class="dashboard-content">
-      <div class="opening-name-row">
-        <span class="color-indicator" :class="color"></span>
-        <h3 class="opening-name">{{ data.openingName }}</h3>
+    <div v-else-if="data" class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full border border-white/20" :class="color === 'white' ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]' : 'bg-void border-white/40 shadow-[0_0_8px_rgba(0,0,0,0.8)]'"></span>
+        <h3 class="m-0 text-2xl font-extrabold text-neon-cyan font-display drop-shadow-md">{{ data.openingName }}</h3>
       </div>
 
       <!-- Gesamt (Overall) row -->
-      <div class="variant-card total-card">
-        <div class="variant-header">
-          <span class="variant-title">{{ $t('features.lichessGamesDb.statistics.total') }}</span>
-          <span class="variant-meta">
+      <div class="bg-danger/10 border border-danger/40 rounded-lg p-3.5 flex flex-col gap-2 transition-all hover:bg-danger/15">
+        <div class="flex justify-between items-center gap-3">
+          <span class="font-bold text-base text-text-primary truncate max-w-[250px]">{{ $t('features.lichessGamesDb.statistics.total') }}</span>
+          <span class="text-sm text-text-secondary flex gap-2 items-center font-condensed">
             ({{ $t('features.lichessGamesDb.statistics.gamesCount', { count: data.gamesCount }) }})
-            <strong class="perf-val">{{ data.performance }} TPR</strong>
+            <strong class="text-warning font-bold">{{ data.performance }} TPR</strong>
           </span>
         </div>
-        <div class="wdl-bar">
-          <div class="wdl-segment win" :style="{ width: data.winRate + '%' }">
-            <span class="wdl-val" v-if="data.winRate > 15">
+        <div class="flex h-5 rounded overflow-hidden bg-surface border border-border">
+          <div class="flex items-center justify-center bg-success transition-all" :style="{ width: data.winRate + '%' }">
+            <span class="text-[10px] font-condensed font-bold text-void" v-if="data.winRate > 15">
               {{ Math.round(data.winRate) }}% W
             </span>
           </div>
-          <div class="wdl-segment draw" :style="{ width: data.drawRate + '%' }">
-            <span class="wdl-val" v-if="data.drawRate > 15">
+          <div class="flex items-center justify-center bg-text-disabled/40 transition-all" :style="{ width: data.drawRate + '%' }">
+            <span class="text-[10px] font-condensed font-bold text-text-primary" v-if="data.drawRate > 15">
               {{ Math.round(data.drawRate) }}% D
             </span>
           </div>
-          <div class="wdl-segment loss" :style="{ width: data.lossRate + '%' }">
-            <span class="wdl-val" v-if="data.lossRate > 15">
+          <div class="flex items-center justify-center bg-danger transition-all" :style="{ width: data.lossRate + '%' }">
+            <span class="text-[10px] font-condensed font-bold text-white" v-if="data.lossRate > 15">
               {{ Math.round(data.lossRate) }}% L
             </span>
           </div>
@@ -228,34 +228,34 @@ async function exportOpeningGames() {
       </div>
 
       <!-- Scrollable list of variants -->
-      <div class="variants-section-title">
+      <div class="text-xs font-bold tracking-wider text-text-secondary uppercase border-b border-border/40 pb-1.5 mt-2.5">
         {{ $t('features.lichessGamesDb.statistics.variants') }}
       </div>
 
-      <div class="scroll-wrapper">
+      <div class="rounded-lg overflow-hidden border border-border/30 bg-void/50 p-2.5">
         <NScrollbar style="max-height: 400px;" trigger="none">
-          <div class="variants-list">
-            <div v-for="v in data.variants" :key="v.name" class="variant-card">
-              <div class="variant-header">
-                <span class="variant-title" :title="v.name">{{ v.name }}</span>
-                <span class="variant-meta">
+          <div class="flex flex-col gap-2.5">
+            <div v-for="v in data.variants" :key="v.name" class="bg-surface/60 border border-border/40 rounded-lg p-3.5 flex flex-col gap-2 transition-all hover:bg-surface hover:border-border">
+              <div class="flex justify-between items-center gap-3">
+                <span class="font-bold text-sm text-text-primary truncate max-w-[250px]" :title="v.name">{{ v.name }}</span>
+                <span class="text-xs text-text-secondary flex gap-2 items-center font-condensed">
                   ({{ $t('features.lichessGamesDb.statistics.gamesCount', { count: v.gamesCount }) }})
-                  <strong class="perf-val">{{ v.performance }} TPR</strong>
+                  <strong class="text-warning font-bold">{{ v.performance }} TPR</strong>
                 </span>
               </div>
-              <div class="wdl-bar">
-                <div class="wdl-segment win" :style="{ width: v.winRate + '%' }">
-                  <span class="wdl-val" v-if="v.winRate > 15">
+              <div class="flex h-5 rounded overflow-hidden bg-surface border border-border">
+                <div class="flex items-center justify-center bg-success transition-all" :style="{ width: v.winRate + '%' }">
+                  <span class="text-[10px] font-condensed font-bold text-void" v-if="v.winRate > 15">
                     {{ Math.round(v.winRate) }}% W
                   </span>
                 </div>
-                <div class="wdl-segment draw" :style="{ width: v.drawRate + '%' }">
-                  <span class="wdl-val" v-if="v.drawRate > 15">
+                <div class="flex items-center justify-center bg-text-disabled/40 transition-all" :style="{ width: v.drawRate + '%' }">
+                  <span class="text-[10px] font-condensed font-bold text-text-primary" v-if="v.drawRate > 15">
                     {{ Math.round(v.drawRate) }}% D
                   </span>
                 </div>
-                <div class="wdl-segment loss" :style="{ width: v.lossRate + '%' }">
-                  <span class="wdl-val" v-if="v.lossRate > 15">
+                <div class="flex items-center justify-center bg-danger transition-all" :style="{ width: v.lossRate + '%' }">
+                  <span class="text-[10px] font-condensed font-bold text-white" v-if="v.lossRate > 15">
                     {{ Math.round(v.lossRate) }}% L
                   </span>
                 </div>
@@ -265,7 +265,7 @@ async function exportOpeningGames() {
         </NScrollbar>
       </div>
 
-      <div class="dashboard-actions">
+      <div class="mt-2.5 border-t border-border pt-4">
         <NButton size="medium" type="primary" secondary block @click="exportOpeningGames">
           {{ $t('features.lichessGamesDb.cacheSettings.exportBtn') }}
         </NButton>
@@ -273,227 +273,3 @@ async function exportOpeningGames() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.opening-details-dashboard {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  transition: all 0.3s ease;
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 12px;
-}
-
-.dashboard-subtitle {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-}
-
-.back-btn {
-  font-weight: bold;
-}
-
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.opening-name-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.color-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.color-indicator.white {
-  background-color: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-}
-
-.color-indicator.black {
-  background-color: #1a1a1a;
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
-}
-
-.opening-name {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--neon-cyan, #00e5ff);
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
-}
-
-.variant-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.variant-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.total-card {
-  border-color: var(--neon-bordeaux, #d9004c);
-  background: rgba(217, 0, 76, 0.05);
-}
-
-.total-card:hover {
-  border-color: var(--neon-bordeaux, #d9004c);
-  background: rgba(217, 0, 76, 0.08);
-}
-
-.variant-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.variant-title {
-  font-weight: bold;
-  font-size: 1.05rem;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 250px;
-}
-
-.variant-meta {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.perf-val {
-  color: var(--neon-yellow, #f7d547);
-  text-shadow: 0 0 8px rgba(247, 213, 71, 0.3);
-}
-
-.variants-section-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  padding-bottom: 6px;
-  margin-top: 10px;
-}
-
-.scroll-wrapper {
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  background: rgba(0, 0, 0, 0.15);
-  padding: 10px;
-}
-
-.variants-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* WDL Progress Bars */
-.wdl-bar {
-  display: flex;
-  height: 20px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.wdl-segment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: width 0.4s ease;
-}
-
-.wdl-segment.win {
-  background: #18a058;
-}
-
-.wdl-segment.draw {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.wdl-segment.loss {
-  background: #d03050;
-}
-
-.wdl-val {
-  font-size: 10px;
-  font-weight: 900;
-  color: #fff;
-  white-space: nowrap;
-}
-
-.dashboard-actions {
-  margin-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 16px;
-}
-
-/* Loader styling */
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--neon-cyan, #00e5ff);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-</style>

@@ -122,12 +122,12 @@ const handleManageSubscription = async () => {
 </script>
 
 <template>
-  <div class="user-cabinet-container">
-    <n-alert v-if="error" type="error" closable class="error-alert">
+  <div class="max-w-[85%] mx-auto my-5 p-6 max-md:max-w-full max-md:p-1 max-md:my-2">
+    <n-alert v-if="error" type="error" closable class="mb-4">
       {{ error }}
     </n-alert>
 
-    <div v-else-if="!isAuthenticated || !userProfile" class="login-prompt">
+    <div v-else-if="!isAuthenticated || !userProfile" class="py-15 bg-surface rounded-md border border-border">
       <n-result
         status="403"
         :title="t('pages.userCabinet.title')"
@@ -141,9 +141,9 @@ const handleManageSubscription = async () => {
       </n-result>
     </div>
 
-    <div class="user-cabinet-content">
-      <div class="user-cabinet-layout-grid">
-        <div class="user-cabinet-left">
+    <div v-else class="w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div class="flex flex-col min-w-0 w-full">
           <n-space vertical size="large">
             <UserProfileHeader
               :profile-override="userProfile"
@@ -151,8 +151,7 @@ const handleManageSubscription = async () => {
               @reactivate="handleManageSubscription"
             />
 
-
-            <div class="charts-grid-unified">
+            <div class="block w-full">
               <ThemeRoseChart
                 v-if="detailedStatsData?.stats"
                 :stats="detailedStatsData.stats"
@@ -161,9 +160,8 @@ const handleManageSubscription = async () => {
               />
             </div>
 
-
             <!-- Gift Code Redeem Area -->
-            <n-card :bordered="false" class="gift-redeem-card" embedded>
+            <n-card :bordered="false" class="mt-6 rounded-md bg-surface border border-border" embedded>
               <n-space vertical>
                 <n-h3 style="margin-bottom: 0">🎁 {{ t('pages.userCabinet.gift.title') }}</n-h3>
                 <n-text depth="3">{{ t('pages.userCabinet.gift.description') }}</n-text>
@@ -193,7 +191,7 @@ const handleManageSubscription = async () => {
             <n-card
               v-if="userProfile?.isPolarCustomer"
               :bordered="false"
-              class="gift-redeem-card"
+              class="mt-6 rounded-md bg-surface border border-border"
               embedded
             >
               <n-space vertical>
@@ -215,7 +213,7 @@ const handleManageSubscription = async () => {
           </n-space>
         </div>
 
-        <div class="user-cabinet-right">
+        <div class="flex flex-col min-w-0 w-full">
           <n-space vertical size="large" style="width: 100%">
             <LichessGamesStatistics />
             <LichessGamesCacheSettings :show-back="false" />
@@ -264,64 +262,3 @@ const handleManageSubscription = async () => {
     </n-modal>
   </div>
 </template>
-
-<style scoped>
-.user-cabinet-container {
-  padding: 24px;
-  max-width: 85%;
-  margin: 20px auto;
-}
-
-.user-cabinet-layout-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.user-cabinet-left {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  width: 100%;
-}
-
-.user-cabinet-right {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  width: 100%;
-}
-
-@media (max-width: 1024px) {
-  .user-cabinet-layout-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.charts-grid-unified {
-  display: block;
-  width: 100%;
-}
-
-.login-prompt {
-  padding: 60px 0;
-  background-color: var(--color-bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-hover);
-}
-
-@media (max-width: 768px) {
-  .user-cabinet-container {
-    padding: 4px;
-    margin: 10px auto;
-    max-width: 100%;
-  }
-}
-
-.gift-redeem-card {
-  margin-top: 24px;
-  border-radius: var(--panel-border-radius);
-  background-color: var(--color-bg-panel);
-}
-</style>

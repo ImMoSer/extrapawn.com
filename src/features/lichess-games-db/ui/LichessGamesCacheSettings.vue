@@ -227,25 +227,25 @@ const syncProgressPercentage = computed(() => {
 </script>
 
 <template>
-  <div class="lichess-games-cache-settings">
+  <div class="flex flex-col h-full w-full">
     <!-- Header panel with back button -->
-    <div v-if="showBack" class="sidebar-header-banner">
-      <div class="header-action-row">
+    <div v-if="showBack" class="px-4 py-3 border-b border-border">
+      <div class="flex items-center gap-3">
         <NButton v-if="showBack" quaternary circle size="small" @click="emit('back')">
           <template #icon>
             <ArrowBackOutline />
           </template>
         </NButton>
-        <span class="wizard-title">{{ $t('features.lichessGamesDb.cacheSettings.title') }}</span>
+        <span class="text-base font-bold text-text-primary font-display">{{ $t('features.lichessGamesDb.cacheSettings.title') }}</span>
       </div>
     </div>
 
-    <div class="content-container">
+    <div class="p-0 flex flex-col gap-4 overflow-y-auto flex-1 w-full">
       <!-- Active User Profile Display -->
-      <NCard class="panel-card user-status-card" size="small">
-        <div class="username-display" style="display: flex; align-items: center; justify-content: space-between; width: 100%">
-          <span class="username-label">{{ $t('features.lichessGamesDb.cacheSettings.username') }}</span>
-          <div v-if="isDeveloper" style="display: flex; gap: 8px; align-items: center; flex-grow: 1; margin-left: 12px; max-width: 250px">
+      <NCard class="bg-surface/80 border border-success/30 rounded-lg shadow-flat" size="small">
+        <div class="flex justify-between items-center w-full">
+          <span class="text-xs text-text-secondary">{{ $t('features.lichessGamesDb.cacheSettings.username') }}</span>
+          <div v-if="isDeveloper" class="flex gap-2 items-center flex-grow ml-3 max-w-[250px]">
             <NInput
               v-model:value="editableUsername"
               size="small"
@@ -255,17 +255,17 @@ const syncProgressPercentage = computed(() => {
             />
             <NButton size="small" secondary @click="resetToSelf">Reset</NButton>
           </div>
-          <span v-else class="username-value">{{ username || $t('features.lichessGamesDb.cacheSettings.noUserSelected') }}</span>
+          <span v-else class="text-sm font-bold text-success font-condensed">{{ username || $t('features.lichessGamesDb.cacheSettings.noUserSelected') }}</span>
         </div>
       </NCard>
 
       <!-- Lichess Online Stats -->
-      <NCard v-if="store.lichessProfile" class="panel-card online-stats-card" :title="$t('features.lichessGamesDb.cacheSettings.onlineStatsTitle')" size="small">
+      <NCard v-if="store.lichessProfile" class="bg-surface border border-border rounded-lg shadow-flat" :title="$t('features.lichessGamesDb.cacheSettings.onlineStatsTitle')" size="small">
         <LichessProfileStatsTable :profile="store.lichessProfile" />
       </NCard>
 
       <!-- Lichess Online Activity -->
-      <NCard v-if="store.lichessActivity && store.lichessActivity.length > 0" class="panel-card online-activity-card" :title="$t('features.lichessGamesDb.cacheSettings.onlineActivityTitle')" size="small">
+      <NCard v-if="store.lichessActivity && store.lichessActivity.length > 0" class="bg-surface border border-border rounded-lg shadow-flat" :title="$t('features.lichessGamesDb.cacheSettings.onlineActivityTitle')" size="small">
         <LichessActivityStatsTabs :activity="store.lichessActivity" />
       </NCard>
 
@@ -279,12 +279,11 @@ const syncProgressPercentage = computed(() => {
         {{ $t('features.lichessGamesDb.cacheSettings.dbNotUpToDateDesc', { date: formattedLatestGameDate, count: newGamesCount }) }}
       </NAlert>
 
-
       <!-- Sync Progress Section -->
-      <NCard v-if="store.isSyncing" class="panel-card progress-card" size="small">
-        <div class="progress-info">
-          <NText class="progress-label">{{ $t('features.lichessGamesDb.cacheSettings.syncing') }}</NText>
-          <NText class="progress-details" depth="3">
+      <NCard v-if="store.isSyncing" class="bg-surface border border-success/40 rounded-lg shadow-flat" size="small">
+        <div class="flex justify-between mb-2 text-xs">
+          <NText class="font-bold text-text-primary">{{ $t('features.lichessGamesDb.cacheSettings.syncing') }}</NText>
+          <NText class="text-text-secondary" depth="3">
             {{ $t('features.lichessGamesDb.cacheSettings.gamesDownloaded', { current: store.syncProgress.current, total: store.syncProgress.total || '?' }) }}
           </NText>
         </div>
@@ -298,7 +297,7 @@ const syncProgressPercentage = computed(() => {
       </NCard>
 
       <!-- Action Panel -->
-      <NCard class="panel-card actions-card" :title="$t('features.lichessGamesDb.cacheSettings.actions')" size="small">
+      <NCard class="bg-surface border border-border rounded-lg shadow-flat" :title="$t('features.lichessGamesDb.cacheSettings.actions')" size="small">
         <NSpace vertical size="medium">
           <!-- Synchronize Button -->
           <div @click="handleSyncWrapper">
@@ -380,135 +379,3 @@ const syncProgressPercentage = computed(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.lichess-games-cache-settings {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.sidebar-header-banner {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.header-action-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.wizard-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.content-container {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.panel-card {
-  background-color: var(--color-bg-tertiary);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-hover);
-}
-
-.user-status-card {
-  background: linear-gradient(135deg, rgba(24, 160, 88, 0.1) 0%, rgba(24, 160, 88, 0.02) 100%);
-  border-color: rgba(24, 160, 88, 0.2);
-}
-
-.username-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.username-label {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.username-value {
-  font-size: 15px;
-  font-weight: 700;
-  color: #18a058;
-}
-
-.stats-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.stat-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.stat-count {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.stat-sub-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.sub-stat-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.sub-label {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.sub-val {
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.empty-stats {
-  padding: 16px 0;
-  text-align: center;
-}
-
-.progress-card {
-  border-color: rgba(24, 160, 88, 0.3);
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 12px;
-}
-
-.progress-label {
-  font-weight: 600;
-}
-</style>
