@@ -65,31 +65,33 @@ export async function getTopMoves(fen, count = 10) {
   const movesUci = pgnService.getCurrentUciPath()
   
   const result = await engine.analyzeMultiPV(fen, numLines, depth, startFen, movesUci)
-  const moves = result.moves.map((m) => {
-    const evalCp = normalizeToWhite(m.score, turn)
-    // Local, engine-free tagline for the move and the next couple of plies
-    // of its PV. quickExplain is pure chess.js + geometry — fast enough to
-    // run for every top move on every position change.
-    const top = quickExplain(fen, m.move)
-    const pvLine = explainPV(fen, m.pv, 3) // [{san, tagline}, …]
-    return {
-      rank: m.rank,
-      move: m.move,
-      san: uciToSan(fen, m.move),
-      eval_cp: evalCp,
-      eval_pawns: parseFloat((evalCp / 100).toFixed(2)),
-      pv: m.pv
-        .map((uci) => uciToSan(fen, uci))
-        .slice(0, 3)
-        .join(' '),
-      isMate: m.mate !== null && m.mate !== undefined,
-      mateIn: mateToWhite(m.mate, turn),
-      tagline: top.tagline,
-      motifs: top.motifs,
-      pvLine,
-      wdl: m.wdl,
-    }
-  })
+  const moves = await Promise.all(
+    result.moves.map(async (m) => {
+      const evalCp = normalizeToWhite(m.score, turn)
+      // Local, engine-free tagline for the move and the next couple of plies
+      // of its PV. quickExplain is pure chess.js + geometry — fast enough to
+      // run for every top move on every position change.
+      const top = await quickExplain(fen, m.move)
+      const pvLine = await explainPV(fen, m.pv, 3) // [{san, tagline}, …]
+      return {
+        rank: m.rank,
+        move: m.move,
+        san: uciToSan(fen, m.move),
+        eval_cp: evalCp,
+        eval_pawns: parseFloat((evalCp / 100).toFixed(2)),
+        pv: m.pv
+          .map((uci) => uciToSan(fen, uci))
+          .slice(0, 3)
+          .join(' '),
+        isMate: m.mate !== null && m.mate !== undefined,
+        mateIn: mateToWhite(m.mate, turn),
+        tagline: top.tagline,
+        motifs: top.motifs,
+        pvLine,
+        wdl: m.wdl,
+      }
+    })
+  )
   return {
     fen,
     eval_cp: normalizeToWhite(result.score ?? 0, turn),
@@ -164,7 +166,7 @@ export async function explainMoveAt(fen, moveUCI) {
 
   const wdlBefore = topRes.moves && topRes.moves[0] ? topRes.moves[0].wdl : null
 
-  const explanation = explainMove(fen, newFen, moveUCI, evalBeforeWhite, evalAfterWhite, {
+  const explanation = await explainMove(fen, newFen, moveUCI, evalBeforeWhite, evalAfterWhite, {
     topMoves: topRes.moves,
     mateAfter,
     wdlBefore,

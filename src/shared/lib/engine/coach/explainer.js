@@ -420,7 +420,7 @@ function moverScoreToWhite(scoreMoverPOV, moverColor) {
 
 const COMPLEXITY_BAND_CP = 50; // moves within this much of best are "plausible"
 
-function classifyMove({
+async function classifyMove({
   fenBefore,
   moveUCI,
   moverColor,
@@ -594,7 +594,7 @@ function classifyMove({
 // Public entry point
 // ───────────────────────────────────────────────────────────────────────────
 
-export function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, opts = {}) {
+export async function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, opts = {}) {
   const chessBefore = new Chess(fenBefore);
   const chessAfter = new Chess(fenAfter);
 
@@ -618,7 +618,7 @@ export function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter,
     : false;
 
   // Classify against engine top moves.
-  const cls = classifyMove({
+  const cls = await classifyMove({
     fenBefore,
     moveUCI,
     moverColor: sideToMove,

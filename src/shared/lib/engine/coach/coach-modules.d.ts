@@ -36,7 +36,7 @@ declare module '@/shared/lib/engine/coach/engine' {
 declare module '@/shared/lib/engine/coach/analyzer-rs' {
   export function ensureReady(): Promise<boolean>
   export function isReady(): boolean
-  export function explainPosition(fen: string): import('./coach.types').CoachExplanation
+  export function explainPosition(fen: string): Promise<import('./coach.types').CoachExplanation | null>
 }
 
 declare module '@/shared/lib/engine/coach/full-explanation' {

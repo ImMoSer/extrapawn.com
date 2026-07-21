@@ -6,7 +6,7 @@ import { initSync, analyze as wasmAnalyze } from '../wasm-rs/engine_rs.js'
 import { explainMove, see } from '../explainer.js'
 
 describe('WASM & SEE Investigation Test', () => {
-  it('analyzes position and outputs detailed logs', () => {
+  it('analyzes position and outputs detailed logs', async () => {
     // 1. Initialize WASM synchronously
     const wasmPath = path.resolve(process.cwd(), 'src/shared/lib/engine/coach/wasm-rs/engine_rs_bg.wasm')
     const wasmBytes = fs.readFileSync(wasmPath)
@@ -56,7 +56,7 @@ describe('WASM & SEE Investigation Test', () => {
       { rank: 2, move: 'a1a2', score: 0, cp: 0, pv: ['a1a2'] }
     ]
 
-    const explanation = explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, {
+    const explanation = await explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, {
       topMoves
     })
 

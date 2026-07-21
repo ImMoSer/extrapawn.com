@@ -608,9 +608,9 @@ function parseMove(fenBefore, moveUCI) {
 //
 // `quickExplain` tries the Rust analyzer first; if WASM isn't ready or
 // the call fails, it falls back to the JS implementation below.
-export function quickExplain(fenBefore, moveUCI) {
+export async function quickExplain(fenBefore, moveUCI) {
   if (isReady()) {
-    const r = analyzeMove(fenBefore, moveUCI);
+    const r = await analyzeMove(fenBefore, moveUCI);
     if (r) return composeTagline(r);
   }
   return quickExplainJs(fenBefore, moveUCI);
@@ -1117,10 +1117,10 @@ function quickExplainJs(fenBefore, moveUCI) {
 }
 
 // Run quickExplain on the first N plies of a PV.
-export function explainPV(startFen, pvUcis, plies = 3) {
+export async function explainPV(startFen, pvUcis, plies = 3) {
   // Fast path: WASM can analyze the whole sequence in one call.
   if (isReady()) {
-    const arr = analyzePv(startFen, pvUcis.slice(0, plies), plies);
+    const arr = await analyzePv(startFen, pvUcis.slice(0, plies), plies);
     if (Array.isArray(arr) && arr.length > 0) {
       return arr.map(r => {
         const composed = composeTagline(r);
@@ -1132,7 +1132,7 @@ export function explainPV(startFen, pvUcis, plies = 3) {
   let fen = startFen;
   const out = [];
   for (const uci of pvUcis.slice(0, plies)) {
-    const r = quickExplain(fen, uci);
+    const r = await quickExplain(fen, uci);
     if (!r || !r.san) break;
     out.push({ san: r.san, tagline: r.tagline });
     if (!r.fenAfter) break;

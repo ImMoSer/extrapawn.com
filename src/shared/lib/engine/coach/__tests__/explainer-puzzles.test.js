@@ -37,12 +37,12 @@ const csvPath = path.resolve(process.cwd(), 'tests/test_sacrifice_pro.csv')
 const puzzles = parseCsv(csvPath)
 
 describe('Explainer Puzzle Tests (Sacrifices)', () => {
-  it('runs all puzzle tests and aggregates results', () => {
+  it('runs all puzzle tests and aggregates results', async () => {
     const successes = []
     const failures = []
     let passed = 0
 
-    puzzles.forEach((puzzle) => {
+    for (const puzzle of puzzles) {
       try {
         const fenBefore = puzzle.puzzle_fen
         const moves = puzzle.tactical_solution.split(' ')
@@ -68,7 +68,7 @@ describe('Explainer Puzzle Tests (Sacrifices)', () => {
           { rank: 2, move: 'a1a2', score: 0, cp: 0, pv: ['a1a2'] }
         ]
         
-        const explanation = explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, {
+        const explanation = await explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, {
           topMoves
         })
         
@@ -97,7 +97,7 @@ describe('Explainer Puzzle Tests (Sacrifices)', () => {
           error: e.message
         })
       }
-    })
+    }
 
     console.log(`\n=== PUZZLE TEST SUMMARY ===`)
     console.log(`Total Puzzles tested: ${puzzles.length}`)

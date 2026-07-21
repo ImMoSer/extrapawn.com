@@ -149,10 +149,10 @@ describe('_detectSacrificeViaSEE', () => {
 // ─────────────────────────────────────────────────────────────────────
 
 describe('explainMove', () => {
-  it('classifies a played top-1 move as best', () => {
+  it('classifies a played top-1 move as best', async () => {
     const fenBefore = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     const fenAfter = makeMoveFen(fenBefore, 'e2', 'e4')
-    const result = explainMove(fenBefore, fenAfter, 'e2e4', 25, -25, {
+    const result = await explainMove(fenBefore, fenAfter, 'e2e4', 25, -25, {
       // mover-POV scores, e2e4 is the engine's top choice.
       topMoves: [
         { rank: 1, move: 'e2e4', score: 25, cp: 25, mate: null, isMate: false, pv: ['e2e4'] },
@@ -164,7 +164,7 @@ describe('explainMove', () => {
     expect(result.isBestMove).toBe(true)
   })
 
-  it('classifies a top-3 alternative within 4pp loss as excellent', () => {
+  it('classifies a top-3 alternative within 4pp loss as excellent', async () => {
     // Tight scores: best=25, played≈20 (mover POV). With cp ≈ 20-25 the
     // win-rate sigmoid yields a loss < 4pp → `excellent` classification.
     // We pass eval-after as -20 (white POV, after black's reply); that
@@ -172,7 +172,7 @@ describe('explainMove', () => {
     // close to the boundary. Bump played slightly higher to clear it.
     const fenBefore = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     const fenAfter = makeMoveFen(fenBefore, 'd2', 'd4')
-    const result = explainMove(fenBefore, fenAfter, 'd2d4', 25, -10, {
+    const result = await explainMove(fenBefore, fenAfter, 'd2d4', 25, -10, {
       topMoves: [
         { rank: 1, move: 'e2e4', score: 25, cp: 25, mate: null, isMate: false, pv: ['e2e4'] },
         { rank: 2, move: 'd2d4', score: 24, cp: 24, mate: null, isMate: false, pv: ['d2d4'] },
@@ -182,14 +182,14 @@ describe('explainMove', () => {
     expect(result.quality).toBe('excellent')
   })
 
-  it('reports checkmate as best and motif checkmate', () => {
+  it('reports checkmate as best and motif checkmate', async () => {
     // Fool's mate: 1.f3 e5 2.g4 Qh4#
     let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
     fen = makeMoveFen(fen, 'f2', 'f3')
     fen = makeMoveFen(fen, 'e7', 'e5')
     fen = makeMoveFen(fen, 'g2', 'g4')
     const fenAfter = makeMoveFen(fen, 'd8', 'h4')
-    const result = explainMove(fen, fenAfter, 'd8h4', 0, -10000, {
+    const result = await explainMove(fen, fenAfter, 'd8h4', 0, -10000, {
       topMoves: [{ rank: 1, move: 'd8h4', score: 100000, mate: 1, isMate: true, pv: ['d8h4'] }],
     })
     expect(result.quality).toBe('best')

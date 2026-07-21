@@ -59,7 +59,7 @@ export async function buildFullExplanation(fen, opts = {}) {
   if (!wasmReady() || !fen) return null
 
   // ── Static layer ────────────────────────────────────────────────────
-  const staticBlob = explainPosition(fen)
+  const staticBlob = await explainPosition(fen)
   if (!staticBlob || staticBlob.error) return staticBlob || null
 
   // Attach pre-calculated concrete facts (for UI and Bridge consistency)
@@ -82,52 +82,54 @@ export async function buildFullExplanation(fen, opts = {}) {
   if (!engineRes || !Array.isArray(engineRes.moves)) return staticBlob
 
   // ── Annotate each top move with motifs + a per-move plan brief ─────
-  const annotatedMoves = engineRes.moves.map((m, idx) => {
-    const result = analyzeMove(fen, m.move)
-    const motifIds = (result?.motifs || []).map((x) => x.id)
-    const planBrief = inferPlanBrief(fen, m.pv || [], motifIds, attackingSideOf(fen))
-    const character = classifyCharacter(motifIds, m, idx, engineRes.moves)
+  const annotatedMoves = await Promise.all(
+    engineRes.moves.map(async (m, idx) => {
+      const result = await analyzeMove(fen, m.move)
+      const motifIds = (result?.motifs || []).map((x) => x.id)
+      const planBrief = await inferPlanBrief(fen, m.pv || [], motifIds, attackingSideOf(fen))
+      const character = classifyCharacter(motifIds, m, idx, engineRes.moves)
 
-    // UI-Synchronous Tagline
-    const taglineObj = composeTagline(result)
+      // UI-Synchronous Tagline
+      const taglineObj = composeTagline(result)
 
-    const stm = getSideToMove(fen)
-    const evalAfterWhite = stm === 'w' ? m.score : -m.score
+      const stm = getSideToMove(fen)
+      const evalAfterWhite = stm === 'w' ? m.score : -m.score
 
-    // Full Move Explanation (Quality, Summary, Details)
-    const explanation = explainMove(
-      fen,
-      result?.fen_after || fen, // Fallback if Rust fails
-      m.move,
-      staticBlob.eval_cp || 0,
-      evalAfterWhite,
-      { topMoves: engineRes.moves }
-    )
+      // Full Move Explanation (Quality, Summary, Details)
+      const explanation = await explainMove(
+        fen,
+        result?.fen_after || fen, // Fallback if Rust fails
+        m.move,
+        staticBlob.eval_cp || 0,
+        evalAfterWhite,
+        { topMoves: engineRes.moves }
+      )
 
-    return {
-      uci: m.move,
-      san: result?.san || m.move,
-      score: m.score,
-      mate: m.mate,
-      motifs: motifIds,
-      targetsKing: motifIds.some((id) => KING_ATTACK_MOTIFS.has(id)),
-      headline: taglineObj.tagline || result?.motifs?.[0]?.phrase || null,
-      tagline: taglineObj.tagline,
-      plan_theme: planBrief.theme,
-      plan_brief: planBrief.text,
-      plan_pv: planBrief.pv,
-      character: character.label,
-      character_reason: character.reason,
-      explanation: {
-        quality: explanation.quality,
-        summary: explanation.summary,
-        details: explanation.details,
-        best_move_san: explanation.bestMoveSan,
-        is_best_move: explanation.isBestMove,
-        winRateLoss: explanation.winRateLoss
+      return {
+        uci: m.move,
+        san: result?.san || m.move,
+        score: m.score,
+        mate: m.mate,
+        motifs: motifIds,
+        targetsKing: motifIds.some((id) => KING_ATTACK_MOTIFS.has(id)),
+        headline: taglineObj.tagline || result?.motifs?.[0]?.phrase || null,
+        tagline: taglineObj.tagline,
+        plan_theme: planBrief.theme,
+        plan_brief: planBrief.text,
+        plan_pv: planBrief.pv,
+        character: character.label,
+        character_reason: character.reason,
+        explanation: {
+          quality: explanation.quality,
+          summary: explanation.summary,
+          details: explanation.details,
+          best_move_san: explanation.bestMoveSan,
+          is_best_move: explanation.isBestMove,
+          winRateLoss: explanation.winRateLoss
+        }
       }
-    }
-  })
+    })
+  )
 
 
   // ── Engine-driven attack potential ──────────────────────────────────
@@ -161,7 +163,7 @@ export async function buildFullExplanation(fen, opts = {}) {
   for (let i = 0; i < Math.min(principalPv.length, PLAN_PLIES); i++) {
     const uci = principalPv[i]
     if (!uci) break
-    const result = analyzeMove(curFen, uci)
+    const result = await analyzeMove(curFen, uci)
     if (!result) break
 
     // Determine the piece role (type) using chess.js
@@ -851,7 +853,7 @@ function attackingSideOf(fen) {
 //   - `theme`: dominant motif category across the PV ply-set
 //   - `text`: a one-line forward-looking description
 //   - `pv`: the SAN sequence (for display)
-function inferPlanBrief(rootFen, pv, rootMotifIds, rootSide) {
+async function inferPlanBrief(rootFen, pv, rootMotifIds, rootSide) {
   if (!Array.isArray(pv) || pv.length === 0) {
     return { theme: null, text: null, pv: [] }
   }
@@ -867,7 +869,7 @@ function inferPlanBrief(rootFen, pv, rootMotifIds, rootSide) {
   for (let i = 0; i < Math.min(pv.length, PLAN_PLIES); i++) {
     const uci = pv[i]
     if (!uci) break
-    const result = analyzeMove(curFen, uci)
+    const result = await analyzeMove(curFen, uci)
     if (!result) break
     const ids = (result.motifs || []).map((m) => m.id)
     planSteps.push({ san: result.san, motifs: ids })
