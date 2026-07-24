@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox } from 'naive-ui'
+import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NTooltip } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
 import { useAnalysisStore } from '@/features/analysis'
 import { EngineLines } from '@/features/analysis'
+import { useSparringStore } from '@/features/sparring'
 
 const analysisStore = useAnalysisStore()
+const sparringStore = useSparringStore()
 const { t } = useI18n()
 
 const {
@@ -18,6 +20,14 @@ const {
   searchTime,
   showArrows,
 } = storeToRefs(analysisStore)
+
+const isEngineDisabled = computed(() => sparringStore.gameStatus === 'playing')
+
+watch(isEngineDisabled, (disabled) => {
+  if (disabled && isAnalysisActive.value) {
+    void analysisStore.hidePanel()
+  }
+})
 
 // Current best score formatted
 const bestScore = computed(() => {
@@ -57,6 +67,7 @@ const engineDepth = computed(() => {
 })
 
 const handleToggle = () => {
+  if (isEngineDisabled.value) return
   analysisStore.toggleAnalysis()
 }
 
@@ -97,23 +108,31 @@ const formatSearchTimeTooltip = (value: number) => {
     <div class="header-control-row">
       <div class="engine-info">
         <div class="engine-toggle-block">
-          <n-switch 
-            :value="isAnalysisActive" 
-            @update:value="handleToggle" 
-            size="medium"
-            class="neon-switch"
-          />
+          <n-tooltip trigger="hover" :disabled="!isEngineDisabled">
+            <template #trigger>
+              <span>
+                <n-switch 
+                  :value="isAnalysisActive && !isEngineDisabled" 
+                  :disabled="isEngineDisabled"
+                  @update:value="handleToggle" 
+                  size="medium"
+                  class="neon-switch"
+                />
+              </span>
+            </template>
+            {{ $t('features.sparring.engineDisabledTooltip') }}
+          </n-tooltip>
           <span class="engine-label">Stockfish 18</span>
         </div>
-        <div v-if="isAnalysisActive" class="engine-depth-badge">
+        <div v-if="isAnalysisActive && !isEngineDisabled" class="engine-depth-badge">
           <n-text depth="3">d: {{ engineDepth }}</n-text>
         </div>
       </div>
 
       <!-- Evaluation Pill & Settings -->
       <div class="eval-and-settings">
-        <div :class="['eval-pill', bestScoreClass]">
-          {{ bestScore }}
+        <div :class="['eval-pill', isEngineDisabled ? 'is-off' : bestScoreClass]">
+          {{ isEngineDisabled ? 'OFF' : bestScore }}
         </div>
 
         <n-popover trigger="click" placement="bottom-end" class="glass popup-settings">
@@ -176,7 +195,7 @@ const formatSearchTimeTooltip = (value: number) => {
     </div>
 
     <!-- PV lines preview -->
-    <div v-show="isAnalysisActive" class="pv-lines-container">
+    <div v-show="isAnalysisActive && !isEngineDisabled" class="pv-lines-container">
       <EngineLines />
     </div>
   </div>

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { MozerExplorerWidget } from '@/widgets/mozer-explorer'
 import { useBoardStore } from '@/entities/game'
-import { useSparringStore, SparringControlsPanel } from '@/features/sparring'
+import { useSparringStore, SparringControlsPanel, NewGameModal } from '@/features/sparring'
 import { useCoachStore } from '@/features/coach'
 import { useAnalysisStore } from '@/features/analysis'
 
+const route = useRoute()
+const router = useRouter()
 const boardStore = useBoardStore()
 const sparringStore = useSparringStore()
 const coachStore = useCoachStore()
@@ -17,8 +20,12 @@ watch(() => boardStore.fen, (newFen) => {
   sparringStore.localFen = newFen
 })
 
+watch(() => route.params.gameId, (newGameId) => {
+  sparringStore.initializeFromRoute(newGameId as string | undefined, router)
+})
+
 onMounted(() => {
-  sparringStore.initialize()
+  sparringStore.initializeFromRoute(route.params.gameId as string | undefined, router)
   coachStore.setCoachEnabled(true)
 })
 
@@ -40,7 +47,8 @@ onUnmounted(async () => {
     </template>
 
     <template #center-column>
-      <!-- Placeholder for center column if needed -->
+      <!-- New Game Setup Modal -->
+      <NewGameModal />
     </template>
 
     <template #right-panel>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore, PgnTree } from '@/entities/game'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { useSparringStore } from '@/features/sparring'
 import { NText, NIcon } from 'naive-ui'
 import { 
   ArrowUpOutline, 
@@ -10,7 +11,10 @@ import {
 } from '@vicons/ionicons5'
 
 const gameStore = useGameStore()
+const sparringStore = useSparringStore()
 const scrollContainer = ref<HTMLElement | null>(null)
+
+const isReadOnly = computed(() => sparringStore.gameStatus === 'playing')
 
 watch(
   pgnTreeVersion,
@@ -40,8 +44,8 @@ const selectedNode = ref<PgnNode | null>(null)
 const handleContextMenu = (payload: { event: MouseEvent; node: PgnNode }) => {
   const { event, node } = payload
   
-  // Do not show menu on root node (ply 0)
-  if (node.ply === 0) return
+  // Do not show menu on root node (ply 0) or during active play
+  if (isReadOnly.value || node.ply === 0) return
 
   selectedNode.value = node
   menuX.value = event.clientX
@@ -107,7 +111,11 @@ const deleteMove = () => {
     </div>
     
     <div ref="scrollContainer" class="history-content-scroll">
-      <PgnTree :key="pgnTreeVersion" @contextmenu="handleContextMenu" />
+      <PgnTree
+        :key="pgnTreeVersion"
+        :read-only="isReadOnly"
+        @contextmenu="handleContextMenu"
+      />
     </div>
 
     <!-- Custom Glassmorphic Context Menu -->

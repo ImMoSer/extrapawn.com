@@ -3,11 +3,21 @@ import { computed } from 'vue'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import PgnTreeNode from './PgnTreeNode.vue'
 
+const props = withDefaults(
+  defineProps<{
+    readOnly?: boolean
+  }>(),
+  {
+    readOnly: false,
+  }
+)
+
 const rootNode = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const v = pgnTreeVersion.value
   return pgnService.getRootNode()
 })
+
 const emit = defineEmits<{
   (e: 'contextmenu', payload: { event: MouseEvent; node: PgnNode }): void
 }>()
@@ -16,7 +26,12 @@ const emit = defineEmits<{
 <template>
   <div class="pgn-tree-view">
     <div v-if="rootNode && rootNode.children.length > 0" class="tree-content">
-      <PgnTreeNode :node="rootNode" :depth="0" @contextmenu="emit('contextmenu', $event)" />
+      <PgnTreeNode
+        :node="rootNode"
+        :depth="0"
+        :read-only="props.readOnly"
+        @contextmenu="emit('contextmenu', $event)"
+      />
     </div>
     <div v-else class="empty-pgn">
       Keine Züge vorhanden

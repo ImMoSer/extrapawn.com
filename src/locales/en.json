@@ -681,6 +681,35 @@
         "failure": "Position lost or draw missed. Try again."
       }
     },
+    "sparring": {
+      "newGameModal": {
+        "title": "New Sparring Game",
+        "chooseColor": "Choose your color",
+        "white": "White",
+        "whiteSub": "You move first",
+        "black": "Black",
+        "blackSub": "Coach moves first",
+        "startPosition": "Starting position",
+        "typeStandard": "Standard",
+        "typePreset": "Preset",
+        "typeCustom": "Custom FEN",
+        "selectPresetPlaceholder": "Select opening",
+        "customFenPlaceholder": "Enter FEN string",
+        "startGame": "Start Game"
+      },
+      "controls": {
+        "white": "White",
+        "black": "Black",
+        "analysis": "ANALYSIS",
+        "resign": "Resign",
+        "newGame": "New Game",
+        "confirmResignTitle": "Resign game?",
+        "confirmResignMessage": "Do you really want to resign this sparring game? The game will then switch to analysis mode.",
+        "confirmResignBtn": "Resign",
+        "keepPlayingBtn": "Keep playing"
+      },
+      "engineDisabledTooltip": "Stockfish Engine is disabled during active play"
+    },
     "lichessGamesDb": {
       "statistics": {
         "title": "Game Database Statistics",

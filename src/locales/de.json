@@ -681,6 +681,35 @@
         "failure": "Stellung verloren oder Remis verpasst. Versuche es noch einmal."
       }
     },
+    "sparring": {
+      "newGameModal": {
+        "title": "Neues Sparring-Spiel",
+        "chooseColor": "Deine Farbe wählen",
+        "white": "Weiß",
+        "whiteSub": "Du ziehst zuerst",
+        "black": "Schwarz",
+        "blackSub": "Coach beginnt",
+        "startPosition": "Startposition",
+        "typeStandard": "Standard",
+        "typePreset": "Preset",
+        "typeCustom": "Eigene FEN",
+        "selectPresetPlaceholder": "Eröffnung wählen",
+        "customFenPlaceholder": "FEN String eingeben",
+        "startGame": "Spiel starten"
+      },
+      "controls": {
+        "white": "Weiß",
+        "black": "Schwarz",
+        "analysis": "ANALYSE",
+        "resign": "Aufgeben",
+        "newGame": "Neues Spiel",
+        "confirmResignTitle": "Partie aufgeben?",
+        "confirmResignMessage": "Möchtest du diese Sparring-Partie wirklich aufgeben? Das Spiel wechselt danach in den Analyse-Modus.",
+        "confirmResignBtn": "Aufgeben",
+        "keepPlayingBtn": "Weiter spielen"
+      },
+      "engineDisabledTooltip": "Stockfish Engine ist während des aktiven Spiels deaktiviert"
+    },
     "lichessGamesDb": {
       "statistics": {
         "title": "Spieldatenbank-Statistiken",

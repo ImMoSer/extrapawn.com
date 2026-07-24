@@ -77,7 +77,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/sparring',
+      path: '/sparring/:gameId?',
       name: 'sparring',
       component: SparringPage,
       meta: { isGame: true, requiresAuth: true, game: 'sparring' },

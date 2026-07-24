@@ -1,81 +1,90 @@
 <script setup lang="ts">
-import { RefreshOutline, SwapVerticalOutline } from '@vicons/ionicons5';
-import { NButton, NIcon, NInput, NSpace, NText, NTooltip } from 'naive-ui';
-import { useSparringStore } from '../model/sparring.store';
+import { FlagOutline, AddOutline, AnalyticsOutline } from '@vicons/ionicons5'
+import { NButton, NIcon, NSpace, NTag } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+import { useSparringStore } from '../model/sparring.store'
+import { useUiStore } from '@/shared/ui/model/ui.store'
 
 const sparringStore = useSparringStore()
+const uiStore = useUiStore()
+const { t } = useI18n()
+
+async function handleResign() {
+  const userConfirmed = await uiStore.showConfirmation(
+    t('features.sparring.controls.confirmResignTitle'),
+    t('features.sparring.controls.confirmResignMessage'),
+    {
+      confirmText: t('features.sparring.controls.confirmResignBtn'),
+      cancelText: t('features.sparring.controls.keepPlayingBtn'),
+      showCancel: true,
+    }
+  )
+
+  if (userConfirmed === 'confirm') {
+    sparringStore.resignGame()
+  }
+}
 </script>
 
 <template>
   <div class="sparring-controls-panel">
     <div class="panel-left">
       <span class="mode-badge">SPARRING</span>
-      <n-text class="mode-description">Gegen Maia trainieren & Eröffnungen lernen</n-text>
+
+      <!-- Game ID badge -->
+      <n-tag v-if="sparringStore.gameId" size="small" round :bordered="false" class="game-id-tag">
+        #{{ sparringStore.gameId }}
+      </n-tag>
+
+      <!-- Player Color badge -->
+      <span v-if="sparringStore.gameStatus !== 'setup'" class="color-badge">
+        <span class="color-dot" :class="sparringStore.userColor"></span>
+        {{ sparringStore.userColor === 'white' ? $t('features.sparring.controls.white') : $t('features.sparring.controls.black') }}
+      </span>
+
+      <!-- Status badge -->
+      <span v-if="sparringStore.gameStatus === 'analysis'" class="analysis-badge">
+        <n-icon><AnalyticsOutline /></n-icon> {{ $t('features.sparring.controls.analysis') }}
+      </span>
     </div>
 
     <div class="panel-right">
       <n-space :size="12" align="center">
-        <!-- Flip Board Button -->
-        <n-tooltip trigger="hover">
-          <template #trigger>
-            <n-button
-              circle
-              secondary
-              size="medium"
-              @click="sparringStore.handleFlip"
-              class="control-btn flip-btn"
-            >
-              <template #icon>
-                <n-icon><SwapVerticalOutline /></n-icon>
-              </template>
-            </n-button>
+        <!-- Resign Button (Active Game) -->
+        <n-button
+          v-if="sparringStore.gameStatus === 'playing'"
+          type="error"
+          secondary
+          size="medium"
+          class="resign-btn"
+          @click="handleResign"
+        >
+          <template #icon>
+            <n-icon><FlagOutline /></n-icon>
           </template>
-          Brett drehen (Farbe wechseln)
-        </n-tooltip>
+          {{ $t('features.sparring.controls.resign') }}
+        </n-button>
 
-        <!-- Restart Button -->
-        <n-tooltip trigger="hover">
-          <template #trigger>
-            <n-button
-              circle
-              secondary
-              size="medium"
-              @click="sparringStore.restartGame"
-              class="control-btn restart-btn"
-            >
-              <template #icon>
-                <n-icon><RefreshOutline /></n-icon>
-              </template>
-            </n-button>
+        <!-- New Game Button (Analysis or Setup Mode) -->
+        <n-button
+          v-else
+          type="primary"
+          secondary
+          size="medium"
+          class="new-game-btn"
+          @click="sparringStore.openNewGameModal"
+        >
+          <template #icon>
+            <n-icon><AddOutline /></n-icon>
           </template>
-          Spiel neu starten
-        </n-tooltip>
-
-        <!-- FEN Input and Load -->
-        <div class="fen-input-wrapper">
-          <n-input
-            v-model:value="sparringStore.localFen"
-            placeholder="FEN eingeben"
-            size="medium"
-            class="fen-input"
-            @keyup.enter="sparringStore.applyFen(sparringStore.localFen)"
-          />
-          <n-button
-            type="primary"
-            secondary
-            size="medium"
-            class="load-btn"
-            @click="sparringStore.applyFen(sparringStore.localFen)"
-          >
-            Laden
-          </n-button>
-        </div>
+          {{ $t('features.sparring.controls.newGame') }}
+        </n-button>
       </n-space>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .sparring-controls-panel {
   display: flex;
   justify-content: space-between;
@@ -91,7 +100,7 @@ const sparringStore = useSparringStore()
 .panel-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .mode-badge {
@@ -106,10 +115,55 @@ const sparringStore = useSparringStore()
   letter-spacing: 1px;
 }
 
-.mode-description {
-  color: var(--color-text-muted, #71717a);
-  font-size: 0.9rem;
-  font-weight: 500;
+.game-id-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--neon-cyan, #1890ff);
+  font-size: 0.8rem;
+}
+
+.color-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #d4d4d8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  &.white {
+    background: #fff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  }
+
+  &.black {
+    background: #52525b;
+    border: 1px solid #a1a1aa;
+  }
+}
+
+.analysis-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(38, 166, 154, 0.15);
+  color: #26a69a;
+  border: 1px solid rgba(38, 166, 154, 0.3);
 }
 
 .panel-right {
@@ -117,42 +171,11 @@ const sparringStore = useSparringStore()
   align-items: center;
 }
 
-.control-btn {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #d4d4d8 !important;
-  transition: all 0.3s ease;
+.resign-btn {
+  font-weight: 700;
 }
 
-.control-btn:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  color: #fff !important;
-}
-
-.fen-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fen-input {
-  width: 260px;
-}
-
-.load-btn {
-  font-weight: 600;
-}
-
-@media (max-width: 768px) {
-  .panel-left {
-    display: none !important;
-  }
-  .fen-input-wrapper {
-    display: none !important;
-  }
-  .sparring-controls-panel {
-    justify-content: center;
-  }
+.new-game-btn {
+  font-weight: 700;
 }
 </style>

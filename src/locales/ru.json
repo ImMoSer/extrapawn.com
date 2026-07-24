@@ -681,6 +681,35 @@
         "failure": "Позиция проиграна или упущена ничья. Попробуйте еще раз."
       }
     },
+    "sparring": {
+      "newGameModal": {
+        "title": "Новая игра в спарринге",
+        "chooseColor": "Выберите ваш цвет",
+        "white": "Белые",
+        "whiteSub": "Вы ходите первыми",
+        "black": "Черные",
+        "blackSub": "Тренер начинает",
+        "startPosition": "Начальная позиция",
+        "typeStandard": "Стандартная",
+        "typePreset": "Пресет",
+        "typeCustom": "Свой FEN",
+        "selectPresetPlaceholder": "Выберите дебют",
+        "customFenPlaceholder": "Введите FEN строку",
+        "startGame": "Начать игру"
+      },
+      "controls": {
+        "white": "Белые",
+        "black": "Черные",
+        "analysis": "АНАЛИЗ",
+        "resign": "Сдаться",
+        "newGame": "Новая игра",
+        "confirmResignTitle": "Сдаться в партии?",
+        "confirmResignMessage": "Вы действительно хотите сдаться в этой спарринг-партии? Игра перейдет в режим анализа.",
+        "confirmResignBtn": "Сдаться",
+        "keepPlayingBtn": "Продолжить игру"
+      },
+      "engineDisabledTooltip": "Движок Stockfish отключен во время активной игры"
+    },
     "lichessGamesDb": {
       "statistics": {
         "title": "Статистика базы игр",
