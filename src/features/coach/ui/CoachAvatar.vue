@@ -10,7 +10,7 @@
       <div class="coach-name">Chess Coach</div>
       <div class="coach-message">{{ message }}</div>
       <!-- Engine Plan -->
-      <div v-if="hasPlan && mood === 'neutral'" class="engine-plan">
+      <div v-if="hasPlan && mood === 'neutral' && !coachStore.llmMessage" class="engine-plan">
         <div class="section-title">
           Engine plan{{ plan?.depth ? ` · depth ${plan.depth}` : '' }}
         </div>
@@ -24,40 +24,65 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCoachFeedbackStore } from '../model/coach-feedback.store'
 import { useCoachStore } from '../model/coach.store'
 
 const feedbackStore = useCoachFeedbackStore()
 const coachStore = useCoachStore()
+const { t } = useI18n()
 
 const plan = computed(() => coachStore.currentExplanation?.principal_plan)
 const hasPlan = computed<boolean>(
   () => !!(plan.value && Array.isArray(plan.value.moves) && plan.value.moves.length >= 2),
 )
 
-const mood = computed(() => feedbackStore.coachMood)
+// Map mood names / shortcodes to standard visual mood classes
+const MOOD_MAP: Record<string, { emoji: string; class: string }> = {
+  proud: { emoji: '🤩', class: 'proud' },
+  star_struck: { emoji: '🤩', class: 'proud' },
 
-const emoji = computed(() => {
-  switch (mood.value) {
-    case 'proud':
-      return '🤩'
-    case 'shocked':
-      return '🤦‍♂️'
-    case 'thoughtful':
-      return '🧐'
-    case 'warning':
-      return '🤨'
-    case 'relieved':
-      return '😅'
-    case 'celebrating':
-      return '🙌'
-    case 'neutral':
-    default:
-      return '🙂'
+  thoughtful: { emoji: '🧐', class: 'thoughtful' },
+  thinking_face: { emoji: '🧐', class: 'thoughtful' },
+
+  warning: { emoji: '🤨', class: 'warning' },
+
+  shocked: { emoji: '🤦‍♂️', class: 'shocked' },
+  screaming: { emoji: '😱', class: 'shocked' },
+
+  relieved: { emoji: '😅', class: 'relieved' },
+
+  celebrating: { emoji: '🙌', class: 'celebrating' },
+  tada: { emoji: '🎉', class: 'celebrating' },
+
+  neutral: { emoji: '🙂', class: 'neutral' }
+}
+
+const currentMoodInfo = computed(() => {
+  if (coachStore.isLlmThinking) {
+    return { emoji: '🧐', class: 'thoughtful' }
   }
+
+  const rawMood = coachStore.llmMood || feedbackStore.coachMood
+  if (rawMood && MOOD_MAP[rawMood]) {
+    return MOOD_MAP[rawMood]
+  }
+
+  return { emoji: rawMood || '🙂', class: 'neutral' }
 })
 
+const mood = computed(() => currentMoodInfo.value.class)
+const emoji = computed(() => currentMoodInfo.value.emoji)
+
 const message = computed(() => {
+  if (coachStore.isLlmThinking) {
+    return t('features.coach.llmThinking')
+  }
+
+  if (coachStore.llmMessage) {
+    return coachStore.llmMessage
+  }
+
   if (feedbackStore.takebackMessage) {
     return feedbackStore.takebackMessage
   }

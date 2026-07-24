@@ -33,6 +33,31 @@ export const useCoachStore = defineStore('coach', () => {
   const currentExplanation = ref<CoachExplanation | null>(null)
   const previousExplanation = ref<CoachExplanation | null>(null)
 
+  // LLM Coach State & Actions
+  const isLlmThinking = ref(false)
+  const llmMessage = ref<string | null>(null)
+  const llmMood = ref<string | null>(null)
+
+  function setLlmThinking(thinking: boolean) {
+    isLlmThinking.value = thinking
+  }
+
+  function setLlmResponse(response: { message: string; mood?: string | null } | null) {
+    if (response) {
+      llmMessage.value = response.message
+      llmMood.value = response.mood || null
+    } else {
+      llmMessage.value = null
+      llmMood.value = null
+    }
+  }
+
+  function resetLlmState() {
+    isLlmThinking.value = false
+    llmMessage.value = null
+    llmMood.value = null
+  }
+
   // State for Visuals
   const showVisuals = ref(false)
 
@@ -385,5 +410,13 @@ export const useCoachStore = defineStore('coach', () => {
 
     analyzeCurrentPosition,
     reset,
+
+    // LLM Coach
+    isLlmThinking,
+    llmMessage,
+    llmMood,
+    setLlmThinking,
+    setLlmResponse,
+    resetLlmState,
   }
 })

@@ -775,6 +775,7 @@
       }
     },
     "coach": {
+      "llmThinking": "Тренер анализирует позицию...",
       "categoryLabel": "Категория",
       "difficultyLabel": "Сложность",
       "tacticsLabel": "Тактические приемы",

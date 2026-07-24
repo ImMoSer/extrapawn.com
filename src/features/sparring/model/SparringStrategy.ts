@@ -44,6 +44,22 @@ export class SparringStrategy implements IGameplayStrategy {
       logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
     }
 
+    // 0. Check for pending n8n new_game response
+    try {
+      const { useSparringStore } = await import('./sparring.store')
+      const sparringStore = useSparringStore()
+      if (sparringStore.pendingNewGamePromise) {
+        const response = await sparringStore.pendingNewGamePromise
+        sparringStore.pendingNewGamePromise = null
+        if (response && response.bot_move) {
+          logger.info(`[SparringStrategy] Using bot move from n8n new_game response: ${response.bot_move}`)
+          return response.bot_move
+        }
+      }
+    } catch (err) {
+      logger.error('[SparringStrategy] Failed to check n8n pending new_game response:', err)
+    }
+
     // 1. Try MozerBook directly from Repository (bypass UI store delay/debounce)
     if (!this.isBookExhausted) {
       try {

@@ -6,6 +6,7 @@ import { useCoachStore } from '@/features/coach'
 import { useAuthStore } from '@/entities/user'
 import { SparringStrategy } from './SparringStrategy'
 import { soundService } from '@/shared/lib/sound.service'
+import { sendNewGameWebhook } from '../api/n8nCoachApi'
 import type { SparringGameStatus } from './types'
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -42,6 +43,8 @@ export const useSparringStore = defineStore('sparring', () => {
     isNewGameModalOpen.value = false
   }
 
+  const pendingNewGamePromise = ref<Promise<import('./types').SparringCoachResponse | null> | null>(null)
+
   function startNewGame(
     params: { color: 'white' | 'black'; fen: string },
     router?: Router
@@ -56,6 +59,29 @@ export const useSparringStore = defineStore('sparring', () => {
 
     boardStore.orientation = params.color
     coachStore.setCoachEnabled(true)
+    coachStore.resetLlmState()
+    coachStore.setLlmThinking(true)
+
+    // Store pending promise for SparringStrategy to await if playing Black
+    const webhookPromise = sendNewGameWebhook({
+      gameId: newId,
+      userId: userId.value,
+      userColor: params.color,
+      startPosition: params.fen,
+    })
+      .then((response) => {
+        coachStore.setLlmThinking(false)
+        if (response) {
+          coachStore.setLlmResponse(response)
+        }
+        return response
+      })
+      .catch(() => {
+        coachStore.setLlmThinking(false)
+        return null
+      })
+
+    pendingNewGamePromise.value = webhookPromise
 
     gameStore.startWithStrategy(
       params.fen,
@@ -110,6 +136,7 @@ export const useSparringStore = defineStore('sparring', () => {
     isNewGameModalOpen,
     localFen,
     userId,
+    pendingNewGamePromise,
     openNewGameModal,
     closeNewGameModal,
     startNewGame,

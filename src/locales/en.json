@@ -775,6 +775,7 @@
       }
     },
     "coach": {
+      "llmThinking": "Coach is analyzing the position...",
       "categoryLabel": "Category",
       "difficultyLabel": "Difficulty",
       "tacticsLabel": "Motifs",

@@ -775,6 +775,7 @@
       }
     },
     "coach": {
+      "llmThinking": "Coach analysiert die Stellung...",
       "categoryLabel": "Kategorie",
       "difficultyLabel": "Schwierigkeit",
       "tacticsLabel": "Taktische Motive",
