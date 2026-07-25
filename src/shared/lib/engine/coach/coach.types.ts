@@ -31,12 +31,60 @@ export interface CoachTheme {
   description: string
 }
 
+export interface OpeningInfo {
+  name: string
+  eco: string
+  theoretical_fen?: string | null
+  theoretical_string?: string | null
+  wikibooks_url?: string | null
+  node_id?: number | null
+  canonical_uci_path?: string[]
+  canonical_san_path?: string[]
+}
+
+export interface StructuredMove {
+  rank: number
+  san: string
+  uci: string
+  name?: string | null
+  eco?: string | null
+  theoretical_fen?: string | null
+  theoretical_string?: string | null
+  win_p?: number | null
+  draw_p?: number | null
+  loss_p?: number | null
+  total?: number | null
+  cp?: number | null
+  mate?: number | null
+  pv?: string[]
+  wdl?: { win: number; draw: number; loss: number } | null
+}
+
+export interface CoachEngineAnalyzeResponse {
+  mode: 'theory' | 'engine'
+  opening_info?: OpeningInfo | null
+  structured_moves: StructuredMove[]
+  lines?: string[]
+  coach_move?: [string, string] | string[]
+  stokfisch_lines?: string[]
+  gaviota_lines?: string[]
+}
+
 export interface CoachTopMove {
   rank: number
   uci: string
   san: string
+  name?: string | null
+  eco?: string | null
+  theoretical_fen?: string | null
+  theoretical_string?: string | null
+  win_p?: number | null
+  draw_p?: number | null
+  loss_p?: number | null
+  total?: number | null
   tts?: string
   score: number
+  eval_cp?: number
   mate: number | null
   eval_pawns: number
   isMate: boolean
@@ -61,6 +109,7 @@ export interface CoachTopMove {
   pvLine?: { san: string; tts?: string; tagline?: string }[]
   wdl?: { win: number; draw: number; loss: number }
 }
+
 
 export interface CoachVisualCommands {
   best_move?: string

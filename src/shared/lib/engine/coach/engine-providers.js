@@ -103,7 +103,7 @@ export class ServerEngineStrategy {
     return Promise.resolve()
   }
 
-  async executeJob(job, { onLine, onError }) {
+  async executeJob(job, { onLine, onData, onError }) {
     fetch('/api/coach-engine/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -111,6 +111,7 @@ export class ServerEngineStrategy {
         fen: job.fen,
         start_fen: job.startFen,
         moves: job.moves,
+        check_book: job.checkBook ?? false,
       }),
     })
       .then((res) => {
@@ -120,9 +121,12 @@ export class ServerEngineStrategy {
         return res.json()
       })
       .then((data) => {
-        if (data.lines) {
+        if (typeof onData === 'function') {
+          onData(data)
+        } else if (data.lines) {
           data.lines.forEach((line) => onLine(line))
         }
+
         if (data.coach_move && data.coach_move.length === 2) {
           const [fen, move] = data.coach_move
           try {

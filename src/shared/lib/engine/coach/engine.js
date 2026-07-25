@@ -301,7 +301,16 @@ class StockfishEngine {
       return p
     }
 
-    const p = this._enqueue({ type: 'multipv', fen, depth, numLines: n, startFen, moves, skipTablebase: options.skipTablebase })
+    const p = this._enqueue({
+      type: 'multipv',
+      fen,
+      depth,
+      numLines: n,
+      startFen,
+      moves,
+      skipTablebase: options.skipTablebase,
+      checkBook: options.check_book ?? options.checkBook,
+    })
     p.catch(() => this.cache.delete(key))
     this.cache.set(key, p)
     return p
@@ -398,6 +407,10 @@ class StockfishEngine {
     this.activeStrategy.executeJob(job, {
       multipv,
       threads: 1,
+      onData: (data) => {
+        if (job._timedOut) return
+        this._onData(data)
+      },
       onLine: (line) => {
         if (job._timedOut) return
         this._onLine(line)
@@ -407,6 +420,78 @@ class StockfishEngine {
         this._abortCurrentJob(err)
       },
     })
+  }
+
+  _onData(data) {
+    const job = this.currentJob
+    if (!job) return
+
+    if (job._timer) clearTimeout(job._timer)
+    if (job._guardTimer) clearTimeout(job._guardTimer)
+
+    if (job.type === 'multipv') {
+      const moves = (data.structured_moves || []).map((sm) => ({
+        rank: sm.rank,
+        move: sm.uci,
+        san: sm.san,
+        name: sm.name || null,
+        eco: sm.eco || null,
+        theoretical_fen: sm.theoretical_fen || null,
+        theoretical_string: sm.theoretical_string ?? null,
+        win_p: sm.win_p ?? null,
+        draw_p: sm.draw_p ?? null,
+        loss_p: sm.loss_p ?? null,
+        total: sm.total ?? null,
+        pv: Array.isArray(sm.pv) && sm.pv.length > 0 ? sm.pv : [sm.uci],
+        score: sm.cp ?? 0,
+        cp: sm.cp ?? null,
+        mate: sm.mate ?? null,
+        isMate: sm.mate !== null && sm.mate !== undefined,
+        wdl: sm.wdl ?? null,
+      }))
+
+      const top = moves[0] || {}
+      const bestMove = top.move || (data.coach_move && data.coach_move.length === 2 ? data.coach_move[1] : null)
+
+      job.resolve({
+        mode: data.mode || 'engine',
+        opening_info: data.opening_info || null,
+        moves,
+        bestMove,
+        score: top.score ?? 0,
+        cp: top.cp ?? null,
+        mate: top.mate ?? null,
+        wdl: top.wdl ?? null,
+      })
+    } else if (job.type === 'bestmove') {
+      const topMove = data.structured_moves?.[0]
+      const bestMove = topMove?.uci || (data.coach_move && data.coach_move.length === 2 ? data.coach_move[1] : null)
+      job.resolve({
+        mode: data.mode || 'engine',
+        opening_info: data.opening_info || null,
+        bestMove,
+        ponderMove: null,
+        score: topMove?.cp ?? 0,
+        cp: topMove?.cp ?? null,
+        mate: topMove?.mate ?? null,
+        wdl: topMove?.wdl ?? null,
+        pv: topMove?.pv && topMove.pv.length > 0 ? topMove.pv : [bestMove],
+      })
+    } else {
+      const topMove = data.structured_moves?.[0]
+      job.resolve({
+        mode: data.mode || 'engine',
+        opening_info: data.opening_info || null,
+        cp: topMove?.cp ?? 0,
+        mate: topMove?.mate ?? null,
+        score: topMove?.cp ?? 0,
+        wdl: topMove?.wdl ?? null,
+      })
+    }
+
+    this.currentJob = null
+    this.working = false
+    setTimeout(() => this._processQueue(), 0)
   }
 
   _abortCurrentJob(err) {

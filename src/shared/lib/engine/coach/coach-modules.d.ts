@@ -1,12 +1,12 @@
 declare module '@/shared/lib/engine/coach/analysis' {
-  export function getTopMoves(fen: string, numMoves: number): Promise<{ moves: import('./coach.types').CoachTopMove[] }>
+  export function getTopMoves(fen: string, numMoves?: number, options?: { check_book?: boolean }): Promise<{ moves: import('./coach.types').CoachTopMove[]; mode?: 'theory' | 'engine'; opening_info?: import('./coach.types').OpeningInfo | null }>
   export function explainMoveAt(fen: string, uci: string): Promise<import('./coach.types').CoachLastMoveAnalysis>
 }
 
 declare module '@/shared/lib/engine/coach/engine' {
   const engine: {
     init(): Promise<void>
-    analyzeMultiPV(fen: string, multipv: number, depth: number, startFen: string, movesUci: string): Promise<unknown>
+    analyzeMultiPV(fen: string, multipv: number, depth: number, startFen: string, movesUci: string, options?: { check_book?: boolean }): Promise<unknown>
     getBestMove(fen: string, depth?: number): Promise<{ bestMove: string } | null>
     _send(cmd: string): void
     shutdown(): void

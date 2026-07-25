@@ -28,7 +28,7 @@ async function ensureReady() {
   await engine.init()
 }
 
-export async function getTopMoves(fen, count = 10) {
+export async function getTopMoves(fen, count = 10, options = {}) {
   // Terminal positions: skip the engine. It has no `bestmove` to give and
   // returns score=0, which would render as "0.00" instead of the real
   // result (1-0 / 0-1 / ½-½).
@@ -64,7 +64,7 @@ export async function getTopMoves(fen, count = 10) {
   const startFen = pgnService.getRootNode().fenAfter
   const movesUci = pgnService.getCurrentUciPath()
   
-  const result = await engine.analyzeMultiPV(fen, numLines, depth, startFen, movesUci)
+  const result = await engine.analyzeMultiPV(fen, numLines, depth, startFen, movesUci, options)
   const moves = await Promise.all(
     result.moves.map(async (m) => {
       const evalCp = normalizeToWhite(m.score, turn)
@@ -76,7 +76,15 @@ export async function getTopMoves(fen, count = 10) {
       return {
         rank: m.rank,
         move: m.move,
-        san: uciToSan(fen, m.move),
+        san: (m.san && m.san !== m.move) ? m.san : uciToSan(fen, m.move),
+        name: m.name || null,
+        eco: m.eco || null,
+        theoretical_fen: m.theoretical_fen || null,
+        theoretical_string: m.theoretical_string ?? null,
+        win_p: m.win_p ?? null,
+        draw_p: m.draw_p ?? null,
+        loss_p: m.loss_p ?? null,
+        total: m.total ?? null,
         eval_cp: evalCp,
         eval_pawns: parseFloat((evalCp / 100).toFixed(2)),
         pv: m.pv
@@ -94,6 +102,8 @@ export async function getTopMoves(fen, count = 10) {
   )
   return {
     fen,
+    mode: result.mode || 'engine',
+    opening_info: result.opening_info || null,
     eval_cp: normalizeToWhite(result.score ?? 0, turn),
     mate: mateToWhite(result.mate, turn),
     moves,

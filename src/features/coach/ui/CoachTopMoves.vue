@@ -31,16 +31,23 @@
           <span
             class="move-eval"
             :style="{
-              backgroundColor: move.eval_pawns > 0 ? 'rgba(74, 222, 128, 0.12)' : move.eval_pawns < 0 ? 'rgba(248, 113, 113, 0.12)' : 'rgba(161, 161, 170, 0.10)',
-              color: move.eval_pawns > 0 ? '#86efac' : move.eval_pawns < 0 ? '#fca5a5' : '#a1a1aa',
-              border: '1px solid ' + (move.eval_pawns > 0 ? 'rgba(74,222,128,0.30)' : move.eval_pawns < 0 ? 'rgba(248,113,113,0.30)' : 'rgba(161,161,170,0.20)'),
+              backgroundColor: getEvalBg(move),
+              color: getEvalColor(move),
+              border: '1px solid ' + getEvalBorder(move),
             }"
           >
-            {{ move.isMate ? `M${move.mateIn}` : `${move.eval_pawns > 0 ? '+' : ''}${move.eval_pawns}` }}
+            {{ getEvalLabel(move) }}
           </span>
         </div>
 
-        <div v-if="getEnriched(move)?.character || move.tagline" class="move-character-row">
+        <div v-if="move.name || getEnriched(move)?.character || move.tagline" class="move-character-row">
+          <span
+            v-if="move.name"
+            class="theory-name-pill"
+            :title="move.eco ? `${move.eco}: ${move.name}` : move.name"
+          >
+            {{ move.name }}
+          </span>
           <span
             v-if="getEnriched(move)?.character && getEnriched(move)?.character !== 'Quiet'"
             class="character-pill"
@@ -122,7 +129,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCoachStore } from '../model/coach.store'
-import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
+import type { CoachExplanation, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { QUALITY_COLOR, QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 
 const coachStore = useCoachStore()
@@ -166,9 +173,67 @@ const characterBorder = (label: string | undefined) => {
     default:           return 'rgba(161,161,170,0.25)';
   }
 }
+
+function getEvalLabel(move: CoachTopMove) {
+  if (move.isMate) {
+    return `M${move.mateIn}`
+  }
+  if (typeof move.eval_cp === 'number' && !isNaN(move.eval_pawns)) {
+    return `${move.eval_pawns > 0 ? '+' : ''}${move.eval_pawns}`
+  }
+  if (typeof move.win_p === 'number') {
+    return `${move.win_p.toFixed(0)}% W`
+  }
+  return '-'
+}
+
+function getEvalBg(move: CoachTopMove) {
+  if (typeof move.eval_cp === 'number' && !isNaN(move.eval_pawns)) {
+    return move.eval_pawns > 0 ? 'rgba(74, 222, 128, 0.12)' : move.eval_pawns < 0 ? 'rgba(248, 113, 113, 0.12)' : 'rgba(161, 161, 170, 0.10)'
+  }
+  if (typeof move.win_p === 'number') {
+    return move.win_p >= 52 ? 'rgba(74, 222, 128, 0.12)' : move.win_p <= 47 ? 'rgba(248, 113, 113, 0.12)' : 'rgba(161, 161, 170, 0.10)'
+  }
+  return 'rgba(161, 161, 170, 0.10)'
+}
+
+function getEvalColor(move: CoachTopMove) {
+  if (typeof move.eval_cp === 'number' && !isNaN(move.eval_pawns)) {
+    return move.eval_pawns > 0 ? '#86efac' : move.eval_pawns < 0 ? '#fca5a5' : '#a1a1aa'
+  }
+  if (typeof move.win_p === 'number') {
+    return move.win_p >= 52 ? '#86efac' : move.win_p <= 47 ? '#fca5a5' : '#a1a1aa'
+  }
+  return '#a1a1aa'
+}
+
+function getEvalBorder(move: CoachTopMove) {
+  if (typeof move.eval_cp === 'number' && !isNaN(move.eval_pawns)) {
+    return move.eval_pawns > 0 ? 'rgba(74,222,128,0.30)' : move.eval_pawns < 0 ? 'rgba(248,113,113,0.30)' : 'rgba(161,161,170,0.20)'
+  }
+  if (typeof move.win_p === 'number') {
+    return move.win_p >= 52 ? 'rgba(74,222,128,0.30)' : move.win_p <= 47 ? 'rgba(248,113,113,0.30)' : 'rgba(161,161,170,0.20)'
+  }
+  return 'rgba(161,161,170,0.20)'
+}
 </script>
 
 <style scoped>
+.theory-name-pill {
+  font-size: 10px;
+  font-weight: 500;
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .coach-top-moves {
   padding: 12px 14px;
   border-bottom: 1px solid #27272a;

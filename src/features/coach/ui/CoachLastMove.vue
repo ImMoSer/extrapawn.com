@@ -1,58 +1,65 @@
 <template>
-  <div v-if="lastMoveAnalysis" class="coach-last-move">
-    <div class="last-move-title">Last move</div>
-    
-    <div class="last-move-header">
-      <span class="san-text">
-        {{ lastMoveAnalysis.san }}
+  <div v-if="lastMoveAnalysis || currentOpeningInfo" class="coach-last-move">
+    <div v-if="currentOpeningInfo" class="opening-banner">
+      <span class="opening-eco">{{ currentOpeningInfo.eco }}</span>
+      <span class="opening-name">{{ currentOpeningInfo.name }}</span>
+    </div>
+
+    <div v-if="lastMoveAnalysis" class="last-move-section">
+      <div class="last-move-title">Last move</div>
+      
+      <div class="last-move-header">
+        <span class="san-text">
+          {{ lastMoveAnalysis.san }}
+          <span
+            v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.quality"
+            class="quality-icon-wrapper"
+            :style="{
+              backgroundColor: getQualityColor(lastMoveAnalysis.quality),
+              boxShadow: `0 0 0 1px ${getQualityColor(lastMoveAnalysis.quality)}55`,
+            }"
+          >
+            <QualityIcon :quality="lastMoveAnalysis.quality" :size="16" />
+          </span>
+        </span>
+
+        <span v-if="lastMoveAnalysis.loading" class="analyzing-text">Analyzing…</span>
         <span
-          v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.quality"
-          class="quality-icon-wrapper"
+          v-else-if="lastMoveAnalysis.quality"
+          class="quality-label"
           :style="{
-            backgroundColor: getQualityColor(lastMoveAnalysis.quality),
-            boxShadow: `0 0 0 1px ${getQualityColor(lastMoveAnalysis.quality)}55`,
+            color: getQualityColor(lastMoveAnalysis.quality),
+            backgroundColor: `${getQualityColor(lastMoveAnalysis.quality)}1F`,
+            borderColor: `${getQualityColor(lastMoveAnalysis.quality)}55`,
           }"
         >
-          <QualityIcon :quality="lastMoveAnalysis.quality" :size="16" />
+          {{ getQualityLabel(lastMoveAnalysis.quality) }}
         </span>
-      </span>
 
-      <span v-if="lastMoveAnalysis.loading" class="analyzing-text">Analyzing…</span>
-      <span
-        v-else-if="lastMoveAnalysis.quality"
-        class="quality-label"
-        :style="{
-          color: getQualityColor(lastMoveAnalysis.quality),
-          backgroundColor: `${getQualityColor(lastMoveAnalysis.quality)}1F`,
-          borderColor: `${getQualityColor(lastMoveAnalysis.quality)}55`,
-        }"
-      >
-        {{ getQualityLabel(lastMoveAnalysis.quality) }}
-      </span>
+        <span
+          v-if="!lastMoveAnalysis.loading && typeof lastMoveAnalysis.winRateLoss === 'number' && lastMoveAnalysis.winRateLoss >= 1"
+          class="win-rate-loss"
+        >
+          −{{ lastMoveAnalysis.winRateLoss.toFixed(1) }}%
+        </span>
+      </div>
 
-      <span
-        v-if="!lastMoveAnalysis.loading && typeof lastMoveAnalysis.winRateLoss === 'number' && lastMoveAnalysis.winRateLoss >= 1"
-        class="win-rate-loss"
-      >
-        −{{ lastMoveAnalysis.winRateLoss.toFixed(1) }}%
-      </span>
-    </div>
+      <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.summary" class="summary-text">
+        {{ lastMoveAnalysis.summary }}
+      </div>
 
-    <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.summary" class="summary-text">
-      {{ lastMoveAnalysis.summary }}
-    </div>
+      <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.details" class="details-text">
+        {{ lastMoveAnalysis.details }}
+      </div>
 
-    <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.details" class="details-text">
-      {{ lastMoveAnalysis.details }}
-    </div>
+      <div v-if="!lastMoveAnalysis.loading && lastMoveConsequence" class="consequence-box">
+        <span class="consequence-label">Consequence</span>
+        {{ lastMoveConsequence }}
+      </div>
 
-    <div v-if="!lastMoveAnalysis.loading && lastMoveConsequence" class="consequence-box">
-      <span class="consequence-label">Consequence</span>
-      {{ lastMoveConsequence }}
-    </div>
-
-    <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.bestMoveSan && !lastMoveAnalysis.isBestMove" class="better-move-box">
-      Better was <span class="better-move-san">{{ lastMoveAnalysis.bestMoveSan }}</span>
+      <div v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.bestMoveSan && !lastMoveAnalysis.isBestMove" class="better-move-box">
+        Better was <span class="better-move-san">{{ lastMoveAnalysis.bestMoveSan }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -67,6 +74,7 @@ import { QUALITY_COLOR, QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.ty
 const coachStore = useCoachStore()
 const lastMoveAnalysis = computed<CoachLastMoveAnalysis | null>(() => coachStore.lastMoveAnalysis)
 const lastMoveConsequence = computed(() => coachStore.lastMoveConsequence as string | null)
+const currentOpeningInfo = computed(() => coachStore.currentOpeningInfo)
 
 const getQualityColor = (q: string) => QUALITY_COLOR[q] || '#a1a1aa'
 const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''
@@ -76,6 +84,32 @@ const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''
 .coach-last-move {
   padding: 12px 14px;
   border-bottom: 1px solid #27272a;
+}
+.opening-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background-color: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+}
+.opening-eco {
+  font-size: 10px;
+  font-weight: 700;
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.16);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.opening-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e0f2fe;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .last-move-title {
   font-size: 9px;

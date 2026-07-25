@@ -1,7 +1,7 @@
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { useBoardStore } from '@/entities/game'
 import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
-import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove, OpeningInfo } from '@/shared/lib/engine/coach/coach.types'
 import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
 import { getPieceCount } from '@/shared/lib/engine/coach/engine'
@@ -32,6 +32,8 @@ export const useCoachStore = defineStore('coach', () => {
   // State for "About Position"
   const currentExplanation = ref<CoachExplanation | null>(null)
   const previousExplanation = ref<CoachExplanation | null>(null)
+  const currentAnalysisMode = ref<'theory' | 'engine'>('engine')
+  const currentOpeningInfo = ref<OpeningInfo | null>(null)
 
   // LLM Coach State & Actions
   const isLlmThinking = ref(false)
@@ -212,7 +214,7 @@ export const useCoachStore = defineStore('coach', () => {
       lastMoveAnalysis.value = null
       boardStore.setCoachShapes([])
     } else {
-      triggerAnalysis(boardStore.fen)
+      analyzeCurrentPosition()
     }
   }
 
@@ -258,8 +260,14 @@ export const useCoachStore = defineStore('coach', () => {
     topMovesLoading.value = true
     tablebaseBestMove.value = null
     try {
-      const result = await getTopMoves(fen, 10)
+      const isSparringOrRepertoire = window.location.pathname.includes('/sparring') ||
+                                     window.location.hash.includes('/sparring') ||
+                                     window.location.pathname.includes('/repertoire') ||
+                                     window.location.hash.includes('/repertoire')
+      const result = await getTopMoves(fen, 10, { check_book: isSparringOrRepertoire })
       topMoves.value = result.moves || []
+      currentAnalysisMode.value = result.mode || 'engine'
+      currentOpeningInfo.value = result.opening_info || null
 
       // Populate tablebaseBestMove directly from the Gaviota server response
       if (topMoves.value.length > 0 && getPieceCount(fen) <= 5) {
@@ -391,6 +399,8 @@ export const useCoachStore = defineStore('coach', () => {
     isAnalyzing,
     currentExplanation,
     previousExplanation,
+    currentAnalysisMode,
+    currentOpeningInfo,
     topMoves,
     topMovesLoading,
     tablebaseBestMove,

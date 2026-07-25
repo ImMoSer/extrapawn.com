@@ -130,7 +130,7 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
 
       if (coachStore.topMoves.length > 0 && coachStore.currentExplanation?.engine_top_moves) {
         logObj.topMoves = coachStore.topMoves.slice(0, 3).map((m: CoachTopMove) => {
-          const enriched = coachStore.currentExplanation?.engine_top_moves.find(em => em.san === m.san)
+          const enriched = coachStore.currentExplanation?.engine_top_moves.find((em: CoachTopMove) => em.san === m.san)
           return {
             rank: m.rank,
             san: m.san,
