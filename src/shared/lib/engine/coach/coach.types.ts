@@ -186,6 +186,16 @@ export interface CoachExplanation {
   concrete_facts?: { text: string; side?: string; importance?: number }[]
 }
 
+export interface CoachOpeningMoveInfo {
+  name?: string | null
+  eco?: string | null
+  win_p?: number | null
+  draw_p?: number | null
+  loss_p?: number | null
+  total?: number | null
+  popularity_p?: number | null
+}
+
 export interface CoachLastMoveAnalysis {
   loading?: boolean
   san: string
@@ -203,6 +213,7 @@ export interface CoachLastMoveAnalysis {
   is_best_move?: boolean
   isBestMove?: boolean
   wdl?: { win: number; draw: number; loss: number }
+  opening?: CoachOpeningMoveInfo | null
   [key: string]: unknown
 }
 

@@ -129,7 +129,11 @@ export async function explainMoveAt(fen, moveUCI) {
     ? fullMoves.slice(0, -1) 
     : fullMoves
     
-  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth, startFen, prevMoves, { skipTablebase: true })
+  const isSparringOrRepertoire = window.location.pathname.includes('/sparring') ||
+                                 window.location.hash.includes('/sparring') ||
+                                 window.location.pathname.includes('/repertoire') ||
+                                 window.location.hash.includes('/repertoire')
+  const topRes = await engine.analyzeMultiPV(fen, explainMultiPV, depth, startFen, prevMoves, { skipTablebase: true, check_book: isSparringOrRepertoire })
 
   // Win-rate-before is approximated by the best move's score (the position's
   // value assuming optimal play). This is what Lichess-style classifiers use
@@ -149,6 +153,25 @@ export async function explainMoveAt(fen, moveUCI) {
   // That's exactly the post-move eval we need for `evalAfter`.
   const playedTopEntry = topRes.moves.find((m) => m.move === moveUCI)
 
+  let opening = null
+  if (playedTopEntry && (playedTopEntry.name || playedTopEntry.eco)) {
+    const totalGamesAll = topRes.moves.reduce((sum, m) => sum + (m.total || 0), 0)
+    const moveTotal = playedTopEntry.total || 0
+    const popularityP = totalGamesAll > 0 && moveTotal > 0
+      ? parseFloat(((moveTotal / totalGamesAll) * 100).toFixed(1))
+      : null
+
+    opening = {
+      name: playedTopEntry.name || null,
+      eco: playedTopEntry.eco || null,
+      win_p: playedTopEntry.win_p ?? null,
+      draw_p: playedTopEntry.draw_p ?? null,
+      loss_p: playedTopEntry.loss_p ?? null,
+      total: playedTopEntry.total ?? null,
+      popularity_p: popularityP,
+    }
+  }
+
   let evalAfterWhite
   let mateAfter = null
   let wdlAfter = null
@@ -162,7 +185,7 @@ export async function explainMoveAt(fen, moveUCI) {
     // We pre-emptively start a MultiPV search on the new position. This will be cached
     // under 'm|newFen|server' and immediately reused when the board updates and the UI requests the top moves.
     const evalMoves = prevMoves.concat([moveUCI])
-    const evalAfterRes = await engine.analyzeMultiPV(newFen, explainMultiPV, depth, startFen, evalMoves, { skipTablebase: true })
+    const evalAfterRes = await engine.analyzeMultiPV(newFen, explainMultiPV, depth, startFen, evalMoves, { skipTablebase: true, check_book: isSparringOrRepertoire })
     evalAfterWhite = normalizeToWhite(evalAfterRes.score ?? 0, newTurn)
     mateAfter = mateToWhite(evalAfterRes.mate, newTurn)
     if (evalAfterRes.wdl) {
@@ -183,7 +206,7 @@ export async function explainMoveAt(fen, moveUCI) {
     wdlAfter,
   })
 
-  return { fen, newFen, move: moveUCI, ...explanation }
+  return { fen, newFen, move: moveUCI, opening, ...explanation }
 }
 
 function moverScoreToWhite(scoreMoverPOV, moverColor) {

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/entities/user'
 import { SparringStrategy } from './SparringStrategy'
 import { soundService } from '@/shared/lib/sound.service'
 import { sendNewGameWebhook } from '../api/n8nCoachApi'
+import { buildTopMovesText } from '../lib/n8nContextBuilder'
 import type { SparringGameStatus } from './types'
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -45,7 +46,7 @@ export const useSparringStore = defineStore('sparring', () => {
 
   const pendingNewGamePromise = ref<Promise<import('./types').SparringCoachResponse | null> | null>(null)
 
-  function startNewGame(
+  async function startNewGame(
     params: { color: 'white' | 'black'; fen: string },
     router?: Router
   ) {
@@ -62,12 +63,18 @@ export const useSparringStore = defineStore('sparring', () => {
     coachStore.resetLlmState()
     coachStore.setLlmThinking(true)
 
+    // Trigger & await analysis for initial position
+    await coachStore.triggerAnalysis(params.fen)
+    const topMovesText = buildTopMovesText(params.fen)
+
     // Store pending promise for SparringStrategy to await if playing Black
     const webhookPromise = sendNewGameWebhook({
       gameId: newId,
       userId: userId.value,
       userColor: params.color,
       startPosition: params.fen,
+      lastUserMove: null,
+      topMovesInPosition: topMovesText,
     })
       .then((response) => {
         coachStore.setLlmThinking(false)

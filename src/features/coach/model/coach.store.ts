@@ -419,6 +419,7 @@ export const useCoachStore = defineStore('coach', () => {
     fetchTopMoves,
 
     analyzeCurrentPosition,
+    triggerAnalysis,
     reset,
 
     // LLM Coach

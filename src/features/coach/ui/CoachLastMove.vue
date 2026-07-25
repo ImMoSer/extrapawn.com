@@ -1,6 +1,16 @@
 <template>
   <div v-if="lastMoveAnalysis || currentOpeningInfo" class="coach-last-move">
-    <div v-if="currentOpeningInfo" class="opening-banner">
+    <div v-if="lastMoveAnalysis?.opening" class="opening-banner move-opening-banner">
+      <span v-if="lastMoveAnalysis.opening.eco" class="opening-eco">{{ lastMoveAnalysis.opening.eco }}</span>
+      <span v-if="lastMoveAnalysis.opening.name" class="opening-name">{{ lastMoveAnalysis.opening.name }}</span>
+      <span v-if="lastMoveAnalysis.opening.popularity_p" class="opening-stat">
+        {{ lastMoveAnalysis.opening.popularity_p }}% plays
+      </span>
+      <span v-if="typeof lastMoveAnalysis.opening.win_p === 'number'" class="opening-stat winrate">
+        {{ lastMoveAnalysis.opening.win_p }}% W
+      </span>
+    </div>
+    <div v-else-if="currentOpeningInfo" class="opening-banner">
       <span class="opening-eco">{{ currentOpeningInfo.eco }}</span>
       <span class="opening-name">{{ currentOpeningInfo.name }}</span>
     </div>
@@ -94,6 +104,7 @@ const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''
   background-color: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 6px;
+  flex-wrap: wrap;
 }
 .opening-eco {
   font-size: 10px;
@@ -110,6 +121,19 @@ const getQualityLabel = (q: string) => QUALITY_LABEL[q] || ''
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.opening-stat {
+  font-size: 10px;
+  font-weight: 600;
+  color: #a1a1aa;
+  margin-left: auto;
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.opening-stat.winrate {
+  color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.12);
 }
 .last-move-title {
   font-size: 9px;

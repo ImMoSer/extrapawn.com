@@ -1,5 +1,5 @@
 import type { IGameplayStrategy } from '@/entities/game'
-import { enginePlayService, useBoardStore, useGameStore } from '@/entities/game'
+import { enginePlayService, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { theoryRepository } from '@/entities/opening'
 import logger from '@/shared/lib/logger'
@@ -44,43 +44,74 @@ export class SparringStrategy implements IGameplayStrategy {
       logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
     }
 
-    // 0. Check for pending n8n new_game response
-    try {
-      const { useSparringStore } = await import('./sparring.store')
-      const sparringStore = useSparringStore()
-      if (sparringStore.pendingNewGamePromise) {
+    const { useSparringStore } = await import('./sparring.store')
+    const { sendSparringWebhook, createSparringWebhookPayload } = await import('../api/n8nCoachApi')
+    const { buildLastUserMoveText, buildTopMovesText } = await import('../lib/n8nContextBuilder')
+    const { useCoachStore } = await import('@/features/coach')
+    const sparringStore = useSparringStore()
+    const coachStore = useCoachStore()
+
+    // 1. Check for pending n8n new_game response (e.g. if user is Black, new_game produces bot's 1st move)
+    if (sparringStore.pendingNewGamePromise) {
+      try {
         const response = await sparringStore.pendingNewGamePromise
         sparringStore.pendingNewGamePromise = null
         if (response && response.bot_move) {
           logger.info(`[SparringStrategy] Using bot move from n8n new_game response: ${response.bot_move}`)
           return response.bot_move
         }
+      } catch (err) {
+        sparringStore.pendingNewGamePromise = null
+        logger.error('[SparringStrategy] Failed to check n8n pending new_game response:', err)
       }
-    } catch (err) {
-      logger.error('[SparringStrategy] Failed to check n8n pending new_game response:', err)
     }
 
-    // 1. Try MozerBook directly from Repository (bypass UI store delay/debounce)
+    // 2. Mid-game turn: Send user_move webhook to n8n
+    if (sparringStore.gameId) {
+      try {
+        coachStore.setLlmThinking(true)
+
+        const lastUserMoveText = buildLastUserMoveText()
+        const topMovesText = buildTopMovesText(fen)
+
+        const payload = createSparringWebhookPayload({
+          event: 'user_move',
+          gameId: sparringStore.gameId,
+          userId: sparringStore.userId,
+          userColor: sparringStore.userColor,
+          startPosition: fen,
+          lastUserMove: lastUserMoveText,
+          topMovesInPosition: topMovesText,
+        })
+
+        const response = await sendSparringWebhook(payload)
+        coachStore.setLlmThinking(false)
+
+        if (response) {
+          coachStore.setLlmResponse(response)
+          if (response.bot_move) {
+            logger.info(`[SparringStrategy] Using bot move from n8n user_move response: ${response.bot_move}`)
+            return response.bot_move
+          }
+        }
+      } catch (err) {
+        coachStore.setLlmThinking(false)
+        logger.error('[SparringStrategy] Failed to send n8n user_move webhook:', err)
+      }
+    }
+
+    // 3. Fallback to MozerBook
     if (!this.isBookExhausted) {
       try {
-        const stats = await theoryRepository.getMozerBookStats(
-          fen,
-          { skipDebounce: true }
-        )
-
+        const stats = await theoryRepository.getMozerBookStats(fen, { skipDebounce: true })
         if (stats && stats.moves && stats.moves.length > 0) {
-          // Only use book if there is a significant amount of games or it's early game
-          // For now, follow the user's request: use theory moves from Lichess Players stats
           const topMoves = stats.moves.slice(0, 5)
           const firstMove = topMoves[0]
-
           if (firstMove) {
             const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
-
             if (totalPlays > 0) {
               let random = Math.random() * totalPlays
               let selectedUci = firstMove.uci
-
               for (const move of topMoves) {
                 random -= move.total
                 if (random <= 0) {
@@ -88,13 +119,11 @@ export class SparringStrategy implements IGameplayStrategy {
                   break
                 }
               }
-
-              logger.info(`[SparringStrategy] Book move selected: ${selectedUci} (from ${totalPlays} games)`)
+              logger.info(`[SparringStrategy] Fallback MozerBook move selected: ${selectedUci}`)
               return selectedUci
             }
           }
         } else if (stats) {
-          logger.info('[SparringStrategy] Book stats returned empty. Marking book as exhausted.')
           this.isBookExhausted = true
         }
       } catch (err) {
@@ -102,9 +131,8 @@ export class SparringStrategy implements IGameplayStrategy {
       }
     }
 
-    // 2. Fallback to Engine (Maia)
-    logger.info(`[SparringStrategy] Book empty or failed. Using engine: ${this.ENGINE_ID}`)
-
+    // 4. Fallback to Engine (Maia)
+    logger.info(`[SparringStrategy] Fallback using engine: ${this.ENGINE_ID}`)
     try {
       const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
       return moveUci
@@ -153,13 +181,12 @@ export class SparringStrategy implements IGameplayStrategy {
       }
 
       this.restartTimeout = window.setTimeout(() => {
-        const boardStore = useBoardStore()
         const gameStore = useGameStore()
         const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
         gameStore.startWithStrategy(
           initialFen,
           new SparringStrategy(),
-          boardStore.orientation,
+          'white',
           false
         )
       }, delay)
