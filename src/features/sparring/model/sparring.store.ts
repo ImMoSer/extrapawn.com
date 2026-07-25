@@ -6,11 +6,21 @@ import { useCoachStore } from '@/features/coach'
 import { useAuthStore } from '@/entities/user'
 import { SparringStrategy } from './SparringStrategy'
 import { soundService } from '@/shared/lib/sound.service'
-import { sendNewGameWebhook } from '../api/n8nCoachApi'
-import { buildTopMovesText } from '../lib/n8nContextBuilder'
+import i18n from '@/shared/config/i18n'
 import type { SparringGameStatus } from './types'
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+function getInitialUserWhiteGreeting(): string {
+  const lang = String(i18n.global.locale.value || 'de')
+  if (lang === 'ru') {
+    return 'Привет! Я готов к спаррингу. Твой ход — сделай первый ход на доске!'
+  }
+  if (lang === 'de') {
+    return 'Hallo! Ich bin bereit für das Sparring. Du bist am Zug — mache deinen ersten Zug!'
+  }
+  return "Hello! I'm ready for sparring. You play White — make your first move!"
+}
 
 export const useSparringStore = defineStore('sparring', () => {
   const gameStore = useGameStore()
@@ -25,7 +35,7 @@ export const useSparringStore = defineStore('sparring', () => {
   const isNewGameModalOpen = ref<boolean>(false)
   const localFen = ref<string>(DEFAULT_FEN)
 
-  const userId = computed(() => authStore.effectiveLichessUsername || 'guest')
+  const userId = computed(() => authStore.effectiveLichessUsername || 'mo3ep')
 
   function generateGameId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -44,8 +54,6 @@ export const useSparringStore = defineStore('sparring', () => {
     isNewGameModalOpen.value = false
   }
 
-  const pendingNewGamePromise = ref<Promise<import('./types').SparringCoachResponse | null> | null>(null)
-
   async function startNewGame(
     params: { color: 'white' | 'black'; fen: string },
     router?: Router
@@ -61,34 +69,16 @@ export const useSparringStore = defineStore('sparring', () => {
     boardStore.orientation = params.color
     coachStore.setCoachEnabled(true)
     coachStore.resetLlmState()
-    coachStore.setLlmThinking(true)
 
-    // Trigger & await analysis for initial position
-    await coachStore.triggerAnalysis(params.fen)
-    const topMovesText = buildTopMovesText(params.fen)
-
-    // Store pending promise for SparringStrategy to await if playing Black
-    const webhookPromise = sendNewGameWebhook({
-      gameId: newId,
-      userId: userId.value,
-      userColor: params.color,
-      startPosition: params.fen,
-      lastUserMove: null,
-      topMovesInPosition: topMovesText,
-    })
-      .then((response) => {
-        coachStore.setLlmThinking(false)
-        if (response) {
-          coachStore.setLlmResponse(response)
-        }
-        return response
+    if (params.color === 'white') {
+      coachStore.setLlmThinking(false)
+      coachStore.setLlmResponse({
+        message: getInitialUserWhiteGreeting(),
+        mood: 'neutral',
       })
-      .catch(() => {
-        coachStore.setLlmThinking(false)
-        return null
-      })
-
-    pendingNewGamePromise.value = webhookPromise
+    } else {
+      coachStore.setLlmThinking(true)
+    }
 
     gameStore.startWithStrategy(
       params.fen,
@@ -143,7 +133,6 @@ export const useSparringStore = defineStore('sparring', () => {
     isNewGameModalOpen,
     localFen,
     userId,
-    pendingNewGamePromise,
     openNewGameModal,
     closeNewGameModal,
     startNewGame,

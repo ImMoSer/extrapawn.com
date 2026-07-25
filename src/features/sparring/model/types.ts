@@ -17,7 +17,7 @@ export interface OpeningPreset {
 
 export interface SparringWebhookPayload {
   mode: 'sparring'
-  event: 'new_game' | 'user_move'
+  event: 'user_move'
   game_id: string
   user_id: string
   user_color: 'white' | 'black'
@@ -28,13 +28,12 @@ export interface SparringWebhookPayload {
   start_position: string
   color_to_move: 'white' | 'black'
   user_message: null | string
-  positional_info: null | Record<string, unknown>
   last_user_move: null | string
   top_moves_in_position: null | string
+  candidate_uci_moves: string[] | null
+  candidate_uci_moves_json: string | null
   pgn_history: string | null
 }
-
-export type SparringNewGamePayload = SparringWebhookPayload
 
 export interface SparringCoachResponse {
   message: string

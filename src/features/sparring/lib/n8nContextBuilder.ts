@@ -103,21 +103,15 @@ export function buildLastUserMoveText(): string | null {
     ? (QUALITY_LABEL[analysis.quality] || analysis.quality)
     : 'Neutral'
 
-  const dropStr = typeof analysis.winRateLoss === 'number' && analysis.winRateLoss > 0
-    ? ` (-${analysis.winRateLoss.toFixed(1)}%)`
-    : ''
-
-  const consequenceStr = coachStore.lastMoveConsequence ? ` | ${String(coachStore.lastMoveConsequence)}` : ''
-  const betterStr = analysis.bestMoveSan && !analysis.isBestMove ? ` | Better: ${analysis.bestMoveSan}` : ''
-
-  return `${uci} (san: ${san}, "${verbal}") | Quality: ${quality}${dropStr}${consequenceStr}${betterStr}`
+  return `${uci} (san: ${san}, "${verbal}") | Quality: ${quality}`
 }
 
 /**
- * Formats top moves in position into an LLM-Ready text block.
- * Example:
- * 1. (+0.21) uci: e2e4 (san: e4, "pawn to e4") [King's Pawn Game] - Stakes a claim in the center. Plan: Improves piece activity.
- * 2. (+0.15) uci: d2d4 (san: d4, "pawn to d4") [Queen's Pawn Game] - Stakes a claim in the center. Plan: Improves piece activity.
+ * Formats top moves in position into an LLM-Ready text block (compact format).
+ * Example with theory:
+ * 1. (+0.13) uci: g8f6 (san: Nf6, "Knight to f6") [Indian Defense]
+ * Example without theory:
+ * 1. (-0.12) uci: c8f5 (san: Bf5, "Bishop to f5")
  */
 export function buildTopMovesText(fen: string): string | null {
   const coachStore = useCoachStore()
@@ -127,7 +121,6 @@ export function buildTopMovesText(fen: string): string | null {
   }
 
   const lines: string[] = []
-  const enrichedList = coachStore.currentExplanation?.engine_top_moves || []
 
   moves.slice(0, 5).forEach((m: CoachTopMove & { move?: string }, idx: number) => {
     const rank = idx + 1
@@ -137,14 +130,34 @@ export function buildTopMovesText(fen: string): string | null {
 
     const rawMove = m.move || m.uci || m.san
     const { uci, san, verbal } = parseMoveDescription(fen, rawMove)
-    const enriched = enrichedList.find((em: CoachTopMove) => em.san === san)
 
     const openingPart = m.name ? ` [${m.name}]` : ''
-    const taglinePart = m.tagline ? ` - ${m.tagline}` : ''
-    const planPart = enriched?.plan_brief ? `. Plan: ${enriched.plan_brief}` : ''
 
-    lines.push(`${rank}. (${evalStr}) uci: ${uci} (san: ${san}, "${verbal}")${openingPart}${taglinePart}${planPart}`)
+    lines.push(`${rank}. (${evalStr}) uci: ${uci} (san: ${san}, "${verbal}")${openingPart}`)
   })
 
   return lines.join('\n')
+}
+
+/**
+ * Returns array of clean candidate UCI strings for n8n JSON Schema enum validation.
+ * Example: ["e2e4", "d2d4", "g1f3"]
+ */
+export function getCandidateUciMoves(fen: string): string[] | null {
+  const coachStore = useCoachStore()
+  const moves = coachStore.topMoves
+  if (!moves || moves.length === 0) {
+    return null
+  }
+
+  const uciList: string[] = []
+  moves.slice(0, 5).forEach((m: CoachTopMove & { move?: string }) => {
+    const rawMove = m.move || m.uci || m.san
+    const { uci } = parseMoveDescription(fen, rawMove)
+    if (uci && !uciList.includes(uci)) {
+      uciList.push(uci)
+    }
+  })
+
+  return uciList.length > 0 ? uciList : null
 }

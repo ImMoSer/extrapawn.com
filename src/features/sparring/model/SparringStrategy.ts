@@ -46,33 +46,21 @@ export class SparringStrategy implements IGameplayStrategy {
 
     const { useSparringStore } = await import('./sparring.store')
     const { sendSparringWebhook, createSparringWebhookPayload } = await import('../api/n8nCoachApi')
-    const { buildLastUserMoveText, buildTopMovesText } = await import('../lib/n8nContextBuilder')
+    const { buildLastUserMoveText, buildTopMovesText, getCandidateUciMoves, parseMoveDescription } = await import('../lib/n8nContextBuilder')
     const { useCoachStore } = await import('@/features/coach')
+    const i18n = (await import('@/shared/config/i18n')).default
     const sparringStore = useSparringStore()
     const coachStore = useCoachStore()
 
-    // 1. Check for pending n8n new_game response (e.g. if user is Black, new_game produces bot's 1st move)
-    if (sparringStore.pendingNewGamePromise) {
-      try {
-        const response = await sparringStore.pendingNewGamePromise
-        sparringStore.pendingNewGamePromise = null
-        if (response && response.bot_move) {
-          logger.info(`[SparringStrategy] Using bot move from n8n new_game response: ${response.bot_move}`)
-          return response.bot_move
-        }
-      } catch (err) {
-        sparringStore.pendingNewGamePromise = null
-        logger.error('[SparringStrategy] Failed to check n8n pending new_game response:', err)
-      }
-    }
+    const lastUserMoveText = buildLastUserMoveText()
 
-    // 2. Mid-game turn: Send user_move webhook to n8n
-    if (sparringStore.gameId) {
+    // 1. Mid-game turn: Send user_move webhook to n8n ONLY if user has made a move
+    if (sparringStore.gameId && lastUserMoveText) {
       try {
         coachStore.setLlmThinking(true)
 
-        const lastUserMoveText = buildLastUserMoveText()
         const topMovesText = buildTopMovesText(fen)
+        const candidateUciList = getCandidateUciMoves(fen)
 
         const payload = createSparringWebhookPayload({
           event: 'user_move',
@@ -82,6 +70,7 @@ export class SparringStrategy implements IGameplayStrategy {
           startPosition: fen,
           lastUserMove: lastUserMoveText,
           topMovesInPosition: topMovesText,
+          candidateUciMoves: candidateUciList,
         })
 
         const response = await sendSparringWebhook(payload)
@@ -100,7 +89,26 @@ export class SparringStrategy implements IGameplayStrategy {
       }
     }
 
-    // 3. Fallback to MozerBook
+    // Helper to set local turn 1 greeting if bot plays White first move
+    const applyTurn1BotGreeting = (moveUci: string) => {
+      if (!lastUserMoveText) {
+        const { san } = parseMoveDescription(fen, moveUci)
+        const lang = String(i18n.global.locale.value || 'de')
+        let greeting = `Hello! Let's have a great game. Playing ${san} — your move!`
+        if (lang === 'ru') {
+          greeting = `Привет! Сыграем отличную партию. Хожу ${san} — твой ход!`
+        } else if (lang === 'de') {
+          greeting = `Hallo! Auf ein gutes Spiel. Ich spiele ${san} — du bist am Zug!`
+        }
+        coachStore.setLlmThinking(false)
+        coachStore.setLlmResponse({
+          message: greeting,
+          mood: 'neutral',
+        })
+      }
+    }
+
+    // 2. Fallback to MozerBook
     if (!this.isBookExhausted) {
       try {
         const stats = await theoryRepository.getMozerBookStats(fen, { skipDebounce: true })
@@ -120,6 +128,7 @@ export class SparringStrategy implements IGameplayStrategy {
                 }
               }
               logger.info(`[SparringStrategy] Fallback MozerBook move selected: ${selectedUci}`)
+              applyTurn1BotGreeting(selectedUci)
               return selectedUci
             }
           }
@@ -131,10 +140,13 @@ export class SparringStrategy implements IGameplayStrategy {
       }
     }
 
-    // 4. Fallback to Engine (Maia)
+    // 3. Fallback to Engine (Maia)
     logger.info(`[SparringStrategy] Fallback using engine: ${this.ENGINE_ID}`)
     try {
       const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
+      if (moveUci) {
+        applyTurn1BotGreeting(moveUci)
+      }
       return moveUci
     } catch (err) {
       logger.error('[SparringStrategy] Engine move failed:', err)

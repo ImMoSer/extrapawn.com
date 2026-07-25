@@ -6,13 +6,14 @@ import type { SparringWebhookPayload, SparringCoachResponse } from '../model/typ
 const N8N_COACH_URL = import.meta.env.VITE_N8N_COACH as string
 
 export function createSparringWebhookPayload(params: {
-  event: 'new_game' | 'user_move'
+  event?: 'user_move'
   gameId: string
   userId: string
   userColor: 'white' | 'black'
   startPosition: string
   lastUserMove?: string | null
   topMovesInPosition?: string | null
+  candidateUciMoves?: string[] | null
 }): SparringWebhookPayload {
   const fenParts = params.startPosition.trim().split(/\s+/)
   const activeColorChar = fenParts[1] || 'w'
@@ -31,7 +32,7 @@ export function createSparringWebhookPayload(params: {
 
   return {
     mode: 'sparring',
-    event: params.event,
+    event: 'user_move',
     game_id: params.gameId,
     user_id: params.userId,
     user_color: params.userColor,
@@ -42,9 +43,10 @@ export function createSparringWebhookPayload(params: {
     start_position: params.startPosition,
     color_to_move: colorToMove,
     user_message: null,
-    positional_info: null,
     last_user_move: params.lastUserMove ?? null,
     top_moves_in_position: params.topMovesInPosition ?? null,
+    candidate_uci_moves: params.candidateUciMoves ?? null,
+    candidate_uci_moves_json: params.candidateUciMoves ? JSON.stringify(params.candidateUciMoves) : null,
     pgn_history: pgnHistory,
   }
 }
@@ -92,19 +94,4 @@ export async function sendSparringWebhook(
     logger.error(`[n8nCoachApi] Error sending ${payload.event} webhook to n8n:`, err)
     return null
   }
-}
-
-export async function sendNewGameWebhook(params: {
-  gameId: string
-  userId: string
-  userColor: 'white' | 'black'
-  startPosition: string
-  lastUserMove?: string | null
-  topMovesInPosition?: string | null
-}): Promise<SparringCoachResponse | null> {
-  const payload = createSparringWebhookPayload({
-    event: 'new_game',
-    ...params,
-  })
-  return sendSparringWebhook(payload)
 }
