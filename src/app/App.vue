@@ -123,7 +123,8 @@ onUnmounted(() => {
                 </n-button>
 
                 <RouterLink v-if="route.path !== '/'" to="/" class="mobile-logo">
-                  <img src="/webp/extra_pawn_black.webp" alt="Logo" height="32" />
+                  <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="mobile-logo-icon" />
+                  <span class="brand-text mobile-brand-name">EXTRAPAWN</span>
                 </RouterLink>
 
                 <SettingsMenu />
@@ -270,6 +271,31 @@ onUnmounted(() => {
   background-color: var(--glass-bg) !important;
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border) !important;
+  position: relative;
+}
+
+.mobile-logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.mobile-logo-icon {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 255, 0.3));
+}
+
+.mobile-brand-name {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .mobile-drawer-content :deep(.n-drawer-header__main) {
