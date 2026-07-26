@@ -30,13 +30,11 @@ async function boot() {
   // We check Auth status BEFORE loading the rest of the app.
   const { useAuthStore } = await import('@/entities/user')
   const pinia = createPinia()
-  const tempApp = createApp({}) // Temporary app for Pinia context
-  tempApp.use(pinia)
-  const authStore = useAuthStore()
+  const authStore = useAuthStore(pinia)
   await authStore.initialize()
 
   const { usePreferencesStore } = await import('@/features/settings')
-  const preferencesStore = usePreferencesStore()
+  const preferencesStore = usePreferencesStore(pinia)
   await preferencesStore.initialize()
 
   // Branch A: User not logged in -> Show minimal Login Screen

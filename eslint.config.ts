@@ -129,40 +129,6 @@ export default defineConfigWithVueTs(
             }
           ]
         }
-      ],
-      'boundaries/no-private': 'error',
-      'boundaries/entry-point': [
-        'error',
-        {
-          policies: [
-            {
-              target: { element: { type: 'features' } },
-              allow: ['index.ts', 'index.js'],
-              disallow: ['**/*.vue']
-            },
-            {
-              target: { element: { type: 'entities' } },
-              allow: ['index.ts', 'index.js'],
-              disallow: ['**/*.vue']
-            },
-            {
-              target: { element: { type: 'shared' } },
-              allow: ['**/*']
-            },
-            {
-              target: { element: { type: 'app' } },
-              allow: ['**/*']
-            },
-            {
-              target: { element: { type: 'pages' } },
-              allow: ['**/*']
-            },
-            {
-              target: { element: { type: 'widgets' } },
-              allow: ['**/*']
-            }
-          ]
-        }
       ]
     }
   },

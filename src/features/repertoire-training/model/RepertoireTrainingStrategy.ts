@@ -7,9 +7,6 @@ import { soundService } from '@/shared/lib/sound.service'
 import i18n from '@/shared/config/i18n'
 import { useRepertoireTrainingStore } from './repertoire-training.store'
 import { srsService } from '../lib/SrsService'
-import { createDiscreteApi } from 'naive-ui'
-
-const { message } = createDiscreteApi(['message'])
 
 export class RepertoireTrainingStrategy implements IGameplayStrategy {
   config = {
@@ -23,10 +20,16 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
   private sessionMistakes = 0
   private userColor: 'white' | 'black'
   private startFen: string
+  private onNotification?: (msg: string) => void
 
-  constructor(userColor: 'white' | 'black', startFen: string) {
+  constructor(
+    userColor: 'white' | 'black',
+    startFen: string,
+    onNotification?: (msg: string) => void,
+  ) {
     this.userColor = userColor
     this.startFen = startFen
+    this.onNotification = onNotification
   }
 
   async validateUserMove(uciMove: string): Promise<boolean> {
@@ -130,9 +133,9 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
 
     this.sessionMistakes = 0
 
-    message.success(i18n.global.t('features.study.replyTraining.variationFinished'), {
-      duration: 2500,
-    })
+    if (this.onNotification) {
+      this.onNotification(i18n.global.t('features.study.replyTraining.variationFinished'))
+    }
 
     setTimeout(async () => {
       if (!this.trainingStore.isTrainingActive) return

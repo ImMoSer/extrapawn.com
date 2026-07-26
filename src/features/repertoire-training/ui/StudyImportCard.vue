@@ -116,7 +116,9 @@ const handleStartTraining = async (chapterId: string) => {
     // Start game store with the strategy
     gameStore.startWithStrategy(
       startFen,
-      new RepertoireTrainingStrategy(userColor, startFen),
+      new RepertoireTrainingStrategy(userColor, startFen, (msg) => {
+        message.success(msg, { duration: 2500 })
+      }),
       userColor,
       true
     )
