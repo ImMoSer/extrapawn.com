@@ -392,12 +392,12 @@
       "blackEndgame": "Vs Black"
     },
     "tierRestriction": {
-      "title": "Upgrade Required",
+      "title": "Subscription Required",
       "cancelBtn": "Cancel",
       "upgradeBtn": "Pricing",
       "basic": "Please log in to play Basic puzzles.",
-      "premium": "You need at least Knight or Bishop tier to play Premium puzzles.",
-      "premiumPlus": "You need at least Rook, Queen, or King tier to play Premium Plus puzzles.",
+      "premium": "Subscription required (VIP, Queen, or King) to access these puzzles.",
+      "premiumPlus": "Subscription required (VIP, Queen, or King) to access these puzzles.",
       "makeTaskToday": "Start Daily Task"
     }
   },
@@ -516,33 +516,22 @@
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
           "price": "Free forever"
         },
-        "knight": {
-          "name": "Knight",
-          "role": "Bonus tier for active community members.",
+        "vip": {
+          "name": "VIP",
+          "role": "Exclusive bonus for Top 20 club performers.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins"
-        },
-        "bishop": {
-          "name": "Bishop",
-          "role": "Exclusive bonus for top performers in the club.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins"
-        },
-        "rook": {
-          "name": "Rook",
-          "role": "The \"No-Brainer\" entry for amateurs.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "3.99 € / Month"
         },
         "queen": {
           "name": "Queen",
           "role": "The \"Standard\" for ambitious club players.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "5.99 € / Month"
+          "price": "9.99 € / Month"
         },
         "king": {
           "name": "King",
           "role": "The \"Full-Power\" package for pros & analysts.",
           "description": "Daily replenishment up to {pawncoins} PawnCoins",
-          "price": "9.99 € / Month"
+          "price": "19.99 € / Month"
         },
         "price": {
           "soon": "Price will be announced",
@@ -552,20 +541,17 @@
       "bonusInfo": {
         "title": "🎉 xtrapawn Bonus Program",
         "howItWorks": "📅 How does it work?",
-        "p1": "Our bonus program rewards the most active members of the xtrapawn club on Lichess.",
+        "p1": "Our bonus program rewards the Top 20 active members of the xtrapawn club on Lichess.",
         "p2": "Bonuses are assigned automatically. The calculation is done daily at 05:29 AM (UTC+1) based on performance over the last 30 days.",
-        "p3": "1st Place (King - 10000), 2nd Place (Queen - 5000), 3rd Place (Rook - 1000).",
-        "p4a": "Players with Vector 500+ receive Bishop (750 PawnCoins).",
-        "p4b": "Players with Vector 250+ receive Knight (500 PawnCoins).",
+        "p3": "Players in the Top 20 club leaderboard receive the VIP status (1000 PawnCoins daily).",
         "p5": "Status is updated daily and remains valid until the next calculation.",
         "homepageLink": "Club Homepage",
         "alertText": "Prefer to earn instead of buy? Check out our",
         "alertButton": "Bonus Program",
         "teamLink": "Join our Lichess team",
-        "knight": "Knight Status: From Vector 250+",
-        "bishop": "Bishop Status: From Vector 500+",
-        "p6": "Status calculation is rolling over the last 30 days.",
-        "p7": "Subject to changes in the bonus program.",
+        "vip": "VIP Status: Top 20 Club Leaderboard",
+        "p6": "Status calculations are based on activity over the last 30 days.",
+        "p7": "Bonus program structure subject to change.",
         "p8": "Good luck with your training!",
         "moreInfo": "More info here"
       },
@@ -695,7 +681,8 @@
         "typeCustom": "Custom FEN",
         "selectPresetPlaceholder": "Select opening",
         "customFenPlaceholder": "Enter FEN string",
-        "startGame": "Start Game"
+        "startGame": "Start Game",
+        "exit": "Exit to Home"
       },
       "controls": {
         "white": "White",

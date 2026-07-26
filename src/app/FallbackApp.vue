@@ -38,7 +38,7 @@ onMounted(() => {
         <span class="info-icon">i</span>
       </button>
 
-      <img src="/png/extra_pawn_black.png" alt="Logo" class="loader-logo static" />
+      <img src="/webp/extra_pawn_black.webp" alt="Logo" class="loader-logo static" />
       <h2 class="loader-title error-text">OOPS!</h2>
       <p class="loader-text">
         {{ t('app.globalLoader.webviewWarning') }}

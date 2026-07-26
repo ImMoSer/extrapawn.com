@@ -19,7 +19,7 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
   <div class="login-app-wrapper">
     <div class="login-content">
       <div class="brand-header">
-        <img src="/png/extra_pawn_black.png" alt="Logo" class="login-logo" />
+        <img src="/webp/extra_pawn_black.webp" alt="Logo" class="login-logo" />
         <h1 class="login-title">EXTRAPAWN</h1>
       </div>
 

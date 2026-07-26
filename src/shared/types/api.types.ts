@@ -359,11 +359,19 @@ export interface UserMeta {
 
 export type SubscriptionTier =
   | 'Pawn'
+  | 'pawn'
+  | 'VIP'
+  | 'vip'
   | 'Knight'
+  | 'knight'
   | 'Bishop'
+  | 'bishop'
   | 'Rook'
+  | 'rook'
   | 'Queen'
+  | 'queen'
   | 'King'
+  | 'king'
   | 'administrator'
 
 interface LichessUserProfile {

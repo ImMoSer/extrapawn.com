@@ -93,13 +93,13 @@ onUnmounted(() => {
                 <RouterLink to="/" class="logo-link">
                   <img
                     v-if="isSidebarCollapsed"
-                    src="/png/extra_pawn_black.png"
+                    src="/webp/extra_pawn_black.webp"
                     alt="Logo"
                     class="logo-collapsed"
                   />
                   <div v-else class="brand-wrapper-sidebar">
                     <img
-                      src="/png/extra_pawn_black.png"
+                      src="/webp/extra_pawn_black.webp"
                       alt="EXTRAPAWN"
                       class="sidebar-logo-icon"
                     />
@@ -122,8 +122,8 @@ onUnmounted(() => {
                   </template>
                 </n-button>
 
-                <RouterLink to="/" class="mobile-logo">
-                  <img src="/png/extra_pawn_black.png" alt="Logo" height="32" />
+                <RouterLink v-if="route.path !== '/'" to="/" class="mobile-logo">
+                  <img src="/webp/extra_pawn_black.webp" alt="Logo" height="32" />
                 </RouterLink>
 
                 <SettingsMenu />
@@ -156,7 +156,7 @@ onUnmounted(() => {
                     @click="isDrawerOpen = false"
                   >
                     <n-space align="center" :wrap="false">
-                      <img src="/png/extra_pawn_black.png" alt="Logo" class="sidebar-logo-icon" />
+                      <img src="/webp/extra_pawn_black.webp" alt="Logo" class="sidebar-logo-icon" />
                       <n-text
                         strong
                         class="brand-text sidebar-brand-name"

@@ -29,18 +29,13 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 
 // Subscription values and colors
-// Subscription values and colors
 const PAWN_COINS = 250
-const KNIGHT_COINS = 500
-const BISHOP_COINS = 750
-const ROOK_COINS = 1000
+const VIP_COINS = 1000
 const QUEEN_COINS = 5000
 const KING_COINS = 10000
 
 const PAWN_COLOR = 'var(--text-color-3)'
-const KNIGHT_COLOR = 'var(--neon-blue)'
-const BISHOP_COLOR = 'var(--neon-lime)'
-const ROOK_COLOR = 'var(--neon-purple)'
+const VIP_COLOR = 'var(--neon-purple)'
 const QUEEN_COLOR = 'var(--color-accent-error)'
 const KING_COLOR = 'var(--neon-gold)' // Gold for King
 
@@ -55,9 +50,7 @@ const upgradeSuccess = ref(false)
 
 const tierRanks: Record<string, number> = {
   pawn: 0,
-  knight: 1,
-  bishop: 2,
-  rook: 3,
+  vip: 3,
   queen: 4,
   king: 5,
 }
@@ -95,36 +88,15 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       isPurchasable: false,
     },
     {
-      id: 'knight',
-      name: t('pages.pricing.tiers.knight.name'),
-      role: t('pages.pricing.tiers.knight.role'),
-      icon: '/piece/alpha/wN.svg',
-      pawncoins: KNIGHT_COINS,
-      color: KNIGHT_COLOR,
-      price: t('pages.pricing.tiers.price.bonus'),
-      isPurchasable: false,
-      isBonus: true,
-    },
-    {
-      id: 'bishop',
-      name: t('pages.pricing.tiers.bishop.name'),
-      role: t('pages.pricing.tiers.bishop.role'),
-      icon: '/piece/alpha/wB.svg',
-      pawncoins: BISHOP_COINS,
-      color: BISHOP_COLOR,
-      price: t('pages.pricing.tiers.price.bonus'),
-      isPurchasable: false,
-      isBonus: true,
-    },
-    {
-      id: 'rook',
-      name: t('pages.pricing.tiers.rook.name'),
-      role: t('pages.pricing.tiers.rook.role'),
+      id: 'vip',
+      name: t('pages.pricing.tiers.vip.name'),
+      role: t('pages.pricing.tiers.vip.role'),
       icon: '/piece/alpha/wR.svg',
-      pawncoins: ROOK_COINS,
-      color: ROOK_COLOR,
-      price: t('pages.pricing.tiers.rook.price'),
-      isPurchasable: true,
+      pawncoins: VIP_COINS,
+      color: VIP_COLOR,
+      price: t('pages.pricing.tiers.price.bonus'),
+      isPurchasable: false,
+      isBonus: true,
     },
     {
       id: 'queen',

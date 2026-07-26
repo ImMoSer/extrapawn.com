@@ -3,87 +3,32 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   NModal,
-  NRadioGroup,
-  NRadioButton,
-  NSelect,
-  NInput,
   NText,
   NButton,
   NIcon
 } from 'naive-ui'
-import { PlayCircleOutline } from '@vicons/ionicons5'
+import { ExitOutline, PlayCircleOutline } from '@vicons/ionicons5'
 import { useSparringStore } from '../model/sparring.store'
-import type { OpeningPreset } from '../model/types'
 
 const sparringStore = useSparringStore()
 const router = useRouter()
 
 const selectedColor = ref<'white' | 'black'>('white')
-const selectedPositionType = ref<'standard' | 'preset' | 'custom'>('standard')
-
-const OPENING_PRESETS: OpeningPreset[] = [
-  {
-    id: 'sicilian',
-    name: 'Sizilianische Verteidigung (1.e4 c5)',
-    fen: 'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2',
-    eco: 'B20'
-  },
-  {
-    id: 'ruy_lopez',
-    name: 'Spanische Partie / Ruy Lopez (1.e4 e5 2.Nf3 Nc6 3.Bb5)',
-    fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
-    eco: 'C60'
-  },
-  {
-    id: 'french',
-    name: 'Französische Verteidigung (1.e4 e6)',
-    fen: 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
-    eco: 'C00'
-  },
-  {
-    id: 'caro_kann',
-    name: 'Caro-Kann Verteidigung (1.e4 c6)',
-    fen: 'rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
-    eco: 'B10'
-  },
-  {
-    id: 'queens_gambit',
-    name: 'Damen-Gambit (1.d4 d5 2.c4)',
-    fen: 'rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2',
-    eco: 'D06'
-  },
-  {
-    id: 'italian',
-    name: 'Italienische Partie (1.e4 e5 2.Nf3 Nc6 3.Bc4)',
-    fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
-    eco: 'C50'
-  }
-]
-
-const selectedPresetId = ref<string>('sicilian')
-const customFen = ref<string>('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-
-const presetOptions = OPENING_PRESETS.map((p) => ({
-  label: `${p.name} (${p.eco})`,
-  value: p.id
-}))
+const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 function handleStartGame() {
-  let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-  if (selectedPositionType.value === 'preset') {
-    const preset = OPENING_PRESETS.find((p) => p.id === selectedPresetId.value)
-    if (preset) fen = preset.fen
-  } else if (selectedPositionType.value === 'custom') {
-    fen = customFen.value.trim() || fen
-  }
-
   sparringStore.startNewGame(
     {
       color: selectedColor.value,
-      fen
+      fen: DEFAULT_FEN
     },
     router
   )
+}
+
+function handleExit() {
+  sparringStore.closeNewGameModal()
+  router.push('/')
 }
 </script>
 
@@ -93,12 +38,12 @@ function handleStartGame() {
     :mask-closable="false"
     preset="card"
     class="new-game-modal glass-modal"
-    style="width: 520px; max-width: 90vw;"
+    style="width: 480px; max-width: 90vw;"
     :title="$t('features.sparring.newGameModal.title')"
     @close="sparringStore.closeNewGameModal"
   >
     <div class="modal-body">
-      <!-- Section 1: Color Selection -->
+      <!-- Section: Color Selection -->
       <div class="section-block">
         <n-text class="section-title">{{ $t('features.sparring.newGameModal.chooseColor') }}</n-text>
         <div class="color-options">
@@ -123,43 +68,26 @@ function handleStartGame() {
           </button>
         </div>
       </div>
-
-      <!-- Section 2: Position Selection -->
-      <div class="section-block">
-        <n-text class="section-title">{{ $t('features.sparring.newGameModal.startPosition') }}</n-text>
-        <n-radio-group v-model:value="selectedPositionType" class="position-type-group">
-          <n-radio-button value="standard">{{ $t('features.sparring.newGameModal.typeStandard') }}</n-radio-button>
-          <n-radio-button value="preset">{{ $t('features.sparring.newGameModal.typePreset') }}</n-radio-button>
-          <n-radio-button value="custom">{{ $t('features.sparring.newGameModal.typeCustom') }}</n-radio-button>
-        </n-radio-group>
-
-        <!-- Preset Selector -->
-        <div v-if="selectedPositionType === 'preset'" class="preset-selector-wrapper">
-          <n-select
-            v-model:value="selectedPresetId"
-            :options="presetOptions"
-            :placeholder="$t('features.sparring.newGameModal.selectPresetPlaceholder')"
-            size="medium"
-          />
-        </div>
-
-        <!-- Custom FEN Input -->
-        <div v-if="selectedPositionType === 'custom'" class="custom-fen-wrapper">
-          <n-input
-            v-model:value="customFen"
-            :placeholder="$t('features.sparring.newGameModal.customFenPlaceholder')"
-            size="medium"
-          />
-        </div>
-      </div>
     </div>
 
     <template #footer>
       <div class="modal-footer">
         <n-button
+          secondary
+          size="large"
+          class="exit-btn"
+          @click="handleExit"
+        >
+          <template #icon>
+            <n-icon><ExitOutline /></n-icon>
+          </template>
+          {{ $t('features.sparring.newGameModal.exit') }}
+        </n-button>
+
+        <n-button
           v-if="sparringStore.gameId"
           secondary
-          size="medium"
+          size="large"
           @click="sparringStore.closeNewGameModal"
         >
           {{ $t('shared.buttons.cancel') }}
@@ -268,17 +196,6 @@ function handleStartGame() {
   font-size: 0.78rem;
   color: var(--color-text-muted, #71717a);
   margin-top: 2px;
-}
-
-.position-type-group {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-}
-
-.preset-selector-wrapper,
-.custom-fen-wrapper {
-  margin-top: 10px;
 }
 
 .modal-footer {

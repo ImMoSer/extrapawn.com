@@ -2,8 +2,8 @@
   <div class="relative" ref="wrapRef">
     <button
       @click="toggleOpen"
-      title="Engine settings (depth, multi-PV)"
-      aria-label="Open engine settings"
+      title="Coach settings (Takeback)"
+      aria-label="Open coach settings"
       :aria-expanded="open"
       aria-haspopup="dialog"
       class="icon-btn settings-btn"
@@ -12,74 +12,8 @@
       <n-icon size="14"><SettingsOutline /></n-icon>
     </button>
     <div v-if="open" class="settings-dropdown">
-      <div class="settings-title">Engine settings</div>
-
-      <!-- Server Engine Switch -->
-      <div class="setting-group">
-        <div class="setting-header">
-          <label for="setting-server">Use Server Engine (Premium)</label>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
-          <span class="setting-desc" style="margin-top: 0;">Offloads analysis to the cloud</span>
-          <input
-            id="setting-server"
-            type="checkbox"
-            v-model="useServer"
-            @change="handleServerToggle"
-          />
-        </div>
-      </div>
-
-      <!-- Depth -->
-      <div class="setting-group" :class="{ 'is-disabled': useServer }">
-        <div class="setting-header">
-          <label for="setting-depth">Search depth</label>
-          <span class="setting-value">{{ depth }}</span>
-        </div>
-        <input
-          id="setting-depth"
-          type="range"
-          min="6"
-          max="22"
-          step="1"
-          v-model.number="depth"
-          class="setting-slider"
-          :disabled="useServer"
-        />
-        <div class="setting-labels">
-          <span>fast (6)</span>
-          <span>deep (22)</span>
-        </div>
-        <div class="setting-desc">
-          Higher depth → stronger analysis, slower per move. Default 12 is a good balance.
-        </div>
-      </div>
-
-      <!-- MultiPV -->
-      <div class="setting-group" :class="{ 'is-disabled': useServer }">
-        <div class="setting-header">
-          <label for="setting-multipv">Top moves shown</label>
-          <span class="setting-value">{{ multipv }}</span>
-        </div>
-        <input
-          id="setting-multipv"
-          type="range"
-          min="1"
-          max="10"
-          step="1"
-          v-model.number="multipv"
-          class="setting-slider"
-          :disabled="useServer"
-        />
-        <div class="setting-labels">
-          <span>1</span>
-          <span>10</span>
-        </div>
-        <div class="setting-desc">How many candidate moves the engine evaluates per position.</div>
-      </div>
-
       <!-- Coach Takeback Settings -->
-      <div class="settings-title" style="margin-top: 16px; border-top: 1px solid #27272a; padding-top: 12px;">
+      <div class="settings-title">
         Coach Takeback
       </div>
 
@@ -139,23 +73,9 @@ const emit = defineEmits(['change'])
 const open = ref(false)
 const preferencesStore = usePreferencesStore()
 
-const useServer = ref(preferencesStore.preferences.engine.useServerCoach)
-const depth = ref(preferencesStore.preferences.engine.depth)
-const multipv = ref(preferencesStore.preferences.engine.multipv)
 const takebackEnabled = ref(preferencesStore.coachTakebackEnabled)
 const takebackDelay = ref(preferencesStore.coachTakebackDelay)
 const wrapRef = ref<HTMLElement | null>(null)
-
-// Sync local inputs if preferences update from elsewhere
-watch(
-  () => preferencesStore.preferences.engine,
-  (newEngine) => {
-    useServer.value = newEngine.useServerCoach
-    depth.value = newEngine.depth
-    multipv.value = newEngine.multipv
-  },
-  { deep: true }
-)
 
 watch(
   () => [preferencesStore.coachTakebackEnabled, preferencesStore.coachTakebackDelay] as const,
@@ -164,11 +84,6 @@ watch(
     takebackDelay.value = newDelay
   }
 )
-
-const handleServerToggle = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  useServer.value = target.checked
-}
 
 const toggleOpen = () => {
   open.value = !open.value
@@ -199,14 +114,12 @@ onUnmounted(() => {
 const apply = () => {
   preferencesStore.updatePreferences({
     engine: {
-      useServerCoach: useServer.value,
-      depth: depth.value,
-      multipv: multipv.value,
+      useServerCoach: true,
     }
   })
   preferencesStore.updateCoachTakeback(takebackEnabled.value, takebackDelay.value)
   open.value = false
-  emit('change', { depth: depth.value, multipv: multipv.value })
+  emit('change')
 }
 </script>
 

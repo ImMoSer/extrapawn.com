@@ -66,7 +66,7 @@ const filteredMenuItems = computed(() => {
       <!-- Hero Section -->
       <div class="hero-section">
         <div class="brand-group">
-          <img src="/png/extra_pawn_black.png" alt="EXTRAPAWN" class="hero-logo" />
+          <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="hero-logo" />
           <div class="brand-text-content">
             <h1 class="brand-name brand-text">EXTRAPAWN</h1>
             <p class="brand-slogan">{{ t('pages.welcome.slogan') }}</p>

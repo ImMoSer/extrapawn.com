@@ -19,14 +19,22 @@ const authStore = useAuthStore()
 const dialog = useDialog()
 const router = useRouter()
 
-const TIER_LEVELS: Record<SubscriptionTier | 'Guest', number> = {
+const TIER_LEVELS: Record<string, number> = {
   Guest: 0,
   Pawn: 1,
-  Knight: 2,
-  Bishop: 2,
+  pawn: 1,
+  VIP: 3,
+  vip: 3,
+  Knight: 3,
+  knight: 3,
+  Bishop: 3,
+  bishop: 3,
   Rook: 3,
+  rook: 3,
   Queen: 3,
+  queen: 3,
   King: 3,
+  king: 3,
   administrator: 4,
 }
 

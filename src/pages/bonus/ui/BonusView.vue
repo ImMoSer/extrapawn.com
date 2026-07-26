@@ -63,12 +63,8 @@ const fetchLeaderboard = async () => {
   }
 }
 
-const getTierInfo = (index: number, vector: number) => {
-  if (index === 0) return { label: 'King', color: 'var(--neon-gold)' }
-  if (index === 1) return { label: 'Queen', color: 'var(--color-accent-error)' }
-  if (index === 2) return { label: 'Rook', color: 'var(--neon-purple)' }
-  if (vector >= 500) return { label: 'Bishop', color: 'var(--color-accent-warning)' }
-  if (vector >= 250) return { label: 'Knight', color: 'var(--neon-cyan)' }
+const getTierInfo = (index: number) => {
+  if (index < 20) return { label: 'VIP', color: 'var(--neon-purple)' }
   return { label: 'Pawn', color: 'var(--text-color-3)' }
 }
 
@@ -151,8 +147,8 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       key: 'bonus',
       align: 'center' as const,
       width: isMobile.value ? 70 : 100,
-      render: (row: ClubPlayer, index: number) => {
-        const tier = getTierInfo(index, row.vector)
+      render: (_: ClubPlayer, index: number) => {
+        const tier = getTierInfo(index)
         if (tier.label === 'Pawn')
           return h('span', { style: { color: 'var(--text-color-3)' } }, '-')
         return h(
@@ -245,42 +241,12 @@ onMounted(() => {
                   style="
                     min-width: 100px;
                     justify-content: center;
-                    background: rgba(255, 7, 58, 0.15);
-                    color: var(--neon-red);
+                    background: rgba(175, 82, 222, 0.15);
+                    color: var(--neon-purple);
                   "
-                  >TOP 1-3</n-tag
+                  >TOP 1-20</n-tag
                 >
                 <n-text>{{ t('pages.pricing.bonusInfo.p3') }}</n-text>
-              </div>
-              <div class="condition-item">
-                <n-tag
-                  :bordered="false"
-                  size="small"
-                  strong
-                  style="
-                    min-width: 100px;
-                    justify-content: center;
-                    background: rgba(255, 85, 0, 0.15);
-                    color: var(--neon-orange);
-                  "
-                  >VECTOR 500</n-tag
-                >
-                <n-text>{{ t('pages.pricing.bonusInfo.p4a') }}</n-text>
-              </div>
-              <div class="condition-item">
-                <n-tag
-                  :bordered="false"
-                  size="small"
-                  strong
-                  style="
-                    min-width: 100px;
-                    justify-content: center;
-                    background: rgba(255, 230, 0, 0.15);
-                    color: var(--neon-yellow);
-                  "
-                  >VECTOR 250</n-tag
-                >
-                <n-text>{{ t('pages.pricing.bonusInfo.p4b') }}</n-text>
               </div>
             </n-space>
 
