@@ -289,7 +289,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
           </n-space>
         </n-alert>
 
-        <n-grid cols="1 600:2 900:3 1400:6" x-gap="16" y-gap="16">
+        <n-grid cols="1 600:2" x-gap="16" y-gap="16" class="pricing-tiers-grid">
           <n-gi v-for="tier in subscriptionTiers" :key="tier.name">
             <n-card
               hoverable
@@ -575,6 +575,11 @@ const handleCheckout = async (tier: SubscriptionTier) => {
   border-radius: 12px !important;
   padding: 12px 20px !important;
   margin-bottom: 12px;
+}
+
+.pricing-tiers-grid {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .bonus-alert-text {
