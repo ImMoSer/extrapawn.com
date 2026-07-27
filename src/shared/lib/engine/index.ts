@@ -1,3 +1,6 @@
 export * from './LocalEngineManager'
-export * from './ServerEngineService'
 export * from './types'
+export * from './leelaOnnx/workerInterface'
+export * from './leelaOnnx/networks'
+export * from './leelaOnnx/types'
+

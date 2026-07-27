@@ -1,14 +1,14 @@
-import { useGameStore } from '@/entities/game'
+import { enginePlayService, useGameStore } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 import type { EngineId } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { AVAILABLE_ENGINES } from '../config/constants'
 
 const ENGINE_STORAGE_KEY = 'user_selected_engine'
 
 export const useEngineSelectionStore = defineStore('engine-selection', () => {
-  const availableEngines = ref<EngineId[]>([...AVAILABLE_ENGINES])
+  const availableEngines = computed<EngineId[]>(() => AVAILABLE_ENGINES)
 
   const loadSavedEngine = (): EngineId => {
     try {
@@ -25,6 +25,11 @@ export const useEngineSelectionStore = defineStore('engine-selection', () => {
   const selectedEngine = ref<EngineId>(loadSavedEngine())
   const isEngineSelectorOpen = ref(false)
 
+  // Immediately pre-load initial engine
+  enginePlayService.ensureReady(selectedEngine.value).catch((err) => {
+    logger.warn('[EngineSelectionStore] Initial engine pre-load failed:', err)
+  })
+
   function toggleEngineSelector() {
     isEngineSelectorOpen.value = !isEngineSelectorOpen.value
   }
@@ -39,6 +44,11 @@ export const useEngineSelectionStore = defineStore('engine-selection', () => {
       logger.info(`[EngineSelectionStore] Saved selected engine: ${engineId}`)
       const gameStore = useGameStore()
       gameStore.setBotEngineId(engineId)
+
+      // Pre-load new engine immediately in the background
+      enginePlayService.ensureReady(engineId).catch((err) => {
+        logger.warn(`[EngineSelectionStore] Background pre-load of ${engineId} failed:`, err)
+      })
     } catch (error) {
       logger.error('[EngineSelectionStore] Failed to save engine', error)
     }

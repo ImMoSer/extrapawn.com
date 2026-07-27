@@ -9,6 +9,8 @@ import { defineConfig } from 'vite'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import pkg from './package.json'
 
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+
 export default defineConfig(({ mode }) => {
   return {
     define: {
@@ -23,6 +25,27 @@ export default defineConfig(({ mode }) => {
             isCustomElement: (tag) => tag.startsWith('piece'),
           },
         },
+      }),
+
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm',
+            dest: '.',
+          },
+          {
+            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs',
+            dest: '.',
+          },
+          {
+            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
+            dest: '.',
+          },
+          {
+            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs',
+            dest: '.',
+          },
+        ],
       }),
 
 
@@ -63,7 +86,15 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        tslib: 'tslib/tslib.es6.js',
       },
+      conditions: ['onnxruntime-web-use-extern-wasm'],
+    },
+    optimizeDeps: {
+      exclude: ['onnxruntime-web'],
+    },
+    worker: {
+      format: 'es',
     },
 
     server: {
@@ -76,31 +107,6 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('naive-ui')) {
-                return 'naive-ui'
-              }
-              if (id.includes('echarts') || id.includes('vue-echarts')) {
-                return 'echarts'
-              }
-              if (id.includes('@lichess-org/chessground') || id.includes('chessops')) {
-                return 'chess-logic'
-              }
-              if (
-                id.includes('vue') ||
-                id.includes('vue-router') ||
-                id.includes('pinia') ||
-                id.includes('vue-i18n')
-              ) {
-                return 'vendor'
-              }
-            }
-          },
-        },
-      },
       chunkSizeWarningLimit: 1000,
     },
   }

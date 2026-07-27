@@ -6,6 +6,7 @@ import { QualityIcon, useCoachStore } from '@/features/coach'
 import { useThemeStore } from '@/features/settings'
 import { useTaskTodayStore } from '@/features/task-today'
 import { QUALITY_COLOR } from '@/shared/lib/engine/coach/coach.types'
+import { EngineSelector } from '@/features/engine'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -111,7 +112,12 @@ onUnmounted(() => {
       <!-- Center Stage: Top Info -> Board -> Controls -->
       <div class="center-stage" ref="centerColumnRef">
         <div class="cb-top-panel">
-          <slot name="top-info"></slot>
+          <div class="top-info-slot">
+            <slot name="top-info"></slot>
+          </div>
+          <div class="top-engine-slot">
+            <EngineSelector />
+          </div>
         </div>
 
         <div class="board-section">
@@ -220,9 +226,25 @@ onUnmounted(() => {
   height: var(--top-panel-h);
   flex: 0 0 var(--top-panel-h);
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   padding-bottom: 8px;
+  gap: 12px;
+  z-index: 25;
+}
+
+.top-info-slot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.top-engine-slot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Board always square, sized by --board-size */

@@ -109,6 +109,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  white-space: nowrap;
+  gap: 8px;
   transition:
     border-color 0.2s ease,
     opacity 0.2s ease;
@@ -142,7 +144,8 @@ onUnmounted(() => {
   border-radius: var(--panel-border-radius);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   z-index: 1010;
-  width: 100%;
+  min-width: 100%;
+  width: max-content;
   max-height: 60vh;
   overflow-y: auto;
   display: flex;
@@ -157,6 +160,7 @@ onUnmounted(() => {
   cursor: pointer;
   text-align: left;
   width: 100%;
+  white-space: nowrap;
   font-size: var(--font-size-small);
   transition: background-color 0.2s ease;
 }

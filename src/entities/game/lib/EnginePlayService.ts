@@ -1,170 +1,111 @@
 // src/entities/game/lib/EnginePlayService.ts
-import { serverEngineService } from '@/shared/lib/engine'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { leelaOnnxEngine } from '@/shared/lib/engine/leelaOnnx/workerInterface'
+import { LEELA_ONNX_NETWORKS } from '@/shared/lib/engine/leelaOnnx/networks'
+import type { LeelaOnnxNetworkInfo } from '@/shared/lib/engine/leelaOnnx/types'
 import logger from '@/shared/lib/logger'
 import type { EngineId } from '@/shared/types/api.types'
-
-type EngineType = 'local' | 'server'
-
-interface EngineConfig {
-  type: EngineType
-  // Для локального движка
-  depth?: number
-  // Для серверного движка
-  model?: string
-  fallback?: boolean // Используем ли локальный движок как фолбэк
-}
-
-// --- НОВАЯ КОНФИГУРАЦИЯ ДВИЖКОВ ---
-export const engineConfigs: Record<EngineId, EngineConfig> = {
-  SF_2200: { type: 'local', depth: 15 },
-  'maia-1900': { type: 'server', model: 'maia-1900', fallback: true },
-  'maia-2200': { type: 'server', model: 'maia-2200', fallback: true },
-  'maia-2400': { type: 'server', model: 'maia-2400', fallback: true },
-}
+import { Chess } from 'chess.js'
 
 class EnginePlayServiceController {
+  private activeEngineId: EngineId | null = null
+
   constructor() {
-    logger.info('[EnginePlayService] Initialized with new local engine configurations.')
-    // Asynchronously pre-load the engine in the background to avoid delay during first fallback
-    coachEngineManager.ensureReady().catch((err) => {
-      logger.warn('[EnginePlayService] Early engine pre-loading failed.', err)
+    logger.info('[EnginePlayService] Initialized with 100% local ONNX bot engines.')
+    // Pre-load saved or default ONNX model asynchronously on startup
+    const savedEngine = this.getSavedEngineId()
+    this.ensureReady(savedEngine).catch((err) => {
+      logger.warn(`[EnginePlayService] Background pre-loading of ${savedEngine} failed:`, err)
     })
   }
 
-  public async getBestMove(engineId: EngineId, fen: string): Promise<string | null> {
-    const config = engineConfigs[engineId]
-    if (!config) {
-      logger.error(`[EnginePlayService] Unknown engineId: ${engineId}.`)
+  private getSavedEngineId(): EngineId {
+    try {
+      const saved = localStorage.getItem('user_selected_engine')
+      if (saved && LEELA_ONNX_NETWORKS.some((net) => net.id === saved)) {
+        return saved as EngineId
+      }
+    } catch {
+      // Fallback to default
+    }
+    return 'maia-2200'
+  }
+
+  /**
+   * Pre-load & initialize the requested ONNX bot network, returning a Promise that resolves when ready.
+   */
+  public async ensureReady(engineId: EngineId): Promise<void> {
+    const netInfo: LeelaOnnxNetworkInfo | undefined = LEELA_ONNX_NETWORKS.find(
+      (net) => net.id === engineId,
+    )
+
+    if (!netInfo) {
+      const errMsg = `[EnginePlayService] Fail-Fast: Unknown or unsupported engineId "${engineId}".`
+      logger.error(errMsg)
+      throw new Error(errMsg)
+    }
+
+    if (this.activeEngineId !== engineId || !leelaOnnxEngine.getState().isReady) {
+      logger.info(
+        `[EnginePlayService] Pre-loading local ONNX bot network: ${netInfo.name} (${netInfo.id})`,
+      )
+      this.activeEngineId = engineId
+      await leelaOnnxEngine.init(netInfo)
+      logger.info(`[EnginePlayService] Local ONNX bot network ready: ${netInfo.name}`)
+    }
+  }
+
+  /**
+   * Compute legal UCI moves for a position using chess.js.
+   */
+  private computeLegalMoves(fen: string): string[] {
+    try {
+      const chess = new Chess(fen)
+      return chess.moves({ verbose: true }).map((m) => m.from + m.to + (m.promotion || ''))
+    } catch (err) {
+      logger.error(`[EnginePlayService] Failed to generate legal moves for FEN: ${fen}`, err)
+      return []
+    }
+  }
+
+  /**
+   * Generates the best move for the given engineId and position FEN using local ONNX neural network inference.
+   *
+   * @throws {Error} Fail-Fast principle: throws immediately if engineId is invalid or network fails.
+   */
+  public async getBestMove(
+    engineId: EngineId,
+    fen: string,
+    historyFens: string[] = [],
+    providedLegalMoves?: string[],
+  ): Promise<string | null> {
+    // Ensure the model is loaded and ready before requesting a move
+    await this.ensureReady(engineId)
+
+    const legalMoves = providedLegalMoves ?? this.computeLegalMoves(fen)
+    if (legalMoves.length === 0) {
+      logger.warn(`[EnginePlayService] No legal moves available for FEN: ${fen}`)
       return null
     }
 
-    // --- ЛОГИКА ДЛЯ ЛОКАЛЬНЫХ ДВИЖКОВ ---
-    if (config.type === 'local' && config.depth !== undefined) {
-      logger.info(`[EnginePlayService] Using local engine for ${engineId} with depth ${config.depth}`)
-      try {
-        await coachEngineManager.ensureReady()
-        return await coachEngineManager.getBestMoveOnly(fen, { depth: config.depth })
-      } catch (error) {
-        logger.error(`[EnginePlayService] Local engine failed for ${engineId}:`, error)
-        return null // В случае ошибки локального движка, ход не будет сделан
-      }
-    }
-
-    // --- ЛОГИКА ДЛЯ СЕРВЕРНОГО ДВИЖКА ---
-    if (config.type === 'server' && config.model) {
-      logger.info(`[EnginePlayService] Using server engine ${engineId} (model: ${config.model})`)
-      return this.getMoveWithFallback(fen, config.model)
-    }
-
-    logger.error(`[EnginePlayService] Invalid configuration for engineId: ${engineId}`)
-    return null
-  }
-
-  private async getMoveWithFallback(fen: string, modelId: string): Promise<string | null> {
-    if (modelId === 'maia-2200' && coachEngineManager.isCoachEnabled) {
-      logger.info(
-        `[EnginePlayService] Coach is enabled. Awaiting coach explanation to utilize cached maia-2200 move...`,
-      )
-      try {
-        await coachEngineManager.getExplanation(fen)
-        logger.info('[EnginePlayService] Coach explanation complete. Proceeding with cache check.')
-      } catch (err) {
-        logger.warn(
-          '[EnginePlayService] Awaiting coach explanation failed, falling back to server request:',
-          err,
-        )
-      }
-    }
-
-    const HEDGE_DELAY_MS = 250
-    const HARD_TIMEOUT_MS = 750
-
-    const controllerA = new AbortController()
-    const controllerB = new AbortController()
-    let timerB: number | null = null
-    let hardTimeout: number | null = null
+    const history = historyFens.length > 0 ? historyFens : [fen]
 
     try {
-      const startTime = performance.now()
-
-      // Request A
-      const promiseA = serverEngineService
-        .getMoveFromServer(fen, modelId, controllerA.signal)
-        .then((res) => ({ source: 'A', result: res }))
-        .catch((err) => {
-          if (err.name === 'AbortError') throw err
-          logger.warn(`[EnginePlayService] Request A failed:`, err)
-          throw err
-        })
-
-      // Request B (delayed)
-      const promiseB = new Promise<{ source: string; result: string | null }>((resolve, reject) => {
-        timerB = window.setTimeout(() => {
-          logger.info(
-            `[EnginePlayService] Request A takes >${HEDGE_DELAY_MS}ms. Firing Hedged Request B.`,
-          )
-          serverEngineService
-            .getMoveFromServer(fen, modelId, controllerB.signal)
-            .then((res) => resolve({ source: 'B', result: res }))
-            .catch((err) => reject(err))
-        }, HEDGE_DELAY_MS)
-      })
-
-      // Hard Timeout
-      const timeoutPromise = new Promise<{ source: string; result: null }>((_, reject) => {
-        hardTimeout = window.setTimeout(() => {
-          reject(new Error('HARD_TIMEOUT'))
-        }, HARD_TIMEOUT_MS)
-      })
-
-      const winner = await Promise.race([
-        new Promise<{ source: string; result: string | null }>((resolve, reject) => {
-          let errors = 0
-          promiseA.then(resolve).catch(() => {
-            errors++
-            if (errors === 2) reject(new Error('All promises were rejected'))
-          })
-          promiseB.then(resolve).catch(() => {
-            errors++
-            if (errors === 2) reject(new Error('All promises were rejected'))
-          })
-        }),
-        timeoutPromise,
-      ])
-
-      const elapsed = Math.round(performance.now() - startTime)
-      logger.info(
-        `[EnginePlayService] Server engine responded via Request ${winner.source} in ${elapsed}ms.`,
-      )
-
-      if (timerB) clearTimeout(timerB)
-      if (hardTimeout) clearTimeout(hardTimeout)
-
-      if (winner.source === 'A') controllerB.abort()
-      if (winner.source === 'B') controllerA.abort()
-
-      return winner.result
-    } catch (error: unknown) {
-      if (timerB) clearTimeout(timerB)
-      if (hardTimeout) clearTimeout(hardTimeout)
-      controllerA.abort()
-      controllerB.abort()
-
-      const errMsg = error instanceof Error ? error.message : String(error)
-      if (errMsg === 'HARD_TIMEOUT') {
-        logger.warn(
-          `[EnginePlayService] Server engine hard timeout after ${HARD_TIMEOUT_MS}ms. Falling back.`,
-        )
-      } else {
-        logger.error(
-          `[EnginePlayService] Both hedged requests failed. Falling back. Error:`,
-          error,
+      const result = await leelaOnnxEngine.getBestMove(fen, history, legalMoves, 0)
+      if (!result || !result.move) {
+        throw new Error(
+          `[EnginePlayService] Local ONNX engine returned empty move for FEN: ${fen}`,
         )
       }
-
-      await coachEngineManager.ensureReady()
-      return coachEngineManager.getBestMoveOnly(fen, { depth: 8 })
+      logger.info(
+        `[EnginePlayService] Local ONNX move for ${engineId}: ${result.move} (confidence: ${(result.confidence * 100).toFixed(1)}%)`,
+      )
+      return result.move
+    } catch (error) {
+      logger.error(
+        `[EnginePlayService] Fail-Fast: Local ONNX engine failed for ${engineId}:`,
+        error,
+      )
+      throw error
     }
   }
 }

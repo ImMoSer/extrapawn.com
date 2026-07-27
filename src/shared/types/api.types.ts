@@ -1,7 +1,21 @@
 // src/types/api.types.ts
 
 // --- Engine and Gameplay Types ---
-export type EngineId = 'SF_2200' | 'maia-1900' | 'maia-2200' | 'maia-2400'
+export type EngineId =
+  | 'maia-1100'
+  | 'maia-1200'
+  | 'maia-1300'
+  | 'maia-1400'
+  | 'maia-1500'
+  | 'maia-1600'
+  | 'maia-1700'
+  | 'maia-1800'
+  | 'maia-1900'
+  | 'maia-2200'
+  | 'mean-girl-8'
+  | 'evilgyal-6'
+  | 'ender-112x9-se'
+  | 'bad-gyal-8'
 
 export type Color = 'white' | 'black'
 
