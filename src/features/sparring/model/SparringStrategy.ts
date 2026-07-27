@@ -1,7 +1,6 @@
 import type { IGameplayStrategy } from '@/entities/game'
 import { enginePlayService, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
-import { theoryRepository } from '@/entities/opening'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
 
@@ -16,8 +15,6 @@ export class SparringStrategy implements IGameplayStrategy {
     }
   }
 
-  private readonly ENGINE_ID: import('@/shared/types/api.types').EngineId = 'maia-2200'
-  private isBookExhausted = false
   private restartTimeout: number | null = null
 
   onGameStart() {
@@ -48,9 +45,17 @@ export class SparringStrategy implements IGameplayStrategy {
     const { sendSparringWebhook, createSparringWebhookPayload } = await import('../api/n8nCoachApi')
     const { buildLastUserMoveText, buildTopMovesText, getCandidateUciMoves, parseMoveDescription } = await import('../lib/n8nContextBuilder')
     const { useCoachStore } = await import('@/features/coach')
+    const { useEngineSelectionStore } = await import('@/features/engine')
     const i18n = (await import('@/shared/config/i18n')).default
     const sparringStore = useSparringStore()
     const coachStore = useCoachStore()
+    const engineSelectionStore = useEngineSelectionStore()
+    const gameStore = useGameStore()
+
+    const selectedEngineId = engineSelectionStore.selectedEngine || gameStore.botEngineId
+    if (!selectedEngineId) {
+      throw new Error('[SparringStrategy] Fail-Fast: No engine selected for bot move')
+    }
 
     const lastUserMoveText = buildLastUserMoveText()
 
@@ -108,50 +113,15 @@ export class SparringStrategy implements IGameplayStrategy {
       }
     }
 
-    // 2. Fallback to MozerBook
-    if (!this.isBookExhausted) {
-      try {
-        const stats = await theoryRepository.getMozerBookStats(fen, { skipDebounce: true })
-        if (stats && stats.moves && stats.moves.length > 0) {
-          const topMoves = stats.moves.slice(0, 5)
-          const firstMove = topMoves[0]
-          if (firstMove) {
-            const totalPlays = topMoves.reduce((sum, m) => sum + m.total, 0)
-            if (totalPlays > 0) {
-              let random = Math.random() * totalPlays
-              let selectedUci = firstMove.uci
-              for (const move of topMoves) {
-                random -= move.total
-                if (random <= 0) {
-                  selectedUci = move.uci
-                  break
-                }
-              }
-              logger.info(`[SparringStrategy] Fallback MozerBook move selected: ${selectedUci}`)
-              applyTurn1BotGreeting(selectedUci)
-              return selectedUci
-            }
-          }
-        } else if (stats) {
-          this.isBookExhausted = true
-        }
-      } catch (err) {
-        logger.error('[SparringStrategy] Failed to fetch book stats:', err)
-      }
+    // 2. Direct Engine Move (Fail-Fast: no MozerBook fallback)
+    logger.info(`[SparringStrategy] Requesting bot move from selected engine: ${selectedEngineId}`)
+    const moveUci = await enginePlayService.getBestMove(selectedEngineId, fen)
+    if (!moveUci) {
+      throw new Error(`[SparringStrategy] Fail-Fast: Engine "${selectedEngineId}" failed to calculate a move for FEN: ${fen}`)
     }
 
-    // 3. Fallback to Engine (Maia)
-    logger.info(`[SparringStrategy] Fallback using engine: ${this.ENGINE_ID}`)
-    try {
-      const moveUci = await enginePlayService.getBestMove(this.ENGINE_ID, fen)
-      if (moveUci) {
-        applyTurn1BotGreeting(moveUci)
-      }
-      return moveUci
-    } catch (err) {
-      logger.error('[SparringStrategy] Engine move failed:', err)
-      return null
-    }
+    applyTurn1BotGreeting(moveUci)
+    return moveUci
   }
 
   async onUserMoveExecuted() {

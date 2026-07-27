@@ -1,110 +1,59 @@
 // src/entities/game/lib/EnginePlayService.ts
-import { leelaOnnxEngine } from '@/shared/lib/engine/leelaOnnx/workerInterface'
-import { LEELA_ONNX_NETWORKS } from '@/shared/lib/engine/leelaOnnx/networks'
-import type { LeelaOnnxNetworkInfo } from '@/shared/lib/engine/leelaOnnx/types'
 import logger from '@/shared/lib/logger'
 import type { EngineId } from '@/shared/types/api.types'
-import { Chess } from 'chess.js'
+
+const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_API_URL as string) || 'http://localhost:3000/api'
 
 class EnginePlayServiceController {
-  private activeEngineId: EngineId | null = null
-
   constructor() {
-    logger.info('[EnginePlayService] Initialized with 100% local ONNX bot engines.')
-    // Pre-load saved or default ONNX model asynchronously on startup
-    const savedEngine = this.getSavedEngineId()
-    this.ensureReady(savedEngine).catch((err) => {
-      logger.warn(`[EnginePlayService] Background pre-loading of ${savedEngine} failed:`, err)
-    })
-  }
-
-  private getSavedEngineId(): EngineId {
-    try {
-      const saved = localStorage.getItem('user_selected_engine')
-      if (saved && LEELA_ONNX_NETWORKS.some((net) => net.id === saved)) {
-        return saved as EngineId
-      }
-    } catch {
-      // Fallback to default
-    }
-    return 'maia-2200'
+    logger.info(`[EnginePlayService] Initialized with Maia Engine Hub API service (Backend: ${BACKEND_API_URL}).`)
   }
 
   /**
-   * Pre-load & initialize the requested ONNX bot network, returning a Promise that resolves when ready.
+   * Compatibility helper for pre-loading engine.
    */
   public async ensureReady(engineId: EngineId): Promise<void> {
-    const netInfo: LeelaOnnxNetworkInfo | undefined = LEELA_ONNX_NETWORKS.find(
-      (net) => net.id === engineId,
-    )
-
-    if (!netInfo) {
-      const errMsg = `[EnginePlayService] Fail-Fast: Unknown or unsupported engineId "${engineId}".`
-      logger.error(errMsg)
-      throw new Error(errMsg)
-    }
-
-    if (this.activeEngineId !== engineId || !leelaOnnxEngine.getState().isReady) {
-      logger.info(
-        `[EnginePlayService] Pre-loading local ONNX bot network: ${netInfo.name} (${netInfo.id})`,
-      )
-      this.activeEngineId = engineId
-      await leelaOnnxEngine.init(netInfo)
-      logger.info(`[EnginePlayService] Local ONNX bot network ready: ${netInfo.name}`)
-    }
+    logger.debug(`[EnginePlayService] Engine ready: ${engineId}`)
   }
 
   /**
-   * Compute legal UCI moves for a position using chess.js.
-   */
-  private computeLegalMoves(fen: string): string[] {
-    try {
-      const chess = new Chess(fen)
-      return chess.moves({ verbose: true }).map((m) => m.from + m.to + (m.promotion || ''))
-    } catch (err) {
-      logger.error(`[EnginePlayService] Failed to generate legal moves for FEN: ${fen}`, err)
-      return []
-    }
-  }
-
-  /**
-   * Generates the best move for the given engineId and position FEN using local ONNX neural network inference.
+   * Generates the best move for the given engineId and position FEN via Fastify backend API (/api/bestmove).
    *
    * @throws {Error} Fail-Fast principle: throws immediately if engineId is invalid or network fails.
    */
   public async getBestMove(
     engineId: EngineId,
     fen: string,
-    historyFens: string[] = [],
-    providedLegalMoves?: string[],
+    _historyFens: string[] = [],
+    _providedLegalMoves?: string[],
   ): Promise<string | null> {
-    // Ensure the model is loaded and ready before requesting a move
-    await this.ensureReady(engineId)
-
-    const legalMoves = providedLegalMoves ?? this.computeLegalMoves(fen)
-    if (legalMoves.length === 0) {
-      logger.warn(`[EnginePlayService] No legal moves available for FEN: ${fen}`)
-      return null
-    }
-
-    const history = historyFens.length > 0 ? historyFens : [fen]
+    const url = `${BACKEND_API_URL}/bestmove?engine=${encodeURIComponent(engineId)}&fen=${encodeURIComponent(fen)}`
 
     try {
-      const result = await leelaOnnxEngine.getBestMove(fen, history, legalMoves, 0)
-      if (!result || !result.move) {
-        throw new Error(
-          `[EnginePlayService] Local ONNX engine returned empty move for FEN: ${fen}`,
-        )
+      logger.info(`[EnginePlayService] Requesting move from Maia Hub via Fastify for ${engineId}...`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`[EnginePlayService] Server HTTP ${response.status}: ${errorText}`)
       }
-      logger.info(
-        `[EnginePlayService] Local ONNX move for ${engineId}: ${result.move} (confidence: ${(result.confidence * 100).toFixed(1)}%)`,
-      )
-      return result.move
+
+      const data = (await response.json()) as { bestMove?: string }
+      if (!data || !data.bestMove) {
+        logger.warn(`[EnginePlayService] Engine Hub returned empty bestMove for FEN: ${fen}`)
+        return null
+      }
+
+      logger.info(`[EnginePlayService] Move received for ${engineId}: ${data.bestMove}`)
+      return data.bestMove
     } catch (error) {
-      logger.error(
-        `[EnginePlayService] Fail-Fast: Local ONNX engine failed for ${engineId}:`,
-        error,
-      )
+      logger.error(`[EnginePlayService] Fail-Fast: Failed to fetch move for ${engineId}:`, error)
       throw error
     }
   }

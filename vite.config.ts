@@ -9,8 +9,6 @@ import { defineConfig } from 'vite'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import pkg from './package.json'
 
-import { viteStaticCopy } from 'vite-plugin-static-copy'
-
 export default defineConfig(({ mode }) => {
   return {
     define: {
@@ -27,29 +25,6 @@ export default defineConfig(({ mode }) => {
         },
       }),
 
-      viteStaticCopy({
-        targets: [
-          {
-            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm',
-            dest: '.',
-          },
-          {
-            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs',
-            dest: '.',
-          },
-          {
-            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
-            dest: '.',
-          },
-          {
-            src: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs',
-            dest: '.',
-          },
-        ],
-      }),
-
-
-
       AutoImport({
         imports: [
           'vue',
@@ -62,8 +37,6 @@ export default defineConfig(({ mode }) => {
         dirs: ['src/components', 'src/shared/ui'],
         resolvers: [NaiveUiResolver()],
       }),
-
-
 
       ...(mode === 'development' ? [VueDevTools()] : []),
       visualizer({ open: false, filename: 'stats.html' }),
@@ -88,11 +61,8 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
         tslib: 'tslib/tslib.es6.js',
       },
-      conditions: ['onnxruntime-web-use-extern-wasm'],
     },
-    optimizeDeps: {
-      exclude: ['onnxruntime-web'],
-    },
+
     worker: {
       format: 'es',
     },
