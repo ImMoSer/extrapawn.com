@@ -1,81 +1,42 @@
-// Manager for the Rust/WASM motif analyzer running inside a Web Worker.
+// Thin JS wrapper around the Rust/WASM motif analyzer.
 //
-// All WASM calculations are dispatched asynchronously to `engine-rs.worker.js`
-// so that heavy position analyses never block the main UI thread.
+// The WASM module is initialised lazily — `ensureReady()` triggers a fetch
+// + instantiate. Until that promise resolves, `analyzeMove()` returns null
+// so callers can fall back to the legacy JS detectors.
+//
+// The Rust analyzer returns a JSON-ish object:
+//   { san, fen_after, motifs: [{id, phrase, priority}], terminal? }
+// Phrases are pre-rendered ("Pins the knight to the queen", etc.) and
+// motifs are NOT pre-sorted. Composition (priority sort + combined phrases
+// like "Captures with check") happens in `composeTagline()`.
 
-let worker = null;
+import init, {
+  analyze as wasmAnalyze,
+  analyze_pv as wasmAnalyzePv,
+  evaluate_fen as wasmEvaluateFen,
+  explain_position as wasmExplainPosition,
+  piece_contributions as wasmPieceContributions,
+  piece_value_at as wasmPieceValueAt,
+  version as wasmVersion,
+} from './wasm-rs/engine_rs.js';
+
 let ready = false;
 let initPromise = null;
-let reqId = 0;
-const pendingMap = new Map();
-
-function getWorker() {
-  if (!worker && typeof window !== 'undefined' && typeof Worker !== 'undefined') {
-    try {
-      worker = new Worker(new URL('./engine-rs.worker.js', import.meta.url), { type: 'module' });
-      worker.onmessage = (e) => {
-        const { id, result, error, success } = e.data || {};
-        if (id === 'init') {
-          ready = !!success;
-          return;
-        }
-        const pending = pendingMap.get(id);
-        if (pending) {
-          pendingMap.delete(id);
-          if (error) {
-            pending.reject(new Error(error));
-          } else {
-            pending.resolve(result);
-          }
-        }
-      };
-      worker.onerror = (err) => {
-        console.error('[engine-rs manager] worker error:', err);
-        ready = false;
-      };
-    } catch (err) {
-      console.error('[engine-rs manager] failed to spawn worker:', err);
-    }
-  }
-  return worker;
-}
-
-function sendRequest(type, payload) {
-  const w = getWorker();
-  if (!w) return Promise.resolve(null);
-  const id = ++reqId;
-  return new Promise((resolve, reject) => {
-    pendingMap.set(id, { resolve, reject });
-    w.postMessage({ id, type, payload });
-  });
-}
 
 export function ensureReady() {
   if (ready) return Promise.resolve(true);
   if (!initPromise) {
-    const w = getWorker();
-    if (!w) return Promise.resolve(false);
-    initPromise = new Promise((resolve) => {
-      const id = 'init';
-      const timeout = setTimeout(() => {
-        console.warn('[engine-rs manager] init timed out');
-        resolve(false);
-      }, 5000);
-
-      w.postMessage({ id, type: 'init' });
-
-      const origOnMessage = w.onmessage;
-      w.onmessage = (e) => {
-        if (e.data?.id === 'init') {
-          clearTimeout(timeout);
-          ready = !!e.data.success;
-          w.onmessage = origOnMessage;
-          resolve(ready);
-          return;
-        }
-        if (origOnMessage) origOnMessage(e);
-      };
-    });
+    initPromise = init()
+      .then(() => {
+        ready = true;
+        try { console.log('[engine-rs]', wasmVersion()); } catch { /* ignore */ }
+        return true;
+      })
+      .catch((err) => {
+        console.error('[engine-rs] init failed:', err);
+        ready = false;
+        return false;
+      });
   }
   return initPromise;
 }
@@ -84,25 +45,46 @@ export function isReady() {
   return ready;
 }
 
-/** Analyze a single move via Web Worker. */
-export async function analyzeMove(fenBefore, moveUci) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+/** Analyze a single move. Returns the raw Rust object, or null if WASM
+ *  isn't ready yet (caller should fall back to JS detectors). */
+export function analyzeMove(fenBefore, moveUci) {
+  if (!ready) return null;
+  try {
+    const result = wasmAnalyze(fenBefore, moveUci);
+    if (!result || result.error) return null;
+    return result;
+  } catch (e) {
+    console.warn('[engine-rs] analyze failed:', e);
+    return null;
   }
-  return sendRequest('analyzeMove', { fenBefore, moveUci });
 }
 
-/** Analyze a sequence of UCI moves via Web Worker. */
-export async function analyzePv(startFen, ucis, plies = 3) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+/** Analyze a sequence of UCI moves. Returns array or null. */
+export function analyzePv(startFen, ucis, plies = 3) {
+  if (!ready) return null;
+  try {
+    const arr = wasmAnalyzePv(startFen, ucis, plies);
+    if (!Array.isArray(arr)) return null;
+    return arr;
+  } catch (e) {
+    console.warn('[engine-rs] analyze_pv failed:', e);
+    return null;
   }
-  return sendRequest('analyzePv', { startFen, ucis, plies });
 }
 
-// Compose a tagline from a Rust analysis result (pure JS composition).
+// Compose a tagline from a Rust analysis result.
+//
+// Strategy (in order):
+//   1. **Named patterns** that subsume other motifs. If `greek_gift`
+//      fires, that's the headline — drop the bare `sacrifice`+`check`
+//      mechanics underneath. Same for `decisive_combination`,
+//      `back_rank_mate_threat`, `smothered_hint`.
+//   2. **Combos** that read more naturally as one phrase:
+//      `Captures the X with check`, `Forks knight and rook with check`,
+//      etc.
+//   3. **Pair join** for two complementary motifs.
+//   4. **Single phrase** for the highest-priority motif.
+//   5. **Empty** when nothing meaningful fired (better silence than filler).
 export function composeTagline(rustResult) {
   if (!rustResult || !rustResult.motifs) {
     return { san: rustResult?.san || '', motifs: [], tagline: '', fenAfter: rustResult?.fen_after || '' };
@@ -117,6 +99,9 @@ export function composeTagline(rustResult) {
   };
 
   // ── 1. Named patterns subsume their components ────────────────────
+  // These are the headline events — when one fires, supporting motifs
+  // become redundant. (E.g., `greek_gift` already implies sacrifice +
+  // check + king attack — saying any of them again is noise.)
   if (has('checkmate'))            return out(rustResult, motifIds, 'Delivers checkmate');
   if (has('greek_gift')) {
     return out(rustResult, motifIds,
@@ -131,6 +116,7 @@ export function composeTagline(rustResult) {
   if (has('double_check'))         return out(rustResult, motifIds, 'Double check — only the king can move');
 
   // ── 2. Forced/forcing combos ──────────────────────────────────────
+  // Captures with check, fork with check, etc. read better as one line.
   if (has('fork') && has('check')) {
     return out(rustResult, motifIds, `${phraseFor('fork')} with check`);
   }
@@ -189,6 +175,12 @@ export function composeTagline(rustResult) {
   const visible = motifs.filter(m => m.phrase && m.phrase.length > 0);
 
   // ── 4. Single or pair fallback ────────────────────────────────────
+  // Before joining two phrases, we dedupe by *target keyword*. If both
+  // phrases mention the same role / file / square, the second one is
+  // re-stating what the first already said — drop it. This catches:
+  //   "Creates a threat on the pawn, attacks the h-pawn"
+  //   "Pins the knight to the queen, threatens the knight"
+  //   "Trades knights into the endgame, trades pieces" (etc.)
   let tagline;
   if (visible.length === 0) {
     tagline = '';
@@ -207,21 +199,28 @@ export function composeTagline(rustResult) {
   return out(rustResult, motifIds, tagline);
 }
 
+// Two phrases "overlap" if they mention the same key noun — role, file,
+// square, or piece. Used to suppress redundant secondary motifs in the
+// pair-join fallback.
 const KEY_TOKENS = [
   'queen', 'rook', 'bishop', 'knight', 'pawn',
   'king',
+  // file-pawns: "h-pawn", "a-pawn" etc — handled by simple substring match
 ];
 function phrasesOverlap(a, b) {
   const la = a.toLowerCase();
   const lb = b.toLowerCase();
+  // Same role keyword in both?
   for (const tok of KEY_TOKENS) {
     if (la.includes(tok) && lb.includes(tok)) return true;
   }
+  // Same file-pawn keyword? "h-pawn" / "a-pawn" / etc.
   for (let f = 0; f < 8; f++) {
     const file = String.fromCharCode(97 + f);
     const tag = `${file}-pawn`;
     if (la.includes(tag) && lb.includes(tag)) return true;
   }
+  // Same exact two-char square? Look for any aN-hN substring shared.
   const sqA = la.match(/[a-h][1-8]/g) || [];
   const sqB = lb.match(/[a-h][1-8]/g) || [];
   for (const s of sqA) if (sqB.includes(s)) return true;
@@ -237,42 +236,71 @@ function out(rustResult, motifIds, tagline) {
   };
 }
 
-/** Static evaluation of a FEN via Web Worker. */
-export async function evaluateFen(fen) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+// Static evaluation of a FEN. Returns `{ phase, white, black, final_cp }`
+// where each side has a per-head breakdown (material/psqt/mobility/pawns/
+// king_safety/threats/imbalance), each tapered to mg+eg.
+export function evaluateFen(fen) {
+  if (!ready) return null;
+  try {
+    const r = wasmEvaluateFen(fen);
+    if (!r || r.error) return null;
+    return r;
+  } catch (e) {
+    console.warn('[engine-rs] evaluate_fen failed:', e);
+    return null;
   }
-  return sendRequest('evaluateFen', { fen });
 }
 
-/** All non-king pieces' contribution via Web Worker. */
-export async function pieceContributionsForFen(fen) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+// All non-king pieces' contribution to the static evaluation. Each entry:
+//   { square, color, role, value_cp, material, psqt, mobility, pawns,
+//     king_safety, threats, imbalance }
+// `value_cp` is side-relative (positive = good for piece's owner).
+export function pieceContributionsForFen(fen) {
+  if (!ready) return null;
+  try {
+    const r = wasmPieceContributions(fen);
+    if (!Array.isArray(r)) return null;
+    return r;
+  } catch (e) {
+    console.warn('[engine-rs] piece_contributions failed:', e);
+    return null;
   }
-  return sendRequest('pieceContributions', { fen });
 }
 
-/** Structured position explanation via Web Worker. */
-export async function explainPosition(fen) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+// Comprehensive structured explanation of a position. Returns the full
+// `Explanation` blob: material, pawn structure, king safety, activity,
+// line control, immediate tactics, and high-level themes. Designed for
+// downstream LLM consumption.
+export function explainPosition(fen) {
+  if (!ready) return null;
+  try {
+    const r = wasmExplainPosition(fen);
+    if (!r || r.error) return null;
+    return r;
+  } catch (e) {
+    console.warn('[engine-rs] explain_position failed:', e);
+    return null;
   }
-  return sendRequest('explainPosition', { fen });
 }
 
-/** Single-piece contribution via Web Worker. */
-export async function pieceValueAt(fen, square) {
-  if (!ready) {
-    const ok = await ensureReady();
-    if (!ok) return null;
+// Single-piece contribution. Same shape as one entry from pieceContributionsForFen.
+export function pieceValueAt(fen, square) {
+  if (!ready) return null;
+  try {
+    const r = wasmPieceValueAt(fen, square);
+    if (!r || r.error) return null;
+    return r;
+  } catch (e) {
+    console.warn('[engine-rs] piece_value_at failed:', e);
+    return null;
   }
-  return sendRequest('pieceValueAt', { fen, square });
 }
 
+// Kick off init eagerly so the first call has a good chance of being warm.
+// Skipped under Node-without-DOM (e.g. vitest unit tests) — `init()` from
+// wasm-bindgen relies on browser fetch + URL semantics that don't apply
+// there. Test code that needs WASM behaviour is expected to mock this
+// module at the test boundary.
 if (typeof window !== 'undefined') {
   ensureReady();
 }

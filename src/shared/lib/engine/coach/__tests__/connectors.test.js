@@ -1,6 +1,5 @@
-/* eslint-disable vitest/no-conditional-expect */
-import { describe, expect, it } from 'vitest';
-import { extractConsequences, topConsequenceLine } from '../connectors.js'
+import { describe, it, expect } from 'vitest';
+import { extractConsequences, topConsequenceLine } from '../connectors.js';
 
 // Minimal fake "explanation blob" shape — only the fields the
 // connectors actually read. This is intentionally just enough to
@@ -61,89 +60,85 @@ function blob({
       pinned: [],
     },
     themes: [],
-  }
+  };
 }
 
 describe('extractConsequences', () => {
   it('returns [] when either blob is missing', () => {
-    expect(extractConsequences(null, blob())).toEqual([])
-    expect(extractConsequences(blob(), null)).toEqual([])
-  })
+    expect(extractConsequences(null, blob())).toEqual([]);
+    expect(extractConsequences(blob(), null)).toEqual([]);
+  });
 
   it('returns [] when nothing changed between two identical blobs', () => {
-    const before = blob()
-    const after = blob()
-    const cs = extractConsequences(before, after, { movingSide: 'white' })
-    expect(Array.isArray(cs)).toBe(true)
+    const before = blob();
+    const after = blob();
+    const cs = extractConsequences(before, after, { movingSide: 'white' });
+    expect(Array.isArray(cs)).toBe(true);
     // No change → no actionable consequences. (May still be empty array
     // depending on connectors, but it must not throw.)
-    expect(cs.every((c) => typeof c.text === 'string')).toBe(true)
-  })
+    expect(cs.every(c => typeof c.text === 'string')).toBe(true);
+  });
 
   it('flags an attacker-count increase against the white king', () => {
     // Black is moving; pulls 3 more attackers into white's king zone.
-    const before = blob({ whiteAttackers: 1 })
-    const after = blob({ whiteAttackers: 4 })
-    const cs = extractConsequences(before, after, { movingSide: 'black' })
-    expect(cs.length).toBeGreaterThan(0)
-    const text = cs.map((c) => c.text).join(' ')
-    expect(text.toLowerCase()).toMatch(/king zone|attackers/)
-  })
+    const before = blob({ whiteAttackers: 1 });
+    const after = blob({ whiteAttackers: 4 });
+    const cs = extractConsequences(before, after, { movingSide: 'black' });
+    expect(cs.length).toBeGreaterThan(0);
+    const text = cs.map(c => c.text).join(' ');
+    expect(text.toLowerCase()).toMatch(/king zone|attackers/);
+  });
 
   it('flags a pawn-shield collapse', () => {
-    const before = blob({ whiteShield: 80 })
-    const after = blob({ whiteShield: 30 })
-    const cs = extractConsequences(before, after, { movingSide: 'black' })
-    expect(cs.length).toBeGreaterThan(0)
-    const text = cs.map((c) => c.text).join(' ')
-    expect(text.toLowerCase()).toMatch(/shield|crack/)
-  })
+    const before = blob({ whiteShield: 80 });
+    const after = blob({ whiteShield: 30 });
+    const cs = extractConsequences(before, after, { movingSide: 'black' });
+    expect(cs.length).toBeGreaterThan(0);
+    const text = cs.map(c => c.text).join(' ');
+    expect(text.toLowerCase()).toMatch(/shield|crack/);
+  });
 
   it('produces sorted, deduped output', () => {
-    const before = blob({ whiteAttackers: 0, whiteShield: 80 })
-    const after = blob({ whiteAttackers: 4, whiteShield: 30 })
-    const cs = extractConsequences(before, after, { movingSide: 'black' })
+    const before = blob({ whiteAttackers: 0, whiteShield: 80 });
+    const after = blob({ whiteAttackers: 4, whiteShield: 30 });
+    const cs = extractConsequences(before, after, { movingSide: 'black' });
     for (let i = 1; i < cs.length; i++) {
-      expect(cs[i - 1].importance).toBeGreaterThanOrEqual(cs[i].importance)
+      expect(cs[i - 1].importance).toBeGreaterThanOrEqual(cs[i].importance);
     }
-    const texts = cs.map((c) => c.text)
-    expect(new Set(texts).size).toBe(texts.length)
-  })
-})
+    const texts = cs.map(c => c.text);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+});
 
 describe('topConsequenceLine', () => {
   it('returns null when there are no consequences', () => {
-    expect(topConsequenceLine(blob(), blob(), { movingSide: 'white' })).toBeOneOf([
-      null,
-      expect.any(String),
-    ])
+    expect(topConsequenceLine(blob(), blob(), { movingSide: 'white' })).toBeOneOf([null, expect.any(String)]);
     // Dual-acceptable: connectors may emit nothing, OR one neutral
     // baseline line. Just enforce shape.
-  })
+  });
 
   it('returns a string when there are consequences', () => {
-    const before = blob({ whiteAttackers: 0, whiteShield: 80 })
-    const after = blob({ whiteAttackers: 4, whiteShield: 30 })
-    const line = topConsequenceLine(before, after, { movingSide: 'black' })
-    if (line !== null) {
-      expect(typeof line).toBe('string')
-      expect(line.length).toBeGreaterThan(0)
-    }
-  })
-})
+    const before = blob({ whiteAttackers: 0, whiteShield: 80 });
+    const after = blob({ whiteAttackers: 4, whiteShield: 30 });
+    const line = topConsequenceLine(before, after, { movingSide: 'black' });
+    expect(line).toBeTruthy();
+    expect(typeof line).toBe('string');
+  });
+
+});
 
 // Vitest doesn't have toBeOneOf out of the box. Provide a tiny helper.
 // (Imported lazily so the failure mode is local.)
 expect.extend({
   toBeOneOf(received, accepted) {
-    const matched = accepted.some((a) =>
+    const matched = accepted.some(a =>
       a && typeof a === 'object' && a.asymmetricMatch
         ? a.asymmetricMatch(received)
         : Object.is(received, a),
-    )
+    );
     return {
       pass: matched,
       message: () => `expected ${received} to match one of ${JSON.stringify(accepted)}`,
-    }
+    };
   },
-})
+});

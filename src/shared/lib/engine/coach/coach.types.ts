@@ -73,20 +73,28 @@ export interface CoachEngineAnalyzeResponse {
 export interface CoachTopMove {
   rank: number
   uci: string
+  move?: string
+  quality?: string
   san: string
   name?: string | null
   eco?: string | null
+  ecoName?: string | null
   theoretical_fen?: string | null
   theoretical_string?: string | null
   win_p?: number | null
   draw_p?: number | null
   loss_p?: number | null
+  winP?: number | null
+  drawP?: number | null
+  lossP?: number | null
+  popularity?: number | null
+  totalGames?: number | null
   total?: number | null
   tts?: string
-  score: number
+  score?: number
   eval_cp?: number
-  mate: number | null
   eval_pawns: number
+  mate: number | null
   isMate: boolean
   mateIn: number | null
   motifs: string[]
@@ -95,10 +103,15 @@ export interface CoachTopMove {
   tagline: string | null
   plan_theme: string | null
   plan_brief: string | null
-  plan_pv: string[]
+  plan_pv?: string[]
+  rawPv?: string[]
+  pv?: string[]
+  theoreticalContinuations?: Array<Record<string, unknown>>
+
+  pvLine?: { san: string; tts?: string; tagline?: string }[]
   character: string
   character_reason: string
-  explanation: {
+  explanation?: {
     quality: string
     summary: string
     details: string
@@ -106,7 +119,6 @@ export interface CoachTopMove {
     is_best_move: boolean
     winRateLoss?: number
   }
-  pvLine?: { san: string; tts?: string; tagline?: string }[]
   wdl?: { win: number; draw: number; loss: number }
 }
 

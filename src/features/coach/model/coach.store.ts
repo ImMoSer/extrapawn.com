@@ -1,41 +1,98 @@
-import { useAnalysisEngineStore } from '@/entities/analysis'
-import { useBoardStore } from '@/entities/game'
-import { explainMoveAt, getTopMoves } from '@/shared/lib/engine/coach/analysis'
-import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove, OpeningInfo } from '@/shared/lib/engine/coach/coach.types'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
-import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
-import { getPieceCount } from '@/shared/lib/engine/coach/engine'
-import logger from '@/shared/lib/logger'
-import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import { defineStore } from 'pinia'
+import { ref, computed, watch } from 'vue'
+import { Chess } from 'chess.js'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
-import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
 
-import { useCoachFeedbackStore } from './coach-feedback.store'
+import { useBoardStore } from '@/entities/game'
+import { analyzeMove, isReady as wasmIsReady, ensureReady as ensureWasmReady } from '@/shared/lib/engine/coach/analyzer-rs'
+import { buildFullExplanation } from '@/shared/lib/engine/coach/full-explanation'
+import { getRandomPuzzle } from '@/shared/lib/engine/coach/positions'
+import { topConsequenceLine } from '@/shared/lib/engine/coach/connectors'
+import { getTopMoves, explainMoveAt } from '@/shared/lib/engine/coach/analysis'
+import { findOpeningFromHistory } from '@/shared/lib/engine/coach/openings'
+import { parseVisualCommands, generateVisualCommands } from '@/shared/lib/engine/coach/visualizer'
+import logger from '@/shared/lib/logger'
+import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+
+export function getBrushForQuality(quality?: string | null): string {
+  switch (quality) {
+    case 'brilliant': return 'cyan'
+    case 'great':
+    case 'best':
+    case 'excellent': return 'green'
+    case 'good': return 'blue'
+    case 'neutral': return 'gray'
+    case 'inaccuracy': return 'yellow'
+    case 'mistake': return 'orange'
+    case 'blunder':
+    case 'missed_mate': return 'red'
+    default: return 'green'
+  }
+}
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
-  const analysisEngineStore = useAnalysisEngineStore()
 
-  const isCoachEnabled = ref(false)
-  const isAnalyzing = ref(false)
+  // Coach Enabled State
+  const isCoachEnabled = ref(true)
 
-  watch(
-    () => isCoachEnabled.value,
-    (val) => {
-      coachEngineManager.isCoachEnabled = val
-    },
-    { immediate: true }
-  )
+  function setCoachEnabled(enabled: boolean) {
+    isCoachEnabled.value = enabled
+    if (!enabled) {
+      boardStore.setCoachShapes([])
+    } else {
+      analyzeCurrentPosition()
+    }
+  }
 
-  // State for "About Position"
-  const currentExplanation = ref<CoachExplanation | null>(null)
-  const previousExplanation = ref<CoachExplanation | null>(null)
-  const currentAnalysisMode = ref<'theory' | 'engine'>('engine')
-  const currentOpeningInfo = ref<OpeningInfo | null>(null)
+  // Board & Navigation State
+  const fen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+  const fenError = ref<string | null>(null)
+  const orientation = ref<'white' | 'black'>('white')
 
-  // LLM Coach State & Actions
+  const stockfishReady = ref(true)
+  const wasmReady = ref(wasmIsReady())
+  const showLoadingBanner = ref(false)
+
+  const moveHistory = ref<Array<{ fen: string; san: string | null }>>([
+    { fen: fen.value, san: null },
+  ])
+  const historyIndex = ref(0)
+
+  // Analysis State
+  const evalCp = ref<number | null>(null)
+  const evalMate = ref<number | null>(null)
+  const gameResult = ref<string | null>(null)
+  const topMoves = ref<CoachTopMove[]>([])
+  const topMovesLoading = ref(false)
+
+  const selectedMoveIndex = ref<number | null>(null)
+  const explanation = ref<CoachLastMoveAnalysis | null>(null)
+  const explanationLoading = ref(false)
+
+  const posExplanation = ref<CoachExplanation | null>(null)
+  const prevPosExplanation = ref<CoachExplanation | null>(null)
+
+  const heatmapVisible = ref(false)
+  const heatmapLoading = ref(false)
+  const heatmapPieces = ref<Record<string, unknown> | null>(null)
+
+  const lastFetchedFen = ref('')
+  const latestAnalysisToken = ref(0)
+  const lastMoveAnalysis = ref<CoachLastMoveAnalysis | null>(null)
+
+  // Backward compatibility properties for other stores / components
+  const currentExplanation = computed(() => posExplanation.value)
+  const previousExplanation = computed(() => prevPosExplanation.value)
+  const selectedMoveExplanation = computed(() => explanation.value)
+  const selectedMoveExplanationLoading = computed(() => explanationLoading.value)
+  const tablebaseBestMove = ref<Record<string, unknown> | null>(null)
+
+  const showVisuals = ref(false)
+
+  // LLM Coach State & Actions for Sparring / AI
   const isLlmThinking = ref(false)
   const llmMessage = ref<string | null>(null)
   const llmMood = ref<string | null>(null)
@@ -60,251 +117,307 @@ export const useCoachStore = defineStore('coach', () => {
     llmMood.value = null
   }
 
-  // State for Visuals
-  const showVisuals = ref(false)
-
-  function toggleVisuals() {
-    showVisuals.value = !showVisuals.value
-    const feedbackStore = useCoachFeedbackStore()
-    const shouldShowVisuals = showVisuals.value || feedbackStore.isTakebackPending
-    if (shouldShowVisuals && currentExplanation.value?.visual_commands) {
-      const commands = Object.values(currentExplanation.value.visual_commands).flat().join(';')
-      if (commands) {
-        executeVisualCommands(commands)
-      }
-    } else if (!shouldShowVisuals) {
-      boardStore.setCoachShapes([])
+  function executeVisualCommands(actionStr: string) {
+    if (!actionStr) return
+    const parsed = parseVisualCommands(actionStr)
+    if (parsed && parsed.length > 0) {
+      boardStore.setCoachShapes(parsed as DrawShape[])
     }
   }
 
-  function executeVisualCommands(actionStr: string) {
-    if (!actionStr) return
+  // Chess Instance
+  const chess = computed(() => {
+    try {
+      return new Chess(fen.value)
+    } catch {
+      return new Chess()
+    }
+  })
 
-    const subActions = actionStr.split(';')
-    const allShapes: DrawShape[] = []
+  const turnColor = computed<'white' | 'black'>(() => (chess.value.turn() === 'w' ? 'white' : 'black'))
+  const sideToMove = computed(() => chess.value.turn())
 
-    // Chessground standard brushes + safety (13 colors)
-    const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove', 'paleBlue', 'paleGreen']
+  // Phase & Material Delta
+  const phase = computed(() => {
+    try {
+      const b = chess.value.board()
+      let queens = 0, minors = 0, rooks = 0
+      for (let r = 0; r < 8; r++)
+        for (let f = 0; f < 8; f++) {
+          const p = b[r][f]
+          if (!p) continue
+          if (p.type === 'q') queens++
+          else if (p.type === 'r') rooks++
+          else if (p.type === 'b' || p.type === 'n') minors++
+        }
+      if (queens === 0 || (queens <= 2 && minors + rooks <= 4)) return 'endgame'
+      const totalMoves = moveHistory.value.length
+      if (totalMoves < 12) return 'opening'
+      return 'middlegame'
+    } catch {
+      return 'middlegame'
+    }
+  })
 
-    for (const sub of subActions) {
-      if (!sub.trim()) continue
+  const materialDelta = computed(() => {
+    try {
+      const b = chess.value.board()
+      const VALS: Record<string, number> = { p: 1, n: 3, b: 3.25, r: 5, q: 9 }
+      let w = 0, bl = 0
+      for (let r = 0; r < 8; r++)
+        for (let f = 0; f < 8; f++) {
+          const p = b[r][f]
+          if (!p || p.type === 'k') continue
+          const v = VALS[p.type] || 0
+          if (p.color === 'w') w += v
+          else bl += v
+        }
+      return w - bl
+    } catch {
+      return 0
+    }
+  })
 
-      // Remove any brackets to prevent matching issues, then split
-      const cleanSub = sub.replace(/[\[\]]/g, '').trim()
-      const parts = cleanSub.split(':')
-      const cmd = parts[0]?.trim()
-      const data = parts[1]?.trim()
+  // Opening Name
+  const openingName = computed(() => {
+    if (moveHistory.value.length <= 1) return null
+    const sans = moveHistory.value.slice(1).map((m) => m.san).filter(Boolean) as string[]
+    return findOpeningFromHistory(sans)
+  })
 
-      let brush = parts[2]?.trim() || 'green'
+  // Last Move Consequence
+  const lastMoveConsequence = computed(() => {
+    if (!prevPosExplanation.value || !posExplanation.value) return null
+    return topConsequenceLine(prevPosExplanation.value, posExplanation.value)
+  })
 
-      // Validation & Debugging
-      if (!VALID_BRUSHES.includes(brush)) {
-        logger.warn(`[CoachStore] Unknown brush detected: "${brush}" in command "${sub}". Falling back to green.`)
-        brush = 'green'
+  // Dynamic Active Candidate Plan & Visual Commands
+  const activeVisualCommands = computed(() => {
+    if (!posExplanation.value) return null
+    const baseBlob = posExplanation.value
+
+    const activeIdx = selectedMoveIndex.value !== null ? selectedMoveIndex.value : 0
+    const selMove = topMoves.value[activeIdx]
+    const pvArray = selMove?.rawPv || (Array.isArray(selMove?.pv) ? selMove.pv : null)
+
+    if (!selMove || !Array.isArray(pvArray) || pvArray.length === 0) {
+      return baseBlob.visual_commands
+    }
+
+    let curFen = fen.value
+    const planSteps: Array<{ uci: string; san: string; motifs: string[]; headline: string | null; to: string; from: string }> = []
+    for (let i = 0; i < Math.min(pvArray.length, 8); i++) {
+      const uci = pvArray[i]
+      if (!uci || uci.length < 4) break
+      const result = analyzeMove(curFen, uci)
+      if (!result) break
+      planSteps.push({
+        uci,
+        san: result.san,
+        motifs: (result.motifs || []).map((m: { id: string }) => m.id),
+        headline: (result.motifs?.[0]?.phrase || null) as string | null,
+        to: uci.slice(2, 4),
+        from: uci.slice(0, 2),
+      })
+
+
+      if (!result.fen_after) break
+      curFen = result.fen_after
+    }
+
+    const stm = chess.value.turn() === 'w' ? 'white' : 'black'
+    return generateVisualCommands(
+      {
+        ...baseBlob,
+        lastMoveAnalysis: lastMoveAnalysis.value,
+        lastMoveConsequence: lastMoveConsequence.value,
+        selectedMoveExplanation: explanation.value,
+      },
+      fen.value,
+      stm,
+      planSteps,
+      baseBlob.principal_plan?.key_squares || []
+    )
+  })
+
+  const activePosExplanation = computed(() => {
+    if (!posExplanation.value) return null
+    const base = {
+      ...posExplanation.value,
+      lastMoveAnalysis: lastMoveAnalysis.value,
+      lastMoveConsequence: lastMoveConsequence.value,
+      selectedMoveExplanation: explanation.value,
+    }
+    if (!activeVisualCommands.value) return base
+    return {
+      ...base,
+      visual_commands: activeVisualCommands.value,
+    }
+  })
+
+  // SVG Shapes (arrows & NAGs) for Chessground
+  const drawableShapes = computed<DrawShape[]>(() => {
+    if (!isCoachEnabled.value) return []
+    const shapes: DrawShape[] = []
+
+    // 1. Visual commands generated for active candidate move plan
+    if (activeVisualCommands.value) {
+      const commandsStr = Object.values(activeVisualCommands.value).flat().join(';')
+      const parsed = parseVisualCommands(commandsStr)
+      shapes.push(...(parsed as DrawShape[]))
+    }
+
+    // 2. Active Candidate Move arrow & NAG badge
+    const activeIdx = selectedMoveIndex.value !== null ? selectedMoveIndex.value : (topMoves.value.length > 0 ? 0 : null)
+    if (activeIdx !== null && topMoves.value[activeIdx]) {
+      const sel = topMoves.value[activeIdx]
+      const moveUci = sel.move || sel.uci
+      if (moveUci) {
+        const orig = moveUci.slice(0, 2) as Key
+        const dest = moveUci.slice(2, 4) as Key
+        const rawQuality = sel.quality || (activeIdx === selectedMoveIndex.value && explanation.value?.quality)
+        const quality = typeof rawQuality === 'string' ? rawQuality : null
+
+        const brush = getBrushForQuality(quality)
+
+
+        shapes.push({ orig, dest, brush })
+        shapes.push({ orig: dest, brush })
+
+        if (quality) {
+          shapes.push({ orig: dest, customNag: quality } as unknown as DrawShape)
+        }
       }
+    }
 
-      // Map standard brushes to thin coach-specific brushes
-      const coachBrush = brush === 'bestmove' ? 'bestmove' : `coach${brush}`
+    return shapes
+  })
 
-      if (cmd === 'clear') {
+  // Keep boardStore shapes in sync with coach shapes
+  watch(
+    drawableShapes,
+    (shapes) => {
+      if (isCoachEnabled.value) {
+        boardStore.setCoachShapes(shapes)
+      } else {
         boardStore.setCoachShapes([])
+      }
+    },
+    { immediate: true }
+  )
+
+  // Last Move Analysis Effect
+  watch(
+    [historyIndex, moveHistory],
+    async ([idx, history]) => {
+      if (idx === 0 || !history || !history[idx]) {
+        lastMoveAnalysis.value = null
+        return
+      }
+      const prev = history[idx - 1]
+      const curr = history[idx]
+      if (!prev || !curr || !curr.san) {
+        lastMoveAnalysis.value = null
+        return
+      }
+      let moveUCI = ''
+      try {
+        const c = new Chess(prev.fen)
+        const verboseMoves = c.moves({ verbose: true })
+        const m = verboseMoves.find((m) => m.san === curr.san)
+        if (!m) {
+          lastMoveAnalysis.value = null
+          return
+        }
+        moveUCI = m.from + m.to + (m.promotion || '')
+      } catch {
+        lastMoveAnalysis.value = null
         return
       }
 
-      if (!data) continue
-
-      if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
-        const squares = data.split('->')
-        for (let i = 0; i < squares.length - 1; i++) {
-          const orig = squares[i]?.trim()
-          const dest = squares[i + 1]?.trim()
-
-          // Coordinate validation (must be e.g. "e4")
-          if (orig && dest && orig.length === 2 && dest.length === 2) {
-            allShapes.push({
-              orig: orig as Key,
-              dest: dest as Key,
-              brush: coachBrush,
-              modifiers: { lineWidth: 3 }
-            })
-          } else {
-            logger.warn(`[CoachStore] Invalid coordinates for route: "${orig}" -> "${dest}"`)
-          }
-        }
-      } else if (cmd === 'mark') {
-        const squares = data.split(',')
-        squares.forEach(sq => {
-          const cleanSq = sq.trim()
-          if (cleanSq && cleanSq.length === 2) {
-            allShapes.push({
-              orig: cleanSq as Key,
-              brush: coachBrush
-            })
-          } else {
-            logger.warn(`[CoachStore] Invalid coordinate for mark: "${cleanSq}"`)
-          }
-        })
+      lastMoveAnalysis.value = { loading: true, san: curr.san }
+      try {
+        const res = await explainMoveAt(prev.fen, moveUCI)
+        lastMoveAnalysis.value = { ...res, loading: false }
+      } catch {
+        lastMoveAnalysis.value = null
       }
-    }
+    },
+    { immediate: true }
+  )
 
-    if (allShapes.length > 0) {
-      // Sort shapes by color priority so the highest priority renders on top.
-      const COLOR_PRIORITY: Record<string, number> = {
-        coachgray: 0,
-        coachbrown: 1,
-        coachyellow: 2,
-        coachpaleGreen: 3,
-        coachgreen: 4,
-        coachcyan: 5,
-        coachpaleBlue: 6,
-        coachblue: 7,
-        coachpurple: 8,
-        coachpink: 9,
-        coachorange: 10,
-        coachred: 11,
-        bestmove: 12
-      }
-      allShapes.sort((a, b) => {
-        const pA = COLOR_PRIORITY[a.brush as string] ?? -1
-        const pB = COLOR_PRIORITY[b.brush as string] ?? -1
-        return pA - pB
-      })
+  // Analysis Trigger
+  async function runAnalysis(currentFen: string, force = false) {
+    if (!currentFen) return
+    if (!force && currentFen === lastFetchedFen.value) return
+    lastFetchedFen.value = currentFen
+    const analysisToken = ++latestAnalysisToken.value
 
-      boardStore.setCoachShapes(allShapes)
-    }
-  }
-
-  // State for "Top Moves"
-  const topMoves = ref<CoachTopMove[]>([])
-  const topMovesLoading = ref(false)
-  const tablebaseBestMove = ref<{
-    san: string
-    uci: string
-    winner: string
-    mateIn: number
-    wdl: 'win' | 'loss'
-  } | null>(null)
-
-  // State for "Last Move"
-  const lastMoveAnalysis = ref<CoachLastMoveAnalysis | null>(null)
-
-  function toggleCoach() {
-    isCoachEnabled.value = !isCoachEnabled.value
-    if (!isCoachEnabled.value) {
-      coachEngineManager.stop()
-      currentExplanation.value = null
-      previousExplanation.value = null
-      topMoves.value = []
-      lastMoveAnalysis.value = null
-      boardStore.setCoachShapes([])
-    } else {
-      triggerAnalysis(boardStore.fen)
-    }
-  }
-
-  function setCoachEnabled(enabled: boolean) {
-    if (isCoachEnabled.value === enabled) return
-
-    isCoachEnabled.value = enabled
-    if (!enabled) {
-      coachEngineManager.stop()
-      currentExplanation.value = null
-      previousExplanation.value = null
-      topMoves.value = []
-      lastMoveAnalysis.value = null
-      boardStore.setCoachShapes([])
-    } else {
-      analyzeCurrentPosition()
-    }
-  }
-
-  async function triggerAnalysis(fen: string) {
-    if (!fen) return
-    isAnalyzing.value = true
-    boardStore.setCoachShapes([])
-
-    const topMovesPromise = fetchTopMoves(fen)
-    const lastMovePromise = fetchLastMoveAnalysis()
-
-    try {
-      previousExplanation.value = currentExplanation.value || previousExplanation.value
-      const explanation = await coachEngineManager.getExplanation(fen)
-      currentExplanation.value = explanation
-
-      const feedbackStore = useCoachFeedbackStore()
-      const shouldShowVisuals = showVisuals.value || feedbackStore.isTakebackPending
-
-      if (shouldShowVisuals && explanation?.visual_commands) {
-        const commands = Object.values(explanation.visual_commands).flat().join(';')
-        if (commands) {
-          executeVisualCommands(commands)
-        } else {
-          boardStore.setCoachShapes([])
-        }
-      } else if (!shouldShowVisuals) {
-        boardStore.setCoachShapes([])
-      }
-
-      // Finalize and Log
-      await Promise.all([topMovesPromise, lastMovePromise])
-    } catch {
-      logger.error('[CoachStore] Error generating explanation')
-    } finally {
-      isAnalyzing.value = false
-    }
-  }
-
-
-
-  async function fetchTopMoves(fen: string) {
     topMovesLoading.value = true
-    tablebaseBestMove.value = null
+    explanationLoading.value = true
+    selectedMoveIndex.value = null
+    explanation.value = null
+
     try {
-      const isSparringOrRepertoire = window.location.pathname.includes('/sparring') ||
-                                     window.location.hash.includes('/sparring') ||
-                                     window.location.pathname.includes('/repertoire') ||
-                                     window.location.hash.includes('/repertoire')
-      const result = await getTopMoves(fen, 10, { check_book: isSparringOrRepertoire })
-      topMoves.value = result.moves || []
-      currentAnalysisMode.value = result.mode || 'engine'
-      currentOpeningInfo.value = result.opening_info || null
+      stockfishReady.value = true
+      showLoadingBanner.value = !wasmReady.value
+      await ensureWasmReady()
+      wasmReady.value = true
 
-      // Populate tablebaseBestMove directly from the Gaviota server response
-      if (topMoves.value.length > 0 && getPieceCount(fen) <= 5) {
-        const best = topMoves.value[0]
-        if (best && best.isMate && best.mateIn !== null && best.mateIn !== undefined) {
-          const sideToMove = fen.split(' ')[1] // 'w' or 'b'
-          const winner = best.mateIn > 0 ? 'White' : 'Black'
-          const mateIn = Math.abs(best.mateIn)
-          const isWin = (sideToMove === 'w' && best.mateIn > 0) || (sideToMove === 'b' && best.mateIn < 0)
+      const isSparringOrRepertoire = typeof window !== 'undefined' && (
+        window.location.pathname.includes('/sparring') ||
+        window.location.hash.includes('/sparring') ||
+        window.location.pathname.includes('/repertoire') ||
+        window.location.hash.includes('/repertoire')
+      )
 
-          tablebaseBestMove.value = {
-            san: best.san,
-            uci: best.uci,
-            winner,
-            mateIn,
-            wdl: isWin ? 'win' : 'loss'
-          }
+      const res = await getTopMoves(currentFen, 10, { check_book: isSparringOrRepertoire })
+      stockfishReady.value = true
+      showLoadingBanner.value = false
+      if (analysisToken !== latestAnalysisToken.value) return
+
+      topMoves.value = res.moves || []
+      evalCp.value = res.eval_cp ?? null
+      evalMate.value = res.mate ?? null
+      gameResult.value = res.result ?? null
+      topMovesLoading.value = false
+
+      if (topMoves.value.length > 0) {
+        selectedMoveIndex.value = 0
+        const bestMoveUci = topMoves.value[0].move || topMoves.value[0].uci
+        const exp = await explainMoveAt(currentFen, bestMoveUci)
+        if (analysisToken === latestAnalysisToken.value) {
+          explanation.value = exp
+          explanationLoading.value = false
         }
       }
     } catch {
-      logger.error('[CoachStore] Top moves failed')
-    } finally {
       topMovesLoading.value = false
+      explanationLoading.value = false
     }
+
+    try {
+      prevPosExplanation.value = posExplanation.value
+      const pExp = await buildFullExplanation(currentFen)
+      if (analysisToken === latestAnalysisToken.value) {
+        posExplanation.value = pExp
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function fetchTopMoves(fenToUse: string) {
+    await runAnalysis(fenToUse, true)
   }
 
   async function fetchLastMoveAnalysis() {
     const lastNode = pgnService.getCurrentNode()
-
     if (!lastNode || !lastNode.parent || !lastNode.uci) {
       lastMoveAnalysis.value = null
       return
     }
-
-    // We need the FEN *before* the move was played.
     const prevFen = lastNode.parent.fenAfter
-
     lastMoveAnalysis.value = { loading: true, san: lastNode.san, fen: prevFen }
     try {
       const r = await explainMoveAt(prevFen, lastNode.uci)
@@ -314,113 +427,180 @@ export const useCoachStore = defineStore('coach', () => {
     }
   }
 
-  // Handle click on a top move in the UI to explain it
-  const selectedMoveIndex = ref<number | null>(null)
-  const selectedMoveExplanation = ref<CoachLastMoveAnalysis | null>(null)
-  const selectedMoveExplanationLoading = ref(false)
+  async function explainTopMove(move: { uci: string; move?: string }, index: number) {
+    await selectMove(index)
+  }
 
-  async function explainTopMove(move: { uci: string }, index: number) {
-    if (selectedMoveIndex.value === index) {
-      selectedMoveIndex.value = null
-      selectedMoveExplanation.value = null
-      return
-    }
-    selectedMoveIndex.value = index
-    selectedMoveExplanationLoading.value = true
+  async function analyzeCurrentPosition(customFen?: string) {
+    const fenToUse = customFen || pgnService.getCurrentNavigatedFen() || boardStore.fen || fen.value
+    fen.value = fenToUse
+    await runAnalysis(fenToUse, true)
+  }
+
+  async function selectMove(idx: number) {
+    if (!topMoves.value[idx]) return
+    selectedMoveIndex.value = idx
+    explanationLoading.value = true
+    const moveUci = topMoves.value[idx].move || topMoves.value[idx].uci
     try {
-      const result = await explainMoveAt(boardStore.fen, move.uci)
-      selectedMoveExplanation.value = result
+      explanation.value = await explainMoveAt(fen.value, moveUci)
     } catch {
-      logger.error('[CoachStore] Top Move Explanation failed')
+      explanation.value = null
     } finally {
-      selectedMoveExplanationLoading.value = false
+      explanationLoading.value = false
     }
   }
 
-  async function analyzeCurrentPosition() {
-    if (!isCoachEnabled.value) return
-    const newFen = pgnService.getCurrentNavigatedFen()
+  function selectHistoryMove(payload: { fen: string; index: number }) {
+    historyIndex.value = payload.index
+    fen.value = payload.fen
+  }
 
-    selectedMoveIndex.value = null
-    selectedMoveExplanation.value = null
-    await triggerAnalysis(newFen)
+  function goBack() {
+    if (historyIndex.value > 0) {
+      const idx = historyIndex.value - 1
+      historyIndex.value = idx
+      fen.value = moveHistory.value[idx].fen
+    }
+  }
+
+  function goForward() {
+    if (historyIndex.value < moveHistory.value.length - 1) {
+      const idx = historyIndex.value + 1
+      historyIndex.value = idx
+      fen.value = moveHistory.value[idx].fen
+    }
+  }
+
+  async function loadRandomPosition() {
+    const puzzle = await getRandomPuzzle()
+    if (!puzzle || !puzzle.initialFen) return
+    fen.value = puzzle.initialFen
+    moveHistory.value = [{ fen: puzzle.initialFen, san: null }]
+    historyIndex.value = 0
+    fenError.value = null
+  }
+
+  function flipBoard() {
+    orientation.value = orientation.value === 'white' ? 'black' : 'white'
+  }
+
+  function resetBoard() {
+    const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    fen.value = startFen
+    moveHistory.value = [{ fen: startFen, san: null }]
+    historyIndex.value = 0
+    fenError.value = null
+  }
+
+  function handleFenSubmit(newFen: string) {
+    try {
+      const c = new Chess(newFen)
+      const validatedFen = c.fen()
+      fen.value = validatedFen
+      moveHistory.value = [{ fen: validatedFen, san: null }]
+      historyIndex.value = 0
+      fenError.value = null
+    } catch (err: unknown) {
+      fenError.value = err instanceof Error ? err.message : 'Invalid FEN'
+    }
+  }
+
+
+  function handleSettingsChange() {
+    stockfishReady.value = true
+    lastFetchedFen.value = ''
+    runAnalysis(fen.value, true)
   }
 
   function reset() {
     logger.info('[CoachStore] Resetting coach state.')
     isCoachEnabled.value = false
-    isAnalyzing.value = false
-    currentExplanation.value = null
-    previousExplanation.value = null
     topMoves.value = []
     lastMoveAnalysis.value = null
     selectedMoveIndex.value = null
-    selectedMoveExplanation.value = null
-    showVisuals.value = false
+    explanation.value = null
+    posExplanation.value = null
+    prevPosExplanation.value = null
     boardStore.setCoachShapes([])
-    coachEngineManager.stop()
   }
 
+  // Watch fen changes to run analysis
+  watch(
+    fen,
+    async (currentFen) => {
+      if (isCoachEnabled.value) {
+        await runAnalysis(currentFen)
+      }
+    },
+    { immediate: true }
+  )
+
+  // Watch PGN Tree Version for navigation sync
   watch(
     () => pgnTreeVersion.value,
     () => {
       if (!isCoachEnabled.value) return
-
-      analyzeCurrentPosition()
+      const navFen = pgnService.getCurrentNavigatedFen()
+      if (navFen && navFen !== fen.value) {
+        fen.value = navFen
+      }
     },
     { flush: 'sync' }
   )
 
-  // Watch deep analysis and handle potential resource management if needed,
-  // but do not disable the coach automatically as per "no restrictions" policy.
-  watch(
-    () => analysisEngineStore.isAnalysisActive,
-    (isActive) => {
-      if (isActive && isCoachEnabled.value) {
-        logger.info('[CoachStore] Deep analysis active alongside Coach.')
-        // We keep the coach enabled. Both can run in parallel if resources allow.
-      }
-    },
-  )
+  const isAnalyzing = computed(() => topMovesLoading.value || explanationLoading.value)
+  const currentOpeningInfo = computed(() => null)
 
-  const lastMoveConsequence = computed(() => {
-    if (!previousExplanation.value || !currentExplanation.value || !lastMoveAnalysis.value) return null
-    if (lastMoveAnalysis.value.loading) return null
-
-    return topConsequenceLine(previousExplanation.value, currentExplanation.value, {
-      movingSide: previousExplanation.value.side_to_move,
-      motifs: lastMoveAnalysis.value.motifs || [],
-      evalSwingCp: (currentExplanation.value.eval_cp || 0) - (previousExplanation.value.eval_cp || 0),
-    })
-  })
+  function toggleVisuals() {
+    showVisuals.value = !showVisuals.value
+  }
 
   return {
     isCoachEnabled,
     isAnalyzing,
-    currentExplanation,
-    previousExplanation,
-    currentAnalysisMode,
-    currentOpeningInfo,
+    setCoachEnabled,
+    fen,
+    fenError,
+    orientation,
+    moveHistory,
+    historyIndex,
+    turnColor,
+    sideToMove,
+    phase,
+    materialDelta,
+    openingName,
     topMoves,
     topMovesLoading,
-    tablebaseBestMove,
+    selectedMoveIndex,
+    explanation,
+    explanationLoading,
+    posExplanation,
+    prevPosExplanation,
     lastMoveAnalysis,
     lastMoveConsequence,
-    selectedMoveIndex,
+    activeVisualCommands,
+    activePosExplanation,
+    drawableShapes,
+    heatmapVisible,
+    heatmapLoading,
+    heatmapPieces,
+    evalCp,
+    evalMate,
+    gameResult,
+    stockfishReady,
+    wasmReady,
+    showLoadingBanner,
+
+    // Backward compatibility aliases
+    currentExplanation,
+    previousExplanation,
+    currentOpeningInfo,
     selectedMoveExplanation,
     selectedMoveExplanationLoading,
-    toggleCoach,
-    setCoachEnabled,
-    explainTopMove,
+    tablebaseBestMove,
     showVisuals,
     toggleVisuals,
-    executeVisualCommands,
-    fetchLastMoveAnalysis,
-    fetchTopMoves,
-
-    analyzeCurrentPosition,
-    triggerAnalysis,
-    reset,
 
     // LLM Coach
     isLlmThinking,
@@ -429,5 +609,24 @@ export const useCoachStore = defineStore('coach', () => {
     setLlmThinking,
     setLlmResponse,
     resetLlmState,
+
+    executeVisualCommands,
+    fetchTopMoves,
+    fetchLastMoveAnalysis,
+    explainTopMove,
+
+    runAnalysis,
+    analyzeCurrentPosition,
+    selectMove,
+    selectHistoryMove,
+    goBack,
+    goForward,
+    loadRandomPosition,
+    flipBoard,
+    resetBoard,
+    handleFenSubmit,
+    handleSettingsChange,
+    reset,
   }
 })
+

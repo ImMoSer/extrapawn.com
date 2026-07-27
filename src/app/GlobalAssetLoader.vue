@@ -19,8 +19,8 @@ const { t } = useI18n({ useScope: 'global' })
 // Assets split by priority to follow strict sequential loading
 
 const SECONDARY_ASSETS = [
-  '/stockfish_single/stockfish-18-lite-single.js',
-  '/stockfish_single/stockfish-18-lite-single.wasm',
+  '/stockfish/stockfish-18-lite-single.js',
+  '/stockfish/stockfish-18-lite-single.wasm',
 ]
 
 // Dynamically discover all sound files to include them in the permanent Cache API

@@ -7,7 +7,7 @@ export interface EngineController {
 }
 
 export function loadLocalEngine(): Promise<EngineController | null> {
-  const workerPath = '/stockfish_single/stockfish-18-lite-single.js'
+  const workerPath = '/stockfish/stockfish-18-lite-single.js'
   logger.info(`[EngineLoader] Initializing Single-Thread Web Worker from ${workerPath}`)
 
   return new Promise((resolve, reject) => {

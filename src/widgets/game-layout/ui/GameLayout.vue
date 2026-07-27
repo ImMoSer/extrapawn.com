@@ -140,7 +140,8 @@ onUnmounted(() => {
               @user-move="handleUserMove"
               @complete-promotion="boardStore.completePromotion"
               @wheel-navigate="handleBoardWheel"
-              @shapes-change="(shapes) => boardStore.setDrawableShapes(shapes)"
+              @shapes-change="(shapes: any) => boardStore.setDrawableShapes(shapes)"
+
             >
               <template #overlays>
                 <div

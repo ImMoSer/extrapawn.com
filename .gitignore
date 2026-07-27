@@ -51,3 +51,6 @@ greek_gift.json
 /app_check
 
 stats.html
+
+# Generated Stockfish binaries (auto-populated via postinstall)
+/public/stockfish

@@ -152,7 +152,7 @@ function classifyByLoss(loss) {
 
 export function see(chess, square, attackingColor) {
   const target = chess.get(square);
-  if (!target || target.type === 'k') return 0;
+  if (!target) return 0;
   const attackers = chess.attackers(square, attackingColor);
   if (!attackers || attackers.length === 0) return 0;
 
@@ -171,12 +171,9 @@ export function see(chess, square, attackingColor) {
   const fenSnap = chess.fen();
   const attackerPiece = { ...chess.get(cheapestSq) };
 
-  const isPromotion = attackerPiece.type === 'p' && (square.endsWith('1') || square.endsWith('8'));
-  const placedType = isPromotion ? 'q' : attackerPiece.type;
-
   chess.remove(cheapestSq);
   chess.remove(square);
-  chess.put({ type: placedType, color: attackerPiece.color }, square);
+  chess.put({ type: attackerPiece.type, color: attackerPiece.color }, square);
 
   const opponent = attackingColor === 'w' ? 'b' : 'w';
   const opponentGain = see(chess, square, opponent);
@@ -331,7 +328,7 @@ function isHangingByMaterial(chess, square) {
 }
 
 // SEE-based sacrifice: would the opponent's optimal capture sequence
-// against `toSquare` net them at least 200cp, accounting for any piece we
+// against `toSquare` net them at least 100cp, accounting for any piece we
 // captured on this move?
 function detectSacrificeViaSEE(chessAfter, toSquare, movingPiece, capturedPiece) {
   const opponent = movingPiece.color === 'w' ? 'b' : 'w';
@@ -340,6 +337,7 @@ function detectSacrificeViaSEE(chessAfter, toSquare, movingPiece, capturedPiece)
   const netMaterial = recovered - opponentGain; // mover's POV
   return netMaterial <= -100;
 }
+
 
 // ───────────────────────────────────────────────────────────────────────────
 // Move metadata
@@ -367,8 +365,8 @@ function getMoveMeta(fenBefore, moveUCI) {
 //                 (decided positions weight loss less)
 //
 // Quality ladder:
-//   brilliant = best move + real sacrifice + position not lost (win rate after >= 50%)
-//   great     = best move + only-move (win rate after >= 15%)
+//   brilliant = best move + only-move + real (SEE) sacrifice + position not already won
+//   great     = best move + only-move
 //   best      = engine's top choice
 //   good      = effective loss < 3 pp
 //   neutral   = effective loss < 6 pp
@@ -402,10 +400,12 @@ function moverScoreToWhite(scoreMoverPOV, moverColor) {
 //
 // Quality ladder:
 //
-//   brilliant   — best move + REAL sacrifice + position not lost (win rate after ≥ 50%).
-//                 Demands that the chosen move is the engine's top choice, offers material
-//                 (soundly verified by Rust/SEE), and does not lead to a lost position.
-//   great       — best move AND (only-move OR critical decision) + position not lost (win rate after ≥ 15%).
+//   brilliant   — best move + REAL sacrifice + complexity ≥ 2 + position
+//                 not already won. Demands all three: there's plausible
+//                 alternatives, the chosen move offers material, and that
+//                 offering is sound (Rust verifies). One-dim "best+SEE<0"
+//                 over-fires here.
+//   great       — best move AND (only-move OR critical decision).
 //                 only-move:     wrBest − wrSecond ≥ 10pp
 //                 critical:      wrBefore moved by ≥ 15pp from this turn
 //   best        — engine's top choice; nothing else special.
@@ -420,7 +420,7 @@ function moverScoreToWhite(scoreMoverPOV, moverColor) {
 
 const COMPLEXITY_BAND_CP = 50; // moves within this much of best are "plausible"
 
-async function classifyMove({
+function classifyMove({
   fenBefore,
   moveUCI,
   moverColor,
@@ -428,8 +428,6 @@ async function classifyMove({
   evalAfterWhite,
   topMoves,
   legacySacrifice,
-  wdlBefore,
-  wdlAfter,
 }) {
   const wrMover = (cpWhite) =>
     moverColor === 'w' ? winRate(cpWhite) : 100 - winRate(cpWhite);
@@ -441,35 +439,10 @@ async function classifyMove({
   const bestWhite = best ? moverScoreToWhite(best.score, moverColor) : evalAfterWhite;
   const secondWhite = second ? moverScoreToWhite(second.score, moverColor) : bestWhite;
 
-  let wrBefore;
-  if (wdlBefore) {
-    wrBefore = (wdlBefore.win + 0.5 * wdlBefore.draw) / 10;
-  } else {
-    wrBefore = wrMover(evalBeforeWhite);
-  }
-
-  let wrPlayed;
-  if (playedInTop && playedInTop.wdl) {
-    wrPlayed = (playedInTop.wdl.win + 0.5 * playedInTop.wdl.draw) / 10;
-  } else if (wdlAfter) {
-    wrPlayed = (wdlAfter.win + 0.5 * wdlAfter.draw) / 10;
-  } else {
-    wrPlayed = wrMover(evalAfterWhite);
-  }
-
-  let wrBest;
-  if (best && best.wdl) {
-    wrBest = (best.wdl.win + 0.5 * best.wdl.draw) / 10;
-  } else {
-    wrBest = wrMover(bestWhite);
-  }
-
-  let wrSecond;
-  if (second && second.wdl) {
-    wrSecond = (second.wdl.win + 0.5 * second.wdl.draw) / 10;
-  } else {
-    wrSecond = wrMover(secondWhite);
-  }
+  const wrBefore = wrMover(evalBeforeWhite);
+  const wrPlayed = wrMover(evalAfterWhite);
+  const wrBest   = wrMover(bestWhite);
+  const wrSecond = wrMover(secondWhite);
 
   const loss = Math.max(0, wrBest - wrPlayed);
   const onlyMoveGap = wrBest - wrSecond;
@@ -504,6 +477,12 @@ async function classifyMove({
     realSacrifice = true;
   }
 
+
+
+  // Detect missed mate.
+  const bestHasMate = best && best.mate !== null && best.mate !== undefined;
+  const playedHasMate = playedInTop && playedInTop.mate !== null && playedInTop.mate !== undefined;
+  const missedMate = bestHasMate && !playedHasMate;
 
   // Brutal threshold: dropping winning to losing is always a blunder
   // even when raw loss is small (e.g. wrBefore=92, wrPlayed=8 = -84pp).
@@ -557,13 +536,15 @@ async function classifyMove({
   })();
 
   let quality;
-  if (isBestMove && realSacrifice && wrPlayed >= 50) {
+  if (isBestMove && realSacrifice && wrPlayed >= 40) {
     quality = 'brilliant';
   } else if (isBestMove && (isOnlyMove || isCriticalPosition)
-             && !isObviousCapture && !onlyLegalMove && wrPlayed >= 15) {
+             && !isObviousCapture && !onlyLegalMove) {
     quality = 'great';
   } else if (isBestMove) {
     quality = 'best';
+  } else if (missedMate && loss >= 5) {
+    quality = 'missed_mate';
   } else if (lostWin) {
     quality = 'blunder';
   } else if (inTop3 && loss < 4) {
@@ -571,6 +552,20 @@ async function classifyMove({
   } else {
     quality = classifyByLoss(loss);
   }
+
+  if (realSacrifice || legacySacrifice) {
+    console.log('[MoveClassifier] Sacrifice evaluation:', {
+      moveUCI,
+      isBestMove,
+      realSacrifice,
+      legacySacrifice,
+      wrBefore: Math.round(wrBefore),
+      wrPlayed: Math.round(wrPlayed),
+      assignedQuality: quality,
+    });
+  }
+
+
 
   return {
     quality,
@@ -594,7 +589,7 @@ async function classifyMove({
 // Public entry point
 // ───────────────────────────────────────────────────────────────────────────
 
-export async function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, opts = {}) {
+export function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, evalAfter, opts = {}) {
   const chessBefore = new Chess(fenBefore);
   const chessAfter = new Chess(fenAfter);
 
@@ -618,7 +613,7 @@ export async function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, eval
     : false;
 
   // Classify against engine top moves.
-  const cls = await classifyMove({
+  const cls = classifyMove({
     fenBefore,
     moveUCI,
     moverColor: sideToMove,
@@ -626,8 +621,6 @@ export async function explainMove(fenBefore, fenAfter, moveUCI, evalBefore, eval
     evalAfterWhite: evalAfter,
     topMoves: opts.topMoves || [],
     legacySacrifice,
-    wdlBefore: opts.wdlBefore,
-    wdlAfter: opts.wdlAfter,
   });
   // Use whichever sacrifice signal the classifier ended up trusting so
   // motifs / tagline composition stay consistent with the verdict.
@@ -852,7 +845,7 @@ function uciToSanSafe(fen, uci) {
 }
 
 export {
-  detectSacrificeViaSEE as _detectSacrificeViaSEE, // exported for tests / debugging
-  detectSkewer as _detectSkewer, see as _see
+  see as _see,            // exported for tests / debugging
+  detectSkewer as _detectSkewer,
+  detectSacrificeViaSEE as _detectSacrificeViaSEE,
 };
-

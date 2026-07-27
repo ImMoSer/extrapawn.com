@@ -12,6 +12,7 @@
       "@parcel/watcher",
       "esbuild",
       "protobufjs",
+      "stockfish",
       "unrs-resolver",
       "vue-demi"
     ]
@@ -25,13 +26,16 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "type-check:watch": "vue-tsc --watch",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "postinstall": "node -e \"import fs from 'fs'; fs.mkdirSync('public/stockfish', { recursive: true }); fs.cpSync('node_modules/stockfish/bin', 'public/stockfish', { recursive: true });\""
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.1.1",
     "@tanstack/vue-query": "^5.101.2",
     "@vicons/ionicons5": "^0.13.0",
     "chess.js": "1.4.0",
+    "stockfish": "^18.0.8",
+
     "chessops": "^0.15.1",
     "dexie": "^4.4.4",
     "dompurify": "^3.4.12",

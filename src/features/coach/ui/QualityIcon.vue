@@ -28,6 +28,8 @@ const SYMBOLS: Record<string, string> = {
   great: '!',
   best: '★',
   excellent: '✓',
+  good: '✓',
+  neutral: 'ok',
   inaccuracy: '?!',
   mistake: '?',
   blunder: '??',
@@ -58,4 +60,3 @@ const computedStyle = computed(() => {
   font-style: normal;
 }
 </style>
-

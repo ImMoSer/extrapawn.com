@@ -1,16 +1,25 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { CoachSidebar, useCoachStore } from '@/features/coach'
+import { AnalysisPanel, useCoachStore } from '@/features/coach'
 import { NButton } from 'naive-ui'
 import { useTaskTodayStore } from '@/features/task-today'
 import { useI18n } from 'vue-i18n'
+
+withDefaults(
+  defineProps<{
+    boardHeight?: number
+  }>(),
+  {
+    boardHeight: 600,
+  }
+)
+
 
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const coachStore = useCoachStore()
 
 onMounted(() => {
-  // Enable the Coach completely (spins up coach engine for current position, renders coach shapes)
   coachStore.setCoachEnabled(true)
 })
 
@@ -20,34 +29,43 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="coach-widget-container">
-    <div v-if="taskTodayStore.isHelpActive" class="help-done-header">
-      <NButton block type="warning" class="done-btn" @click="taskTodayStore.stopHelpMode()">
+  <div class="coach-widget-container flex flex-col h-full w-full flex-1">
+    <div v-if="taskTodayStore.isHelpActive" class="help-done-header p-2 bg-warning/10 border-b border-warning/20 mb-2">
+      <NButton block type="warning" class="done-btn font-bold" @click="taskTodayStore.stopHelpMode()">
         {{ t('features.taskToday.helpDone') }}
       </NButton>
     </div>
-    <div class="sidebar-inner">
-      <CoachSidebar />
+    <div class="sidebar-inner flex-1 min-h-0 w-full flex flex-col">
+
+      <AnalysisPanel
+        :boardHeight="boardHeight"
+        :engineLoading="!coachStore.stockfishReady || !coachStore.wasmReady"
+        :showLoadingBanner="coachStore.showLoadingBanner"
+        :stockfishReady="coachStore.stockfishReady"
+        :wasmReady="coachStore.wasmReady"
+        :historyIndex="coachStore.historyIndex"
+        :moveHistory="coachStore.moveHistory"
+        :sideToMove="coachStore.sideToMove"
+        :phase="coachStore.phase"
+        :materialDelta="coachStore.materialDelta"
+        :openingName="coachStore.openingName"
+        :lastMoveAnalysis="coachStore.lastMoveAnalysis"
+        :lastMoveConsequence="coachStore.lastMoveConsequence"
+        :posExplanation="coachStore.posExplanation"
+        :topMoves="coachStore.topMoves"
+        :topMovesLoading="coachStore.topMovesLoading"
+        :selectedMoveIndex="coachStore.selectedMoveIndex"
+        :explanation="coachStore.explanation"
+        :explanationLoading="coachStore.explanationLoading"
+        @go-back="coachStore.goBack"
+        @go-forward="coachStore.goForward"
+        @random-pos="coachStore.loadRandomPosition"
+        @flip-board="coachStore.flipBoard"
+        @reset-board="coachStore.resetBoard"
+        @settings-change="coachStore.handleSettingsChange"
+        @select-history-move="coachStore.selectHistoryMove"
+        @select-move="coachStore.selectMove"
+      />
     </div>
   </div>
 </template>
-
-<style scoped>
-.coach-widget-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.sidebar-inner {
-  flex: 1;
-  min-height: 0;
-}
-.help-done-header {
-  padding: 8px 14px;
-  background: rgba(247, 213, 71, 0.1);
-  border-bottom: 1px solid rgba(247, 213, 71, 0.2);
-}
-.done-btn {
-  font-weight: bold;
-}
-</style>

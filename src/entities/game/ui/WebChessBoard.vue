@@ -15,6 +15,8 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch, type PropType
 import { useBoardStore, type PromotionState } from '../model/board.store'
 import PromotionDialog from './PromotionDialog.vue'
 
+
+
 const props = defineProps({
   fen: { type: String, required: true },
   orientation: { type: String as PropType<ChessgroundColor>, required: true },
@@ -46,94 +48,138 @@ const ground = shallowRef<Api | null>(null)
 const boardStore = useBoardStore()
 
 const CHESSGROUND_BRUSHES = {
-  green: { key: 'g', color: '#15781B', opacity: 1, lineWidth: 10 },
-  red: { key: 'r', color: '#882020', opacity: 1, lineWidth: 10 },
-  blue: { key: 'b', color: '#0030C0', opacity: 1, lineWidth: 10 },
-  yellow: { key: 'y', color: '#E6A000', opacity: 1, lineWidth: 10 },
-  orange: { key: 'o', color: '#D56000', opacity: 1, lineWidth: 10 },
-  purple: { key: 'u', color: '#7B1FA2', opacity: 1, lineWidth: 10 },
-  bestmove: { key: 'p', color: '#ff007a', opacity: 1, lineWidth: 10 },
-  cyan: { key: 'c', color: '#008BA1', opacity: 1, lineWidth: 10 },
-  pink: { key: 'k', color: '#B3205D', opacity: 1, lineWidth: 10 },
-  brown: { key: 'w', color: '#6D4C41', opacity: 1, lineWidth: 10 },
-  gray: { key: 'x', color: '#616161', opacity: 1, lineWidth: 10 },
-  paleBlue: { key: 'pb', color: '#0030C0', opacity: 0.4, lineWidth: 15 },
-  paleGreen: { key: 'pg', color: '#15781B', opacity: 0.4, lineWidth: 15 },
+  green: { key: 'g', color: 'var(--color-success)', opacity: 1, lineWidth: 10 },
+  red: { key: 'r', color: 'var(--color-danger)', opacity: 1, lineWidth: 10 },
+  blue: { key: 'b', color: 'var(--color-info)', opacity: 1, lineWidth: 10 },
+  yellow: { key: 'y', color: 'var(--color-warning)', opacity: 1, lineWidth: 10 },
+  orange: { key: 'o', color: 'var(--color-orange)', opacity: 1, lineWidth: 10 },
+  purple: { key: 'u', color: 'var(--color-neon-purple)', opacity: 1, lineWidth: 10 },
+  enginePlan: { key: 'p', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
+  bestmove: { key: 'p', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
+  cyan: { key: 'c', color: 'var(--color-neon-cyan)', opacity: 1, lineWidth: 10 },
+  pink: { key: 'k', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
+  brown: { key: 'w', color: 'var(--color-orange-warm)', opacity: 1, lineWidth: 10 },
+  gray: { key: 'x', color: 'var(--color-text-secondary)', opacity: 1, lineWidth: 10 },
+  paleBlue: { key: 'pb', color: 'var(--color-info)', opacity: 0.4, lineWidth: 15 },
+  paleGreen: { key: 'pg', color: 'var(--color-success)', opacity: 0.4, lineWidth: 15 },
 
   // Coach-specific thin brushes
-  coachgreen: { key: 'G', color: '#15781B', opacity: 0.5, lineWidth: 5 },
-  coachred: { key: 'R', color: '#882020', opacity: 0.5, lineWidth: 5 },
-  coachblue: { key: 'B', color: '#0030C0', opacity: 0.5, lineWidth: 5 },
-  coachyellow: { key: 'Y', color: '#E6A000', opacity: 0.5, lineWidth: 5 },
-  coachorange: { key: 'O', color: '#D56000', opacity: 0.5, lineWidth: 5 },
-  coachpurple: { key: 'U', color: '#7B1FA2', opacity: 0.5, lineWidth: 5 },
-  coachcyan: { key: 'C', color: '#008BA1', opacity: 0.5, lineWidth: 5 },
-  coachpink: { key: 'K', color: '#B3205D', opacity: 0.5, lineWidth: 5 },
-  coachbrown: { key: 'W', color: '#6D4C41', opacity: 0.5, lineWidth: 5 },
-  coachgray: { key: 'X', color: '#616161', opacity: 0.5, lineWidth: 5 },
-  coachpaleBlue: { key: 'PB', color: '#0030C0', opacity: 0.4, lineWidth: 5 },
-  coachpaleGreen: { key: 'PG', color: '#15781B', opacity: 0.4, lineWidth: 5 },
+  coachgreen: { key: 'G', color: 'var(--color-success)', opacity: 0.5, lineWidth: 5 },
+  coachred: { key: 'R', color: 'var(--color-danger)', opacity: 0.5, lineWidth: 5 },
+  coachblue: { key: 'B', color: 'var(--color-info)', opacity: 0.5, lineWidth: 5 },
+  coachyellow: { key: 'Y', color: 'var(--color-warning)', opacity: 0.5, lineWidth: 5 },
+  coachorange: { key: 'O', color: 'var(--color-orange)', opacity: 0.5, lineWidth: 5 },
+  coachpurple: { key: 'U', color: 'var(--color-neon-purple)', opacity: 0.9, lineWidth: 5 },
+  coachcyan: { key: 'C', color: 'var(--color-neon-cyan)', opacity: 0.5, lineWidth: 5 },
+  coachpink: { key: 'K', color: 'var(--color-highlight)', opacity: 0.5, lineWidth: 5 },
+  coachbrown: { key: 'W', color: 'var(--color-orange-warm)', opacity: 0.5, lineWidth: 5 },
+  coachgray: { key: 'X', color: 'var(--color-text-disabled)', opacity: 0.5, lineWidth: 5 },
+  coachpaleBlue: { key: 'PB', color: 'var(--color-info)', opacity: 0.4, lineWidth: 5 },
+  coachpaleGreen: { key: 'PG', color: 'var(--color-success)', opacity: 0.4, lineWidth: 5 },
+  coachenginePlan: { key: 'P', color: 'var(--color-highlight)', opacity: 0.5, lineWidth: 5 },
 } as const
 
-const nagMarkerStyle = computed(() => {
-  if (!boardStore.lastNag) return null
-  const square = boardStore.lastNag.square
-  const file = square.charCodeAt(0) - 97 // a=0
-  const rank = parseInt(square.charAt(1), 10) - 1 // 1=0
 
-  let top, left
-  if (props.orientation === 'white') {
-    top = (7 - rank) * 12.5
-    left = file * 12.5
-  } else {
-    top = rank * 12.5
-    left = (7 - file) * 12.5
+
+
+
+const NAG_SYMBOLS: Record<string, string> = {
+
+  brilliant: '!!',
+  great: '!',
+  best: '★',
+  excellent: '✓',
+  good: 'ok',
+  inaccuracy: '?!',
+  mistake: '?',
+  blunder: '??',
+  missed_mate: '✕',
+}
+
+function getNagSymbol(quality: string, nag?: string) {
+  if (nag) return nag
+  return NAG_SYMBOLS[quality] || '!'
+}
+
+const QUALITY_BG_HEX: Record<string, string> = {
+  brilliant: '#00f6ff',
+  great: '#00e676',
+  best: '#00e676',
+  excellent: '#00e676',
+  good: '#29b6f6',
+  neutral: '#8b93a8',
+  inaccuracy: '#ffd700',
+  mistake: '#ff9100',
+  blunder: '#ff1744',
+  missed_mate: '#ff1744',
+}
+
+function getNagHexColor(quality: string): string {
+  return QUALITY_BG_HEX[quality] || '#00e676'
+}
+
+type LooseShape = DrawShape & { stepBadge?: string; nag?: string; customNag?: string }
+
+const combinedShapes = computed(() => {
+  const raw = [...props.drawableShapes, ...boardStore.autoShapes] as LooseShape[]
+  const result: DrawShape[] = []
+  const nagAdded = new Set<string>()
+
+  // 1. Last move NAG (if present and not hidden)
+  if (!props.hideNag && boardStore.lastNag?.square) {
+    const q = boardStore.lastNag.quality || 'brilliant'
+    const sym = getNagSymbol(q, boardStore.lastNag.nag)
+    const color = getNagHexColor(q)
+    result.push({
+      orig: boardStore.lastNag.square as Key,
+      customSvg: {
+        html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="#0b0e14" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="#0b0e14" text-anchor="middle">${sym}</text></g>`,
+        center: 'orig',
+      },
+    })
+    nagAdded.add(boardStore.lastNag.square)
   }
 
-  return {
-    top: `${top}%`,
-    left: `${left}%`,
-    width: '12.5%',
-    height: '12.5%',
+  // 2. Iterate autoShapes and drawableShapes
+  for (const s of raw) {
+    if (s.orig && (s.nag || s.customNag) && !nagAdded.has(s.orig)) {
+      const q = s.nag || s.customNag || 'brilliant'
+      const sym = getNagSymbol(q, s.nag)
+      const color = getNagHexColor(q)
+      result.push({
+        orig: s.orig as Key,
+        customSvg: {
+          html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="#0b0e14" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="#0b0e14" text-anchor="middle">${sym}</text></g>`,
+          center: 'orig',
+        },
+      })
+      nagAdded.add(s.orig)
+    } else if (s.orig && s.stepBadge) {
+      const label = String(s.stepBadge)
+      const badgeWidth = Math.max(26, label.length * 11)
+      result.push({
+        orig: s.orig as Key,
+        customSvg: {
+          html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="#ffd700" stroke="#0b0e14" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="#0b0e14" text-anchor="middle">${label}</text></g>`,
+          center: 'orig',
+        },
+      })
+    } else if (s.orig && (s.dest || s.brush)) {
+      const brushKey = typeof s.brush === 'string' ? s.brush : undefined
+      const safeBrush = (brushKey && brushKey in CHESSGROUND_BRUSHES) ? brushKey : 'green'
+      result.push({
+        orig: s.orig as Key,
+        dest: s.dest as Key | undefined,
+        brush: safeBrush,
+        modifiers: s.modifiers,
+      })
+    }
   }
+
+  return result
 })
 
-const getNagColor = (quality: string) => {
-  switch (quality) {
-    case 'blunder':
-      return 'var(--color-nag-blunder)'
-    case 'mistake':
-      return 'var(--color-nag-mistake)'
-    case 'inaccuracy':
-      return 'var(--color-nag-inaccuracy)'
-    case 'best':
-      return 'var(--color-nag-best)'
-    case 'brilliant':
-      return 'var(--color-nag-brilliant)'
-    case 'interesting':
-      return 'var(--color-nag-interesting)'
-    case 'better-white':
-    case 'advantage-white':
-    case 'winning-white':
-    case 'decisive-white':
-      return 'var(--color-success)'
-    case 'better-black':
-    case 'advantage-black':
-    case 'winning-black':
-    case 'decisive-black':
-      return 'var(--color-error)'
-    case 'equal':
-      return 'var(--color-text-secondary)'
-    case 'novelty':
-      return 'var(--color-accent-primary)'
-    case 'initiative':
-    case 'attack':
-    case 'counterplay':
-      return 'var(--color-warning)'
-    default:
-      return 'var(--color-accent-primary)'
-  }
-}
+
 
 const handleWheel = (event: WheelEvent) => {
   emit('wheel-navigate', event.deltaY > 0 ? 'down' : 'up')
@@ -184,11 +230,12 @@ onMounted(() => {
         brushes: CHESSGROUND_BRUSHES,
         shapes: combinedShapes.value as DrawShape[],
         onChange: (shapes) => {
-          const autoKey = (s: DrawShape) => `${s.orig}-${s.dest}-${s.brush}`
+          const autoKey = (s: DrawShape) => `${s.orig}-${s.dest || ''}-${s.brush || ''}`
           const autoKeys = new Set(boardStore.autoShapes.map(autoKey))
-          const userShapes = (shapes as DrawShape[]).filter((s) => !autoKeys.has(autoKey(s)))
+          const userShapes = (shapes as DrawShape[]).filter((s) => !s.customSvg && !autoKeys.has(autoKey(s)))
           emit('shapes-change', userShapes)
         },
+
       },
     }
     ground.value = Chessground(chessboardRef.value, config)
@@ -204,9 +251,6 @@ onUnmounted(() => {
 // To avoid sending multiple .set() calls to Chessground in the same reactive tick
 // (which cancels piece movement animations), we consolidate all props into a single batch watcher.
 
-const combinedShapes = computed(() => {
-  return [...props.drawableShapes, ...boardStore.autoShapes]
-})
 
 watch(
   [
@@ -271,12 +315,8 @@ watch(
   <div class="board-wrapper" @wheel.passive="handleWheel">
     <div ref="chessboardRef" class="chessboard"></div>
 
-    <!-- NAG Marker Overlay -->
-    <div v-if="!hideNag && boardStore.lastNag && nagMarkerStyle" class="nag-container" :style="nagMarkerStyle">
-      <div class="nag-badge" :style="{ backgroundColor: getNagColor(boardStore.lastNag.quality) }">
-        {{ boardStore.lastNag.nag }}
-      </div>
-    </div>
+
+
 
     <!-- Custom overlays slot -->
     <slot name="overlays"></slot>

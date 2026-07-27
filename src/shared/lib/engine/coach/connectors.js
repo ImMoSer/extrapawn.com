@@ -366,6 +366,7 @@ function line_control_change(before, after, out, opts) {
 }
 
 function plan_summary(before, after, out) {
+
   // Engine-derived: when after-blob has a principal_plan with a
   // recognised theme, surface it as a forward-looking consequence.
   const plan = after?.principal_plan;

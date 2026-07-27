@@ -1,370 +1,359 @@
-// Browser-side Stockfish (WASM) wrapper & Server analysis orchestrator.
-// Delegates job execution to WasmEngineStrategy or ServerEngineStrategy.
+// Browser-side Stockfish (WASM) wrapper.
+// Runs Stockfish 18-lite-single in a Web Worker, talks UCI over postMessage.
+// Same public API as the (now-deprecated) server engine: evaluate / analyzeMultiPV / getBestMove.
 
+const ENGINE_VERSIONS = {
+  lite: '/stockfish/stockfish-18-lite-single.js',
+  full: '/stockfish/stockfish-18-single.js',
+};
 
-import { Chess } from 'chess.js'
-import { LRU } from './engine-cache'
-import { ServerEngineStrategy, WasmEngineStrategy } from './engine-providers'
-
-function checkTerminalPosition(fen) {
+// Configurable defaults backed by localStorage. The UI's settings
+// panel writes to these so the engine layer reflects user preference
+// without each call-site having to thread depth through.
+function readPref(key, fallback, min, max) {
   try {
-    const c = new Chess(fen)
-    if (c.isGameOver()) {
-      if (c.isCheckmate()) {
-        return {
-          isTerminal: true,
-          type: 'checkmate',
-          score: -100000,
-          mate: 0,
-          moves: [],
-          bestMove: null,
-          ponderMove: null,
-          pv: [],
-        }
-      }
-      if (c.isStalemate() || c.isDraw() || c.isThreefoldRepetition() || c.isInsufficientMaterial()) {
-        return {
-          isTerminal: true,
-          type: 'draw',
-          score: 0,
-          mate: null,
-          moves: [],
-          bestMove: null,
-          ponderMove: null,
-          pv: [],
-        }
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return null
+    const raw = localStorage.getItem(`positional_chess.${key}`);
+    if (!raw) return fallback;
+    const v = parseInt(raw, 10);
+    if (Number.isFinite(v) && v >= min && v <= max) return v;
+  } catch { /* localStorage unavailable */ }
+  return fallback;
 }
 
-const WORKER_URL = '/stockfish_single/stockfish-18-lite-single.js'
-
-let engineConfigProvider = null
-
-export function registerEngineConfigProvider(provider) {
-  engineConfigProvider = provider
-}
-
-export let USE_SERVER_ENGINE = true
-
-function getPrefs() {
-  if (engineConfigProvider) {
-    return engineConfigProvider.getEnginePrefs()
-  }
-  return { useServerCoach: true, depth: 12, multipv: 5 }
-}
-
-export function getUseServerEngine() {
+function readPrefString(key, fallback, validValues) {
   try {
-    const val = getPrefs().useServerCoach
-    USE_SERVER_ENGINE = val
-    return val
-  } catch {
-    return USE_SERVER_ENGINE
-  }
+    const raw = localStorage.getItem(`positional_chess.${key}`);
+    if (raw && validValues.includes(raw)) return raw;
+  } catch { /* localStorage unavailable */ }
+  return fallback;
 }
 
-export function setUseServerEngine(val) {
-  USE_SERVER_ENGINE = val
-  if (engineConfigProvider) {
-    engineConfigProvider.setUseServerCoach(val)
+import {
+  analyzeRemotePosition,
+  getEngineSource,
+  setEngineSource,
+  getRemoteEngineUrl,
+  setRemoteEngineUrl
+} from './remote-engine';
+
+export { getEngineSource, setEngineSource, getRemoteEngineUrl, setRemoteEngineUrl };
+
+let DEFAULT_DEPTH = readPref('depth', 12, 6, 22);
+let DEFAULT_MULTIPV = readPref('multipv', 5, 1, 10);
+let DEFAULT_VERSION = readPrefString('version', 'lite', ['lite', 'full']);
+let DEFAULT_ENGINE_SOURCE = getEngineSource();
+
+export function setEngineDefaults({ depth, multipv, version, source } = {}) {
+  if (Number.isFinite(depth)) {
+    DEFAULT_DEPTH = Math.max(6, Math.min(22, depth));
+    try { localStorage.setItem('positional_chess.depth', String(DEFAULT_DEPTH)); } catch { /* ignore */ }
+  }
+  if (Number.isFinite(multipv)) {
+    DEFAULT_MULTIPV = Math.max(1, Math.min(10, multipv));
+    try { localStorage.setItem('positional_chess.multipv', String(DEFAULT_MULTIPV)); } catch { /* ignore */ }
+  }
+  if (version && (version === 'lite' || version === 'full')) {
+    DEFAULT_VERSION = version;
+    try { localStorage.setItem('positional_chess.version', DEFAULT_VERSION); } catch { /* ignore */ }
+    engine.setVersion(version);
+  }
+  if (source && (source === 'remote' || source === 'local')) {
+    DEFAULT_ENGINE_SOURCE = source;
+    setEngineSource(source);
+    engine.clearCache();
   }
 }
 
 export function getEngineDefaults() {
-  const prefs = getPrefs()
-  return { depth: prefs.depth, multipv: prefs.multipv, threads: 1 }
+  return { depth: DEFAULT_DEPTH, multipv: DEFAULT_MULTIPV, version: DEFAULT_VERSION, source: DEFAULT_ENGINE_SOURCE };
 }
 
-export function setEngineDefaults({ depth, multipv } = {}) {
-  if (engineConfigProvider) {
-    engineConfigProvider.setEngineDefaults({ depth, multipv })
+let engineConfigProvider = null;
+
+export function getEngineConfigProvider() {
+  return engineConfigProvider;
+}
+
+export function registerEngineConfigProvider(provider) {
+  engineConfigProvider = provider;
+  if (provider) {
+    const depth = typeof provider.getDepth === 'function' ? provider.getDepth() : undefined;
+    const multipv = typeof provider.getMultiPv === 'function' ? provider.getMultiPv() : undefined;
+    const version = typeof provider.getEngineVersion === 'function' ? provider.getEngineVersion() : undefined;
+    const useServer = typeof provider.useServerCoach === 'function' ? provider.useServerCoach() : undefined;
+    const source = useServer !== undefined ? (useServer ? 'remote' : 'local') : undefined;
+    setEngineDefaults({ depth, multipv, version, source });
   }
 }
 
-const DEFAULT_JOB_TIMEOUT_MS = 30_000
-const DEFAULT_INIT_TIMEOUT_MS = 15_000
-const DEFAULT_CACHE_SIZE = 3
+
+export function getPieceCount(fen) {
+  if (!fen) return 0;
+  const boardPart = fen.split(' ')[0];
+  let count = 0;
+  for (const ch of boardPart) {
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+      count++;
+    }
+  }
+  return count;
+}
+
+
+const DEFAULT_JOB_TIMEOUT_MS = 30_000;
+const DEFAULT_INIT_TIMEOUT_MS = 120_000;
+const DEFAULT_CACHE_SIZE = 500;
+
+class LRU {
+  constructor(maxSize) {
+    this.maxSize = maxSize;
+    this.map = new Map();
+  }
+  get(key) {
+    if (!this.map.has(key)) return undefined;
+    const v = this.map.get(key);
+    this.map.delete(key);
+    this.map.set(key, v);
+    return v;
+  }
+  set(key, value) {
+    if (this.map.has(key)) this.map.delete(key);
+    this.map.set(key, value);
+    while (this.map.size > this.maxSize) {
+      this.map.delete(this.map.keys().next().value);
+    }
+  }
+  clear() {
+    this.map.clear();
+  }
+}
 
 function parseScore(line) {
-  const m = line.match(/score (cp|mate) (-?\d+)/)
-  if (!m) return null
-  const value = parseInt(m[2], 10)
+  const m = line.match(/score (cp|mate) (-?\d+)/);
+  if (!m) return null;
+  const value = parseInt(m[2], 10);
   if (m[1] === 'mate') {
-    const cp = value > 0 ? 100_000 - value : -100_000 - value
-    return { type: 'mate', value, cp }
+    const cp = value > 0 ? 100_000 - value : -100_000 - value;
+    return { type: 'mate', value, cp };
   }
-  return { type: 'cp', value, cp: value }
-}
-
-function parseWdl(line) {
-  const m = line.match(/wdl (\d+) (\d+) (\d+)/)
-  if (!m) return null
-  return {
-    win: parseInt(m[1], 10),
-    draw: parseInt(m[2], 10),
-    loss: parseInt(m[3], 10),
-  }
+  return { type: 'cp', value, cp: value };
 }
 
 function parsePV(line) {
-  const idx = line.indexOf(' pv ')
-  if (idx === -1) return []
-  return line
-    .substring(idx + 4)
-    .trim()
-    .split(/\s+/)
+  const idx = line.indexOf(' pv ');
+  if (idx === -1) return [];
+  return line.substring(idx + 4).trim().split(/\s+/);
 }
 
 function parseMultiPV(line) {
-  const m = line.match(/multipv (\d+)/)
-  return m ? parseInt(m[1], 10) : 1
-}
-
-export function getPieceCount(fen) {
-  if (!fen) return 32
-  const boardPart = fen.split(' ')[0]
-  return (boardPart.match(/[a-zA-Z]/g) || []).length
+  const m = line.match(/multipv (\d+)/);
+  return m ? parseInt(m[1], 10) : 1;
 }
 
 class StockfishEngine {
   constructor(opts = {}) {
-    this.workerUrl = opts.workerUrl ?? WORKER_URL
-    this.jobTimeoutMs = opts.jobTimeoutMs ?? DEFAULT_JOB_TIMEOUT_MS
-    this.initTimeoutMs = opts.initTimeoutMs ?? DEFAULT_INIT_TIMEOUT_MS
-    this.cache = new LRU(opts.cacheSize ?? DEFAULT_CACHE_SIZE)
+    this.version = opts.version ?? DEFAULT_VERSION;
+    this.workerUrl = opts.workerUrl ?? ENGINE_VERSIONS[this.version] ?? ENGINE_VERSIONS.lite;
+    this.jobTimeoutMs = opts.jobTimeoutMs ?? DEFAULT_JOB_TIMEOUT_MS;
+    this.initTimeoutMs = opts.initTimeoutMs ?? DEFAULT_INIT_TIMEOUT_MS;
+    this.cache = new LRU(opts.cacheSize ?? DEFAULT_CACHE_SIZE);
 
-    this.ready = false
-    this.queue = []
-    this.currentJob = null
-    this.working = false
+    this.worker = null;
+    this.ready = false;
+    this.queue = [];
+    this.currentJob = null;
+    this.working = false;
+    this.lastMultiPV = 1;
 
-    this._wasmStrategy = null
-    this._serverStrategy = null
-    this._lastInitWasServer = null
-
-    this._initResolve = null
-    this._initReject = null
-    this._initTimer = null
-    this._initPromise = null
+    this._initResolve = null;
+    this._initReject = null;
+    this._initTimer = null;
+    this._initPromise = null;
   }
 
-  get activeStrategy() {
-    if (getUseServerEngine()) {
-      if (!this._serverStrategy) {
-        this._serverStrategy = new ServerEngineStrategy()
-      }
-      return this._serverStrategy
-    } else {
-      if (!this._wasmStrategy) {
-        this._wasmStrategy = new WasmEngineStrategy(this.workerUrl)
-      }
-      return this._wasmStrategy
-    }
+  setVersion(newVersion) {
+    if (!ENGINE_VERSIONS[newVersion]) return;
+    const targetUrl = ENGINE_VERSIONS[newVersion];
+    if (this.version === newVersion && this.workerUrl === targetUrl) return;
+
+    console.log(`[Stockfish] Switching engine version from '${this.version}' to '${newVersion}' (${targetUrl})`);
+    this.shutdown();
+    this.version = newVersion;
+    this.workerUrl = targetUrl;
+    this.cache.clear();
   }
 
   init() {
-    if (this._initPromise && this._lastInitWasServer === getUseServerEngine()) {
-      return this._initPromise
-    }
-
-    this._lastInitWasServer = getUseServerEngine()
+    if (this._initPromise) return this._initPromise;
+    console.log(`[Stockfish] Spawning engine worker: ${this.workerUrl} (version: ${this.version})`);
     this._initPromise = new Promise((resolve, reject) => {
-      this._initResolve = resolve
-      this._initReject = reject
-      this.ready = false
-
+      this._initResolve = resolve;
+      this._initReject = reject;
+      try {
+        this.worker = new Worker(this.workerUrl);
+      } catch (err) {
+        console.error(`[Stockfish] Failed to spawn worker:`, err);
+        return reject(new Error(`Failed to spawn Stockfish worker: ${err.message}`));
+      }
+      this.worker.onmessage = (e) => {
+        if (typeof e.data === 'string') this._onLine(e.data.trim());
+      };
+      this.worker.onerror = (err) => {
+        const msg = err.message || 'Worker error';
+        console.error(`[Stockfish] Worker error: ${msg}`, err);
+        if (this._initReject) {
+          this._initReject(new Error(`Stockfish worker error: ${msg}`));
+          this._clearInit();
+        } else {
+          this._abortCurrentJob(new Error(`Stockfish worker error: ${msg}`));
+        }
+      };
       this._initTimer = setTimeout(() => {
         if (this._initReject) {
-          this._initReject(
-            new Error(`Stockfish init timed out after ${this.initTimeoutMs}ms (no readyok)`),
-          )
-          this._clearInit()
+          console.error(`[Stockfish] Init timed out after ${this.initTimeoutMs}ms`);
+          this._initReject(new Error(
+            `Stockfish init timed out after ${this.initTimeoutMs}ms (no readyok)`
+          ));
+          this._clearInit();
         }
-      }, this.initTimeoutMs)
+      }, this.initTimeoutMs);
 
-      this.activeStrategy.init({
-        onLine: (line) => this._onLine(line),
-        onError: (err) => {
-          if (this._initReject) {
-            this._initReject(err)
-            this._clearInit()
-          } else {
-            this._abortCurrentJob(err)
-          }
-        },
-        onReady: () => {
-          if (this._initResolve) {
-            this.ready = true
-            this._initResolve()
-            this._clearInit()
-            setTimeout(() => this._processQueue(), 0)
-          }
-        },
-      }).catch((err) => {
-        if (this._initReject) {
-          this._initReject(err)
-          this._clearInit()
-        } else {
-          reject(err)
-        }
-      })
-    })
-
-    return this._initPromise
+      this._send('uci');
+      this._send('isready');
+    });
+    return this._initPromise;
   }
 
   _clearInit() {
-    if (this._initTimer) clearTimeout(this._initTimer)
-    this._initTimer = null
-    this._initResolve = null
-    this._initReject = null
+    if (this._initTimer) clearTimeout(this._initTimer);
+    this._initTimer = null;
+    this._initResolve = null;
+    this._initReject = null;
+  }
+
+  clearCache() {
+    if (this.cache) this.cache.clear();
   }
 
   shutdown() {
-    if (this._wasmStrategy) {
-      this._wasmStrategy.shutdown()
+    this._clearInit();
+    this._initPromise = null;
+    if (this.currentJob) {
+      this._abortCurrentJob(new Error('Engine shutdown'));
     }
-    if (this._serverStrategy) {
-      this._serverStrategy.shutdown()
+    while (this.queue.length > 0) {
+      const j = this.queue.shift();
+      try { j.reject(new Error('Engine shutdown')); } catch { /* ignore */ }
     }
-    this.ready = false
-    this._initPromise = null
+    if (this.worker) {
+      try { this._send('quit'); } catch { /* ignore */ }
+      try { this.worker.terminate(); } catch { /* ignore */ }
+      this.worker = null;
+    }
+    this.ready = false;
   }
 
   _send(cmd) {
-    if (this.activeStrategy && typeof this.activeStrategy.send === 'function') {
-      this.activeStrategy.send(cmd)
-    }
+    if (this.worker) this.worker.postMessage(cmd);
   }
 
   _onLine(line) {
-    if (!line) return
+    if (!line) return;
+
+    if (line.startsWith('id name')) {
+      console.log(`[Stockfish] Engine identity: ${line.substring(8)} (version: ${this.version})`);
+    }
+
+    if (line === 'readyok') {
+      if (this._initResolve) {
+        this.ready = true;
+        console.log(`[Stockfish] Engine readyok received! Active engine: ${this.version} (${this.workerUrl})`);
+        this._initResolve();
+        this._clearInit();
+        setTimeout(() => this._processQueue(), 0);
+      }
+      return;
+    }
 
     if (line.startsWith('bestmove')) {
-      this._finishJob(line)
-      return
+      this._finishJob(line);
+      return;
     }
 
     if (this.currentJob && this.currentJob.onLine) {
-      this.currentJob.onLine(line)
+      this.currentJob.onLine(line);
     }
   }
 
-  evaluate(fen, depth = DEFAULT_DEPTH, startFen = null, moves = null, options = {}) {
-    const key = `e|${fen}|${depth}`
-    const hit = this.cache.get(key)
-    if (hit) return hit // Promise cached
-
-    const terminal = checkTerminalPosition(fen)
-    if (terminal) {
-      const p = Promise.resolve({ cp: terminal.score, mate: terminal.mate, score: terminal.score })
-      this.cache.set(key, p)
-      return p
-    }
-
-    // Optimization: if we already have a MultiPV search for this fen, we can just use its score!
-    const mpvKey = getUseServerEngine() ? `m|${fen}|server` : `m|${fen}|${getEngineDefaults().multipv}|${depth}`
-    const hitMpv = this.cache.get(mpvKey)
-    if (hitMpv) {
-      const p = hitMpv.then(r => ({ cp: r.cp, mate: r.mate, score: r.score, wdl: r.wdl }))
-      this.cache.set(key, p)
-      return p
-    }
-
-    const p = this._enqueue({ type: 'eval', fen, depth, startFen, moves, skipTablebase: options.skipTablebase })
-    p.catch(() => this.cache.delete(key))
-    this.cache.set(key, p)
-    return p
+  evaluate(fen, depth = DEFAULT_DEPTH) {
+    const key = `e|${fen}|${depth}`;
+    const hit = this.cache.get(key);
+    if (hit) return Promise.resolve(hit);
+    return this._enqueue({ type: 'eval', fen, depth }).then(r => {
+      this.cache.set(key, r);
+      return r;
+    });
   }
 
-  analyzeMultiPV(fen, numLines = getEngineDefaults().multipv, depth = getEngineDefaults().depth, startFen = null, moves = null, options = {}) {
-    const key = getUseServerEngine() ? `m|${fen}|server` : `m|${fen}|${Math.max(1, Math.min(numLines, 10))}|${depth}`
-    const n = getUseServerEngine() ? 3 : Math.max(1, Math.min(numLines, 10))
-    const hit = this.cache.get(key)
-    if (hit) return hit // Promise cached
+  async analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, opts = {}) {
+    const n = Math.max(1, Math.min(numLines, 10));
+    const src = getEngineSource();
+    const key = `${src}|m|${fen}|${n}|${depth}`;
+    const hit = this.cache.get(key);
+    if (hit) return Promise.resolve(hit);
 
-    const terminal = checkTerminalPosition(fen)
-    if (terminal) {
-      const p = Promise.resolve({
-        moves: [],
-        bestMove: null,
-        score: terminal.score,
-        cp: terminal.score,
-        mate: terminal.mate,
-      })
-      this.cache.set(key, p)
-      return p
+    if (src === 'remote') {
+      try {
+        const remoteRes = await analyzeRemotePosition(fen, { ...opts, depth, multipv: n });
+        this.cache.set(key, remoteRes);
+        return remoteRes;
+      } catch (err) {
+        console.warn('[StockfishEngine] Remote server failed, falling back to local engine:', err);
+      }
     }
 
-    const p = this._enqueue({
-      type: 'multipv',
-      fen,
-      depth,
-      numLines: n,
-      startFen,
-      moves,
-      skipTablebase: options.skipTablebase,
-      checkBook: options.check_book ?? options.checkBook,
-    })
-    p.catch(() => this.cache.delete(key))
-    this.cache.set(key, p)
-    return p
+    return this._enqueue({ type: 'multipv', fen, depth, numLines: n }).then(r => {
+      this.cache.set(key, r);
+      return r;
+    });
   }
 
-  getBestMove(fen, depth = getEngineDefaults().depth, startFen = null, moves = null) {
-    const key = `b|${fen}|${depth}`
-    const hit = this.cache.get(key)
-    if (hit) return hit // Promise cached
-
-    const terminal = checkTerminalPosition(fen)
-    if (terminal) {
-      const p = Promise.resolve({
-        bestMove: null,
-        ponderMove: null,
-        score: terminal.score,
-        cp: terminal.score,
-        mate: terminal.mate,
-        pv: [],
-      })
-      this.cache.set(key, p)
-      return p
-    }
-
-    const p = this._enqueue({ type: 'bestmove', fen, depth, startFen, moves })
-    p.catch(() => this.cache.delete(key))
-    this.cache.set(key, p)
-    return p
+  getBestMove(fen, depth = DEFAULT_DEPTH) {
+    const key = `b|${fen}|${depth}`;
+    const hit = this.cache.get(key);
+    if (hit) return Promise.resolve(hit);
+    return this._enqueue({ type: 'bestmove', fen, depth }).then(r => {
+      this.cache.set(key, r);
+      return r;
+    });
   }
 
   _enqueue(job) {
     return new Promise((resolve, reject) => {
-      this.queue.push({ ...job, resolve, reject })
-      this._processQueue()
-    })
+      this.queue.push({ ...job, resolve, reject });
+      this._processQueue();
+    });
   }
 
   _processQueue() {
-    if (this.working || !this.ready || this.queue.length === 0) return
+    if (this.working || !this.ready || this.queue.length === 0) return;
 
-    this.working = true
-    const job = this.queue.shift()
-    this.currentJob = job
-    job.scoreObj = null
-    job.bestPV = []
-    job.lines = {}
+    this.working = true;
+    const job = this.queue.shift();
+    this.currentJob = job;
+    job.scoreObj = null;
+    job.bestPV = [];
+    job.lines = {};
 
     if (job.type === 'multipv') {
+      this._send(`setoption name MultiPV value ${job.numLines}`);
+      this.lastMultiPV = job.numLines;
+
       job.onLine = (line) => {
         if (line.startsWith('info') && line.includes(' score ') && line.includes(' pv ')) {
-          const mpv = parseMultiPV(line)
-          const score = parseScore(line)
-          const pv = parsePV(line)
-          const wdl = parseWdl(line)
+          const mpv = parseMultiPV(line);
+          const score = parseScore(line);
+          const pv = parsePV(line);
           if (score && pv.length > 0) {
             job.lines[mpv] = {
               rank: mpv,
@@ -374,180 +363,85 @@ class StockfishEngine {
               cp: score.type === 'cp' ? score.value : null,
               mate: score.type === 'mate' ? score.value : null,
               isMate: score.type === 'mate',
-              wdl,
-            }
+            };
           }
         }
-      }
+      };
     } else {
+      if (this.lastMultiPV !== 1) {
+        this._send('setoption name MultiPV value 1');
+        this.lastMultiPV = 1;
+      }
       job.onLine = (line) => {
         if (line.startsWith('info') && line.includes(' score ')) {
-          const score = parseScore(line)
-          const wdl = parseWdl(line)
-          if (score) {
-            job.scoreObj = { ...score, wdl }
-          }
+          const score = parseScore(line);
+          if (score) job.scoreObj = score;
           if (job.type === 'bestmove') {
-            const pv = parsePV(line)
-            if (pv.length > 0) job.bestPV = pv
+            const pv = parsePV(line);
+            if (pv.length > 0) job.bestPV = pv;
           }
         }
-      }
+      };
     }
 
     job._timer = setTimeout(() => {
-      job._timedOut = true
-      this.activeStrategy.stop()
+      job._timedOut = true;
+      this._send('stop');
       job._guardTimer = setTimeout(() => {
-        this._abortCurrentJob(new Error(`Stockfish job timed out after ${this.jobTimeoutMs}ms`))
-      }, 2000)
-    }, this.jobTimeoutMs)
+        this._abortCurrentJob(new Error(
+          `Stockfish job timed out after ${this.jobTimeoutMs}ms`
+        ));
+      }, 2000);
+    }, this.jobTimeoutMs);
 
-    const multipv = job.type === 'multipv' ? job.numLines : 1
-    this.activeStrategy.executeJob(job, {
-      multipv,
-      threads: 1,
-      onData: (data) => {
-        if (job._timedOut) return
-        this._onData(data)
-      },
-      onLine: (line) => {
-        if (job._timedOut) return
-        this._onLine(line)
-      },
-      onError: (err) => {
-        if (job._timedOut) return
-        this._abortCurrentJob(err)
-      },
-    })
-  }
-
-  _onData(data) {
-    const job = this.currentJob
-    if (!job) return
-
-    if (job._timer) clearTimeout(job._timer)
-    if (job._guardTimer) clearTimeout(job._guardTimer)
-
-    if (job.type === 'multipv') {
-      const moves = (data.structured_moves || []).map((sm) => ({
-        rank: sm.rank,
-        move: sm.uci,
-        san: sm.san,
-        name: sm.name || null,
-        eco: sm.eco || null,
-        theoretical_fen: sm.theoretical_fen || null,
-        theoretical_string: sm.theoretical_string ?? null,
-        win_p: sm.win_p ?? null,
-        draw_p: sm.draw_p ?? null,
-        loss_p: sm.loss_p ?? null,
-        total: sm.total ?? null,
-        pv: Array.isArray(sm.pv) && sm.pv.length > 0 ? sm.pv : [sm.uci],
-        score: sm.cp ?? 0,
-        cp: sm.cp ?? null,
-        mate: sm.mate ?? null,
-        isMate: sm.mate !== null && sm.mate !== undefined,
-        wdl: sm.wdl ?? null,
-      }))
-
-      const top = moves[0] || {}
-      const bestMove = top.move || (data.coach_move && data.coach_move.length === 2 ? data.coach_move[1] : null)
-
-      job.resolve({
-        mode: data.mode || 'engine',
-        opening_info: data.opening_info || null,
-        moves,
-        bestMove,
-        score: top.score ?? 0,
-        cp: top.cp ?? null,
-        mate: top.mate ?? null,
-        wdl: top.wdl ?? null,
-      })
-    } else if (job.type === 'bestmove') {
-      const topMove = data.structured_moves?.[0]
-      const bestMove = topMove?.uci || (data.coach_move && data.coach_move.length === 2 ? data.coach_move[1] : null)
-      job.resolve({
-        mode: data.mode || 'engine',
-        opening_info: data.opening_info || null,
-        bestMove,
-        ponderMove: null,
-        score: topMove?.cp ?? 0,
-        cp: topMove?.cp ?? null,
-        mate: topMove?.mate ?? null,
-        wdl: topMove?.wdl ?? null,
-        pv: topMove?.pv && topMove.pv.length > 0 ? topMove.pv : [bestMove],
-      })
-    } else {
-      const topMove = data.structured_moves?.[0]
-      job.resolve({
-        mode: data.mode || 'engine',
-        opening_info: data.opening_info || null,
-        cp: topMove?.cp ?? 0,
-        mate: topMove?.mate ?? null,
-        score: topMove?.cp ?? 0,
-        wdl: topMove?.wdl ?? null,
-      })
-    }
-
-    this.currentJob = null
-    this.working = false
-    setTimeout(() => this._processQueue(), 0)
+    this._send(`position fen ${job.fen}`);
+    this._send(`go depth ${job.depth}`);
   }
 
   _abortCurrentJob(err) {
-    const job = this.currentJob
-    if (!job) return
-    if (job._timer) clearTimeout(job._timer)
-    if (job._guardTimer) clearTimeout(job._guardTimer)
-    try {
-      job.reject(err)
-    } catch {
-      /* ignore */
-    }
-    this.currentJob = null
-    this.working = false
-    setTimeout(() => this._processQueue(), 0)
+    const job = this.currentJob;
+    if (!job) return;
+    if (job._timer) clearTimeout(job._timer);
+    if (job._guardTimer) clearTimeout(job._guardTimer);
+    try { job.reject(err); } catch { /* ignore */ }
+    this.currentJob = null;
+    this.working = false;
+    setTimeout(() => this._processQueue(), 0);
   }
 
   _finishJob(line) {
-    const job = this.currentJob
-    if (!job) return
-    if (job._timer) clearTimeout(job._timer)
-    if (job._guardTimer) clearTimeout(job._guardTimer)
+    const job = this.currentJob;
+    if (!job) return;
+    if (job._timer) clearTimeout(job._timer);
+    if (job._guardTimer) clearTimeout(job._guardTimer);
 
     if (job._timedOut) {
-      try {
-        job.reject(new Error('Stockfish search aborted (timeout)'))
-      } catch {
-        /* ignore */
-      }
-      this.currentJob = null
-      this.working = false
-      setTimeout(() => this._processQueue(), 0)
-      return
+      try { job.reject(new Error('Stockfish search aborted (timeout)')); } catch { /* ignore */ }
+      this.currentJob = null;
+      this.working = false;
+      setTimeout(() => this._processQueue(), 0);
+      return;
     }
 
-    const parts = line.split(/\s+/)
-    const bestMove = parts[1]
-    const ponderMove = parts[3] || null
-    const so = job.scoreObj
-    const cp = so ? so.cp : 0
-    const mate = so && so.type === 'mate' ? so.value : null
-    const wdl = so && so.wdl ? so.wdl : null
+    const parts = line.split(/\s+/);
+    const bestMove = parts[1];
+    const ponderMove = parts[3] || null;
+    const so = job.scoreObj;
+    const cp = so ? so.cp : 0;
+    const mate = so && so.type === 'mate' ? so.value : null;
 
     if (job.type === 'multipv') {
       const results = Object.values(job.lines)
         .sort((a, b) => a.rank - b.rank)
-        .slice(0, job.numLines)
-      const top = results[0] || {}
+        .slice(0, job.numLines);
+      const top = results[0] || {};
       job.resolve({
         moves: results,
         bestMove,
         score: top.score ?? 0,
         cp: top.cp ?? null,
         mate: top.mate ?? null,
-        wdl: top.wdl ?? null,
-      })
+      });
     } else if (job.type === 'bestmove') {
       job.resolve({
         bestMove,
@@ -555,20 +449,19 @@ class StockfishEngine {
         score: cp,
         cp: so && so.type === 'cp' ? so.value : null,
         mate,
-        wdl,
         pv: job.bestPV.length > 0 ? job.bestPV : [bestMove],
-      })
+      });
     } else {
-      job.resolve({ cp, mate, score: cp, wdl })
+      job.resolve({ cp, mate, score: cp });
     }
 
-    this.currentJob = null
-    this.working = false
-    setTimeout(() => this._processQueue(), 0)
+    this.currentJob = null;
+    this.working = false;
+    setTimeout(() => this._processQueue(), 0);
   }
 }
 
 // Module-level singleton — one engine per page.
-const engine = new StockfishEngine()
+const engine = new StockfishEngine();
 
-export default engine
+export default engine;

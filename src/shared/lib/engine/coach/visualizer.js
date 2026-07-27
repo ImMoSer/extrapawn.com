@@ -1,12 +1,16 @@
+import { getEngineDefaults } from './engine'
+
 /**
  * Centralized Color Design System for Visualizer Marks.
  * Maps semantic chess concepts to Chessground brush color names.
  */
 const COLORS = {
-  BEST_MOVE: 'bestmove',
-  NEXT_MOVE: 'paleBlue',
-  LAST_MOVE: 'paleGreen',
-  MANEUVER: 'blue',
+  ENGINE_PLAN: 'enginePlan',
+  BEST_MOVE: 'enginePlan',
+  NEXT_MOVE: 'enginePlan',
+  LAST_MOVE: 'enginePlan',
+  MANEUVER: 'enginePlan',
+  OPPOSITION: 'purple',
   DIRECT_TACTIC: 'red',
   TACTIC_GEOMETRY: 'cyan',
   PAWN_RACE: 'yellow',
@@ -15,12 +19,24 @@ const COLORS = {
   STRUCTURE_BLACK: 'red',
 }
 
+function formatFallbackVerdict(evalCp, mate = null) {
+  if (mate !== null && mate !== undefined) {
+    const side = mate > 0 ? 'White' : 'Black';
+    return `${side} mate (M${Math.abs(mate)})`;
+  }
+  if (typeof evalCp !== 'number') return null;
+  const absCp = Math.abs(evalCp);
+  if (absCp < 25) return 'Roughly equal';
+  const side = evalCp > 0 ? 'White' : 'Black';
+  const pawns = (absCp / 100).toFixed(1);
+  if (absCp < 75) return `${side} has a slight edge (+${pawns})`;
+  if (absCp < 200) return `${side} is better (+${pawns})`;
+  if (absCp < 500) return `${side} is winning (+${pawns})`;
+  return `${side} is clearly winning (+${pawns})`;
+}
+
 /**
  * Dedicated visual translator for engine-coach explanations.
- *
- * This module converts structured engine data (opposition, pawn structure,
- * maneuvers, etc.) and raw Rust targets into visual commands for the UI.
- * It completely replaces the fragile regex-based parsing.
  */
 export function generateVisualCommands(
   blob,
@@ -30,108 +46,183 @@ export function generateVisualCommands(
   keySquares
 ) {
   const visual_commands = {}
+  const logs = []
 
-  // 1. Best Move (Immediate Action) and Plan Sequence
-  mapPlanSequence(visual_commands, planSteps)
+  // Capture structured input sources for debugging & inspection
+  const input_sources = {
+    fen,
+    attackingSide,
+    positionSummary: {
+      evalPawns: blob?.eval_pawns ?? (typeof blob?.eval_cp === 'number' ? parseFloat((blob.eval_cp / 100).toFixed(2)) : null),
+      evalMate: blob?.eval_mate ?? null,
+      phase: blob?.phase || null,
+      verdict: blob?.verdict || formatFallbackVerdict(blob?.eval_cp, blob?.eval_mate),
+      materialSummary: blob?.material?.summary || null
+    },
+    lastMoveAnalysis: blob?.lastMoveAnalysis ? {
+      san: blob.lastMoveAnalysis.san || null,
+      quality: blob.lastMoveAnalysis.quality || null,
+      summary: blob.lastMoveAnalysis.summary || null,
+      details: blob.lastMoveAnalysis.details || null,
+      consequence: blob?.lastMoveConsequence || null
+    } : null,
+    tactics: extractTacticsSources(blob, planSteps),
+    planSteps: (planSteps || []).slice(0, 5).map(s => ({
+      san: s.san || '',
+      from: s.from || (s.move ? s.move.slice(0, 2) : ''),
+      to: s.to || (s.move ? s.move.slice(2, 4) : ''),
+      quality: s.quality || null,
+      motifs: s.motifs || [],
+      headline: s.headline || null
+    })),
+    principalPlan: blob?.principal_plan ? {
+      theme: blob.principal_plan.theme || null,
+      description: blob.principal_plan.description || null,
+      evalCp: blob.principal_plan.eval_cp ?? null,
+      depth: blob.principal_plan.depth ?? null
+    } : null,
+    engineTopMoves: (blob?.engine_top_moves || []).slice(0, getEngineDefaults().multipv).map(m => ({
+      san: m.san || m.uci || '',
+      uci: m.uci || '',
+      score: m.score ?? null,
+      mate: m.mate ?? null,
+      character: m.character || null,
+      headline: m.headline || null,
+      planTheme: m.plan_theme || null,
+      planBrief: m.plan_brief || null,
+      motifs: m.motifs || []
+    })),
+    keySquares: keySquares || [],
+    outposts: Array.from(new Set([
+      ...(blob?.activity?.white?.outposts || []),
+      ...(blob?.activity?.black?.outposts || [])
+    ].map(o => typeof o === 'string' ? o : o.square))),
+    passedPawns: Array.from(new Set([
+      ...(blob?.pawn_structure?.white?.passed || []),
+      ...(blob?.pawn_structure?.black?.passed || [])
+    ])),
+    weakPawns: Array.from(new Set([
+      ...(blob?.pawn_structure?.white?.isolated || []),
+      ...(blob?.pawn_structure?.white?.doubled_files || []),
+      ...(blob?.pawn_structure?.black?.isolated || []),
+      ...(blob?.pawn_structure?.black?.doubled_files || [])
+    ])),
+    pawnStructure: {
+      summary: blob?.pawn_structure?.summary || '',
+      darkComplexWeak: blob?.pawn_structure?.dark_complex_weak || null,
+      whiteIsolated: blob?.pawn_structure?.white?.isolated || [],
+      blackIsolated: blob?.pawn_structure?.black?.isolated || [],
+      whiteBackward: blob?.pawn_structure?.white?.backward || [],
+      blackBackward: blob?.pawn_structure?.black?.backward || [],
+      whitePassed: blob?.pawn_structure?.white?.passed || [],
+      blackPassed: blob?.pawn_structure?.black?.passed || [],
+      whiteHoles: blob?.pawn_structure?.white?.holes || [],
+      blackHoles: blob?.pawn_structure?.black?.holes || []
+    },
+    themes: (blob?.themes || []).map(t => ({
+      id: t.id,
+      side: t.side,
+      strength: t.strength,
+      description: t.description
+    })),
+    pawnChains: blob?.pawn_structure?.pawn_chains || [],
+    kingSafety: {
+      whiteAttackers: blob?.king_safety?.white_attackers || [],
+      blackAttackers: blob?.king_safety?.black_attackers || [],
+      exposures: blob?.king_safety?.king_exposures || []
+    }
+  }
 
-  // 1.5 Maneuvers (Piece Journeys)
-  mapManeuvers(visual_commands, planSteps, attackingSide)
+  // 1. Engine Plan Sequence & Piece Maneuvers (Single color enginePlan)
+  mapPlanSequence(visual_commands, planSteps, logs)
 
   // 2. Passed Pawns (Static Structure)
-  mapPawnRace(visual_commands, blob, attackingSide)
+  mapPawnRace(visual_commands, blob, attackingSide, logs)
 
-  // 3. Key Squares & Outposts
-  mapKeySquares(visual_commands, blob, keySquares)
-
-  // 4. Opposition
-  mapOpposition(visual_commands, blob)
+  // 3. Opposition
+  mapOpposition(visual_commands, blob, logs)
 
   // 5. Structure (Pawn positions)
-  mapStructure(visual_commands, blob, fen)
+  mapStructure(visual_commands, blob, fen, logs)
 
   // 6. Tactics (Precise Geometry from Rust)
-  mapTactics(visual_commands, planSteps)
+  mapTactics(visual_commands, planSteps, logs)
+
+  Object.defineProperty(visual_commands, '_logs', {
+    value: logs,
+    enumerable: true,
+    writable: true,
+  })
+
+  Object.defineProperty(visual_commands, '_input_sources', {
+    value: input_sources,
+    enumerable: true,
+    writable: true,
+  })
 
   return visual_commands
 }
 
-function mapPlanSequence(cmds, planSteps) {
+function extractTacticsSources(blob, planSteps) {
+  const items = []
+  if (blob?.tactics) {
+    if (Array.isArray(blob.tactics.forks)) {
+      blob.tactics.forks.forEach(f => items.push({ type: 'fork', detail: typeof f === 'string' ? f : `${f.attacker || 'Piece'} forks ${Array.isArray(f.targets) ? f.targets.join(', ') : f.target || ''}` }))
+    }
+    if (Array.isArray(blob.tactics.pins)) {
+      blob.tactics.pins.forEach(p => items.push({ type: 'pin', detail: typeof p === 'string' ? p : `${p.pinned || 'Piece'} pinned by ${p.pinner || ''}` }))
+    }
+    if (Array.isArray(blob.tactics.skewers)) {
+      blob.tactics.skewers.forEach(s => items.push({ type: 'skewer', detail: typeof s === 'string' ? s : `${s.skewerer || 'Piece'} skewers target` }))
+    }
+    if (Array.isArray(blob.tactics.hanging_pieces)) {
+      blob.tactics.hanging_pieces.forEach(h => items.push({ type: 'hanging', detail: typeof h === 'string' ? `Hanging on ${h}` : `Hanging piece on ${h.square || ''}` }))
+    }
+  }
+
+  if (Array.isArray(planSteps)) {
+    planSteps.forEach(step => {
+      if (Array.isArray(step.motifs)) {
+        step.motifs.forEach(m => {
+          items.push({ type: m, detail: `Motif '${m}' on move ${step.san || step.from + '->' + step.to}` })
+        })
+      }
+    })
+  }
+
+  return items
+}
+
+function mapPlanSequence(cmds, planSteps, logs) {
   if (!planSteps || planSteps.length === 0) return
 
-  // 1. Best Move (immediate)
-  const bestMove = planSteps[0]
-  if (bestMove.from && bestMove.to) {
-    cmds.best_move = `[mark:${bestMove.to}:${COLORS.BEST_MOVE};route:${bestMove.from}->${bestMove.to}:${COLORS.BEST_MOVE}]`
-  }
+  // Filter our side's moves from plan (indices 0, 2, 4...)
+  const ourMoves = planSteps.filter((s, i) => i % 2 === 0 && (s.from || (s.move && s.move.length >= 4)))
+    .map((s, idx) => ({
+      from: s.from || s.move.slice(0, 2),
+      to: s.to || s.move.slice(2, 4),
+      san: s.san || '',
+      label: `${idx + 1}`
+    }))
 
-  // 2. Next Move (our second move in the plan, index 2)
-  if (planSteps.length > 2) {
-    const nextMove = planSteps[2]
-    if (nextMove.from && nextMove.to) {
-      cmds.next_move = `[mark:${nextMove.to}:${COLORS.NEXT_MOVE};route:${nextMove.from}->${nextMove.to}:${COLORS.NEXT_MOVE}]`
-    }
-  }
+  if (ourMoves.length === 0) return
 
-  // 3. Last Move (our final move in the plan)
-  // We only want the *last* move if it's ours, and it's > index 2.
-  // Actually, we can just find the last move of the plan sequence that belongs to our side.
-  // Our moves are at even indices: 0, 2, 4, 6...
-  let lastMoveIndex = -1;
-  for (let i = planSteps.length - 1; i >= 0; i--) {
-    if (i % 2 === 0) {
-      lastMoveIndex = i;
-      break;
-    }
-  }
+  ourMoves.forEach((m, idx) => {
+    const cmdKey = `plan_step_${idx + 1}`
+    cmds[cmdKey] = `[mark:${m.to}:${COLORS.ENGINE_PLAN};route:${m.from}->${m.to}:${COLORS.ENGINE_PLAN};step_badge:${m.from}:${m.label}:${COLORS.ENGINE_PLAN}]`
 
-  if (lastMoveIndex > 2) {
-    const lastMove = planSteps[lastMoveIndex]
-    if (lastMove.from && lastMove.to) {
-      cmds.last_move = `[mark:${lastMove.to}:${COLORS.LAST_MOVE};route:${lastMove.from}->${lastMove.to}:${COLORS.LAST_MOVE}]`
-    }
-  }
-}
-
-function mapManeuvers(cmds, planSteps, attackingSide) {
-  if (!planSteps) return
-
-  const rootIsWhite = attackingSide === 'white'
-  const journeys = new Map()
-
-  planSteps.forEach((s, i) => {
-    const isOurMove = i % 2 === 0
-    const side = isOurMove ? (rootIsWhite ? 'white' : 'black') : rootIsWhite ? 'black' : 'white'
-
-    // Track non-pawn pieces of the attacking side
-    if (side === attackingSide && s.role && s.role !== 'p') {
-      let chain = null
-      for (const [, c] of journeys) {
-        if (c.lastSquare === s.from) {
-          chain = c
-          break
-        }
-      }
-      if (chain) {
-        chain.path.push(s.to)
-        chain.lastSquare = s.to
-      } else {
-        journeys.set(s.from, { originalFrom: s.from, path: [s.to], lastSquare: s.to })
-      }
-    }
+    logs.push({
+      category: 'Plan',
+      title: `Engine Plan Step ${m.label}`,
+      squares: [m.from, m.to],
+      color: COLORS.ENGINE_PLAN,
+      command: cmds[cmdKey],
+      reason: `Engine plan step ${m.label}: ${m.san ? m.san + ' ' : ''}(${m.from} -> ${m.to})`
+    })
   })
-
-  let leadJourney = null
-  for (const c of journeys.values()) {
-    if (!leadJourney || c.path.length > leadJourney.path.length) leadJourney = c
-  }
-
-  // Only add maneuver if it's different/longer than just the immediate best move
-  if (leadJourney && leadJourney.path.length >= 2) {
-    cmds.maneuver = `[mark:${leadJourney.lastSquare}:${COLORS.MANEUVER};route:${leadJourney.originalFrom}->${leadJourney.path.join('->')}:${COLORS.MANEUVER}]`
-  }
 }
 
-function mapPawnRace(cmds, blob, attackingSide) {
+function mapPawnRace(cmds, blob, attackingSide, logs) {
   const passedPawns = []
   if (blob.pawn_structure && blob.pawn_structure[attackingSide]?.passed) {
     passedPawns.push(...blob.pawn_structure[attackingSide].passed)
@@ -159,40 +250,40 @@ function mapPawnRace(cmds, blob, attackingSide) {
 
     if (tags.length > 0) {
       cmds.pawn_race = tags.join(';')
+      logs.push({
+        category: 'Pawn Race',
+        title: 'Passed Pawn Promotion March',
+        squares: passedPawns,
+        color: COLORS.PAWN_RACE,
+        command: cmds.pawn_race,
+        reason: `Passed pawn(s) on [${passedPawns.join(', ')}] marching towards promotion rank ${promoRank}`
+      })
     }
   }
 }
 
-function mapKeySquares(cmds, blob, keySquares) {
-  const markedSquares = new Set()
-  if (keySquares && keySquares.length > 0) {
-    keySquares.forEach((sq) => markedSquares.add(sq))
-  }
-
-  if (blob.activity) {
-    if (blob.activity.white?.outposts) {
-      blob.activity.white.outposts.forEach((o) => markedSquares.add(o.square))
-    }
-    if (blob.activity.black?.outposts) {
-      blob.activity.black.outposts.forEach((o) => markedSquares.add(o.square))
-    }
-  }
-
-  if (markedSquares.size > 0) {
-    cmds.key_squares = `[mark:${[...markedSquares].join(',')}:${COLORS.STRATEGIC_SQUARE}]`
-  }
-}
-
-function mapOpposition(cmds, blob) {
+function mapOpposition(cmds, blob, logs) {
   if (blob.endgame?.opposition) {
     const opp = blob.endgame.opposition
-    if (opp.from && opp.to) {
-      cmds.opposition = `[arrow:${opp.from}->${opp.to}:${COLORS.MANEUVER}]`
+    const wKing = blob.king_safety?.white?.king_square
+    const bKing = blob.king_safety?.black?.king_square
+    if (wKing && bKing) {
+      const fromSq = opp.holder === 'white' ? wKing : bKing
+      const toSq = opp.holder === 'white' ? bKing : wKing
+      cmds.opposition = `[arrow:${fromSq}->${toSq}:${COLORS.OPPOSITION}]`
+      logs.push({
+        category: 'Opposition',
+        title: `King Opposition Vector (${opp.kind || 'direct'})`,
+        squares: [wKing, bKing],
+        color: COLORS.OPPOSITION,
+        command: cmds.opposition,
+        reason: opp.description || `Endgame king opposition control vector: ${fromSq} -> ${toSq}`
+      })
     }
   }
 }
 
-function mapStructure(cmds, blob, fen) {
+function mapStructure(cmds, blob, fen, logs) {
   const hasStructureTheme = (blob.themes || []).some(
     (t) => t.id.includes('pawn') || t.id.includes('structure') || t.id.includes('isolated'),
   )
@@ -202,10 +293,18 @@ function mapStructure(cmds, blob, fen) {
     const bPawns = getPawnsFromFen(fen, 'black')
     if (wPawns.length) cmds.structure_white = `[mark:${wPawns.join(',')}:${COLORS.STRUCTURE_WHITE}]`
     if (bPawns.length) cmds.structure_black = `[mark:${bPawns.join(',')}:${COLORS.STRUCTURE_BLACK}]`
+    logs.push({
+      category: 'Structure',
+      title: 'Pawn Skeleton Highlight',
+      squares: [...wPawns, ...bPawns],
+      color: COLORS.STRUCTURE_WHITE,
+      command: `${cmds.structure_white || ''};${cmds.structure_black || ''}`,
+      reason: `Pawn structure theme active in current position`
+    })
   }
 }
 
-function mapTactics(cmds, planSteps) {
+function mapTactics(cmds, planSteps, logs) {
   if (!planSteps || planSteps.length === 0) return
 
   const marks = new Set()
@@ -213,33 +312,57 @@ function mapTactics(cmds, planSteps) {
   const routes = new Set()
 
   planSteps.forEach((step, index) => {
-    // Only map tactics/motifs for the attacking side (even indices)
     if (index % 2 !== 0) return
-
     if (!step.raw_motifs) return
 
     step.raw_motifs.forEach((motif) => {
       const t = motif.targets || []
       if (t.length === 0) return
 
+      let motifCmd = ''
       switch (motif.id) {
-        // 1. Lineare Strahlen (Durchschlagende Geometrie)
         case 'pin':
         case 'skewer':
-          if (t.length >= 3) routes.add(`[route:${t[0]}->${t[1]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
+          if (t.length >= 3) {
+            motifCmd = `[route:${t[0]}->${t[1]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`
+            routes.add(motifCmd)
+          }
           break
         case 'battery':
-          if (t.length >= 3) routes.add(`[route:${t[1]}->${t[0]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`)
+          if (t.length >= 3) {
+            motifCmd = `[route:${t[1]}->${t[0]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`
+            routes.add(motifCmd)
+          }
+          break
+        case 'rook_lift':
+          if (t.length >= 3) {
+            motifCmd = `[route:${t[0]}->${t[1]}->${t[2]}:${COLORS.TACTIC_GEOMETRY}]`
+            routes.add(motifCmd)
+          }
           break
         case 'discovered_check':
-          if (t.length >= 3) arrows.add(`[arrow:${t[0]}->${t[2]}:${COLORS.DIRECT_TACTIC}]`)
+          if (t.length >= 3) {
+            motifCmd = `[arrow:${t[0]}->${t[2]}:${COLORS.DIRECT_TACTIC}]`
+            arrows.add(motifCmd)
+          }
           break
 
-        // 2. Direkte Angriffe & Pfeile
         case 'check':
         case 'threatens':
         case 'attacks_pawn':
-          if (t.length >= 2) arrows.add(`[arrow:${t[0]}->${t[1]}:${COLORS.DIRECT_TACTIC}]`)
+        case 'greek_gift':
+        case 'back_rank_mate_threat':
+          if (t.length >= 2) {
+            motifCmd = `[arrow:${t[0]}->${t[1]}:${COLORS.DIRECT_TACTIC}]`
+            arrows.add(motifCmd)
+          }
+          break
+        case 'double_check':
+          if (t.length >= 2) {
+            for (let i = 0; i < t.length - 1; i++) {
+              arrows.add(`[arrow:${t[i]}->${t[t.length - 1]}:${COLORS.DIRECT_TACTIC}]`)
+            }
+          }
           break
         case 'fork':
         case 'attacks_king':
@@ -251,14 +374,15 @@ function mapTactics(cmds, planSteps) {
           }
           break
 
-        // 3. Statische Highlights (Warnungen & Markierungen)
         case 'creates_threat':
         case 'traps_piece':
         case 'removes_defender':
+        case 'outpost':
+        case 'knight_invasion':
+        case 'pawn_breakthrough':
           marks.add(t[0])
           break
 
-        // 4. Spezielle & Komplexe Geometrie
         case 'overloaded':
           if (t.length >= 2) {
             marks.add(t[0])
@@ -269,17 +393,27 @@ function mapTactics(cmds, planSteps) {
           break
         case 'opens_file_for':
         case 'opens_diagonal_for':
-          if (t.length >= 2) routes.add(`[route:${t[0]}->${t[1]}:${COLORS.TACTIC_GEOMETRY}]`)
+          if (t.length >= 2) {
+            motifCmd = `[route:${t[0]}->${t[1]}:${COLORS.TACTIC_GEOMETRY}]`
+            routes.add(motifCmd)
+          }
           break
         case 'defends':
-          if (t.length >= 2) marks.add(t[1]) // Nur das Gedeckte Ziel markieren (über DIRECT_TACTIC)
+          if (t.length >= 2) marks.add(t[1])
           break
       }
+
+      logs.push({
+        category: 'Tactics',
+        title: `Motif: ${motif.id.replace(/_/g, ' ')}`,
+        squares: t,
+        color: COLORS.DIRECT_TACTIC,
+        command: motifCmd || `[tactic:${motif.id}]`,
+        reason: `Rust motif engine identified [${motif.id}] involving squares [${t.join(', ')}]`
+      })
     })
   })
 
-  // Add the gathered shapes to cmds without overriding existing keys
-  // For tactics, we combine them into a single string
   const tacticsCmds = []
   if (marks.size > 0) tacticsCmds.push(`[mark:${[...marks].join(',')}:${COLORS.DIRECT_TACTIC}]`)
   if (arrows.size > 0) tacticsCmds.push(...arrows)
@@ -309,4 +443,101 @@ function getPawnsFromFen(fenStr, color) {
     }
   }
   return pawns
+}
+
+/**
+ * Parse visual commands string into Chessground DrawShapes
+ */
+export function parseVisualCommands(actionStr) {
+  if (!actionStr) return []
+  const subActions = actionStr.split(';')
+  const allShapes = []
+  const VALID_BRUSHES = ['green', 'red', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'pink', 'brown', 'gray', 'bestmove', 'enginePlan', 'paleBlue', 'paleGreen']
+
+  for (const sub of subActions) {
+    if (!sub.trim()) continue
+
+    const cleanSub = sub.replace(/[\[\]]/g, '').trim()
+    const parts = cleanSub.split(':')
+    const cmd = parts[0]?.trim()
+    const data = parts[1]?.trim()
+    let brush = parts[2]?.trim() || 'green'
+
+    if (!VALID_BRUSHES.includes(brush)) {
+      brush = 'green'
+    }
+
+    const coachBrush = (brush === 'bestmove' || brush === 'enginePlan') ? 'enginePlan' : `coach${brush}`
+
+    if (cmd === 'clear') {
+      return []
+    }
+
+    if (!data) continue
+
+    if (cmd === 'arrow' || cmd === 'route' || cmd === 'root') {
+      const squares = data.split('->')
+      for (let i = 0; i < squares.length - 1; i++) {
+        const orig = squares[i]?.trim()
+        const dest = squares[i + 1]?.trim()
+
+        if (orig && dest && orig.length === 2 && dest.length === 2) {
+          allShapes.push({
+            orig: orig,
+            dest: dest,
+            brush: coachBrush,
+            modifiers: { lineWidth: 3 }
+          })
+        }
+      }
+    } else if (cmd === 'mark') {
+      const squares = data.split(',')
+      squares.forEach(sq => {
+        const cleanSq = sq.trim()
+        if (cleanSq && cleanSq.length === 2) {
+          allShapes.push({
+            orig: cleanSq,
+            brush: coachBrush
+          })
+        }
+      })
+    } else if (cmd === 'nag') {
+      const squares = data.split(',')
+      const quality = parts[2]?.trim() || 'brilliant'
+      squares.forEach(sq => {
+        const cleanSq = sq.trim()
+        if (cleanSq && cleanSq.length === 2) {
+          allShapes.push({
+            orig: cleanSq,
+            nag: quality
+          })
+        }
+      })
+    } else if (cmd === 'step_badge' || cmd === 'badge') {
+      const squares = data.split(',')
+      const label = parts[2]?.trim() || 'A1'
+      const bColor = parts[3]?.trim() || coachBrush
+      squares.forEach(sq => {
+        const cleanSq = sq.trim()
+        if (cleanSq && cleanSq.length === 2) {
+          allShapes.push({
+            orig: cleanSq,
+            stepBadge: label,
+            brush: bColor
+          })
+        }
+      })
+    }
+  }
+
+  const COLOR_PRIORITY = {
+    coachgray: 0, coachbrown: 1, coachyellow: 2, coachgreen: 3, coachcyan: 4, coachblue: 5, coachpurple: 6, coachpink: 7, coachorange: 8, coachred: 9, bestmove: 10, enginePlan: 10
+  }
+  allShapes.sort((a, b) => {
+    const pA = COLOR_PRIORITY[a.brush] || 0
+    const pB = COLOR_PRIORITY[b.brush] || 0
+    return pA - pB
+  })
+
+  return allShapes
 }

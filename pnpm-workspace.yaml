@@ -2,5 +2,6 @@ allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   protobufjs: true
+  stockfish: true
   unrs-resolver: true
   vue-demi: true
