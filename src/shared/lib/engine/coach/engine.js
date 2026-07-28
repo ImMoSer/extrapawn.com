@@ -29,7 +29,9 @@ function readPrefString(key, fallback, validValues) {
 }
 
 import {
-  analyzeRemotePosition,
+  clearRemoteCache,
+  fetchMultiEval,
+  fetchSingleEval,
   getEngineSource,
   setEngineSource,
   getRemoteEngineUrl,
@@ -233,6 +235,7 @@ class StockfishEngine {
 
   clearCache() {
     if (this.cache) this.cache.clear();
+    clearRemoteCache();
   }
 
   shutdown() {
@@ -285,10 +288,20 @@ class StockfishEngine {
     }
   }
 
-  evaluate(fen, depth = DEFAULT_DEPTH) {
+  async evaluate(fen, depth = DEFAULT_DEPTH) {
+    const src = getEngineSource();
+    if (src === 'remote') {
+      try {
+        return await fetchSingleEval(fen);
+      } catch (err) {
+        console.warn('[StockfishEngine] Remote single_eval failed, falling back to local engine:', err);
+      }
+    }
+
     const key = `e|${fen}|${depth}`;
     const hit = this.cache.get(key);
-    if (hit) return Promise.resolve(hit);
+    if (hit) return hit;
+
     return this._enqueue({ type: 'eval', fen, depth }).then(r => {
       this.cache.set(key, r);
       return r;
@@ -298,31 +311,19 @@ class StockfishEngine {
   async analyzeMultiPV(fen, numLines = DEFAULT_MULTIPV, depth = DEFAULT_DEPTH, opts = {}) {
     const n = Math.max(1, Math.min(numLines, 10));
     const src = getEngineSource();
-    const key = `${src}|m|${fen}|${n}|${depth}`;
-    const hit = this.cache.get(key);
-    if (hit) return Promise.resolve(hit);
-
     if (src === 'remote') {
       try {
-        const remoteRes = await analyzeRemotePosition(fen, { ...opts, depth, multipv: n });
-        this.cache.set(key, remoteRes);
-        return remoteRes;
+        return await fetchMultiEval(fen, opts);
       } catch (err) {
-        console.warn('[StockfishEngine] Remote server failed, falling back to local engine:', err);
+        console.warn('[StockfishEngine] Remote multi_eval failed, falling back to local engine:', err);
       }
     }
 
-    return this._enqueue({ type: 'multipv', fen, depth, numLines: n }).then(r => {
-      this.cache.set(key, r);
-      return r;
-    });
-  }
-
-  getBestMove(fen, depth = DEFAULT_DEPTH) {
-    const key = `b|${fen}|${depth}`;
+    const key = `m|${fen}|${n}|${depth}`;
     const hit = this.cache.get(key);
-    if (hit) return Promise.resolve(hit);
-    return this._enqueue({ type: 'bestmove', fen, depth }).then(r => {
+    if (hit) return hit;
+
+    return this._enqueue({ type: 'multipv', fen, depth, numLines: n }).then(r => {
       this.cache.set(key, r);
       return r;
     });

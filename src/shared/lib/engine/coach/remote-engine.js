@@ -37,6 +37,132 @@ export function setEngineSource(source) {
   }
 }
 
+function getBaseRemoteUrl() {
+  const fullUrl = getRemoteEngineUrl()
+  try {
+    const urlObj = new URL(fullUrl)
+    return `${urlObj.protocol}//${urlObj.host}`
+  } catch {
+    return 'http://127.0.0.1:5004'
+  }
+}
+
+import { LRU } from './engine-cache'
+
+const remoteCache = new LRU(3)
+const pendingRequests = new Map()
+
+export function clearRemoteCache() {
+  remoteCache.clear()
+  pendingRequests.clear()
+}
+
+/**
+ * Sends multi_eval request (Multi-PV = 3, Depth = 12) to the Docker microservice.
+ */
+export async function fetchMultiEval(fen, opts = {}) {
+  const checkBook = opts.checkBook ?? true
+  const cacheKey = `multi|${fen}|${checkBook}`
+
+  const cachedHit = remoteCache.get(cacheKey)
+  if (cachedHit) return cachedHit
+
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey)
+  }
+
+  const requestPromise = (async () => {
+    const baseUrl = getBaseRemoteUrl()
+    const url = `${baseUrl}/multi_eval`
+    const payload = {
+      fen,
+      check_book: checkBook,
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs || 15000)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`Remote engine HTTP error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const result = mapRemoteResponseToEngineFormat(data)
+      remoteCache.set(cacheKey, result)
+      return result
+    } catch (err) {
+      clearTimeout(timeoutId)
+      console.warn('[RemoteEngine] fetchMultiEval failed, falling back to /analyze:', err)
+      return analyzeRemotePosition(fen, opts)
+    } finally {
+      pendingRequests.delete(cacheKey)
+    }
+  })()
+
+  pendingRequests.set(cacheKey, requestPromise)
+  return requestPromise
+}
+
+/**
+ * Sends single_eval request (Multi-PV = 1, Depth = 12) to the Docker microservice.
+ */
+export async function fetchSingleEval(fen, opts = {}) {
+  const cacheKey = `single|${fen}|false`
+
+  const cachedHit = remoteCache.get(cacheKey)
+  if (cachedHit) return cachedHit
+
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey)
+  }
+
+  const requestPromise = (async () => {
+    const baseUrl = getBaseRemoteUrl()
+    const url = `${baseUrl}/single_eval`
+    const payload = { fen }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs || 15000)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`Remote engine HTTP error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const result = mapRemoteResponseToEngineFormat(data)
+      remoteCache.set(cacheKey, result)
+      return result
+    } catch (err) {
+      clearTimeout(timeoutId)
+      console.warn('[RemoteEngine] fetchSingleEval failed, falling back to /analyze:', err)
+      return analyzeRemotePosition(fen, { ...opts, multipv: 1 })
+    } finally {
+      pendingRequests.delete(cacheKey)
+    }
+  })()
+
+  pendingRequests.set(cacheKey, requestPromise)
+  return requestPromise
+}
+
 /**
  * Sends position analysis request to the Docker Server Engine.
  */
@@ -46,8 +172,8 @@ export async function analyzeRemotePosition(fen, opts = {}) {
     fen,
     start_fen: opts.startFen || fen,
     moves: opts.movesHistoryUci || [],
-    depth: opts.depth || 14,
-    multipv: opts.multipv || 5,
+    depth: opts.depth || 12,
+    multipv: opts.multipv || 3,
     check_book: opts.checkBook ?? true,
   }
 

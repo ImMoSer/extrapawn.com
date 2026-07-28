@@ -276,45 +276,6 @@ export class LocalEngineManager {
     }
   }
 
-  public async getBestMoveOnly(
-    fen: string,
-    options: { depth?: number; movetime?: number } = {},
-  ): Promise<string | null> {
-    await this.ensureReady()
-    if (!this.engine) return null
-
-    if (this.isSearching) {
-      await this.stopAnalysis()
-    }
-
-    // For simple gameplay moves (depth <= 10 or default), use 1 thread as requested
-    const useSingleThread = (options.depth || 10) <= 10
-    if (useSingleThread && this.currentThreads !== 1) {
-      await this.setThreads(1)
-    } else if (!useSingleThread && this.currentThreads !== this.preferredAnalysisThreads) {
-      await this.setThreads(this.preferredAnalysisThreads)
-    }
-
-    return new Promise((resolve) => {
-      const internalCallback = (_lines: EvaluatedLine[], bestMoveUci?: string | null) => {
-        if (bestMoveUci !== undefined && bestMoveUci !== null) {
-          this.infiniteAnalysisCallback = null
-          this.isSearching = false
-          resolve(bestMoveUci)
-        }
-      }
-
-      this.infiniteAnalysisCallback = internalCallback
-      this.isSearching = true
-
-      this.sendCommand(`position fen ${fen}`)
-      const goCommand = `go ${options.depth ? `depth ${options.depth}` : ''} ${
-        options.movetime ? `movetime ${options.movetime}` : ''
-      }`.trim()
-      this.sendCommand(goCommand || 'go depth 10')
-    })
-  }
-
   public async startNewGame(): Promise<void> {
     await this.ensureReady()
     if (!this.engine) return

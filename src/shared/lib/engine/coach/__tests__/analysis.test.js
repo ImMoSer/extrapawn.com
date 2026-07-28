@@ -8,7 +8,6 @@ vi.mock('../engine.js', () => {
     init: vi.fn(() => Promise.resolve()),
     evaluate: vi.fn(),
     analyzeMultiPV: vi.fn(),
-    getBestMove: vi.fn(),
   };
   return {
     default: fakeEngine,

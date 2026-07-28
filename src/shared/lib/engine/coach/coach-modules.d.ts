@@ -21,7 +21,6 @@ declare module '@/shared/lib/engine/coach/engine' {
     setVersion(v: string): void
     clearCache(): void
     analyzeMultiPV(fen: string, multipv: number, depth: number, startFen: string, movesUci: string, options?: { check_book?: boolean }): Promise<unknown>
-    getBestMove(fen: string, depth?: number): Promise<{ bestMove: string } | null>
     _send(cmd: string): void
     shutdown(): void
   }

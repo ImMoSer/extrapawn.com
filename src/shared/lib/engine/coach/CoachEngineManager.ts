@@ -78,23 +78,6 @@ export class CoachEngineManager {
   }
 
   /**
-   * Backward compatibility / fallback for EnginePlayService.
-   */
-  public async getBestMoveOnly(
-    fen: string,
-    options: { depth?: number } = {},
-  ): Promise<string | null> {
-    await this.ensureReady()
-    try {
-      const result = await engine.getBestMove(fen, options.depth)
-      return result?.bestMove || null
-    } catch (error) {
-      logger.error('[CoachEngineManager] getBestMoveOnly failed:', error)
-      return null
-    }
-  }
-
-  /**
    * Update engine settings
    */
   public setDefaults(options: { depth?: number; multipv?: number; threads?: number }) {
