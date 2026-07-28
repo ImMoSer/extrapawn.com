@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
 import { useCoachStore } from './coach.store'
 import { uciToSan } from '@/shared/lib/engine/coach/chess'
 import { explainMoveAt } from '@/shared/lib/engine/coach/analysis'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { soundService } from '@/shared/lib/sound.service'
+import { sendCoachWebhook } from '@/shared/api/n8nCoachApi'
 import logger from '@/shared/lib/logger'
 import type { Key } from '@lichess-org/chessground/types'
 
@@ -215,11 +217,14 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const puzzleObj = (activeStrategy as any)?.puzzle
 
+      const authStore = useAuthStore()
+      const userId = authStore.userProfile?.id || authStore.effectiveLichessUsername || 'anonymous'
+
       n8nLastPayload.value = {
+        user_id: userId,
         session_id: currentSessionId,
         mode: activeStrategy?.strategyId || puzzleObj?.puzzle_type || 'chess',
         event: 'user_blunder',
-        game_id: currentSessionId,
         user_color: boardStore.orientation,
         puzzle_metadata: puzzleObj ? {
           puzzle_id: puzzleObj.puzzle_id,
@@ -244,6 +249,22 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
         timestamp: Date.now(),
       }
 
+      // Dispatch blunder webhook asynchronously to n8n
+      if (n8nLastPayload.value) {
+        coachStore.setLlmThinking(true)
+        sendCoachWebhook(n8nLastPayload.value)
+          .then((response) => {
+            coachStore.setLlmThinking(false)
+            if (response) {
+              coachStore.setLlmResponse(response)
+            }
+          })
+          .catch((err) => {
+            coachStore.setLlmThinking(false)
+            logger.error('[ORCHESTRATOR] Error sending n8n blunder webhook:', err)
+          })
+      }
+
       logger.info(
         `[ORCHESTRATOR] Blunder detected on ${san} (quality: ${pendingMove.value.quality}, winrate_loss: ${pendingMove.value.winRateLoss}%). State -> DECISION_REQUIRED. Bot execution BLOCKED until user decision (B1/B2).`
       )
@@ -265,6 +286,21 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
 
     // Play B1 sound (ThinkDeeperNextTime or tryAgain)
     soundService.playSound('blunder_takeback')
+
+    const authStore = useAuthStore()
+    const userId = authStore.userProfile?.id || authStore.effectiveLichessUsername || 'anonymous'
+
+    const currentSessionId = gameStore.currentStrategy?.sessionId || null
+    void sendCoachWebhook({
+      user_id: userId,
+      session_id: currentSessionId,
+      event: 'user_decision',
+      decision: 'takeback_accepted',
+      option: 'B1',
+      user_move_uci: uci,
+      user_move_san: san,
+      fen_before: fenBefore,
+    })
 
     // 1. Revert board to fenBefore & clear NAG
     boardStore.setupPosition(fenBefore)
@@ -302,6 +338,21 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     logger.info(`[USER_DECISION] Option B2 chosen (Insist on move). Committing ${pendingMove.value.san}${pendingMove.value.nag || ''} to mainline.`)
     // Play B2 sound (youllNeverWin)
     soundService.playSound('blunder_insist')
+
+    const authStore = useAuthStore()
+    const userId = authStore.userProfile?.id || authStore.effectiveLichessUsername || 'anonymous'
+
+    const currentSessionId = gameStore.currentStrategy?.sessionId || null
+    void sendCoachWebhook({
+      user_id: userId,
+      session_id: currentSessionId,
+      event: 'user_decision',
+      decision: 'insist_played',
+      option: 'B2',
+      user_move_uci: pendingMove.value.uci,
+      user_move_san: pendingMove.value.san,
+      fen_before: pendingMove.value.fenBefore,
+    })
 
     await _commitUserMoveMainline()
   }

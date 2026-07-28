@@ -50,13 +50,10 @@ export class SparringStrategy implements IGameplayStrategy {
       logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
     }
 
-    const { useSparringStore } = await import('./sparring.store')
-    const { sendSparringWebhook, createSparringWebhookPayload } = await import('../api/n8nCoachApi')
-    const { buildLastUserMoveText, buildTopMovesText, getCandidateUciMoves, parseMoveDescription } = await import('../lib/n8nContextBuilder')
-    const { useCoachStore } = await import('@/features/coach')
+    const { buildLastUserMoveText, parseMoveDescription } = await import('../lib/n8nContextBuilder')
     const { useEngineSelectionStore } = await import('@/features/engine')
+    const { useCoachStore } = await import('@/features/coach')
     const i18n = (await import('@/shared/config/i18n')).default
-    const sparringStore = useSparringStore()
     const coachStore = useCoachStore()
     const engineSelectionStore = useEngineSelectionStore()
     const gameStore = useGameStore()
@@ -67,41 +64,6 @@ export class SparringStrategy implements IGameplayStrategy {
     }
 
     const lastUserMoveText = buildLastUserMoveText()
-
-    // 1. Mid-game turn: Send user_move webhook to n8n ONLY if user has made a move
-    if (sparringStore.gameId && lastUserMoveText) {
-      try {
-        coachStore.setLlmThinking(true)
-
-        const topMovesText = buildTopMovesText(fen)
-        const candidateUciList = getCandidateUciMoves(fen)
-
-        const payload = createSparringWebhookPayload({
-          event: 'user_move',
-          gameId: sparringStore.gameId,
-          userId: sparringStore.userId,
-          userColor: sparringStore.userColor,
-          startPosition: fen,
-          lastUserMove: lastUserMoveText,
-          topMovesInPosition: topMovesText,
-          candidateUciMoves: candidateUciList,
-        })
-
-        const response = await sendSparringWebhook(payload)
-        coachStore.setLlmThinking(false)
-
-        if (response) {
-          coachStore.setLlmResponse(response)
-          if (response.bot_move) {
-            logger.info(`[SparringStrategy] Using bot move from n8n user_move response: ${response.bot_move}`)
-            return response.bot_move
-          }
-        }
-      } catch (err) {
-        coachStore.setLlmThinking(false)
-        logger.error('[SparringStrategy] Failed to send n8n user_move webhook:', err)
-      }
-    }
 
     // Helper to set local turn 1 greeting if bot plays White first move
     const applyTurn1BotGreeting = (moveUci: string) => {

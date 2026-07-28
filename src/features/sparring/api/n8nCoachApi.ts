@@ -1,9 +1,6 @@
-import logger from '@/shared/lib/logger'
 import i18n from '@/shared/config/i18n'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { SparringWebhookPayload, SparringCoachResponse } from '../model/types'
-
-const N8N_COACH_URL = import.meta.env.VITE_N8N_COACH as string
 
 export function createSparringWebhookPayload(params: {
   event?: 'user_move'
@@ -51,47 +48,12 @@ export function createSparringWebhookPayload(params: {
   }
 }
 
+import { sendCoachWebhook } from '@/shared/api/n8nCoachApi'
+
+export { sendCoachWebhook }
+
 export async function sendSparringWebhook(
   payload: SparringWebhookPayload
 ): Promise<SparringCoachResponse | null> {
-  if (!N8N_COACH_URL) {
-    logger.warn('[n8nCoachApi] VITE_N8N_COACH is not configured in .env file.')
-    return null
-  }
-
-  try {
-    logger.info(`[n8nCoachApi] Sending ${payload.event} webhook payload to n8n:`, payload)
-    const response = await fetch(N8N_COACH_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-
-    if (!response.ok) {
-      logger.error(`[n8nCoachApi] Webhook returned HTTP error status ${response.status}`)
-      return null
-    }
-
-    const data = (await response.json()) as Record<string, unknown>
-    logger.info(`[n8nCoachApi] ${payload.event} webhook response received:`, data)
-
-    if (data) {
-      const target = (data.output || data.coach_response || data) as Record<string, unknown>
-      if (target && typeof target.message === 'string') {
-        return {
-          message: target.message,
-          mood: typeof target.mood === 'string' ? target.mood : null,
-          bot_move: typeof target.bot_move === 'string' ? target.bot_move : null,
-          san: typeof target.san === 'string' ? target.san : null,
-        }
-      }
-    }
-
-    return null
-  } catch (err) {
-    logger.error(`[n8nCoachApi] Error sending ${payload.event} webhook to n8n:`, err)
-    return null
-  }
+  return sendCoachWebhook(payload as unknown as Record<string, unknown>)
 }
