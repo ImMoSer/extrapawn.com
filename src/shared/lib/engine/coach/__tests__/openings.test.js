@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Chess } from 'chess.js';
+import { Chess } from '../chess';
 import { findOpening, findOpeningFromHistory } from '../openings.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';

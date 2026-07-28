@@ -33,7 +33,6 @@
     "@lichess-org/chessground": "^10.1.1",
     "@tanstack/vue-query": "^5.101.2",
     "@vicons/ionicons5": "^0.13.0",
-    "chess.js": "1.4.0",
     "stockfish": "^18.0.8",
 
     "chessops": "^0.15.1",

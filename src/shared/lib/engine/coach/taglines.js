@@ -13,7 +13,7 @@
 //   quickExplain(fen, moveUCI) → { san, motifs[], tagline, fenAfter }
 //   explainPV(startFen, pvUcis, plies) → [{ san, tagline }, …]
 
-import { Chess } from 'chess.js';
+import { Chess } from './chess';
 import { analyzeMove, analyzePv, composeTagline, isReady } from './analyzer-rs.js';
 
 const PIECE_VALUE = { p: 100, n: 300, b: 320, r: 500, q: 900, k: 20_000 };

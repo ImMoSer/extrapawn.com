@@ -2,9 +2,8 @@
 // Shapes match the (deprecated) server endpoints so Board.jsx stays close
 // to its original form: getTopMoves / explainMoveAt.
 
-import { Chess } from 'chess.js';
 import engine, { getEngineDefaults } from './engine';
-import { uciToSan, makeMove, getSideToMove } from './chess';
+import { Chess, uciToSan, makeMove, getSideToMove } from './chess';
 import { explainMove } from './explainer';
 import { quickExplain, explainPV } from './taglines';
 

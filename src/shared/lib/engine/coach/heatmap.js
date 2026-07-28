@@ -20,7 +20,7 @@
 // FALLBACK: the legacy engine-call-per-piece method, used only if WASM
 // hasn't initialised yet. Slow (~50ms per square) but correct.
 
-import { Chess } from 'chess.js';
+import { Chess } from './chess';
 import engine from './engine';
 import {
   getPieces,

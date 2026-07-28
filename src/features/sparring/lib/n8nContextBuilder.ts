@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js'
+import { Chess, type ExecutedMoveInfo } from '@/shared/lib/engine/coach/chess'
 import { useCoachStore } from '@/features/coach'
 import { QUALITY_LABEL } from '@/shared/lib/engine/coach/coach.types'
 import type { CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
@@ -29,7 +29,7 @@ export function parseMoveDescription(fen: string, moveInput: string): MoveDescri
 
   try {
     const chess = new Chess(fen)
-    let move: import('chess.js').Move | null = null
+    let move: ExecutedMoveInfo | null = null
 
     // 1. Try parsing moveInput as SAN first (e.g. "e4", "Nf3")
     try {
@@ -64,7 +64,7 @@ export function parseMoveDescription(fen: string, moveInput: string): MoveDescri
       return { uci, san, verbal: 'Queenside castling' }
     }
 
-    const pieceName = PIECE_NAMES[move.piece] || move.piece
+    const pieceName = move.piece ? (PIECE_NAMES[move.piece as string] || move.piece) : ''
     const action = move.captured ? 'takes' : 'to'
     const verbal = `${pieceName} ${action} ${move.to}`
 

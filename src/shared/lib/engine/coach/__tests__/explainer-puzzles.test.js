@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, it, expect } from 'vitest'
-import { Chess } from 'chess.js'
+import { Chess } from '../chess'
 import { explainMove } from '../explainer.js'
 
 function parseCsv(filePath) {

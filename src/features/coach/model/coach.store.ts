@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { Chess } from 'chess.js'
+import { Chess } from '@/shared/lib/engine/coach/chess'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 
@@ -134,8 +134,8 @@ export const useCoachStore = defineStore('coach', () => {
     }
   })
 
-  const turnColor = computed<'white' | 'black'>(() => (chess.value.turn() === 'w' ? 'white' : 'black'))
-  const sideToMove = computed(() => chess.value.turn())
+  const turnColor = computed<'white' | 'black'>(() => ((chess.value.turn() as string) === 'w' ? 'white' : 'black'))
+  const sideToMove = computed<'w' | 'b'>(() => chess.value.turn())
 
   // Phase & Material Delta
   const phase = computed(() => {
@@ -146,9 +146,9 @@ export const useCoachStore = defineStore('coach', () => {
         for (let f = 0; f < 8; f++) {
           const p = b[r][f]
           if (!p) continue
-          if (p.type === 'q') queens++
-          else if (p.type === 'r') rooks++
-          else if (p.type === 'b' || p.type === 'n') minors++
+          if (p.type === 'queen' || (p.type as string) === 'q') queens++
+          else if (p.type === 'rook' || (p.type as string) === 'r') rooks++
+          else if (p.type === 'bishop' || p.type === 'knight' || (p.type as string) === 'b' || (p.type as string) === 'n') minors++
         }
       if (queens === 0 || (queens <= 2 && minors + rooks <= 4)) return 'endgame'
       const totalMoves = moveHistory.value.length
@@ -162,14 +162,14 @@ export const useCoachStore = defineStore('coach', () => {
   const materialDelta = computed(() => {
     try {
       const b = chess.value.board()
-      const VALS: Record<string, number> = { p: 1, n: 3, b: 3.25, r: 5, q: 9 }
+      const VALS: Record<string, number> = { pawn: 1, knight: 3, bishop: 3.25, rook: 5, queen: 9, p: 1, n: 3, b: 3.25, r: 5, q: 9 }
       let w = 0, bl = 0
       for (let r = 0; r < 8; r++)
         for (let f = 0; f < 8; f++) {
           const p = b[r][f]
-          if (!p || p.type === 'k') continue
+          if (!p || p.type === 'king' || (p.type as string) === 'k') continue
           const v = VALS[p.type] || 0
-          if (p.color === 'w') w += v
+          if ((p.color as string) === 'w') w += v
           else bl += v
         }
       return w - bl
@@ -225,7 +225,7 @@ export const useCoachStore = defineStore('coach', () => {
       curFen = result.fen_after
     }
 
-    const stm = chess.value.turn() === 'w' ? 'white' : 'black'
+    const stm = (chess.value.turn() as string) === 'w' ? 'white' : 'black'
     return generateVisualCommands(
       {
         ...baseBlob,
@@ -310,7 +310,7 @@ export const useCoachStore = defineStore('coach', () => {
     try {
       const c = new Chess(prevFen)
       const verboseMoves = c.moves({ verbose: true })
-      const m = verboseMoves.find((m) => m.san === san)
+      const m = verboseMoves.find((move) => move.san === san)
       if (m) return m.from + m.to + (m.promotion || '')
     } catch {
       /* ignore */

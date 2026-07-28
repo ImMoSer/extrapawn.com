@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Chess } from 'chess.js';
+import { Chess } from '../chess';
 import {
   winRate,
   getPSTValue,
