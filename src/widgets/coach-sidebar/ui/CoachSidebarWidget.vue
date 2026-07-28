@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { AnalysisPanel, useCoachStore } from '@/features/coach'
+import { MozerBook, WikiBooksPanel } from '@/features/mozer-book'
+import { EngineEvaluationHeader } from '@/features/analysis'
 import { NButton } from 'naive-ui'
 import { useTaskTodayStore } from '@/features/task-today'
 import { useI18n } from 'vue-i18n'
@@ -57,15 +59,20 @@ onUnmounted(() => {
         :selectedMoveIndex="coachStore.selectedMoveIndex"
         :explanation="coachStore.explanation"
         :explanationLoading="coachStore.explanationLoading"
-        @go-back="coachStore.goBack"
-        @go-forward="coachStore.goForward"
-        @random-pos="coachStore.loadRandomPosition"
-        @flip-board="coachStore.flipBoard"
-        @reset-board="coachStore.resetBoard"
         @settings-change="coachStore.handleSettingsChange"
         @select-history-move="coachStore.selectHistoryMove"
         @select-move="coachStore.selectMove"
-      />
+      >
+        <template #book>
+          <MozerBook />
+        </template>
+        <template #wiki>
+          <WikiBooksPanel />
+        </template>
+        <template #sf>
+          <EngineEvaluationHeader />
+        </template>
+      </AnalysisPanel>
     </div>
   </div>
 </template>

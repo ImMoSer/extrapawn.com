@@ -40,6 +40,60 @@ export class WikiUrlBuilder {
   }
 }
 
+/**
+ * Trims Wikibooks extract HTML to cut off unwanted sections like
+ * "Theory table", "Statistics", "References", "See also", etc.
+ */
+export function trimWikiExtract(html: string): string {
+  if (!html) return ''
+
+  const cutoffTitles = ['theory table', 'statistics', 'references', 'see also', 'external links']
+
+  try {
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(html, 'text/html')
+      const elements = Array.from(doc.body.children)
+
+      for (const el of elements) {
+        const text = (el.textContent || '').trim().toLowerCase()
+        const tagName = el.tagName.toLowerCase()
+
+        const isHeading =
+          /^h[1-6]$/.test(tagName) ||
+          el.querySelector('h1, h2, h3, h4, h5, h6') !== null ||
+          ((tagName === 'p' || tagName === 'div') && el.querySelector('b, strong') !== null && text.length < 40)
+
+        const matchesCutoff = cutoffTitles.some((title) => text.includes(title))
+
+        if (isHeading && matchesCutoff) {
+          let sibling: Element | null = el
+          while (sibling) {
+            const next: Element | null = sibling.nextElementSibling
+            sibling.remove()
+            sibling = next
+          }
+          break
+        }
+      }
+
+      const trimmed = doc.body.innerHTML.trim()
+      if (trimmed) return trimmed
+    }
+  } catch {
+    // Ignore DOMParser errors and fallback to regex
+  }
+
+  // Regex Fallback
+  const regex = /(?:<h[1-6][^>]*>|<p>\s*<b[^>]*>|<p>\s*<strong[^>]*>)[\s\S]*?(?:Theory table|Statistics|References|See also|External links)[\s\S]*?(?:<\/h[1-6]>|<\/b>|<\/strong>)/i
+  const match = regex.exec(html)
+  if (match) {
+    return html.substring(0, match.index).trim()
+  }
+
+  return html
+}
+
 // --- API Service ---
 class WikiBooksApiService {
   private readonly BASE_URL = 'https://en.wikibooks.org/w/api.php'

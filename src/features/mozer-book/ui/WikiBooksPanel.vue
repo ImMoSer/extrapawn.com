@@ -6,7 +6,7 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
-import { WikiUrlBuilder } from '@/shared/api/WikiBooksService'
+import { WikiUrlBuilder, trimWikiExtract } from '@/shared/api/WikiBooksService'
 import { useWikiBooksStore } from '../index'
 
 const { t } = useI18n()
@@ -40,7 +40,8 @@ const externalLink = computed(() => {
 
 const sanitizedContent = computed(() => {
   if (!wikiData.value?.extract) return ''
-  return DOMPurify.sanitize(wikiData.value.extract, {
+  const trimmedHtml = trimWikiExtract(wikiData.value.extract)
+  return DOMPurify.sanitize(trimmedHtml, {
     ALLOWED_TAGS: ['p', 'b', 'i', 'strong', 'em', 'ul', 'li', 'br', 'h2', 'h3', 'h4'],
     ALLOWED_ATTR: [], // Security: No attributes allowed
   })
@@ -71,7 +72,7 @@ const sanitizedContent = computed(() => {
     </div>
 
     <div class="panel-content-wrapper">
-      <n-scrollbar style="max-height: 60vh" trigger="none">
+      <n-scrollbar style="height: 100%" trigger="none">
         <div class="panel-content">
           <div v-if="error" class="state-container error">
             <span class="error-icon">⚠</span>

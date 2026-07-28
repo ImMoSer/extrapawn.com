@@ -16,6 +16,7 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
   const multiPv = ref(3)
   const searchTime = ref(5) // 99 represents Infinity
   const showArrows = ref(true)
+  const engineVersion = ref<'lite' | 'full'>('lite')
 
   // Internal versioning to prevent race conditions
   let analysisVersion = 0
@@ -42,8 +43,14 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     const savedShowArrows = localStorage.getItem('analysis_show_arrows')
     showArrows.value = savedShowArrows !== 'false'
 
+    const savedVersion = localStorage.getItem('analysis_engine_version') as 'lite' | 'full' | null
+    if (savedVersion === 'full' || savedVersion === 'lite') {
+      engineVersion.value = savedVersion
+    }
+    await analysisService.setEngineVariant(engineVersion.value)
+
     logger.info(
-      `[AnalysisEngineStore] Initialized. Threads: ${numThreads.value}/${maxThreads.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
+      `[AnalysisEngineStore] Initialized. EngineVersion: ${engineVersion.value}, Threads: ${numThreads.value}/${maxThreads.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
     )
   }
 
@@ -90,6 +97,16 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     if (showArrows.value === value) return
     showArrows.value = value
     localStorage.setItem('analysis_show_arrows', String(value))
+  }
+
+  async function setEngineVersion(version: 'lite' | 'full') {
+    if (engineVersion.value === version) return
+    engineVersion.value = version
+    localStorage.setItem('analysis_engine_version', version)
+    isLoading.value = true
+    await analysisService.setEngineVariant(version)
+    isLoading.value = false
+    await triggerRestart()
   }
 
   async function startNewGame() {
@@ -166,11 +183,13 @@ export const useAnalysisEngineStore = defineStore('analysis-engine', () => {
     multiPv,
     searchTime,
     showArrows,
+    engineVersion,
     initialize,
     setThreads,
     setMultiPv,
     setSearchTime,
     setShowArrows,
+    setEngineVersion,
     startNewGame,
     startAnalysis,
     stopAnalysis,

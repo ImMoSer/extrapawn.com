@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import QualityIcon from './QualityIcon.vue'
 import ChessPieceIcon from './ChessPieceIcon.vue'
 import SettingsPanel from './SettingsPanel.vue'
@@ -7,7 +8,19 @@ import AboutPosition from './AboutPosition.vue'
 import VisualizerConsole from './VisualizerConsole.vue'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
-const showConsole = ref(false)
+const activeTab = ref<'analysis' | 'console' | 'book' | 'wiki' | 'sf'>('analysis')
+
+const route = useRoute()
+const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
+
+watch(
+  () => route.path,
+  (newPath) => {
+    if (!newPath.startsWith('/sparring') && (activeTab.value === 'book' || activeTab.value === 'wiki')) {
+      activeTab.value = 'analysis'
+    }
+  },
+)
 
 
 const props = defineProps<{
@@ -33,11 +46,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'go-back'): void
-  (e: 'go-forward'): void
-  (e: 'random-pos'): void
-  (e: 'flip-board'): void
-  (e: 'reset-board'): void
   (e: 'settings-change'): void
   (e: 'select-history-move', payload: { fen: string; index: number }): void
   (e: 'select-move', index: number): void
@@ -174,62 +182,69 @@ function getPlanBrief(move: CoachTopMove): string | null {
     <!-- Toolbar buttons -->
     <div class="flex items-center gap-1.5 p-2 border-b border-border">
       <button
-        @click="emit('go-back')"
-        :disabled="historyIndex === 0"
-        title="Previous move (← / ↑)"
-        class="icon-btn p-1.5 rounded-md bg-elevated border border-border text-text-secondary disabled:text-text-disabled cursor-pointer disabled:cursor-default"
+        v-if="isSparringRoute"
+        @click="activeTab = activeTab === 'book' ? 'analysis' : 'book'"
+        title="MozerBook Opening Explorer (MB)"
+        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
+        :class="activeTab === 'book' ? 'bg-success/20 text-success border-success/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        MB
       </button>
       <button
-        @click="emit('go-forward')"
-        :disabled="historyIndex >= moveHistory.length - 1"
-        title="Next move (→ / ↓)"
-        class="icon-btn p-1.5 rounded-md bg-elevated border border-border text-text-secondary disabled:text-text-disabled cursor-pointer disabled:cursor-default"
+        v-if="isSparringRoute"
+        @click="activeTab = activeTab === 'wiki' ? 'analysis' : 'wiki'"
+        title="WikiBooks Opening Theory (WT)"
+        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
+        :class="activeTab === 'wiki' ? 'bg-warning/20 text-warning border-warning/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <div class="flex-1" />
-      <button
-        @click="emit('random-pos')"
-        title="Random plausible position"
-        class="icon-btn p-1.5 rounded-md bg-elevated border border-border text-text-secondary cursor-pointer"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        WT
       </button>
       <button
-        @click="emit('flip-board')"
-        title="Flip board (F)"
-        class="icon-btn p-1.5 rounded-md bg-elevated border border-border text-text-secondary cursor-pointer"
+        @click="activeTab = activeTab === 'sf' ? 'analysis' : 'sf'"
+        title="Stockfish Evaluation & Lines (SF)"
+        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
+        :class="activeTab === 'sf' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        SF
       </button>
       <button
-        @click="emit('reset-board')"
-        title="Reset to start position"
-        class="icon-btn p-1.5 rounded-md bg-elevated border border-border text-text-secondary cursor-pointer"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-      </button>
-      <SettingsPanel @change="emit('settings-change')" />
-      <button
-        @click="showConsole = !showConsole"
+        @click="activeTab = activeTab === 'console' ? 'analysis' : 'console'"
         title="Toggle Visualizer Debug Console (CC)"
         class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
-        :class="showConsole ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
+        :class="activeTab === 'console' ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
       >
         CC
       </button>
+      <div class="flex-1" />
+      <SettingsPanel @change="emit('settings-change')" />
     </div>
 
-    <!-- Visualizer Console Overlay / Main View when CC is toggled -->
-    <template v-if="showConsole">
+    <!-- Tab Views: Console, Book, Wiki, SF, or Analysis -->
+    <template v-if="activeTab === 'console'">
       <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0">
         <VisualizerConsole
           :boardHeight="boardHeight"
           :posExplanation="posExplanation"
           class="!w-full !h-full !border-none !rounded-none"
         />
+      </div>
+    </template>
+
+    <template v-else-if="activeTab === 'book' && isSparringRoute">
+      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
+        <slot name="book" />
+      </div>
+    </template>
+
+    <template v-else-if="activeTab === 'wiki' && isSparringRoute">
+      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
+        <slot name="wiki" />
+      </div>
+    </template>
+
+    <template v-else-if="activeTab === 'sf'">
+      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
+        <slot name="sf" />
       </div>
     </template>
 

@@ -1,13 +1,18 @@
 import logger from '@/shared/lib/logger'
 
+export type EngineVariant = 'lite' | 'full'
+
 export interface EngineController {
   postMessage(command: string): void
   addMessageListener(callback: (message: string) => void): void
   terminate?(): void
 }
 
-export function loadLocalEngine(): Promise<EngineController | null> {
-  const workerPath = '/stockfish/stockfish-18-lite-single.js'
+export function loadLocalEngine(variant: EngineVariant = 'lite'): Promise<EngineController | null> {
+  const workerPath =
+    variant === 'full'
+      ? '/stockfish/stockfish-18-single.js'
+      : '/stockfish/stockfish-18-lite-single.js'
   logger.info(`[EngineLoader] Initializing Single-Thread Web Worker from ${workerPath}`)
 
   return new Promise((resolve, reject) => {

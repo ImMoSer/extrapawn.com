@@ -2,10 +2,10 @@
 import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NTooltip } from 'naive-ui'
+import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NTooltip, NSelect } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
-import { useAnalysisStore } from '@/features/analysis'
-import { EngineLines } from '@/features/analysis'
+import { useAnalysisStore } from '../model/analysis.store'
+import EngineLines from './EngineLines.vue'
 import { useSparringStore } from '@/features/sparring'
 
 const analysisStore = useAnalysisStore()
@@ -19,6 +19,7 @@ const {
   multiPv,
   searchTime,
   showArrows,
+  engineVersion,
 } = storeToRefs(analysisStore)
 
 const isEngineDisabled = computed(() => sparringStore.gameStatus === 'playing')
@@ -79,6 +80,15 @@ const handleShowArrowsChange = (value: boolean) => {
   analysisStore.setShowArrows(value)
 }
 
+const engineVersionOptions = [
+  { label: 'Stockfish 18 Lite (~7 MB)', value: 'lite' },
+  { label: 'Stockfish 18 Full (~113 MB)', value: 'full' },
+]
+
+const handleEngineVersionChange = (value: 'lite' | 'full') => {
+  analysisStore.setEngineVersion(value)
+}
+
 // Search Time slider helper
 const sliderSearchTime = computed({
   get() {
@@ -122,7 +132,7 @@ const formatSearchTimeTooltip = (value: number) => {
             </template>
             {{ $t('features.sparring.engineDisabledTooltip') }}
           </n-tooltip>
-          <span class="engine-label">Stockfish 18</span>
+          <span class="engine-label">Stockfish 18 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}</span>
         </div>
         <div v-if="isAnalysisActive && !isEngineDisabled" class="engine-depth-badge">
           <n-text depth="3">d: {{ engineDepth }}</n-text>
@@ -146,6 +156,19 @@ const formatSearchTimeTooltip = (value: number) => {
           
           <div class="settings-content">
             <n-text strong class="settings-title">{{ t('features.analysis.engineSettings') || 'Engine-Optionen' }}</n-text>
+
+            <!-- Engine Version Select -->
+            <div class="settings-field">
+              <div class="field-label-row">
+                <span class="field-label">Engine Version</span>
+              </div>
+              <n-select
+                :value="engineVersion"
+                :options="engineVersionOptions"
+                size="small"
+                @update:value="handleEngineVersionChange"
+              />
+            </div>
             
             <!-- MultiPV Slider -->
             <div class="settings-field">

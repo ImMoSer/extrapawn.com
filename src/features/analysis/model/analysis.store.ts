@@ -38,6 +38,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     multiPv,
     searchTime,
     showArrows,
+    engineVersion,
   } = storeToRefs(engineStore)
 
   // --- LOGIC ---
@@ -205,6 +206,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     multiPv,
     searchTime,
     showArrows,
+    engineVersion,
 
     // Actions
     showPanel,
@@ -214,6 +216,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     setMultiPv: engineStore.setMultiPv,
     setSearchTime: engineStore.setSearchTime,
     setShowArrows: engineStore.setShowArrows,
+    setEngineVersion: engineStore.setEngineVersion,
     resetAnalysisState,
     setPlayerColor,
   }

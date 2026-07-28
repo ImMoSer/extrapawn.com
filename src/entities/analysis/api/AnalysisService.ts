@@ -144,6 +144,16 @@ class AnalysisServiceController {
     }
   }
 
+  public async setEngineVariant(variant: 'lite' | 'full') {
+    if (!this.activeEngineManager) {
+      await this.initialize()
+    }
+    if (this.activeEngineManager === localEngineManager) {
+      await localEngineManager.setVariant(variant)
+      logger.info(`[AnalysisService] Engine variant set to ${variant}`)
+    }
+  }
+
   private prepareLinesForDisplay(lines: EvaluatedLine[], fen: string): EvaluatedLineWithSan[] {
     const setup = parseFen(fen).unwrap()
     const turn = setup.turn

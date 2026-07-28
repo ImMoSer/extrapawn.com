@@ -1,4 +1,4 @@
-import { loadLocalEngine, type EngineController } from '@/shared/lib/engine.loader'
+import { loadLocalEngine, type EngineController, type EngineVariant } from '@/shared/lib/engine.loader'
 import logger from '@/shared/lib/logger'
 
 import {
@@ -23,6 +23,7 @@ export class LocalEngineManager {
 
   private currentThreads: number = 1
   private preferredAnalysisThreads: number = 1
+  private currentVariant: EngineVariant = 'lite'
   private commandQueue: string[] = []
   private infiniteAnalysisCallback: AnalysisUpdateCallback | null = null
   private lastIsReadyTime: number = 0
@@ -57,7 +58,7 @@ export class LocalEngineManager {
 
   private async _initEngine(): Promise<void> {
     try {
-      const loadedEngine = await loadLocalEngine()
+      const loadedEngine = await loadLocalEngine(this.currentVariant)
 
       if (!loadedEngine) {
         this.isSupported = false
@@ -397,6 +398,27 @@ export class LocalEngineManager {
   public async setThreads(count: number): Promise<void> {
     logger.debug(`[LocalEngineManager] setThreads called with ${count}, forcing 1`)
     await this.setOption('Threads', 1)
+  }
+
+  public async setVariant(variant: EngineVariant): Promise<void> {
+    if (this.currentVariant === variant && this.isReady) return
+    logger.info(`[LocalEngineManager] Switching engine variant to '${variant}'`)
+    this.currentVariant = variant
+
+    if (this.engine) {
+      if (this.isSearching) {
+        await this.stopAnalysis()
+      }
+      if (this.engine.terminate) {
+        this.engine.terminate()
+      }
+      this.engine = null
+      this.isReady = false
+      this.isInitializing = false
+      this.initPromise = null
+    }
+
+    await this.ensureReady()
   }
 
   public isEngineSupported(): boolean {

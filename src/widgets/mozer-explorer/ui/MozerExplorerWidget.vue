@@ -1,22 +1,13 @@
 <script setup lang="ts">
-import EngineEvaluationHeader from './EngineEvaluationHeader.vue'
 import PgnMoveHistory from './PgnMoveHistory.vue'
 import ControlBottomBar from './ControlBottomBar.vue'
-import { MozerBook } from '@/features/mozer-book'
 </script>
 
 <template>
   <div class="mozer-explorer-widget">
-    <!-- Engine Status & Eval -->
-    <EngineEvaluationHeader />
-
     <!-- Scrollable Explorer Panels -->
     <div class="explorer-content">
       <PgnMoveHistory />
-      
-      <div class="mozer-book-wrapper">
-        <MozerBook />
-      </div>
     </div>
 
     <!-- Navigation & Settings Bottom Bar -->
@@ -45,10 +36,5 @@ import { MozerBook } from '@/features/mozer-book'
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.mozer-book-wrapper {
-  padding: 4px 14px 14px;
-  background: var(--bg-1);
 }
 </style>
