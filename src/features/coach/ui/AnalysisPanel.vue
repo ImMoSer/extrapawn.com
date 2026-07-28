@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import QualityIcon from './QualityIcon.vue'
 import ChessPieceIcon from './ChessPieceIcon.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import AboutPosition from './AboutPosition.vue'
+import VisualizerConsole from './VisualizerConsole.vue'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+
+const showConsole = ref(false)
+
 
 const props = defineProps<{
   boardHeight: number
@@ -207,10 +212,31 @@ function getPlanBrief(move: CoachTopMove): string | null {
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
       </button>
       <SettingsPanel @change="emit('settings-change')" />
+      <button
+        @click="showConsole = !showConsole"
+        title="Toggle Visualizer Debug Console (CC)"
+        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
+        :class="showConsole ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
+      >
+        CC
+      </button>
     </div>
 
-    <!-- Compact status line -->
-    <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
+    <!-- Visualizer Console Overlay / Main View when CC is toggled -->
+    <template v-if="showConsole">
+      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0">
+        <VisualizerConsole
+          :boardHeight="boardHeight"
+          :posExplanation="posExplanation"
+          class="!w-full !h-full !border-none !rounded-none"
+        />
+      </div>
+    </template>
+
+    <template v-else>
+      <!-- Compact status line -->
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
+
       <span
         class="w-2 h-2 rounded-full border shrink-0"
         :class="sideToMove === 'w' ? 'bg-text-primary border-text-primary' : 'bg-surface border-border-hover'"
@@ -516,5 +542,6 @@ function getPlanBrief(move: CoachTopMove): string | null {
     <div class="p-3 border-t border-border">
       <AboutPosition :explanation="posExplanation" />
     </div>
+    </template>
   </div>
 </template>

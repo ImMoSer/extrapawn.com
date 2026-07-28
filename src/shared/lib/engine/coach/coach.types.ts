@@ -124,14 +124,16 @@ export interface CoachTopMove {
 
 
 export interface CoachVisualCommands {
-  best_move?: string
-  maneuver?: string
-  pawn_race?: string
-  key_squares?: string
-  diagonals?: string
-  structure_white?: string
-  structure_black?: string
-  [key: string]: string | undefined
+  best_move?: string | string[]
+  maneuver?: string | string[]
+  pawn_race?: string | string[]
+  key_squares?: string | string[]
+  diagonals?: string | string[]
+  structure_white?: string | string[]
+  structure_black?: string | string[]
+  _logs?: VisualizerLogItem[]
+  _input_sources?: VisualizerInputSources
+  [key: string]: unknown
 }
 
 export interface CoachExplanation {
@@ -246,4 +248,87 @@ export interface CoachHistoryItem {
   notation?: string
   move?: string
 }
+
+export interface VisualizerLogItem {
+  category?: string
+  title?: string
+  reason?: string
+  command?: string
+  squares?: string[]
+}
+
+export interface VisualizerInputPlanStep {
+  san?: string
+  uci?: string
+  from?: string
+  to?: string
+  quality?: string | null
+  motifs?: string[]
+  headline?: string | null
+}
+
+export interface VisualizerInputPawnStruct {
+  summary?: string | null
+  darkComplexWeak?: string | null
+  whiteIsolated?: string[]
+  blackIsolated?: string[]
+  whiteBackward?: string[]
+  blackBackward?: string[]
+  whiteHoles?: string[]
+  blackHoles?: string[]
+}
+
+export interface VisualizerInputTheme {
+  id: string
+  side?: string
+  strength?: number
+  description?: string
+}
+
+export interface VisualizerInputEngineMove {
+  san?: string
+  uci?: string
+  score?: number | null
+  mate?: number | null
+  character?: string | null
+  headline?: string | null
+  planBrief?: string | null
+  motifs?: string[]
+}
+
+export interface VisualizerInputPosSummary {
+  evalPawns?: number | null
+  evalMate?: number | null
+  phase?: string | null
+  verdict?: string | null
+  materialSummary?: string | null
+}
+
+export interface VisualizerInputSources {
+  fen?: string
+  attackingSide?: 'w' | 'b' | string
+  positionSummary?: VisualizerInputPosSummary | null
+  lastMoveAnalysis?: {
+    san?: string | null
+    quality?: string | null
+    summary?: string | null
+    details?: string | null
+    consequence?: string | null
+  } | null
+  tactics?: unknown[]
+  planSteps?: VisualizerInputPlanStep[]
+  principalPlan?: {
+    theme?: string | null
+    description?: string | null
+    evalCp?: number | null
+    depth?: number | null
+  } | null
+  pawnStructure?: VisualizerInputPawnStruct | null
+  themes?: VisualizerInputTheme[]
+  passedPawns?: string[]
+  weakPawns?: string[]
+  engineTopMoves?: VisualizerInputEngineMove[]
+  [key: string]: unknown
+}
+
 

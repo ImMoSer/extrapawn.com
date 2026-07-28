@@ -1,16 +1,16 @@
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, computed } from 'vue'
 
-import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
-
-interface LogItem {
-  category?: string
-  title?: string
-  reason?: string
-  command?: string
-  squares?: string[]
-}
+import type {
+  CoachExplanation,
+  VisualizerLogItem,
+  VisualizerInputSources,
+  VisualizerInputPlanStep,
+  VisualizerInputPawnStruct,
+  VisualizerInputTheme,
+  VisualizerInputEngineMove,
+  VisualizerInputPosSummary,
+} from '@/shared/lib/engine/coach/coach.types'
 
 const props = defineProps<{
   boardHeight: number
@@ -24,30 +24,29 @@ const isCollapsed = ref<boolean>(false)
 const copied = ref<boolean>(false)
 
 // Output Visual Logs
-const logs = computed<LogItem[]>(() => {
+const logs = computed<VisualizerLogItem[]>(() => {
   if (!props.posExplanation || !props.posExplanation.visual_commands) return []
   const l = (props.posExplanation.visual_commands as Record<string, unknown>)._logs
-  if (Array.isArray(l)) return l as LogItem[]
+  if (Array.isArray(l)) return l as VisualizerLogItem[]
   return []
 })
 
 // Input Data Sources
-const inputSources = computed<Record<string, unknown> | null>(() => {
+const inputSources = computed<VisualizerInputSources | null>(() => {
   if (!props.posExplanation || !props.posExplanation.visual_commands) return null
-  return ((props.posExplanation.visual_commands as Record<string, unknown>)._input_sources as Record<string, unknown>) || null
+  return ((props.posExplanation.visual_commands as Record<string, unknown>)._input_sources as VisualizerInputSources) || null
 })
-
 
 const categories = computed(() => {
   const set = new Set<string>()
-  logs.value.forEach((item: LogItem) => {
+  logs.value.forEach((item: VisualizerLogItem) => {
     if (item.category) set.add(item.category)
   })
   return ['ALL', ...Array.from(set)]
 })
 
 const filteredLogs = computed(() => {
-  return logs.value.filter((item: LogItem) => {
+  return logs.value.filter((item: VisualizerLogItem) => {
     if (activeCategory.value !== 'ALL' && item.category !== activeCategory.value) {
       return false
     }
@@ -60,20 +59,17 @@ const filteredLogs = computed(() => {
   })
 })
 
-const inputTactics = computed(() => (inputSources.value?.tactics as any[]) || [])
-const inputPlanSteps = computed(() => (inputSources.value?.planSteps as any[]) || [])
-const inputPawnStruct = computed(() => (inputSources.value?.pawnStructure as any) || null)
-const inputThemes = computed(() => (inputSources.value?.themes as any[]) || [])
-const inputPassedPawns = computed(() => (inputSources.value?.passedPawns as any[]) || [])
-const inputWeakPawns = computed(() => (inputSources.value?.weakPawns as any[]) || [])
-const inputPrincipalPlan = computed(() => (inputSources.value?.principalPlan as any) || null)
-const inputEngineTopMoves = computed(() => (inputSources.value?.engineTopMoves as any[]) || [])
+const inputTactics = computed<unknown[]>(() => inputSources.value?.tactics || [])
+const inputPlanSteps = computed<VisualizerInputPlanStep[]>(() => inputSources.value?.planSteps || [])
+const inputPawnStruct = computed<VisualizerInputPawnStruct | null>(() => inputSources.value?.pawnStructure || null)
+const inputThemes = computed<VisualizerInputTheme[]>(() => inputSources.value?.themes || [])
+const inputPassedPawns = computed<string[]>(() => inputSources.value?.passedPawns || [])
+const inputWeakPawns = computed<string[]>(() => inputSources.value?.weakPawns || [])
+const inputPrincipalPlan = computed(() => inputSources.value?.principalPlan || null)
+const inputEngineTopMoves = computed<VisualizerInputEngineMove[]>(() => inputSources.value?.engineTopMoves || [])
 
-const inputPosSummary = computed(() => (inputSources.value?.positionSummary as any) || null)
-const inputLastMove = computed(() => (inputSources.value?.lastMoveAnalysis as any) || null)
-
-
-
+const inputPosSummary = computed<VisualizerInputPosSummary | null>(() => inputSources.value?.positionSummary || null)
+const inputLastMove = computed(() => inputSources.value?.lastMoveAnalysis || null)
 
 const inputSourcesTotalCount = computed(() => {
   if (!inputSources.value) return 0
@@ -87,6 +83,7 @@ const inputSourcesTotalCount = computed(() => {
 })
 
 
+
 async function copyData() {
   const lines: string[] = []
 
@@ -95,7 +92,7 @@ async function copyData() {
   if (logs.value.length === 0) {
     lines.push('No visualizer commands generated for this position.\n')
   } else {
-    logs.value.forEach((log: LogItem, idx: number) => {
+    logs.value.forEach((log: VisualizerLogItem, idx: number) => {
 
       lines.push(`${idx + 1}. [${log.category}] ${log.title}`)
       if (log.squares && log.squares.length > 0) {
@@ -118,7 +115,7 @@ async function copyData() {
     lines.push(`Attacking Side: ${inputSources.value.attackingSide === 'w' ? 'white' : 'black'}`)
     if (inputPlanSteps.value.length) {
       lines.push(`\nPlan Steps (${inputPlanSteps.value.length}):`)
-      inputPlanSteps.value.forEach((m: { san?: string; uci?: string; quality?: string; headline?: string }, i: number) => {
+      inputPlanSteps.value.forEach((m: VisualizerInputPlanStep, i: number) => {
         let line = `  ${i + 1}. ${m.san || m.uci}`
         if (m.quality) line += ` [${m.quality}]`
         if (m.headline) line += ` | Headline: ${m.headline}`
@@ -155,8 +152,8 @@ function getCategoryBadgeClass(category?: string) {
 
 <template>
   <div
-    class="visualizer-console thin-scroll w-[340px] flex flex-col border border-border rounded-md overflow-hidden bg-void text-text-primary"
-    :style="{ height: `${boardHeight}px` }"
+    class="visualizer-console thin-scroll w-full h-full flex flex-col border border-border rounded-md overflow-hidden bg-void text-text-primary"
+    :style="boardHeight ? { height: `${boardHeight}px` } : {}"
   >
     <!-- Header -->
     <div class="p-2.5 border-b border-border bg-surface flex items-center justify-between shrink-0">
@@ -303,11 +300,11 @@ function getCategoryBadgeClass(category?: string) {
               <div class="text-[9px] uppercase font-bold text-text-secondary tracking-wider">Position Summary</div>
               <div class="flex items-center gap-1.5 flex-wrap text-text-primary">
                 <span
-                  v-if="inputPosSummary.evalPawns !== null || inputPosSummary.evalMate !== null"
+                  v-if="typeof inputPosSummary.evalPawns === 'number' || inputPosSummary.evalMate !== null"
                   class="px-1.5 py-0.5 rounded font-bold text-[10px]"
-                  :class="inputPosSummary.evalPawns !== null && inputPosSummary.evalPawns < 0 ? 'bg-danger/20 text-danger border border-danger/30' : 'bg-success/20 text-success border border-success/30'"
+                  :class="typeof inputPosSummary.evalPawns === 'number' && inputPosSummary.evalPawns < 0 ? 'bg-danger/20 text-danger border border-danger/30' : 'bg-success/20 text-success border border-success/30'"
                 >
-                  Eval: {{ inputPosSummary.evalMate !== null ? `M${inputPosSummary.evalMate}` : (inputPosSummary.evalPawns >= 0 ? `+${inputPosSummary.evalPawns.toFixed(2)}` : inputPosSummary.evalPawns.toFixed(2)) }}
+                  Eval: {{ inputPosSummary.evalMate !== null ? `M${inputPosSummary.evalMate}` : (typeof inputPosSummary.evalPawns === 'number' ? (inputPosSummary.evalPawns >= 0 ? `+${inputPosSummary.evalPawns.toFixed(2)}` : inputPosSummary.evalPawns.toFixed(2)) : '0.00') }}
                 </span>
                 <span v-if="inputPosSummary.phase" class="capitalize text-text-secondary text-[10px]">
                   ({{ inputPosSummary.phase }})
@@ -496,11 +493,11 @@ function getCategoryBadgeClass(category?: string) {
                     <div class="flex items-center gap-1.5">
                       <span class="text-neon-cyan">{{ Number(idx) + 1 }}. {{ m.san }}</span>
                       <span
-                        v-if="m.score !== null || m.mate !== null"
+                        v-if="typeof m.score === 'number' || m.mate !== null"
                         class="text-[9px] font-mono font-bold px-1 py-0.2 rounded border"
-                        :class="m.score !== null && m.score < 0 ? 'bg-danger/15 text-danger border-danger/30' : 'bg-success/15 text-success border-success/30'"
+                        :class="typeof m.score === 'number' && m.score < 0 ? 'bg-danger/15 text-danger border-danger/30' : 'bg-success/15 text-success border-success/30'"
                       >
-                        {{ m.score !== null ? (m.score >= 0 ? `+${(m.score / 100).toFixed(2)}` : `${(m.score / 100).toFixed(2)}`) : `M${m.mate}` }}
+                        {{ typeof m.score === 'number' ? (m.score >= 0 ? `+${(m.score / 100).toFixed(2)}` : `${(m.score / 100).toFixed(2)}`) : `M${m.mate}` }}
                       </span>
                     </div>
 
