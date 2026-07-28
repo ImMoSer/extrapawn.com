@@ -190,6 +190,22 @@ class PgnServiceController {
     return newNode
   }
 
+  public addBlunderVariation(data: NewNodeData & { nag?: string; quality?: string }): PgnNode | null {
+    const parentNode = this.currentNode
+    const newNode = this.addNode(data)
+    if (newNode) {
+      newNode.metadata = {
+        ...newNode.metadata,
+        nag: data.nag || '??',
+        quality: data.quality || 'blunder',
+      }
+      this.currentNode = parentNode
+      this.currentPath = this.buildPath(parentNode)
+      treeVersion.value++
+    }
+    return newNode
+  }
+
   private buildPath(node: PgnNode): string {
     let path = ''
     let current: PgnNode | undefined = node

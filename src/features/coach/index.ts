@@ -18,6 +18,7 @@ export {
 
 export { useCoachStore } from './model/coach.store'
 export { useCoachFeedbackStore } from './model/coach-feedback.store'
+export { useCoachOrchestratorStore, type MoveState, type PendingMoveInfo } from './model/coach-orchestrator.store'
 export { waitForCoachAndCheckTakeback } from './model/coach-gameplay'
 export { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
 

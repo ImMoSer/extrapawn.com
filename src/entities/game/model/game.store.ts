@@ -13,6 +13,7 @@ import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy
 import { GameAudioEngine } from './GameAudioEngine'
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER'
+export type UserMoveHandler = (uciMove: string) => Promise<boolean>
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -26,6 +27,11 @@ export const useGameStore = defineStore('game', () => {
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const isFreePlay = ref(false)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
+  const userMoveHandler = ref<UserMoveHandler | null>(null)
+
+  function registerUserMoveHandler(handler: UserMoveHandler | null) {
+    userMoveHandler.value = handler
+  }
 
   function getGameStatus(): GameStatusInfo {
     const chessPosition = boardStore.chessPosition
@@ -314,24 +320,25 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    const fenBefore = boardStore.fen
-    const positionBefore = boardStore.chessPosition.clone()
+    if (!intendedUci) return
 
-    const uciMove = await boardStore.handleUserMove({ orig, dest })
+    let isCommitted = true
+    if (userMoveHandler.value) {
+      isCommitted = await userMoveHandler.value(intendedUci)
+    } else {
+      const fenBefore = boardStore.fen
+      const positionBefore = boardStore.chessPosition.clone()
+      const uciMove = await boardStore.handleUserMove({ orig, dest })
+      if (!uciMove) return
 
-    if (!uciMove) {
-      return
-    }
-
-    // Apply the user move in PGN
-    const chessopsMove = (await import('chessops/util')).parseUci(uciMove)
-    if (chessopsMove) {
-      const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
-      const fenAfter = boardStore.fen
-      pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
-      boardStore.syncVisualCues()
-      
-      GameAudioEngine.playMoveSoundFromSan(san, false)
+      const chessopsMove = (await import('chessops/util')).parseUci(uciMove)
+      if (chessopsMove) {
+        const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
+        const fenAfter = boardStore.fen
+        pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
+        boardStore.syncVisualCues()
+        GameAudioEngine.playMoveSoundFromSan(san, false)
+      }
     }
 
     if (userMovesCount.value === 0) {
@@ -345,17 +352,8 @@ export const useGameStore = defineStore('game', () => {
 
     const strategyAtStart = currentStrategy.value
 
-    if (strategyAtStart) {
-      await strategyAtStart.onUserMoveExecuted?.(uciMove, boardStore.fen)
-    }
-
-    const isGameOver = _checkAndHandleGameOver()
-
-    if (!isGameOver && strategyAtStart && currentStrategy.value === strategyAtStart) {
-      const isBotTurn = boardStore.turn !== playerColor.value
-      if (isBotTurn) {
-        await triggerBotMove()
-      }
+    if (strategyAtStart && isCommitted) {
+      await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
     }
   }
 
@@ -414,5 +412,6 @@ export const useGameStore = defineStore('game', () => {
     botEngineId,
     setBotEngineId,
     triggerBotMove,
+    registerUserMoveHandler,
   }
 })

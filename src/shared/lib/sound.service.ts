@@ -52,6 +52,9 @@ export type SoundEvent =
   | 'task_today_success'
   | 'task_today_error'
   | 'blunder'
+  | 'blunder_sound'
+  | 'blunder_takeback'
+  | 'blunder_insist'
 
 // --- DYNAMIC POOL LOADING ---
 // This uses Vite's glob import to find all mp3 files in the public/sounds folder.
@@ -115,6 +118,9 @@ const soundDefinitions: Record<SoundEvent, { track: SoundTrack; path: string | s
   game_you_move: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_1.mp3' },
   game_speedrun_finished: { track: 'background', path: createPool('/sounds/gameStore/applaus_backround') },
   blunder: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_2.mp3' },
+  blunder_sound: { track: 'background', path: '/sounds/gameStore/ErrorChpock.mp3' },
+  blunder_takeback: { track: 'voice', path: ['/sounds/gameStore/ThinkDeeperNextTime.mp3', '/sounds/gameStore/tryAgain.mp3'] },
+  blunder_insist: { track: 'voice', path: '/sounds/gameStore/youllNeverWin.mp3' },
 }
 
 class SoundServiceController {

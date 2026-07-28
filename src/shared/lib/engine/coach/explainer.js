@@ -554,15 +554,7 @@ function classifyMove({
   }
 
   if (realSacrifice || legacySacrifice) {
-    console.log('[MoveClassifier] Sacrifice evaluation:', {
-      moveUCI,
-      isBestMove,
-      realSacrifice,
-      legacySacrifice,
-      wrBefore: Math.round(wrBefore),
-      wrPlayed: Math.round(wrPlayed),
-      assignedQuality: quality,
-    });
+    // Sacrifice detected
   }
 
 

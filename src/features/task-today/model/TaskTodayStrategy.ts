@@ -73,6 +73,22 @@ export class TaskTodayStrategy implements IGameplayStrategy {
     return false
   }
 
+  getScenarioValidation(uciMove: string): { isScenario: boolean; isCorrect: boolean; expectedMove?: string } | null {
+    if (this.isPlayoutMode) return null
+    if (this.puzzle.strategy !== 'scenarioOnly' && this.puzzle.strategy !== 'scenarioPlus') return null
+    if (this.scenarioIndex >= this.scenarioMoves.length) return null
+
+    const expectedMove = this.scenarioMoves[this.scenarioIndex]
+    const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+    const isCorrect = uciMove === expectedMove || isCheckmate
+
+    return {
+      isScenario: true,
+      isCorrect,
+      expectedMove,
+    }
+  }
+
   async onUserMoveExecuted(uciMove: string): Promise<void> {
     if (!this.isPlayoutMode) {
       const expectedMove = this.scenarioMoves[this.scenarioIndex]

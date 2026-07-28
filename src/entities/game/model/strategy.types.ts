@@ -64,6 +64,14 @@ export interface IGameplayStrategy {
   onBotMoveExecuted?: (uciMove: string, fen: string) => void | Promise<void>
 
   /**
+   * Валидация хода в рамках сценария (tactical_solution / scenarioOnly / scenarioPlus).
+   */
+  getScenarioValidation?: (
+    uciMove: string,
+    fenAfter: string,
+  ) => { isScenario: boolean; isCorrect: boolean; expectedMove?: string } | null
+
+  /**
    * Позволяет переопределить логику победы (например, ничья == победа в Theory Endings).
    */
   checkWinCondition?: (currentState: GameStatusInfo) => boolean

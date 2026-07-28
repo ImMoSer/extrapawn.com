@@ -306,6 +306,17 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true }
   )
 
+  // Keep coachStore.fen in sync with boardStore.fen
+  watch(
+    () => boardStore.fen,
+    (newFen) => {
+      if (isCoachEnabled.value && newFen && newFen !== fen.value) {
+        fen.value = newFen
+      }
+    },
+    { immediate: true }
+  )
+
   function getUciFromSan(prevFen: string, san: string): string | null {
     try {
       const c = new Chess(prevFen)
@@ -394,10 +405,10 @@ export const useCoachStore = defineStore('coach', () => {
 
 
 
-  // Analysis Trigger
   async function runAnalysis(currentFen: string, force = false) {
     if (!currentFen) return
     if (!force && currentFen === lastFetchedFen.value) return
+    fen.value = currentFen
     lastFetchedFen.value = currentFen
     const analysisToken = ++latestAnalysisToken.value
 
