@@ -82,7 +82,7 @@ export const useSparringStore = defineStore('sparring', () => {
 
     gameStore.startWithStrategy(
       params.fen,
-      new SparringStrategy(),
+      new SparringStrategy(newId),
       params.color,
       true
     )

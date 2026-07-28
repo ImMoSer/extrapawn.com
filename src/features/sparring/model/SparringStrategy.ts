@@ -6,6 +6,15 @@ import { usePreferencesStore } from '@/features/settings'
 
 export class SparringStrategy implements IGameplayStrategy {
   readonly strategyId = 'sparring'
+  private gameId?: string
+
+  constructor(gameId?: string) {
+    this.gameId = gameId
+  }
+
+  get sessionId(): string {
+    return `sparring_${this.gameId || 'active'}`
+  }
 
   get config() {
     const preferencesStore = usePreferencesStore()

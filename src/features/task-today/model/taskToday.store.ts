@@ -107,6 +107,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const router = useRouter()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
+  const activePlanId = ref<string | null>(null)
   const currentTaskIndex = ref(0)
 
   // Tasks map: sub_mode -> WorkoutPuzzle[]
@@ -269,14 +270,26 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     if (!puzzle) return
 
     const userColor = determineHumanColor(puzzle)
+    const planId = activePlanId.value || 'current'
 
     gameStore.setGamePhase('LOADING')
 
     gameStore.startWithStrategy(
       puzzle.initial_fen,
-      new TaskTodayStrategy(puzzle, userColor),
+      new TaskTodayStrategy(puzzle, userColor, planId),
       userColor,
     )
+
+    if (router.currentRoute.value.name === 'task-today') {
+      void router.replace({
+        name: 'task-today',
+        params: {
+          planId,
+          puzzleType: puzzle.puzzle_type,
+          puzzleId: puzzle.puzzle_id,
+        },
+      })
+    }
   }
 
   function startHelpMode(puzzle: WorkoutPuzzle) {
@@ -724,6 +737,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   async function replayPlan(planData: DailyTrainingPlanEntity | TrainingPlanCurrentResponse, forceReplayAll = false) {
     try {
+      if ('id' in planData && planData.id) {
+        activePlanId.value = String(planData.id).slice(0, 12)
+      }
+
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false

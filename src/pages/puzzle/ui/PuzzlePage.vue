@@ -14,6 +14,10 @@ const props = defineProps({
     type: String as PropType<PuzzleSubmode>,
     required: true,
   },
+  puzzleId: {
+    type: String,
+    default: undefined,
+  },
 })
 
 const { t } = useI18n()
@@ -45,14 +49,18 @@ watch(() => puzzleStore.isWaitingForColorGuess, (isWaiting) => {
   }
 })
 
-watch(() => props.submode, (newSubmode) => {
-  puzzleStore.initialize(newSubmode)
-  if (puzzleStore.isWaitingForColorGuess) {
-    coachStore.setCoachEnabled(false)
-  } else {
-    coachStore.setCoachEnabled(true)
-  }
-}, { immediate: true })
+watch(
+  () => [props.submode, props.puzzleId],
+  ([newSubmode, newPuzzleId]) => {
+    puzzleStore.initialize(newSubmode as PuzzleSubmode, newPuzzleId as string | undefined)
+    if (puzzleStore.isWaitingForColorGuess) {
+      coachStore.setCoachEnabled(false)
+    } else {
+      coachStore.setCoachEnabled(true)
+    }
+  },
+  { immediate: true },
+)
 
 onUnmounted(() => {
   puzzleStore.reset()

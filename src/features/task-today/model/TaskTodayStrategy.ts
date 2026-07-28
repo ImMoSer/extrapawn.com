@@ -11,6 +11,21 @@ import { useTaskTodayStore, type WorkoutPuzzle } from './taskToday.store'
 import { usePreferencesStore } from '@/features/settings'
 
 export class TaskTodayStrategy implements IGameplayStrategy {
+  private puzzle: WorkoutPuzzle
+  private humanColor: 'white' | 'black'
+  private scenarioMoves: string[]
+  private scenarioIndex = 0
+  private isPlayoutMode: boolean
+  private planId?: string
+
+  constructor(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black', planId?: string) {
+    this.puzzle = puzzle
+    this.humanColor = humanColor
+    this.planId = planId
+    this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
+    this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
+  }
+
   get config() {
     const preferencesStore = usePreferencesStore()
     return {
@@ -19,17 +34,9 @@ export class TaskTodayStrategy implements IGameplayStrategy {
     }
   }
 
-  private puzzle: WorkoutPuzzle
-  private humanColor: 'white' | 'black'
-  private scenarioMoves: string[]
-  private scenarioIndex = 0
-  private isPlayoutMode: boolean
-
-  constructor(puzzle: WorkoutPuzzle, humanColor: 'white' | 'black') {
-    this.puzzle = puzzle
-    this.humanColor = humanColor
-    this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
-    this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
+  get sessionId(): string {
+    const planPrefix = this.planId ? `task_today_${this.planId}` : 'task_today'
+    return `${planPrefix}_${this.puzzle.puzzle_type || 'puzzle'}_${this.puzzle.puzzle_id}`
   }
 
   private get store() {

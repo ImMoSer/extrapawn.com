@@ -23,6 +23,10 @@ export class EndgameTrainingStrategy implements IGameplayStrategy {
 
   readonly strategyId = 'endgame'
 
+  get sessionId(): string {
+    return `endgame_${this.puzzle.puzzle_id || this.puzzle.game_id || 'active'}`
+  }
+
   private puzzle: EndgamePuzzle
   private humanColor: 'white' | 'black'
   private isPlayoutMode = true

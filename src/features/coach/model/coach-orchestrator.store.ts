@@ -30,6 +30,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
   const coachStore = useCoachStore()
   const gameStore = useGameStore()
 
+  const activeSessionId = ref<string | null>(null)
   const moveState = ref<MoveState>('IDLE')
   const pendingMove = ref<PendingMoveInfo | null>(null)
   const n8nLastPayload = ref<Record<string, unknown> | null>(null)
@@ -39,14 +40,26 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
   const isDecisionRequired = computed(() => moveState.value === 'DECISION_REQUIRED')
   const isCommitted = computed(() => moveState.value === 'COMMITTED')
 
-  // Register orchestrator handlers with GameStore
+  // Register orchestrator handlers with GameStore (FSD-compliant DI)
   gameStore.registerUserMoveHandler(handleUserMove)
+  gameStore.registerStopHandler(() => resetSession(null))
+
   registerBotMoveHandler(async () => {
     await gameStore.triggerBotMove()
   })
 
   function registerBotMoveHandler(handler: BotMoveHandler | null) {
     botMoveHandler.value = handler
+  }
+
+  function resetSession(newSessionId: string | null = null) {
+    logger.info(`[ORCHESTRATOR] Resetting session. Old: ${activeSessionId.value} -> New: ${newSessionId}`)
+    activeSessionId.value = newSessionId
+    moveState.value = 'IDLE'
+    pendingMove.value = null
+    n8nLastPayload.value = null
+    boardStore.lastNag = null
+    coachStore.lastMoveAnalysis = null
   }
 
   function _qualityToNag(quality?: string | null): string {
@@ -60,6 +73,11 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
   }
 
   async function handleUserMove(uciMove: string): Promise<boolean> {
+    const currentSessionId = gameStore.currentStrategy?.sessionId || null
+    if (activeSessionId.value !== currentSessionId) {
+      resetSession(currentSessionId)
+    }
+
     if (moveState.value === 'USER_PENDING_EVAL' || moveState.value === 'DECISION_REQUIRED') {
       logger.warn('[ORCHESTRATOR] Move submission rejected: previous move evaluation pending.')
       return false
@@ -69,7 +87,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     const san = uciToSan(fenBefore, uciMove)
     const destSquare = uciMove.slice(2, 4) as Key
 
-    logger.info(`[USER_MOVE] User played ${san} (UCI: ${uciMove}) | FEN before: ${fenBefore}`)
+    logger.info(`[USER_MOVE] User played ${san} (UCI: ${uciMove}) | FEN before: ${fenBefore} | Session: ${currentSessionId}`)
 
     // 1. Visually execute move on board
     const moveOk = boardStore.applyUciMove(uciMove)
@@ -194,15 +212,35 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
       // Play ErrorChpock sound on blunder
       soundService.playSound('blunder_sound')
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const puzzleObj = (activeStrategy as any)?.puzzle
+
       n8nLastPayload.value = {
+        session_id: currentSessionId,
+        mode: activeStrategy?.strategyId || puzzleObj?.puzzle_type || 'chess',
         event: 'user_blunder',
+        game_id: currentSessionId,
+        user_color: boardStore.orientation,
+        puzzle_metadata: puzzleObj ? {
+          puzzle_id: puzzleObj.puzzle_id,
+          puzzle_type: puzzleObj.puzzle_type,
+          category: puzzleObj.category,
+          difficulty: puzzleObj.difficulty,
+          strategy: puzzleObj.strategy,
+          first_move: puzzleObj.first_move,
+          initial_fen: puzzleObj.initial_fen,
+          tactical_solution: puzzleObj.tactical_solution,
+          rating: puzzleObj.rating,
+        } : null,
         fen_before: fenBefore,
         fen_after: fenAfter,
-        user_move_uci: uciMove,
-        user_move_san: san,
-        quality: pendingMove.value.quality,
-        win_rate_loss: pendingMove.value.winRateLoss,
-        best_move: pendingMove.value.bestMoveSan,
+        last_user_move: {
+          uci: uciMove,
+          san,
+          quality: pendingMove.value.quality,
+          win_rate_loss: pendingMove.value.winRateLoss,
+          best_move_san: pendingMove.value.bestMoveSan,
+        },
         timestamp: Date.now(),
       }
 
@@ -352,8 +390,16 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
         }
 
         if (analysis && (analysis.quality === 'blunder' || analysis.quality === 'mistake')) {
+          const currentSessionId = gameStore.currentStrategy?.sessionId || null
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const puzzleObj = (gameStore.currentStrategy as any)?.puzzle
+
           n8nLastPayload.value = {
+            session_id: currentSessionId,
+            mode: gameStore.currentStrategy?.strategyId || puzzleObj?.puzzle_type || 'chess',
             event: 'bot_blunder',
+            game_id: currentSessionId,
+            user_color: boardStore.orientation,
             fen_before: fenBefore,
             fen_after: fenAfter,
             bot_move_uci: uciMove,
@@ -375,6 +421,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
   }
 
   return {
+    activeSessionId,
     moveState,
     pendingMove,
     n8nLastPayload,
@@ -382,6 +429,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     isDecisionRequired,
     isCommitted,
     registerBotMoveHandler,
+    resetSession,
     handleUserMove,
     acceptTakeback,
     insistUserMove,

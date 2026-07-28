@@ -94,12 +94,12 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
 
-  function initialize(submode: PuzzleSubmode) {
+  function initialize(submode: PuzzleSubmode, puzzleId?: string) {
     if (!VALID_SUBMODES.includes(submode)) {
       throw new Error(`[PuzzleStore] Invalid submode initialized: "${submode}". Fail-Fast!`)
     }
-    // Clear stale puzzle if the submode changed
-    if (activePuzzle.value && activePuzzle.value.puzzle_type !== submode) {
+    // Clear stale puzzle if the submode or requested puzzleId changed
+    if (activePuzzle.value && (activePuzzle.value.puzzle_type !== submode || (puzzleId && activePuzzle.value.puzzle_id !== puzzleId))) {
       activePuzzle.value = null
       const demoplayStore = useDemoplayStore()
       demoplayStore.demoplayCount = 1
@@ -107,7 +107,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     }
     activeSubmode.value = submode
     soundService.playSound('app_game_entry')
-    if (!activePuzzle.value) {
+    if (puzzleId && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleId)) {
+      isDiscoveryMode.value = false
+      void loadNewPuzzle(submode, { puzzleId })
+    } else if (!activePuzzle.value) {
       startDiscovery(submode)
     } else {
       isDiscoveryMode.value = false
@@ -360,7 +363,8 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         }
         const difficulty = mergedParams.difficulty || 'Novice'
         
-        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
+        const puzzleIdParam = mergedParams.puzzleId ? `&puzzle_id=${mergedParams.puzzleId}` : ''
+        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}${puzzleIdParam}`
 
         const puzzle = await apiClient<PuzzlePuzzle>(url)
         if (!puzzle) {
@@ -375,6 +379,16 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       }
 
       activePuzzle.value = mappedPuzzle
+
+      // Dynamically sync URL route parameter to active puzzle_id
+      const currentRouteId = router.currentRoute.value.params.puzzleId
+      if (mappedPuzzle.puzzle_id && currentRouteId !== mappedPuzzle.puzzle_id) {
+        const routeName = router.currentRoute.value.name || type
+        void router.replace({
+          name: routeName,
+          params: { ...router.currentRoute.value.params, puzzleId: mappedPuzzle.puzzle_id },
+        })
+      }
       
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor

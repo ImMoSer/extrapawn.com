@@ -216,8 +216,9 @@ export const useGameStore = defineStore('game', () => {
     try {
       logger.info('[GameStore] Starting game with Strategy Context.')
 
-      // Cleanup old strategy if exists
+      // Cleanup old strategy and reset Orchestrator state if exists
       currentStrategy.value?.onDestroy?.()
+      stopHandler.value?.()
 
       const setup = parseFen(fen).unwrap()
 
@@ -368,6 +369,12 @@ export const useGameStore = defineStore('game', () => {
     botEngineId.value = id
   }
 
+  const stopHandler = ref<(() => void) | null>(null)
+
+  function registerStopHandler(handler: (() => void) | null) {
+    stopHandler.value = handler
+  }
+
   function stop() {
     logger.info('[GameStore] Stopping game and clearing entity states.')
     
@@ -383,6 +390,9 @@ export const useGameStore = defineStore('game', () => {
     // 3. Clear Entity Systems
     pgnService.reset(INITIAL_FEN)
     boardStore.resetBoardState()
+
+    // 4. Trigger registered stop handler (e.g. Orchestrator reset)
+    stopHandler.value?.()
   }
 
   async function resetGame() {
@@ -413,5 +423,6 @@ export const useGameStore = defineStore('game', () => {
     setBotEngineId,
     triggerBotMove,
     registerUserMoveHandler,
+    registerStopHandler,
   }
 })

@@ -13,6 +13,21 @@ import { useAnalysisStore } from '@/features/analysis'
 import { onBeforeRouteLeave } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
 
+defineProps({
+  planId: {
+    type: String,
+    default: undefined,
+  },
+  puzzleType: {
+    type: String,
+    default: undefined,
+  },
+  puzzleId: {
+    type: String,
+    default: undefined,
+  },
+})
+
 const taskTodayStore = useTaskTodayStore()
 const analysisStore = useAnalysisStore()
 

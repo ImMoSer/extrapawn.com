@@ -12,6 +12,10 @@ import { usePuzzleStore, type PuzzleSubmode, type PuzzlePuzzle } from './puzzle.
 import { usePreferencesStore } from '@/features/settings'
 
 export class PuzzleStrategy implements IGameplayStrategy {
+  get sessionId(): string {
+    return `${this.puzzle.puzzle_type || 'puzzle'}_${this.puzzle.puzzle_id}`
+  }
+
   get config() {
     const preferencesStore = usePreferencesStore()
     return {
