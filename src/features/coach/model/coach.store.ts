@@ -306,45 +306,93 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true }
   )
 
+  function getUciFromSan(prevFen: string, san: string): string | null {
+    try {
+      const c = new Chess(prevFen)
+      const verboseMoves = c.moves({ verbose: true })
+      const m = verboseMoves.find((m) => m.san === san)
+      if (m) return m.from + m.to + (m.promotion || '')
+    } catch {
+      /* ignore */
+    }
+    return null
+  }
+
+  async function fetchLastMoveAnalysis() {
+    if (!isCoachEnabled.value) return
+
+    // 1. Try PGN Service node
+    const lastNode = pgnService.getCurrentNode()
+    if (lastNode && lastNode.parent) {
+      const prevFen = lastNode.parent.fenAfter
+      const uci = lastNode.uci || (lastNode.san ? getUciFromSan(prevFen, lastNode.san) : null)
+      if (uci) {
+        const sq = uci.slice(2, 4) as Key
+        lastMoveAnalysis.value = { loading: true, san: lastNode.san, fen: prevFen, square: sq }
+        try {
+          const r = await explainMoveAt(prevFen, uci)
+          lastMoveAnalysis.value = { ...r, loading: false, fen: prevFen, square: sq }
+          return
+        } catch {
+          lastMoveAnalysis.value = null
+        }
+      }
+    }
+
+    // 2. Fall back to moveHistory & historyIndex
+    const idx = historyIndex.value
+    const history = moveHistory.value
+    if (idx > 0 && history && history[idx] && history[idx - 1]) {
+      const prev = history[idx - 1]
+      const curr = history[idx]
+      if (curr && curr.san && prev && prev.fen) {
+        const uci = getUciFromSan(prev.fen, curr.san)
+        if (uci) {
+          const sq = uci.slice(2, 4) as Key
+          lastMoveAnalysis.value = { loading: true, san: curr.san, fen: prev.fen, square: sq }
+          try {
+            const r = await explainMoveAt(prev.fen, uci)
+            lastMoveAnalysis.value = { ...r, loading: false, fen: prev.fen, square: sq }
+            return
+          } catch {
+            lastMoveAnalysis.value = null
+          }
+        }
+      }
+    }
+
+    lastMoveAnalysis.value = null
+  }
+
   // Last Move Analysis Effect
   watch(
     [historyIndex, moveHistory],
-    async ([idx, history]) => {
-      if (idx === 0 || !history || !history[idx]) {
-        lastMoveAnalysis.value = null
-        return
-      }
-      const prev = history[idx - 1]
-      const curr = history[idx]
-      if (!prev || !curr || !curr.san) {
-        lastMoveAnalysis.value = null
-        return
-      }
-      let moveUCI = ''
-      try {
-        const c = new Chess(prev.fen)
-        const verboseMoves = c.moves({ verbose: true })
-        const m = verboseMoves.find((m) => m.san === curr.san)
-        if (!m) {
-          lastMoveAnalysis.value = null
-          return
-        }
-        moveUCI = m.from + m.to + (m.promotion || '')
-      } catch {
-        lastMoveAnalysis.value = null
-        return
-      }
+    () => {
+      fetchLastMoveAnalysis()
+    },
+    { immediate: true }
+  )
 
-      lastMoveAnalysis.value = { loading: true, san: curr.san }
-      try {
-        const res = await explainMoveAt(prev.fen, moveUCI)
-        lastMoveAnalysis.value = { ...res, loading: false }
-      } catch {
-        lastMoveAnalysis.value = null
+  // Sync lastMoveAnalysis quality to boardStore.lastNag for vector SVG rendering
+  watch(
+    lastMoveAnalysis,
+    (val) => {
+      const sq = (val?.square as Key) || (boardStore.lastMove ? (boardStore.lastMove[1] as Key) : null)
+      if (val && !val.loading && val.quality && sq) {
+        boardStore.lastNag = {
+          square: sq,
+          quality: val.quality,
+        }
+      } else if (!val) {
+        boardStore.lastNag = null
       }
     },
     { immediate: true }
   )
+
+
+
+
 
   // Analysis Trigger
   async function runAnalysis(currentFen: string, force = false) {
@@ -411,21 +459,7 @@ export const useCoachStore = defineStore('coach', () => {
     await runAnalysis(fenToUse, true)
   }
 
-  async function fetchLastMoveAnalysis() {
-    const lastNode = pgnService.getCurrentNode()
-    if (!lastNode || !lastNode.parent || !lastNode.uci) {
-      lastMoveAnalysis.value = null
-      return
-    }
-    const prevFen = lastNode.parent.fenAfter
-    lastMoveAnalysis.value = { loading: true, san: lastNode.san, fen: prevFen }
-    try {
-      const r = await explainMoveAt(prevFen, lastNode.uci)
-      lastMoveAnalysis.value = { ...r, loading: false, fen: prevFen }
-    } catch {
-      lastMoveAnalysis.value = null
-    }
-  }
+
 
   async function explainTopMove(move: { uci: string; move?: string }, index: number) {
     await selectMove(index)
@@ -531,6 +565,7 @@ export const useCoachStore = defineStore('coach', () => {
     async (currentFen) => {
       if (isCoachEnabled.value) {
         await runAnalysis(currentFen)
+        await fetchLastMoveAnalysis()
       }
     },
     { immediate: true }
@@ -539,15 +574,17 @@ export const useCoachStore = defineStore('coach', () => {
   // Watch PGN Tree Version for navigation sync
   watch(
     () => pgnTreeVersion.value,
-    () => {
+    async () => {
       if (!isCoachEnabled.value) return
       const navFen = pgnService.getCurrentNavigatedFen()
       if (navFen && navFen !== fen.value) {
         fen.value = navFen
       }
+      await fetchLastMoveAnalysis()
     },
     { flush: 'sync' }
   )
+
 
   const isAnalyzing = computed(() => topMovesLoading.value || explanationLoading.value)
   const currentOpeningInfo = computed(() => null)

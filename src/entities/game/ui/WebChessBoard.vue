@@ -84,12 +84,11 @@ const CHESSGROUND_BRUSHES = {
 
 
 const NAG_SYMBOLS: Record<string, string> = {
-
   brilliant: '!!',
   great: '!',
   best: '★',
   excellent: '✓',
-  good: 'ok',
+  good: '✓',
   inaccuracy: '?!',
   mistake: '?',
   blunder: '??',
@@ -97,9 +96,12 @@ const NAG_SYMBOLS: Record<string, string> = {
 }
 
 function getNagSymbol(quality: string, nag?: string) {
+  if (nag && NAG_SYMBOLS[nag]) return NAG_SYMBOLS[nag]
+  if (quality && NAG_SYMBOLS[quality]) return NAG_SYMBOLS[quality]
   if (nag) return nag
-  return NAG_SYMBOLS[quality] || '!'
+  return '!'
 }
+
 
 const QUALITY_BG_HEX: Record<string, string> = {
   brilliant: '#00f6ff',

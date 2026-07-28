@@ -24,9 +24,10 @@ export interface GameEndOutcome {
 
 export interface NagMarker {
   square: Key
-  nag: string
+  nag?: string
   quality: string
 }
+
 
 export interface PromotionState {
   orig: Key

@@ -24,10 +24,14 @@ class EnginePlayServiceController {
   public async getBestMove(
     engineId: EngineId,
     fen: string,
-    _historyFens: string[] = [],
-    _providedLegalMoves?: string[],
+    historyFens: string[] = [],
+    providedLegalMoves?: string[],
   ): Promise<string | null> {
+    void historyFens
+    void providedLegalMoves
     const url = `${BACKEND_API_URL}/bestmove?engine=${encodeURIComponent(engineId)}&fen=${encodeURIComponent(fen)}`
+
+
 
     try {
       logger.info(`[EnginePlayService] Requesting move from Maia Hub via Fastify for ${engineId}...`)

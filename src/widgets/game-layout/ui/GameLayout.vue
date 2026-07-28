@@ -2,10 +2,8 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
-import { QualityIcon, useCoachStore } from '@/features/coach'
 import { useThemeStore } from '@/features/settings'
 import { useTaskTodayStore } from '@/features/task-today'
-import { QUALITY_COLOR } from '@/shared/lib/engine/coach/coach.types'
 import { EngineSelector } from '@/features/engine'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
@@ -20,8 +18,8 @@ const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const analysisStore = useAnalysisStore()
 const taskTodayStore = useTaskTodayStore()
-const coachStore = useCoachStore()
 const route = useRoute()
+
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
 
@@ -38,28 +36,6 @@ const effectiveAnalysisMode = computed(() => {
 
 const canUserEdit = computed(() => true)
 
-const getSquareStyle = (square: Key, orientation: 'white' | 'black') => {
-  const file = square.charCodeAt(0) - 97 // a=0
-  const rank = parseInt(square.charAt(1), 10) - 1 // 1=0
-
-  let top, left
-  if (orientation === 'white') {
-    top = (7 - rank) * 12.5
-    left = file * 12.5
-  } else {
-    top = rank * 12.5
-    left = (7 - file) * 12.5
-  }
-
-  return {
-    top: `${top}%`,
-    left: `${left}%`,
-    width: '12.5%',
-    height: '12.5%',
-  }
-}
-
-const getQualityColor = (q: string) => QUALITY_COLOR[q] || '#a1a1aa'
 
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   await gameStore.handleUserMove(orig, dest)
@@ -136,40 +112,13 @@ onUnmounted(() => {
               :animation-duration="themeStore.currentTheme.animationDuration"
               :board-sync-counter="boardStore.boardSyncCounter"
               :can-edit="canUserEdit"
-              :hide-nag="coachStore.isCoachEnabled && !!coachStore.lastMoveAnalysis && !coachStore.lastMoveAnalysis.loading"
               @user-move="handleUserMove"
+
               @complete-promotion="boardStore.completePromotion"
               @wheel-navigate="handleBoardWheel"
               @shapes-change="(shapes: any) => boardStore.setDrawableShapes(shapes)"
+            />
 
-            >
-              <template #overlays>
-                <div
-                  v-if="
-                    coachStore.isCoachEnabled &&
-                    coachStore.lastMoveAnalysis &&
-                    !coachStore.lastMoveAnalysis.loading &&
-                    coachStore.lastMoveAnalysis.quality &&
-                    boardStore.lastMove
-                  "
-                  class="coach-badge-container"
-                  :style="getSquareStyle(boardStore.lastMove[1], boardStore.orientation)"
-                >
-                  <div
-                    class="coach-board-badge"
-                    :style="{
-                      backgroundColor: getQualityColor(coachStore.lastMoveAnalysis.quality),
-                    }"
-                  >
-                    <QualityIcon
-                      :quality="coachStore.lastMoveAnalysis.quality"
-                      :size="'64cqw'"
-                      color="#ffffff"
-                    />
-                  </div>
-                </div>
-              </template>
-            </WebChessBoard>
 
             <!-- Center slot for overlays or additional content -->
             <div class="center-column-overlay">
