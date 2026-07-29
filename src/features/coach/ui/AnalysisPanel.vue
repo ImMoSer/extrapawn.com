@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import QualityIcon from './QualityIcon.vue'
-import ChessPieceIcon from './ChessPieceIcon.vue'
-import SettingsPanel from './SettingsPanel.vue'
-import AboutPosition from './AboutPosition.vue'
-import VisualizerConsole from './VisualizerConsole.vue'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import AboutPosition from './AboutPosition.vue'
+import ChessPieceIcon from './ChessPieceIcon.vue'
+import QualityIcon from './QualityIcon.vue'
+import SettingsPanel from './SettingsPanel.vue'
+import VisualizerConsole from './VisualizerConsole.vue'
 
 const activeTab = ref<'analysis' | 'console' | 'book' | 'wiki' | 'sf'>('analysis')
 
@@ -402,7 +402,7 @@ function getPlanBrief(move: CoachTopMove): string | null {
               borderColor: move.eval_pawns > 0 ? 'rgba(0, 255, 85, 0.30)' : move.eval_pawns < 0 ? 'rgba(255, 7, 58, 0.30)' : 'rgba(139, 147, 168, 0.20)',
             }"
           >
-            {{ move.isMate ? (move.mateIn && move.mateIn > 0 ? `+#M${move.mateIn}` : `-#M${Math.abs(move.mateIn || 0)}`) : (move.eval_pawns > 0 ? `+${move.eval_pawns.toFixed(2)}` : move.eval_pawns.toFixed(2)) }}
+            {{ move.isMate ? (move.mateIn && move.mateIn > 0 ? `+ M${move.mateIn}` : `- M${Math.abs(move.mateIn || 0)}`) : (move.eval_pawns > 0 ? `+${move.eval_pawns.toFixed(2)}` : move.eval_pawns.toFixed(2)) }}
           </span>
         </div>
 

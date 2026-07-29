@@ -2,9 +2,10 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
+import { EvalBar, useCoachStore } from '@/features/coach'
+import { EngineSelector } from '@/features/engine'
 import { useThemeStore } from '@/features/settings'
 import { useTaskTodayStore } from '@/features/task-today'
-import { EngineSelector } from '@/features/engine'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -18,6 +19,7 @@ const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const analysisStore = useAnalysisStore()
 const taskTodayStore = useTaskTodayStore()
+const coachStore = useCoachStore()
 const route = useRoute()
 
 
@@ -84,6 +86,17 @@ onUnmounted(() => {
       <aside class="left-panel">
         <slot name="left-panel"></slot>
       </aside>
+
+      <!-- Dedicated Eval Bar Column -->
+      <div class="eval-bar-column">
+        <EvalBar
+          :eval-cp="coachStore.evalCp"
+          :mate="coachStore.evalMate"
+          :result="coachStore.gameResult"
+          :loading="coachStore.topMovesLoading"
+          :orientation="boardStore.orientation"
+        />
+      </div>
 
       <!-- Center Stage: Top Info -> Board -> Controls -->
       <div class="center-stage" ref="centerColumnRef">
@@ -153,10 +166,17 @@ onUnmounted(() => {
   display: grid;
   flex: 1;
   /* Use the calculated board size for the center column to ensure wings get proper space */
-  grid-template-columns: 2fr var(--board-size) 3fr;
+  grid-template-columns: 3fr 18px var(--board-size) 4fr;
   gap: 10px;
   min-height: 0;
   justify-content: center;
+}
+
+.eval-bar-column {
+  width: 18px;
+  height: var(--board-size);
+  margin-top: var(--top-panel-h);
+  flex-shrink: 0;
 }
 
 /* --- Center Stage Area --- */
@@ -263,12 +283,16 @@ onUnmounted(() => {
 @media (max-width: 1200px) {
   .layout-main {
     /* Shrink side panels on smaller desktops */
-    grid-template-columns: 250px auto 300px;
+    grid-template-columns: 250px 18px auto 300px;
     gap: 10px;
   }
 }
 
 @media (orientation: portrait) {
+  .eval-bar-column {
+    display: none;
+  }
+
   .game-layout {
     height: 100%;
     overflow-y: auto; /* Enable scroll for the whole page on mobile */

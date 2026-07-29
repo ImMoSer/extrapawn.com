@@ -1,12 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
-  evalCp?: number | null
-  mate?: number | null
-  result?: string | null
-  loading?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    evalCp?: number | null
+    mate?: number | null
+    result?: string | null
+    loading?: boolean
+    orientation?: 'white' | 'black'
+    showLabel?: boolean
+  }>(),
+  {
+    orientation: 'white',
+    evalCp: null,
+    mate: null,
+    result: null,
+    loading: false,
+    showLabel: false,
+  }
+)
 
 const isMate = computed(() => props.mate !== null && props.mate !== undefined && props.mate !== 0)
 const isResult = computed(() => !!props.result)
@@ -35,7 +47,7 @@ const label = computed(() => {
   return props.evalCp > 0 ? `+${v}` : `${v}`
 })
 
-const labelAtTop = computed(() => {
+const isWhiteAdvantage = computed(() => {
   if (isResult.value) {
     if (props.result === '1-0') return true
     if (props.result === '0-1') return false
@@ -47,11 +59,18 @@ const labelAtTop = computed(() => {
   return (props.evalCp ?? 0) >= 0
 })
 
+const labelAtTop = computed(() => {
+  return props.orientation === 'black' ? !isWhiteAdvantage.value : isWhiteAdvantage.value
+})
+
 const labelOnDark = computed(() => labelAtTop.value)
 </script>
 
 <template>
-  <div class="w-full h-full bg-void border border-border rounded relative overflow-hidden flex flex-col shadow-inner">
+  <div
+    class="w-full h-full bg-void border border-border rounded relative overflow-hidden flex shadow-inner"
+    :class="orientation === 'black' ? 'flex-col-reverse' : 'flex-col'"
+  >
     <!-- Black portion (top) -->
     <div
       class="transition-[flex] duration-350 ease-out bg-elevated"
@@ -69,8 +88,9 @@ const labelOnDark = computed(() => labelAtTop.value)
       :class="percentage >= 50 ? 'bg-black/20' : 'bg-white/20'"
     />
 
-    <!-- Numeric label inside the bar -->
+    <!-- Numeric label inside the bar (optional) -->
     <div
+      v-if="showLabel"
       class="absolute left-0 right-0 text-center text-[12px] font-black font-mono tracking-tight pointer-events-none select-none"
       :style="{
         top: labelAtTop ? '8px' : 'auto',
