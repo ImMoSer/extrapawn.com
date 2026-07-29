@@ -8,12 +8,51 @@ import {
 import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
-import { usePuzzleStore, type PuzzleSubmode, type PuzzlePuzzle } from './puzzle.store'
+import { usePuzzleStore, type PuzzlePuzzle } from './puzzle.store'
 import { usePreferencesStore } from '@/features/settings'
 
+export interface PuzzleStrategyCallbacks {
+  onSuccess?: (timeMs?: number) => void | Promise<void>
+  onFailure?: () => void | Promise<void>
+  onGameOver?: (status: GameStatusInfo) => void
+  planId?: string
+}
+
 export class PuzzleStrategy implements IGameplayStrategy {
+  private puzzle: PuzzlePuzzle
+  private humanColor: 'white' | 'black'
+  private submode: string
+  private scenarioMoves: string[]
+  private scenarioIndex = 0
+  private isPlayoutMode: boolean
+  private callbacks?: PuzzleStrategyCallbacks
+
+  private prevScenarioIndex = 0
+  private prevPlayoutMode = false
+  private nextPuzzleTimeout: number | null = null
+
+  constructor(
+    puzzle: PuzzlePuzzle,
+    humanColor: 'white' | 'black',
+    submode: string,
+    callbacks?: PuzzleStrategyCallbacks,
+  ) {
+    this.puzzle = puzzle
+    this.humanColor = humanColor
+    this.submode = submode
+    this.callbacks = callbacks
+    this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
+    this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
+
+    this.prevScenarioIndex = this.scenarioIndex
+    this.prevPlayoutMode = this.isPlayoutMode
+  }
+
   get sessionId(): string {
-    return `${this.puzzle.puzzle_type || 'puzzle'}_${this.puzzle.puzzle_id}`
+    const prefix = this.callbacks?.planId
+      ? `task_today_${this.callbacks.planId}`
+      : (this.puzzle.puzzle_type || 'puzzle')
+    return `${prefix}_${this.puzzle.puzzle_id}`
   }
 
   get config() {
@@ -25,28 +64,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
       nextPuzzleDelayMs: preferencesStore.preferences.delays.nextPuzzleDelayMs,
       restartDelayMs: preferencesStore.preferences.delays.restartDelayMs,
     }
-  }
-
-  private puzzle: PuzzlePuzzle
-  private humanColor: 'white' | 'black'
-  private submode: PuzzleSubmode
-  private scenarioMoves: string[]
-  private scenarioIndex = 0
-  private isPlayoutMode: boolean
-
-  private prevScenarioIndex = 0
-  private prevPlayoutMode = false
-  private nextPuzzleTimeout: number | null = null
-
-  constructor(puzzle: PuzzlePuzzle, humanColor: 'white' | 'black', submode: PuzzleSubmode) {
-    this.puzzle = puzzle
-    this.humanColor = humanColor
-    this.submode = submode
-    this.isPlayoutMode = puzzle.strategy === 'playOutOnly'
-    this.scenarioMoves = puzzle.tactical_solution ? puzzle.tactical_solution.split(' ') : []
-
-    this.prevScenarioIndex = this.scenarioIndex
-    this.prevPlayoutMode = this.isPlayoutMode
   }
 
   private get store() {
@@ -111,28 +128,54 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
   }
 
+  private async triggerSuccess(reason: string = 'scenario_complete'): Promise<void> {
+    if (this.callbacks?.onSuccess) {
+      await this.callbacks.onSuccess()
+      return
+    }
+
+    soundService.playSound('game_tacktics_success', 'PuzzleStrategy.scenarioSuccess')
+    this.store.handleGameOver(
+      this.puzzle,
+      true,
+      { winner: this.humanColor, reason },
+      this.humanColor,
+    )
+    this.nextPuzzleTimeout = window.setTimeout(() => {
+      this.store.loadNewPuzzle(this.puzzle.puzzle_type)
+    }, this.config.nextPuzzleDelayMs)
+  }
+
+  private async triggerFailure(): Promise<void> {
+    if (this.callbacks?.onFailure) {
+      await this.callbacks.onFailure()
+      return
+    }
+
+    soundService.playSound('game_tacktics_error')
+    this.store.handleGameOver(
+      this.puzzle,
+      false,
+      { winner: undefined, reason: 'wrong_move' },
+      this.humanColor,
+    )
+    this.nextPuzzleTimeout = window.setTimeout(() => {
+      this.store.localRestart()
+    }, this.config.restartDelayMs)
+  }
+
   async onUserMoveExecuted(uciMove: string): Promise<void> {
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
 
     const coachStore = useCoachStore()
-
-    // 1. In Playout Mode, check if move delivered checkmate or check for blunder takebacks
     const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
+    // 1. In Playout Mode, check for checkmate victory or blunder takebacks
     if (this.isPlayoutMode) {
       if (isCheckmate) {
         logger.info('[PuzzleStrategy] Checkmate delivered in playout mode. Game won!')
-        soundService.playSound('game_tacktics_success', 'PuzzleStrategy.playoutCheckmate')
-        this.store.handleGameOver(
-          this.puzzle,
-          true,
-          { winner: this.humanColor, reason: 'checkmate' },
-          this.humanColor,
-        )
-        this.nextPuzzleTimeout = window.setTimeout(() => {
-          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-        }, this.config.nextPuzzleDelayMs)
+        await this.triggerSuccess('checkmate')
         return
       }
 
@@ -173,20 +216,11 @@ export class PuzzleStrategy implements IGameplayStrategy {
         }
 
         if (isCheckmate || this.puzzle.strategy === 'scenarioOnly') {
-          soundService.playSound('game_tacktics_success', 'PuzzleStrategy.scenarioSuccess')
-          this.store.handleGameOver(
-            this.puzzle,
-            true,
-            { winner: this.humanColor, reason: isCheckmate ? 'checkmate' : 'scenario_complete' },
-            this.humanColor,
-          )
-          this.nextPuzzleTimeout = window.setTimeout(() => {
-            this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-          }, this.config.nextPuzzleDelayMs)
+          await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
           soundService.playSound('game_play_out_start')
-          window.$message.success('Tacktics completed! Playout starts.')
+          window.$message?.success('Tacktics completed! Playout starts.')
         }
       } else {
         try {
@@ -241,16 +275,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
           }
         }
 
-        soundService.playSound('game_tacktics_error')
-        this.store.handleGameOver(
-          this.puzzle,
-          false,
-          { winner: undefined, reason: 'wrong_move' },
-          this.humanColor,
-        )
-        this.nextPuzzleTimeout = window.setTimeout(() => {
-          this.store.localRestart()
-        }, this.config.restartDelayMs)
+        await this.triggerFailure()
         return
       }
     }
@@ -271,16 +296,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     if (this.scenarioIndex >= this.scenarioMoves.length) {
       if (this.puzzle.strategy === 'scenarioOnly' || this.submode === 'tactics') {
-        soundService.playSound('game_tacktics_success')
-        this.store.handleGameOver(
-          this.puzzle,
-          true,
-          { winner: this.humanColor, reason: 'scenario_complete' },
-          this.humanColor,
-        )
-        this.nextPuzzleTimeout = window.setTimeout(() => {
-          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-        }, this.config.nextPuzzleDelayMs)
+        await this.triggerSuccess('scenario_complete')
       }
     }
   }
@@ -303,6 +319,11 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onGameOver(status: GameStatusInfo): void {
+    if (this.callbacks?.onGameOver) {
+      this.callbacks.onGameOver(status)
+      return
+    }
+
     const isWin = this.checkWinCondition(status)
     if (status.outcome) {
       this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)

@@ -11,7 +11,7 @@ import { useAuthStore } from '@/entities/user'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useRouter } from 'vue-router'
 import { parseFen } from 'chessops/fen'
-import { TaskTodayStrategy } from './TaskTodayStrategy'
+import { PuzzleStrategy } from '@/features/puzzle'
 import { usePreferencesStore } from '@/features/settings'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
 
@@ -271,7 +271,19 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
     gameStore.startWithStrategy(
       puzzle.initial_fen,
-      new TaskTodayStrategy(puzzle, userColor, planId),
+      new PuzzleStrategy(
+        {
+          ...puzzle,
+          strategy: puzzle.strategy || (puzzle.puzzle_type === 'finish_him' ? 'scenarioPlus' : puzzle.puzzle_type === 'tactics' ? 'scenarioOnly' : 'playOutOnly')
+        },
+        userColor,
+        puzzle.puzzle_type,
+        {
+          planId,
+          onSuccess: () => handlePuzzleSuccess(currentTimeMs.value),
+          onFailure: () => handlePuzzleFailure(),
+        }
+      ),
       userColor,
     )
 
@@ -336,8 +348,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     const boardStore = useBoardStore()
     const puzzle = currentPuzzle.value
     const userColor = puzzle ? determineHumanColor(puzzle) : null
-    const isCheckmate = boardStore.chessPosition.isCheckmate()
-    GameAudioEngine.handleGameOutcome({ winner: userColor || undefined, reason: isCheckmate ? 'checkmate' : 'draw' }, userColor)
+    const outcome = boardStore.chessPosition.outcome()
+    if (outcome) {
+      GameAudioEngine.handleGameOutcome(outcome, userColor)
+    }
 
     if (puzzle) {
       const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
