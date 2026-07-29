@@ -92,6 +92,7 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
 
     // Perform the actual undo
     gameStore.undoLastUserMove()
+    coachStore.resetVisualsAfterBlunderDecision()
     return true
   }
 

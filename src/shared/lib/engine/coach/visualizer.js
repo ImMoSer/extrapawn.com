@@ -210,17 +210,25 @@ function mapPlanSequence(cmds, planSteps, logs) {
 
   if (ourMoves.length === 0) return
 
+  // Verify that all moves of our side form a continuous route of the same piece
+  // (i.e. move i's 'from' must equal move i-1's 'to')
+  for (let i = 1; i < ourMoves.length; i++) {
+    if (ourMoves[i].from !== ourMoves[i - 1].to) {
+      return // Not a continuous single-piece route -> no arrows
+    }
+  }
+
   ourMoves.forEach((m, idx) => {
     const cmdKey = `plan_step_${idx + 1}`
-    cmds[cmdKey] = `[mark:${m.to}:${COLORS.ENGINE_PLAN};route:${m.from}->${m.to}:${COLORS.ENGINE_PLAN};step_badge:${m.from}:${m.label}:${COLORS.ENGINE_PLAN}]`
+    cmds[cmdKey] = `[mark:${m.to}:${COLORS.ENGINE_PLAN};route:${m.from}->${m.to}:${COLORS.ENGINE_PLAN}]`
 
     logs.push({
       category: 'Plan',
-      title: `Engine Plan Step ${m.label}`,
+      title: `Piece Route Step ${m.label}`,
       squares: [m.from, m.to],
       color: COLORS.ENGINE_PLAN,
       command: cmds[cmdKey],
-      reason: `Engine plan step ${m.label}: ${m.san ? m.san + ' ' : ''}(${m.from} -> ${m.to})`
+      reason: `Piece route step ${m.label}: ${m.san ? m.san + ' ' : ''}(${m.from} -> ${m.to})`
     })
   })
 }

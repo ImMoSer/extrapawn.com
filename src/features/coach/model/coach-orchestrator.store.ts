@@ -62,6 +62,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     n8nLastPayload.value = null
     boardStore.lastNag = null
     coachStore.lastMoveAnalysis = null
+    coachStore.resetVisualsAfterBlunderDecision()
   }
 
   function _qualityToNag(quality?: string | null): string {
@@ -211,6 +212,9 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
       // Scenario B: User Blunder -> DECISION_REQUIRED
       moveState.value = 'DECISION_REQUIRED'
 
+      // Auto-enable board visuals if eye was OFF
+      coachStore.enableVisualsForBlunder()
+
       // Play ErrorChpock sound on blunder
       soundService.playSound('blunder_sound')
 
@@ -319,6 +323,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
 
     pendingMove.value = null
     moveState.value = 'IDLE'
+    coachStore.resetVisualsAfterBlunderDecision()
 
     // 3. Restore candidate arrows & top moves for fenBefore
     if (coachStore.isCoachEnabled) {
@@ -404,6 +409,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     }
 
     moveState.value = 'IDLE'
+    coachStore.resetVisualsAfterBlunderDecision()
   }
 
   async function handleBotMove(uciMove: string): Promise<boolean> {

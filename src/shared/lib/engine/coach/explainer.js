@@ -434,7 +434,6 @@ function classifyMove({
 
   const best = topMoves && topMoves[0];
   const second = topMoves && topMoves[1];
-  const playedInTop = topMoves && topMoves.find(m => m.move === moveUCI);
 
   const bestWhite = best ? moverScoreToWhite(best.score, moverColor) : evalAfterWhite;
   const secondWhite = second ? moverScoreToWhite(second.score, moverColor) : bestWhite;
@@ -478,11 +477,6 @@ function classifyMove({
   }
 
 
-
-  // Detect missed mate.
-  const bestHasMate = best && best.mate !== null && best.mate !== undefined;
-  const playedHasMate = playedInTop && playedInTop.mate !== null && playedInTop.mate !== undefined;
-  const missedMate = bestHasMate && !playedHasMate;
 
   // Brutal threshold: dropping winning to losing is always a blunder
   // even when raw loss is small (e.g. wrBefore=92, wrPlayed=8 = -84pp).
@@ -543,8 +537,6 @@ function classifyMove({
     quality = 'great';
   } else if (isBestMove) {
     quality = 'best';
-  } else if (missedMate && loss >= 5) {
-    quality = 'missed_mate';
   } else if (lostWin) {
     quality = 'blunder';
   } else if (inTop3 && loss < 4) {

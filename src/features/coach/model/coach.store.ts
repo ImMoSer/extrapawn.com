@@ -96,6 +96,7 @@ export const useCoachStore = defineStore('coach', () => {
   const tablebaseBestMove = ref<Record<string, unknown> | null>(null)
 
   const showVisuals = ref(false)
+  const autoOpenedForBlunder = ref(false)
 
   // LLM Coach State & Actions for Sparring / AI
   const isLlmThinking = ref(false)
@@ -605,8 +606,25 @@ export const useCoachStore = defineStore('coach', () => {
   const isAnalyzing = computed(() => topMovesLoading.value || explanationLoading.value)
   const currentOpeningInfo = computed(() => null)
 
+  function enableVisualsForBlunder() {
+    if (!showVisuals.value) {
+      autoOpenedForBlunder.value = true
+      showVisuals.value = true
+      logger.info('[CoachStore] Auto-enabled board visuals for blunder position')
+    }
+  }
+
+  function resetVisualsAfterBlunderDecision() {
+    if (autoOpenedForBlunder.value) {
+      showVisuals.value = false
+      autoOpenedForBlunder.value = false
+      logger.info('[CoachStore] Reset board visuals (eye OFF) after blunder decision')
+    }
+  }
+
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
+    autoOpenedForBlunder.value = false
   }
 
   return {
@@ -655,6 +673,9 @@ export const useCoachStore = defineStore('coach', () => {
     selectedMoveExplanationLoading,
     tablebaseBestMove,
     showVisuals,
+    autoOpenedForBlunder,
+    enableVisualsForBlunder,
+    resetVisualsAfterBlunderDecision,
     toggleVisuals,
 
     // LLM Coach

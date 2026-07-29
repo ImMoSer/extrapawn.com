@@ -39,6 +39,7 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
         isTakebackPending.value = false
         takebackMessage.value = null
         pendingTakebackFen.value = null
+        coachStore.resetVisualsAfterBlunderDecision()
       }
 
       // Check if the move was played by the user (matches board orientation)
@@ -51,9 +52,10 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
       const hasHighWinRateLoss = isUserMove && analysis.quality && typeof analysis.winRateLoss === 'number' && analysis.winRateLoss >= 20
 
       if (hasHighWinRateLoss) {
-        // Trigger Auto-Takeback
+        // Trigger Auto-Takeback & auto-enable board visuals if eye was OFF
         isTakebackPending.value = true
         pendingTakebackFen.value = prevFen || null
+        coachStore.enableVisualsForBlunder()
 
         if (analysis.quality === 'inaccuracy') {
           coachMood.value = 'warning'
