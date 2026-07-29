@@ -60,11 +60,14 @@ export function generateVisualCommands(
       materialSummary: blob?.material?.summary || null
     },
     lastMoveAnalysis: blob?.lastMoveAnalysis ? {
+      uci: blob.lastMoveAnalysis.uci || blob.lastMoveAnalysis.move || null,
       san: blob.lastMoveAnalysis.san || null,
       quality: blob.lastMoveAnalysis.quality || null,
       summary: blob.lastMoveAnalysis.summary || null,
       details: blob.lastMoveAnalysis.details || null,
-      consequence: blob?.lastMoveConsequence || null
+      consequence: blob?.lastMoveConsequence || null,
+      win_rate_loss: blob.lastMoveAnalysis.winRateLoss ?? blob.lastMoveAnalysis.win_rate_loss ?? null,
+      best_move_san: blob.lastMoveAnalysis.bestMoveSan ?? blob.lastMoveAnalysis.best_move_san ?? null
     } : null,
     tactics: extractTacticsSources(blob, planSteps),
     planSteps: (planSteps || []).slice(0, 5).map(s => ({

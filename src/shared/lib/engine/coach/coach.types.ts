@@ -309,11 +309,14 @@ export interface VisualizerInputSources {
   attackingSide?: 'w' | 'b' | string
   positionSummary?: VisualizerInputPosSummary | null
   lastMoveAnalysis?: {
+    uci?: string | null
     san?: string | null
     quality?: string | null
     summary?: string | null
     details?: string | null
     consequence?: string | null
+    win_rate_loss?: number | null
+    best_move_san?: string | null
   } | null
   tactics?: unknown[]
   planSteps?: VisualizerInputPlanStep[]

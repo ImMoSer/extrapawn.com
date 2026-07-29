@@ -93,7 +93,6 @@ async function copyData() {
     lines.push('No visualizer commands generated for this position.\n')
   } else {
     logs.value.forEach((log: VisualizerLogItem, idx: number) => {
-
       lines.push(`${idx + 1}. [${log.category}] ${log.title}`)
       if (log.squares && log.squares.length > 0) {
         lines.push(`   Squares: ${log.squares.join(', ')}`)
@@ -113,12 +112,100 @@ async function copyData() {
   if (inputSources.value) {
     lines.push(`FEN: ${inputSources.value.fen || ''}`)
     lines.push(`Attacking Side: ${inputSources.value.attackingSide === 'w' ? 'white' : 'black'}`)
+
+    // 0. Position Summary
+    if (inputPosSummary.value) {
+      lines.push(`\n--- Position Summary ---`)
+      const evalStr =
+        inputPosSummary.value.evalMate !== null && inputPosSummary.value.evalMate !== undefined
+          ? `M${inputPosSummary.value.evalMate}`
+          : typeof inputPosSummary.value.evalPawns === 'number'
+            ? inputPosSummary.value.evalPawns >= 0
+              ? `+${inputPosSummary.value.evalPawns.toFixed(2)}`
+              : inputPosSummary.value.evalPawns.toFixed(2)
+            : '0.00'
+      lines.push(`Eval: ${evalStr}`)
+      if (inputPosSummary.value.phase) lines.push(`Phase: ${inputPosSummary.value.phase}`)
+      if (inputPosSummary.value.verdict) lines.push(`Verdict: ${inputPosSummary.value.verdict}`)
+      if (inputPosSummary.value.materialSummary) lines.push(`Material: ${inputPosSummary.value.materialSummary}`)
+    }
+
+    // 0.1 Last Move Analysis
+    if (inputLastMove.value?.san) {
+      lines.push(`\n--- Last Move Analysis ---`)
+      let moveLine = `Move: ${inputLastMove.value.san}`
+      if (inputLastMove.value.uci) moveLine += ` (${inputLastMove.value.uci})`
+      if (inputLastMove.value.quality) moveLine += ` [${inputLastMove.value.quality}]`
+      lines.push(moveLine)
+      if (typeof inputLastMove.value.win_rate_loss === 'number') {
+        lines.push(`Win Rate Loss: ${inputLastMove.value.win_rate_loss}%`)
+      }
+      if (inputLastMove.value.best_move_san) {
+        lines.push(`Best Move: ${inputLastMove.value.best_move_san}`)
+      }
+      if (inputLastMove.value.summary) lines.push(`Summary: ${inputLastMove.value.summary}`)
+      if (inputLastMove.value.details) lines.push(`Details: ${inputLastMove.value.details}`)
+      if (inputLastMove.value.consequence) lines.push(`Consequence: ${inputLastMove.value.consequence}`)
+    }
+
+    // 1. Principal Plan & Plan Steps
+    if (inputPrincipalPlan.value?.theme || inputPrincipalPlan.value?.description) {
+      lines.push(`\n--- Principal Plan Overview ---`)
+      if (inputPrincipalPlan.value.theme) lines.push(`Theme: ${inputPrincipalPlan.value.theme}`)
+      if (inputPrincipalPlan.value.description) lines.push(`Description: ${inputPrincipalPlan.value.description}`)
+    }
+
     if (inputPlanSteps.value.length) {
-      lines.push(`\nPlan Steps (${inputPlanSteps.value.length}):`)
+      lines.push(`\n--- Plan Steps (${inputPlanSteps.value.length}) ---`)
       inputPlanSteps.value.forEach((m: VisualizerInputPlanStep, i: number) => {
-        let line = `  ${i + 1}. ${m.san || m.uci}`
+        let line = `  ${i + 1}. ${m.san || m.uci || `${m.from}->${m.to}`}`
         if (m.quality) line += ` [${m.quality}]`
         if (m.headline) line += ` | Headline: ${m.headline}`
+        if (m.motifs?.length) line += ` | Motifs: ${m.motifs.join(', ')}`
+        lines.push(line)
+      })
+    }
+
+    // 2. Pawn Structure
+    if (inputPawnStruct.value) {
+      lines.push(`\n--- Pawn Structure ---`)
+      if (inputPawnStruct.value.summary) lines.push(`Summary: ${inputPawnStruct.value.summary}`)
+      if (inputPawnStruct.value.darkComplexWeak) lines.push(`Dark Squares Weak: ${inputPawnStruct.value.darkComplexWeak}`)
+      lines.push(`Passed Pawns: ${inputPassedPawns.value.length ? inputPassedPawns.value.join(', ') : 'None'}`)
+      lines.push(`Weak Pawns: ${inputWeakPawns.value.length ? inputWeakPawns.value.join(', ') : 'None'}`)
+      if (inputPawnStruct.value.whiteIsolated?.length || inputPawnStruct.value.blackIsolated?.length) {
+        lines.push(`Isolated Pawns: White: ${inputPawnStruct.value.whiteIsolated?.join(', ') || 'None'} | Black: ${inputPawnStruct.value.blackIsolated?.join(', ') || 'None'}`)
+      }
+      if (inputPawnStruct.value.whiteBackward?.length || inputPawnStruct.value.blackBackward?.length) {
+        lines.push(`Backward Pawns: White: ${inputPawnStruct.value.whiteBackward?.join(', ') || 'None'} | Black: ${inputPawnStruct.value.blackBackward?.join(', ') || 'None'}`)
+      }
+    }
+
+    // 3. Strategic Themes
+    if (inputThemes.value.length) {
+      lines.push(`\n--- Strategic Themes (${inputThemes.value.length}) ---`)
+      inputThemes.value.forEach((t: VisualizerInputTheme, i: number) => {
+        lines.push(`  ${i + 1}. [${t.id}] (${t.side}, strength: ${t.strength}): ${t.description}`)
+      })
+    }
+
+    // 4. Candidate Engine Top Moves
+    if (inputEngineTopMoves.value.length) {
+      lines.push(`\n--- Candidate Engine Moves (${inputEngineTopMoves.value.length}) ---`)
+      inputEngineTopMoves.value.forEach((m: VisualizerInputEngineMove, i: number) => {
+        const scoreStr =
+          typeof m.score === 'number'
+            ? m.score >= 0
+              ? `+${(m.score / 100).toFixed(2)}`
+              : `${(m.score / 100).toFixed(2)}`
+            : m.mate !== null && m.mate !== undefined
+              ? `M${m.mate}`
+              : 'N/A'
+        let line = `  ${i + 1}. ${m.san} (Eval: ${scoreStr})`
+        if (m.character) line += ` [${m.character}]`
+        if (m.headline) line += ` | Headline: ${m.headline}`
+        if (m.planBrief) line += ` | Brief: ${m.planBrief}`
+        if (m.motifs?.length) line += ` | Motifs: ${m.motifs.join(', ')}`
         lines.push(line)
       })
     }
@@ -321,11 +408,20 @@ function getCategoryBadgeClass(category?: string) {
             <!-- 0.1 Last Move Analysis & Consequence -->
             <div v-if="inputLastMove?.san" class="p-2.5 rounded border border-border bg-surface text-[11px] space-y-1">
               <div class="flex items-center justify-between">
-                <span class="text-[9px] uppercase font-bold text-danger tracking-wider">
+                <span class="text-[9px] uppercase font-bold text-danger tracking-wider flex items-center gap-1.5">
                   📜 Last Move: {{ inputLastMove.san }}
+                  <span v-if="inputLastMove.uci" class="font-mono text-text-secondary lowercase">({{ inputLastMove.uci }})</span>
                 </span>
                 <span v-if="inputLastMove.quality" class="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-danger/15 text-danger border border-danger/30">
                   {{ inputLastMove.quality }}
+                </span>
+              </div>
+              <div v-if="typeof inputLastMove.win_rate_loss === 'number' || inputLastMove.best_move_san" class="flex items-center gap-2 text-[10px] font-mono">
+                <span v-if="typeof inputLastMove.win_rate_loss === 'number'" class="text-text-secondary">
+                  Win Rate Loss: <strong class="text-warning">{{ inputLastMove.win_rate_loss }}%</strong>
+                </span>
+                <span v-if="inputLastMove.best_move_san" class="text-text-secondary">
+                  Best Move: <strong class="text-success">{{ inputLastMove.best_move_san }}</strong>
                 </span>
               </div>
               <div v-if="inputLastMove.summary" class="text-[11px] text-text-primary">
