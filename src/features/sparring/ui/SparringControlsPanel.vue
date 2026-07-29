@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { FlagOutline, AddOutline, AnalyticsOutline } from '@vicons/ionicons5'
-import { NButton, NIcon, NSpace, NTag } from 'naive-ui'
+import { NButton, NIcon, NSpace } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useSparringStore } from '../model/sparring.store'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -30,11 +30,6 @@ async function handleResign() {
   <div class="sparring-controls-panel">
     <div class="panel-left">
       <span class="mode-badge">SPARRING</span>
-
-      <!-- Game ID badge -->
-      <n-tag v-if="sparringStore.gameId" size="small" round :bordered="false" class="game-id-tag">
-        #{{ sparringStore.gameId }}
-      </n-tag>
 
       <!-- Player Color badge -->
       <span v-if="sparringStore.gameStatus !== 'setup'" class="color-badge">
