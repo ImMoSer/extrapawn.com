@@ -1,4 +1,4 @@
-import { soundService, type SoundEvent } from '@/shared/lib/sound.service'
+import { boardSoundService, coachSpeakService } from '@/shared/lib/sound'
 import type { GameStatusInfo } from './strategy.types'
 import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
@@ -6,41 +6,34 @@ class GameAudioEngineController {
   
   /**
    * Orchestrates the sound sequence for game endings.
-   * Plays the raw board outcome (e.g. Checkmate) followed by the interpretative outcome (e.g. User Won).
+   * Plays the board outcome voice line followed by user praise or blunder reaction.
    */
   public handleGameOutcome(outcome: NonNullable<GameStatusInfo['outcome']>, humanColor: ChessgroundColor | null) {
     if (!outcome) return
-    
-    const sequence: SoundEvent[] = []
 
-    // 1. Board Fact Sound
+    // 1. Board Outcome Voice
     if (outcome.reason === 'checkmate') {
-      sequence.push('board_checkmate')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'checkmate' })
     } else if (outcome.reason === 'stalemate') {
-      sequence.push('board_draw_stalemate')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'stalemate' })
     } else if (outcome.reason === 'insufficient_material') {
-      sequence.push('board_draw_insufficient_material')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'insufficient_material' })
     } else if (outcome.reason === 'fifty_move_rule') {
-      sequence.push('board_draw_fifty_moves')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'fifty_moves_no_progress' })
     } else if (outcome.reason === 'threefold_repetition') {
-      sequence.push('board_draw_repetition')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'draw_by_repetition' })
     } else if (outcome.reason === 'draw') {
-      sequence.push('game_draw')
+      coachSpeakService.speak({ category: 'chess_result', specificKey: 'draw' })
     }
 
-    // 2. Emotional/Narrative Sound
+    // 2. User Outcome Reaction
     if (humanColor && outcome.winner !== undefined) {
-       if (outcome.winner === humanColor) {
-         sequence.push('game_user_won')
-       } else {
-         sequence.push('game_user_lost')
-       }
-    } else if (humanColor && !outcome.winner && outcome.reason !== 'resign' && outcome.reason !== 'wrong_move') {
-       // Optional: Add a specific drawn sound for the user here if needed
-       // Currently handled by the board_draw_... sounds
+      if (outcome.winner === humanColor) {
+        coachSpeakService.speak({ category: 'praise' })
+      } else {
+        coachSpeakService.speak({ category: 'blunder', severity: 'critical' })
+      }
     }
-
-    soundService.playSequence(sequence)
   }
 
   /**
@@ -51,43 +44,43 @@ class GameAudioEngineController {
     if (!san) return
 
     if (san.includes('O-O')) {
-      soundService.playSound('board_castle')
+      boardSoundService.play('castle')
     } else if (san.includes('x')) {
-      soundService.playSound('board_capture')
+      boardSoundService.play('capture')
     } else if (san.includes('=')) {
-      soundService.playSound('board_promote')
+      boardSoundService.play('promote')
     } else {
-      soundService.playSound('board_move')
+      boardSoundService.play('move')
     }
 
     // Play check sound. (Checkmate sound is handled by handleGameOutcome)
     if (san.includes('+')) {
       if (isBotMove) {
-        soundService.playSound('board_bot_checks_player')
+        coachSpeakService.speak({ category: 'during_game', specificKey: 'coach_says_check' })
       } else {
-        soundService.playSound('board_check')
+        boardSoundService.play('check')
       }
     }
   }
 
   public playFeatureSuccess() {
-    soundService.playSound('game_tacktics_success')
+    boardSoundService.play('tactics_success')
   }
 
   public playFeatureError() {
-    soundService.playSound('game_tacktics_error')
+    boardSoundService.play('tactics_error')
   }
 
   public playTaskTodaySuccess() {
-    soundService.playSound('task_today_success')
+    boardSoundService.play('tactics_success')
   }
 
   public playTaskTodayError() {
-    soundService.playSound('task_today_error')
+    boardSoundService.play('tactics_error')
   }
 
   public playSpeedrunFinished() {
-    soundService.playSound('game_speedrun_finished')
+    boardSoundService.play('applause')
   }
 }
 

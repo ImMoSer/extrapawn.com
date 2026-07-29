@@ -97,9 +97,10 @@ export class TaskTodayStrategy implements IGameplayStrategy {
   }
 
   async onUserMoveExecuted(uciMove: string): Promise<void> {
+    const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+
     if (!this.isPlayoutMode) {
       const expectedMove = this.scenarioMoves[this.scenarioIndex]
-      const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
       if (uciMove === expectedMove || isCheckmate) {
         if (uciMove === expectedMove) {
@@ -108,9 +109,10 @@ export class TaskTodayStrategy implements IGameplayStrategy {
           this.scenarioIndex = this.scenarioMoves.length
         }
 
-        if (this.puzzle.strategy === 'scenarioOnly' && this.scenarioIndex >= this.scenarioMoves.length) {
+        if (isCheckmate || this.scenarioIndex >= this.scenarioMoves.length) {
           // Success!
           await this.store.handlePuzzleSuccess(this.store.currentTimeMs)
+          return
         }
       } else {
         if (this.puzzle.strategy === 'scenarioOnly') {
@@ -121,9 +123,13 @@ export class TaskTodayStrategy implements IGameplayStrategy {
         if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
           this.scenarioIndex = this.scenarioMoves.length
-          soundService.playSound('game_play_out_start')
+          soundService.playSound('game_play_out_start', 'TaskTodayStrategy.playoutStart')
           window.$message.success('Tacktics completed! Playout starts.')
         }
+      }
+    } else {
+      if (isCheckmate) {
+        await this.store.handlePuzzleSuccess(this.store.currentTimeMs)
       }
     }
   }

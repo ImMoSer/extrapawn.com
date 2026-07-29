@@ -7,6 +7,7 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import {
   useGameStore,
   useBoardStore,
+  GameAudioEngine,
   type GameStatusInfo,
 } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
@@ -105,8 +106,11 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       demoplayStore.demoplayCount = 1
       demoplayStore.hasJustReset = true
     }
+    const isNewRoom = activeSubmode.value !== submode
     activeSubmode.value = submode
-    soundService.playSound('app_game_entry')
+    if (isNewRoom) {
+      soundService.playSound('app_game_entry', 'puzzleStore.initSubmode (Room Entry)')
+    }
     if (puzzleId && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleId)) {
       isDiscoveryMode.value = false
       void loadNewPuzzle(submode, { puzzleId })
@@ -146,7 +150,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       )
       feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
       if (activeSubmode.value !== 'tactics') {
-        soundService.playSound('game_you_move')
+        soundService.playSound('game_you_move', 'puzzleStore.guessColor')
       }
     } else {
       // Wrong guess - instant game over
@@ -172,6 +176,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
     gameStore.setGamePhase('GAMEOVER')
     analysisStore.setPlayerColor(humanColor)
+    GameAudioEngine.handleGameOutcome(outcome, humanColor)
 
     if (isWin) {
       feedbackMessage.value = t('features.puzzle.feedback.win')
@@ -412,9 +417,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
           false
         )
         feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
-        if (activeSubmode.value !== 'tactics') {
-          soundService.playSound('game_you_move')
-        }
       }
     } catch (error) {
        const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))

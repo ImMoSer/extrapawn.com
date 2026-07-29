@@ -391,8 +391,10 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
       }
     }
 
-    // Trigger Bot Move if registered
-    if (botMoveHandler.value) {
+    // Trigger Bot Move if registered (only if game is not over)
+    if (boardStore.isGameOver || gameStore.gamePhase === 'GAMEOVER') {
+      logger.info('[ORCHESTRATOR] User move ended game (Checkmate/Draw). Bot move trigger skipped.')
+    } else if (botMoveHandler.value) {
       logger.info('[BOT_MOVE] Triggering bot response...')
       try {
         await botMoveHandler.value(committedFen)

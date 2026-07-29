@@ -143,6 +143,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function triggerBotMove(overrideDelay?: number) {
+    if (boardStore.isGameOver || gamePhase.value === 'GAMEOVER') {
+      logger.info('[GameStore] Skipping bot move request: position is game over.')
+      return
+    }
+
     if (currentStrategy.value) {
       const fenAtRequest = boardStore.fen
       const startTime = Date.now()
@@ -183,7 +188,9 @@ export const useGameStore = defineStore('game', () => {
           pgnService.addNode({ san, uci, fenBefore, fenAfter })
           boardStore.syncVisualCues()
           
-          GameAudioEngine.playMoveSoundFromSan(san, true)
+          if (san.includes('+')) {
+            GameAudioEngine.handleGameOutcome({ winner: undefined, reason: 'check' }, null)
+          }
         } else {
           boardStore.applyUciMove(uci)
         }

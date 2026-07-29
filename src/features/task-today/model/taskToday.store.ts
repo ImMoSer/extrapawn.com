@@ -1,5 +1,6 @@
 import {
   useGameStore,
+  useBoardStore,
   GameAudioEngine
 } from '@/entities/game'
 import { soundService } from '@/shared/lib/sound.service'
@@ -329,11 +330,15 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   async function handlePuzzleSuccess(timeNeededMs: number) {
     const cappedTimeMs = Math.min(timeNeededMs, 15 * 60 * 1000)
-    console.log(`[TaskToday] Success! Time needed: ${cappedTimeMs}ms (raw: ${timeNeededMs}ms)`)
     GameAudioEngine.playTaskTodaySuccess()
     stopTimer()
 
+    const boardStore = useBoardStore()
     const puzzle = currentPuzzle.value
+    const userColor = puzzle ? determineHumanColor(puzzle) : null
+    const isCheckmate = boardStore.chessPosition.isCheckmate()
+    GameAudioEngine.handleGameOutcome({ winner: userColor || undefined, reason: isCheckmate ? 'checkmate' : 'draw' }, userColor)
+
     if (puzzle) {
       const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
       const newAttempts = attempts + 1
@@ -543,7 +548,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       saveState()
       await startPlanOnBackend()
 
-      soundService.playSound('app_game_entry')
+      soundService.playSound('app_game_entry', 'taskTodayStore.startPlan')
       playCurrentPuzzle()
 
       return true
@@ -807,7 +812,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
       saveState()
 
-      soundService.playSound('app_game_entry')
+      soundService.playSound('app_game_entry', 'taskTodayStore.replayPlan')
       playCurrentPuzzle()
 
       return true

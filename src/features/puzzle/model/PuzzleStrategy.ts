@@ -117,8 +117,25 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     const coachStore = useCoachStore()
 
-    // 1. In Playout Mode, wait for coach and check for blunder takebacks
+    // 1. In Playout Mode, check if move delivered checkmate or check for blunder takebacks
+    const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+
     if (this.isPlayoutMode) {
+      if (isCheckmate) {
+        logger.info('[PuzzleStrategy] Checkmate delivered in playout mode. Game won!')
+        soundService.playSound('game_tacktics_success', 'PuzzleStrategy.playoutCheckmate')
+        this.store.handleGameOver(
+          this.puzzle,
+          true,
+          { winner: this.humanColor, reason: 'checkmate' },
+          this.humanColor,
+        )
+        this.nextPuzzleTimeout = window.setTimeout(() => {
+          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
+        }, this.config.nextPuzzleDelayMs)
+        return
+      }
+
       if (coachStore.isCoachEnabled) {
         try {
           const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
@@ -135,7 +152,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     // 2. In Scenario Mode (following the predefined tactical solution)
     const expectedMove = this.scenarioMoves[this.scenarioIndex]
-    const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
     if (uciMove === expectedMove || isCheckmate) {
       if (uciMove === expectedMove) {
@@ -144,7 +160,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         this.scenarioIndex = this.scenarioMoves.length
       }
 
-      if (this.scenarioIndex >= this.scenarioMoves.length) {
+      if (isCheckmate || this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')
         try {
           const { useCoachFeedbackStore } = await import('@/features/coach')
@@ -156,12 +172,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
           logger.error('[PuzzleStrategy] Error showing tactical completion feedback:', err)
         }
 
-        if (this.puzzle.strategy === 'scenarioOnly') {
-          soundService.playSound('game_tacktics_success')
+        if (isCheckmate || this.puzzle.strategy === 'scenarioOnly') {
+          soundService.playSound('game_tacktics_success', 'PuzzleStrategy.scenarioSuccess')
           this.store.handleGameOver(
             this.puzzle,
             true,
-            { winner: this.humanColor, reason: 'scenario_complete' },
+            { winner: this.humanColor, reason: isCheckmate ? 'checkmate' : 'scenario_complete' },
             this.humanColor,
           )
           this.nextPuzzleTimeout = window.setTimeout(() => {

@@ -1,6 +1,9 @@
-import logger from '@/shared/lib/logger'
+import { boardSoundService, registerBoardVolumeProvider } from './sound/boardSound.service'
+import { coachSpeakService, registerCoachVolumeProvider } from './sound/coachSpeak.service'
 
-// --- TYPES ---
+export * from './sound/boardSound.service'
+export * from './sound/coachSpeak.service'
+
 export type SoundTrack = 'voice' | 'background'
 
 export interface SoundVolumeProvider {
@@ -10,17 +13,19 @@ export interface SoundVolumeProvider {
   setBoardVolume(vol: number): void
 }
 
-let volumeProvider: SoundVolumeProvider | null = null
-
-export function registerVolumeProvider(provider: SoundVolumeProvider) {
-  volumeProvider = provider
+export function registerVolumeProvider(provider: SoundVolumeProvider): void {
+  registerBoardVolumeProvider({
+    getBoardVolume: provider.getBoardVolume,
+    setBoardVolume: provider.setBoardVolume,
+  })
+  registerCoachVolumeProvider({
+    getVoiceVolume: provider.getVoiceVolume,
+    setVoiceVolume: provider.setVoiceVolume,
+  })
 }
 
 export type SoundEvent =
-  // --- App ---
   | 'app_game_entry'
-
-  // --- Board Store / Game Mechanics ---
   | 'board_move'
   | 'board_capture'
   | 'board_castle'
@@ -36,13 +41,9 @@ export type SoundEvent =
   | 'board_timer_10s'
   | 'board_timer_8s'
   | 'board_timer_times_up'
-
-  // --- Game Result / Personal ---
   | 'game_user_won'
   | 'game_user_lost'
   | 'game_draw'
-
-  // --- Feature Specific ---
   | 'game_play_out_start'
   | 'game_tacktics_error'
   | 'game_tacktics_success'
@@ -56,231 +57,116 @@ export type SoundEvent =
   | 'blunder_takeback'
   | 'blunder_insist'
 
-// --- DYNAMIC POOL LOADING ---
-// This uses Vite's glob import to find all mp3 files in the public/sounds folder.
-const soundModules = import.meta.glob('/public/sounds/**/*.mp3')
-const allSoundPaths = Object.keys(soundModules).map((path) => path.replace('/public', ''))
+class UnifiedSoundServiceFacade {
+  public async playSound(event: SoundEvent, reason?: string): Promise<void> {
+    const callerReason = reason || `soundService.playSound('${event}')`
+    switch (event) {
+      // --- Board SFX ---
+      case 'board_move':
+        return boardSoundService.play('move', callerReason)
+      case 'board_capture':
+        return boardSoundService.play('capture', callerReason)
+      case 'board_castle':
+        return boardSoundService.play('castle', callerReason)
+      case 'board_promote':
+        return boardSoundService.play('promote', callerReason)
+      case 'board_check':
+        return boardSoundService.play('check', callerReason)
+      case 'board_load_position':
+        return boardSoundService.play('load_position', callerReason)
+      case 'blunder_sound':
+      case 'game_training_error':
+        return boardSoundService.play('chpock', callerReason)
+      case 'game_tacktics_error':
+      case 'task_today_error':
+        return boardSoundService.play('tactics_error', callerReason)
+      case 'game_tacktics_success':
+      case 'task_today_success':
+        return boardSoundService.play('tactics_success', callerReason)
+      case 'game_speedrun_finished':
+        return boardSoundService.play('applause', callerReason)
+      case 'board_timer_10s':
+        return boardSoundService.play('timer_10s', callerReason)
+      case 'board_timer_8s':
+        return boardSoundService.play('timer_8s', callerReason)
+      case 'board_timer_times_up':
+        return boardSoundService.play('timer_times_up', callerReason)
 
-/**
- * Creates a pool of sound paths based on a prefix.
- * If the prefix points to a specific file, it returns just that file.
- * If it points to a directory, it returns all files within that directory (recursively).
- */
-const createPool = (pathPrefix: string): string[] => {
-  // Check if it's a direct file first (to be safe)
-  if (allSoundPaths.includes(pathPrefix)) return [pathPrefix]
-  
-  // Otherwise filter by prefix (folder structure)
-  const pool = allSoundPaths.filter((path) => path.startsWith(pathPrefix))
-  
-  if (pool.length === 0) {
-    logger.warn(`[SoundService] No sounds found for prefix: ${pathPrefix}`)
-  }
-  return pool
-}
+      // --- Coach Voice ---
+      case 'app_game_entry':
+        return coachSpeakService.speak({ category: 'entry', reason: callerReason })
+      case 'board_bot_checks_player':
+        return coachSpeakService.speak({ category: 'during_game', specificKey: 'coach_says_check', reason: callerReason })
+      case 'game_you_move':
+        return coachSpeakService.speak({ category: 'during_game', specificKey: 'your_move', reason: callerReason })
+      case 'game_play_out_start':
+        return coachSpeakService.speak({ category: 'during_game', reason: callerReason })
+      case 'game_user_won':
+        return coachSpeakService.speak({ category: 'praise', reason: callerReason })
+      case 'game_user_lost':
+        return coachSpeakService.speak({ category: 'blunder', severity: 'critical', reason: callerReason })
+      case 'blunder':
+        return coachSpeakService.speak({ category: 'blunder', severity: 'critical', reason: callerReason })
+      case 'blunder_takeback':
+        return coachSpeakService.speak({ category: 'blunder', severity: 'takeback', reason: callerReason })
+      case 'blunder_insist':
+        return coachSpeakService.speak({ category: 'blunder', severity: 'insist', reason: callerReason })
+      case 'board_checkmate':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'checkmate', reason: callerReason })
+      case 'board_draw_stalemate':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'stalemate', reason: callerReason })
+      case 'board_draw_repetition':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'draw_by_repetition', reason: callerReason })
+      case 'board_draw_fifty_moves':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'fifty_moves_no_progress', reason: callerReason })
+      case 'board_draw_insufficient_material':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'insufficient_material', reason: callerReason })
+      case 'game_draw':
+        return coachSpeakService.speak({ category: 'chess_result', specificKey: 'draw', reason: callerReason })
 
-// --- SOUND DEFINITIONS ---
-const soundDefinitions: Record<SoundEvent, { track: SoundTrack; path: string | string[] }> = {
-  // --- App ---
-  app_game_entry: { track: 'voice', path: createPool('/sounds/app/gameModusEntry') },
-
-  // --- Board Store ---
-  board_move: { track: 'background', path: '/sounds/boarStore/board_move.mp3' },
-  board_capture: { track: 'background', path: '/sounds/boarStore/board_capture.mp3' },
-  board_castle: { track: 'background', path: '/sounds/boarStore/board_castle.mp3' },
-  board_promote: { track: 'background', path: '/sounds/boarStore/board_promote.mp3' },
-  board_load_position: { track: 'background', path: '/sounds/boarStore/board_load_position.mp3' },
-  board_check: { track: 'background', path: '/sounds/boarStore/board_check.mp3' },
-  board_bot_checks_player: { track: 'voice', path: createPool('/sounds/boarStore/checks_by_bot') },
-  board_checkmate: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/checkmate') },
-  
-  board_draw_stalemate: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/draw/draw_by_stalemate') },
-  board_draw_repetition: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_repetition.mp3' },
-  board_draw_fifty_moves: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_fifty_moves.mp3' },
-  board_draw_insufficient_material: { track: 'voice', path: '/sounds/boarStore/chessGameResult/draw/draw_by_insufficient_material.mp3' },
-
-  board_timer_10s: { track: 'background', path: '/sounds/boarStore/timer_10_seconds_left.mp3' },
-  board_timer_8s: { track: 'background', path: '/sounds/boarStore/timer_8_seconds_left.mp3' },
-  board_timer_times_up: { track: 'background', path: '/sounds/boarStore/timer_times_up.mp3' },
-
-  // --- Game Result ---
-  game_user_won: { track: 'voice', path: createPool('/sounds/gameStore/after_game/if_user_won') },
-  game_user_lost: { track: 'voice', path: createPool('/sounds/gameStore/after_game/if_user_lost') },
-  game_draw: { track: 'voice', path: createPool('/sounds/boarStore/chessGameResult/draw') },
-
-  // --- Features ---
-  game_play_out_start: { track: 'voice', path: createPool('/sounds/gameStore/during_game/play_out_start') },
-  game_tacktics_error: { track: 'background', path: '/sounds/gameStore/TacticksError.mp3' },
-  game_tacktics_success: { track: 'background', path: '/sounds/gameStore/TacticksSuccess.mp3' },
-  task_today_error: { track: 'background', path: '/sounds/gameStore/TacticksError.mp3' },
-  task_today_success: { track: 'background', path: '/sounds/gameStore/TacticksSuccess.mp3' },
-  game_training_error: { track: 'background', path: '/sounds/gameStore/ErrorChpock.mp3' },
-  game_you_move: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_1.mp3' },
-  game_speedrun_finished: { track: 'background', path: createPool('/sounds/gameStore/applaus_backround') },
-  blunder: { track: 'voice', path: '/sounds/gameStore/during_game/play_out_start/play_out_start_2.mp3' },
-  blunder_sound: { track: 'background', path: '/sounds/gameStore/ErrorChpock.mp3' },
-  blunder_takeback: { track: 'voice', path: ['/sounds/gameStore/ThinkDeeperNextTime.mp3', '/sounds/gameStore/tryAgain.mp3'] },
-  blunder_insist: { track: 'voice', path: '/sounds/gameStore/youllNeverWin.mp3' },
-}
-
-class SoundServiceController {
-  private audioCache: Map<string, HTMLAudioElement> = new Map()
-
-  private get voiceVolume(): number {
-    if (volumeProvider) return volumeProvider.getVoiceVolume()
-    return 1.0
-  }
-
-  private get boardVolume(): number {
-    if (volumeProvider) return volumeProvider.getBoardVolume()
-    return 1.0
-  }
-
-  private isVoiceTrackBusy = false
-  private voiceQueue: SoundEvent[] = []
-  private activeBackgroundSounds: Set<HTMLAudioElement> = new Set()
-
-  constructor() {}
-
-  /**
-   * Plays a sound event. 
-   * 'voice' track events are queued and played sequentially.
-   * 'background' track events are played immediately.
-   */
-  public async playSound(event: SoundEvent): Promise<void> {
-    const definition = soundDefinitions[event]
-    if (!definition) {
-      logger.warn(`[SoundService] Sound definition not found for event: ${event}`)
-      return
-    }
-
-    if (definition.track === 'voice') {
-      this.voiceQueue.push(event)
-      this._processVoiceQueue()
-    } else {
-      // Background sounds don't need a queue, play them immediately
-      this._playAndTrack(event)
+      default:
+        return Promise.resolve()
     }
   }
 
-  /**
-   * Helper to play multiple sounds in a specific sequence.
-   */
-  public async playSequence(events: SoundEvent[]): Promise<void> {
+  public async playSequence(events: SoundEvent[], reason?: string): Promise<void> {
     for (const event of events) {
-      await this.playSound(event)
+      await this.playSound(event, reason)
     }
-  }
-
-  private async _processVoiceQueue(): Promise<void> {
-    if (this.isVoiceTrackBusy || this.voiceQueue.length === 0) {
-      return
-    }
-    this.isVoiceTrackBusy = true
-    
-    const nextEvent = this.voiceQueue.shift()
-    if (nextEvent) {
-      await this._playAndTrack(nextEvent)
-    }
-    
-    this.isVoiceTrackBusy = false
-    this._processVoiceQueue()
-  }
-
-  private _getOrCreateAudio(path: string): HTMLAudioElement {
-    if (this.audioCache.has(path)) {
-      return this.audioCache.get(path)!
-    }
-
-    const audio = new Audio(path)
-    audio.preload = 'auto'
-    this.audioCache.set(path, audio)
-    return audio
-  }
-
-  private _playAndTrack(event: SoundEvent): Promise<void> {
-    return new Promise((resolve) => {
-      const definition = soundDefinitions[event]!
-      const pathOrPool = definition.path
-      const path = Array.isArray(pathOrPool)
-        ? pathOrPool[Math.floor(Math.random() * pathOrPool.length)]
-        : pathOrPool
-
-      if (!path) {
-        logger.warn(`[SoundService] No sound path found for event: ${event}. Pool might be empty.`)
-        resolve()
-        return
-      }
-
-      const audio = this._getOrCreateAudio(path)
-      const isBackground = definition.track === 'background'
-
-      audio.volume = isBackground ? this.boardVolume : this.voiceVolume
-      audio.currentTime = 0
-
-      audio.onended = () => {
-        if (isBackground) {
-          this.activeBackgroundSounds.delete(audio)
-        }
-        audio.onended = null
-        resolve()
-      }
-
-      if (isBackground) {
-        this.activeBackgroundSounds.add(audio)
-      }
-
-      audio.play().catch((error) => {
-        const message = (error as Error).message
-        if (
-          message.includes("user didn't interact") ||
-          (error as Error).name === 'NotAllowedError'
-        ) {
-          logger.info(`[SoundService] Autoplay blocked for sound '${path}'. User interaction required.`)
-        } else {
-          logger.warn(`[SoundService] Error playing sound '${path}':`, message)
-        }
-
-        if (isBackground) {
-          this.activeBackgroundSounds.delete(audio)
-        }
-        audio.onended = null
-        resolve()
-      })
-    })
   }
 
   public stopAllBackgroundSounds(): void {
-    this.activeBackgroundSounds.forEach((audio) => {
-      audio.pause()
-      audio.currentTime = 0
-    })
-    this.activeBackgroundSounds.clear()
-    logger.info('[SoundService] All background sounds stopped.')
+    boardSoundService.stopAll()
   }
 
-  public setVoiceVolume(volume: number): void {
-    const vol = Math.max(0, Math.min(1, volume))
-    if (volumeProvider) {
-      volumeProvider.setVoiceVolume(vol)
-    }
+  public stopAllVoiceSounds(): void {
+    coachSpeakService.stop()
   }
 
-  public setBoardVolume(volume: number): void {
-    const vol = Math.max(0, Math.min(1, volume))
-    if (volumeProvider) {
-      volumeProvider.setBoardVolume(vol)
-    }
+  public stopAll(): void {
+    boardSoundService.stopAll()
+    coachSpeakService.stop()
   }
 
-  public getVoiceVolume = (): number => this.voiceVolume
-  public getBoardVolume = (): number => this.boardVolume
+  public setVoiceVolume(vol: number): void {
+    coachSpeakService.setVolume(vol)
+  }
 
-  private loadVolumeSettings(): void {}
+  public setBoardVolume(vol: number): void {
+    boardSoundService.setVolume(vol)
+  }
+
+  public getVoiceVolume(): number {
+    return coachSpeakService.volume
+  }
+
+  public getBoardVolume(): number {
+    return boardSoundService.volume
+  }
 
   public async ensureInitialized(): Promise<void> {
     return Promise.resolve()
   }
 }
 
-export const soundService = new SoundServiceController()
+export const soundService = new UnifiedSoundServiceFacade()

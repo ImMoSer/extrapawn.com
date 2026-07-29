@@ -15,6 +15,7 @@ import { isNormal } from 'chessops'
 import { makeUci, parseSquare, parseUci as parseUciMove } from 'chessops/util'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, toRaw } from 'vue'
+import { boardSoundService } from '@/shared/lib/sound'
 import { soundService } from '@/shared/lib/sound.service'
 
 export interface GameEndOutcome {
@@ -136,13 +137,18 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
-  function applyUciMove(uci: string): boolean {
+  function applyUciMove(uci: string, options?: { skipSound?: boolean }): boolean {
     logger.info(`[BoardStore] Applying UCI move: ${uci}`)
     const move = parseUciMove(uci)
     if (!move || !chessPosition.value.isLegal(move)) {
       logger.error(`[BoardStore] Illegal move: ${uci}`)
       return false
     }
+
+    const fromPiece = isNormal(move) ? chessPosition.value.board.get(move.from) : undefined
+    const isCapture = isNormal(move) && (chessPosition.value.board.has(move.to) || (fromPiece?.role === 'pawn' && (move.from % 8 !== move.to % 8)))
+    const isCastle = isNormal(move) && fromPiece?.role === 'king' && Math.abs((move.from % 8) - (move.to % 8)) > 1
+    const isPromotion = isNormal(move) && !!move.promotion
 
     chessPosition.value.play(move)
     chessPosition.value = chessPosition.value.clone()
@@ -153,6 +159,23 @@ export const useBoardStore = defineStore('board', () => {
     }
     lastMoveTimestamp.value = Date.now()
     boardSyncCounter.value++
+
+    if (!options?.skipSound) {
+      if (isCastle) {
+        boardSoundService.play('castle', 'boardStore.applyUciMove')
+      } else if (isCapture) {
+        boardSoundService.play('capture', 'boardStore.applyUciMove')
+      } else if (isPromotion) {
+        boardSoundService.play('promote', 'boardStore.applyUciMove')
+      } else {
+        boardSoundService.play('move', 'boardStore.applyUciMove')
+      }
+
+      if (chessPosition.value.isCheck()) {
+        boardSoundService.play('check', 'boardStore.applyUciMove')
+      }
+    }
+
     return true
   }
 

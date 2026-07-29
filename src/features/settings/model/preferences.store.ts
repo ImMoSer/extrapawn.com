@@ -87,7 +87,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   delays: {
     initialBotDelayMs: 500,
     botDelayMs: 250,
-    nextPuzzleDelayMs: 500,
+    nextPuzzleDelayMs: 2000,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
     demoThinkingBeforVisualizeMs: 7500,

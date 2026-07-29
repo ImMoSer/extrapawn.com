@@ -1,6 +1,8 @@
 // src/entities/game/lib/EnginePlayService.ts
 import logger from '@/shared/lib/logger'
 import type { EngineId } from '@/shared/types/api.types'
+import { Chess } from 'chessops/chess'
+import { parseFen } from 'chessops/fen'
 
 const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_API_URL as string) || 'http://localhost:3000/api'
 
@@ -29,9 +31,21 @@ class EnginePlayServiceController {
   ): Promise<string | null> {
     void historyFens
     void providedLegalMoves
+
+    try {
+      const setup = parseFen(fen).unwrap()
+      const pos = Chess.fromSetup(setup).unwrap()
+      const outcome = pos.outcome()
+      if (outcome) {
+        logger.info(`[EnginePlayService] Skipping move fetch: position is terminal (winner: ${outcome.winner}).`)
+        return null
+      }
+    } catch (e) {
+      // If FEN parsing fails, continue to endpoint
+      void e
+    }
+
     const url = `${BACKEND_API_URL}/bestmove?engine=${encodeURIComponent(engineId)}&fen=${encodeURIComponent(fen)}`
-
-
 
     try {
       logger.info(`[EnginePlayService] Requesting move from Maia Hub via Fastify for ${engineId}...`)
