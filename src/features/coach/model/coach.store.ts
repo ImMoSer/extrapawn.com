@@ -37,6 +37,11 @@ export const useCoachStore = defineStore('coach', () => {
 
   // Coach Enabled State
   const isCoachEnabled = ref(true)
+  const activeTab = ref<'analysis' | 'console' | 'book' | 'wiki' | 'sf'>('analysis')
+
+  function toggleTab(tab: 'console' | 'book' | 'wiki' | 'sf') {
+    activeTab.value = activeTab.value === tab ? 'analysis' : tab
+  }
 
   function setCoachEnabled(enabled: boolean) {
     isCoachEnabled.value = enabled
@@ -606,6 +611,8 @@ export const useCoachStore = defineStore('coach', () => {
 
   return {
     isCoachEnabled,
+    activeTab,
+    toggleTab,
     isAnalyzing,
     setCoachEnabled,
     fen,

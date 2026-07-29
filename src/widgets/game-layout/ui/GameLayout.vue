@@ -5,6 +5,7 @@ import { useAnalysisStore } from '@/features/analysis'
 import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
 import { useThemeStore } from '@/features/settings'
+import ControlCenter from './ControlCenter.vue'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -136,6 +137,13 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <!-- Control Center Sector -->
+        <div class="cb-bottom-panel">
+          <slot name="bottom-controls">
+            <ControlCenter />
+          </slot>
+        </div>
       </div>
 
       <aside class="right-panel">
@@ -148,7 +156,8 @@ onUnmounted(() => {
 <style scoped>
 .game-layout {
   --top-panel-h: 48px;
-  --board-size: calc(100vh - 20px - var(--top-panel-h) - 4px);
+  --bottom-panel-h: 48px;
+  --board-size: calc(100vh - 20px - var(--top-panel-h) - var(--bottom-panel-h) - 16px);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -197,6 +206,17 @@ onUnmounted(() => {
   align-items: center;
   padding-bottom: 8px;
   gap: 12px;
+  z-index: 25;
+}
+
+.cb-bottom-panel {
+  width: 100%;
+  height: var(--bottom-panel-h);
+  flex: 0 0 var(--bottom-panel-h);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 8px;
   z-index: 25;
 }
 

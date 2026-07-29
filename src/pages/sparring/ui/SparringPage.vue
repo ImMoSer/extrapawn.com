@@ -3,7 +3,6 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
-import { MozerExplorerWidget } from '@/widgets/mozer-explorer'
 import { useBoardStore } from '@/entities/game'
 import { useSparringStore, SparringControlsPanel, NewGameModal } from '@/features/sparring'
 import { useCoachStore } from '@/features/coach'
@@ -38,10 +37,6 @@ onUnmounted(async () => {
 
 <template>
   <GameLayout>
-    <template #left-panel>
-      <MozerExplorerWidget />
-    </template>
-
     <template #top-info>
       <SparringControlsPanel />
     </template>

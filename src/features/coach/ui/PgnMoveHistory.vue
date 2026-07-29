@@ -10,11 +10,20 @@ import {
   TrendingUpOutline 
 } from '@vicons/ionicons5'
 
+const props = withDefaults(
+  defineProps<{
+    readOnly?: boolean
+  }>(),
+  {
+    readOnly: undefined,
+  }
+)
+
 const gameStore = useGameStore()
 const sparringStore = useSparringStore()
 const scrollContainer = ref<HTMLElement | null>(null)
 
-const isReadOnly = computed(() => sparringStore.gameStatus === 'playing')
+const isReadOnly = computed(() => props.readOnly ?? sparringStore.gameStatus === 'playing')
 
 watch(
   pgnTreeVersion,
@@ -154,11 +163,13 @@ const deleteMove = () => {
   flex: 1;
   min-height: 0;
   background: var(--bg-1);
-  border-bottom: 1px solid var(--glass-border);
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
 }
 
 .history-header {
-  padding: 8px 14px 4px;
+  padding: 8px 12px 4px;
 }
 
 .header-title {
@@ -172,11 +183,11 @@ const deleteMove = () => {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 14px 12px;
+  padding: 8px 12px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.03);
-  margin: 0 14px 12px;
-  border-radius: 8px;
+  margin: 0 8px 8px;
+  border-radius: 6px;
 }
 
 .history-content-scroll::-webkit-scrollbar {

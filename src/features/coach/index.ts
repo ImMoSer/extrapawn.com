@@ -6,6 +6,8 @@ import AboutPosition from './ui/AboutPosition.vue'
 import FenInput from './ui/FenInput.vue'
 import SettingsPanel from './ui/SettingsPanel.vue'
 
+import PgnMoveHistory from './ui/PgnMoveHistory.vue'
+
 export {
   AnalysisPanel,
   QualityIcon,
@@ -14,6 +16,7 @@ export {
   AboutPosition,
   FenInput,
   SettingsPanel,
+  PgnMoveHistory,
 }
 
 export { useCoachStore } from './model/coach.store'

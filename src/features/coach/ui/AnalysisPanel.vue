@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useCoachStore } from '../model/coach.store'
 import AboutPosition from './AboutPosition.vue'
 import ChessPieceIcon from './ChessPieceIcon.vue'
+import PgnMoveHistory from './PgnMoveHistory.vue'
 import QualityIcon from './QualityIcon.vue'
-import SettingsPanel from './SettingsPanel.vue'
 import VisualizerConsole from './VisualizerConsole.vue'
 
-const activeTab = ref<'analysis' | 'console' | 'book' | 'wiki' | 'sf'>('analysis')
+const coachStore = useCoachStore()
+const activeTab = computed({
+  get: () => coachStore.activeTab,
+  set: (val) => { coachStore.activeTab = val }
+})
 
 const route = useRoute()
 const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
@@ -179,47 +184,7 @@ function getPlanBrief(move: CoachTopMove): string | null {
       </span>
     </div>
 
-    <!-- Toolbar buttons -->
-    <div class="flex items-center gap-1.5 p-2 border-b border-border">
-      <button
-        v-if="isSparringRoute"
-        @click="activeTab = activeTab === 'book' ? 'analysis' : 'book'"
-        title="MozerBook Opening Explorer (MB)"
-        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
-        :class="activeTab === 'book' ? 'bg-success/20 text-success border-success/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
-      >
-        MB
-      </button>
-      <button
-        v-if="isSparringRoute"
-        @click="activeTab = activeTab === 'wiki' ? 'analysis' : 'wiki'"
-        title="WikiBooks Opening Theory (WT)"
-        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
-        :class="activeTab === 'wiki' ? 'bg-warning/20 text-warning border-warning/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
-      >
-        WT
-      </button>
-      <button
-        @click="activeTab = activeTab === 'sf' ? 'analysis' : 'sf'"
-        title="Stockfish Evaluation & Lines (SF)"
-        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
-        :class="activeTab === 'sf' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
-      >
-        SF
-      </button>
-      <button
-        @click="activeTab = activeTab === 'console' ? 'analysis' : 'console'"
-        title="Toggle Visualizer Debug Console (CC)"
-        class="icon-btn px-2 py-1 rounded-md text-[11px] font-bold font-mono border transition-colors cursor-pointer"
-        :class="activeTab === 'console' ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50' : 'bg-elevated text-text-secondary border-border hover:text-text-primary'"
-      >
-        CC
-      </button>
-      <div class="flex-1" />
-      <SettingsPanel @change="emit('settings-change')" />
-    </div>
-
-    <!-- Tab Views: Console, Book, Wiki, SF, or Analysis -->
+      <!-- Tab Views: Console, Book, Wiki, SF, or Analysis -->
     <template v-if="activeTab === 'console'">
       <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0">
         <VisualizerConsole
@@ -243,8 +208,9 @@ function getPlanBrief(move: CoachTopMove): string | null {
     </template>
 
     <template v-else-if="activeTab === 'sf'">
-      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
+      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2 gap-2">
         <slot name="sf" />
+        <PgnMoveHistory class="flex-1 min-h-0" />
       </div>
     </template>
 

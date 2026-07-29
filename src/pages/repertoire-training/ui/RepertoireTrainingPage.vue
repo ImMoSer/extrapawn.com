@@ -10,7 +10,7 @@ import {
   useRepertoireTrainingStore
 } from '@/features/repertoire-training'
 import { useGameStore } from '@/entities/game'
-import { MozerExplorerWidget } from '@/widgets/mozer-explorer'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { useAnalysisStore } from '@/features/analysis'
 
 const { t } = useI18n()
@@ -89,7 +89,7 @@ onBeforeRouteLeave((to, from, next) => {
     </template>
 
     <template #right-panel>
-      <MozerExplorerWidget />
+      <CoachSidebarWidget />
     </template>
   </GameLayout>
 </template>

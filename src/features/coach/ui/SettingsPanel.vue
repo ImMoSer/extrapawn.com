@@ -57,7 +57,7 @@ function apply() {
 
     <div
       v-if="open"
-      class="absolute right-0 top-[calc(100%+6px)] w-[320px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-50 text-[11px]"
+      class="absolute right-0 bottom-[calc(100%+8px)] w-[320px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-50 text-[11px]"
     >
       <div class="text-[9px] uppercase tracking-wider font-bold text-text-secondary mb-2">
         Engine settings
