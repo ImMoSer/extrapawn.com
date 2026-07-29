@@ -262,7 +262,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // SVG Shapes (arrows & NAGs) for Chessground
   const drawableShapes = computed<DrawShape[]>(() => {
-    if (!isCoachEnabled.value) return []
+    if (!isCoachEnabled.value || !showVisuals.value) return []
     const shapes: DrawShape[] = []
 
     // 1. Visual commands generated for active candidate move plan
@@ -302,7 +302,7 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     drawableShapes,
     (shapes) => {
-      if (isCoachEnabled.value) {
+      if (isCoachEnabled.value && showVisuals.value) {
         boardStore.setCoachShapes(shapes)
       } else {
         boardStore.setCoachShapes([])

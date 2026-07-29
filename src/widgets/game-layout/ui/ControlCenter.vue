@@ -7,6 +7,8 @@ import { NIcon } from 'naive-ui'
 import {
   ChevronBackOutline,
   ChevronForwardOutline,
+  EyeOffOutline,
+  EyeOutline,
   PlaySkipBackOutline,
   PlaySkipForwardOutline,
   SwapVerticalOutline,
@@ -121,8 +123,24 @@ const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
       </button>
     </div>
 
-    <!-- Right: Settings Gear (Zahnrad) -->
-    <div class="flex items-center">
+    <!-- Right: Visualizations Toggle (Eye) + Settings Gear (Zahnrad) -->
+    <div class="flex items-center gap-2">
+      <button
+        @click="coachStore.toggleVisuals()"
+        :title="coachStore.showVisuals ? 'Brett-Visualisierungen ausblenden' : 'Brett-Visualisierungen anzeigen'"
+        class="icon-btn p-1.5 rounded-md border text-xs cursor-pointer flex items-center justify-center transition-colors"
+        :class="
+          coachStore.showVisuals
+            ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,229,255,0.3)]'
+            : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
+        "
+      >
+        <n-icon size="14">
+          <EyeOutline v-if="coachStore.showVisuals" />
+          <EyeOffOutline v-else />
+        </n-icon>
+      </button>
+
       <SettingsPanel @change="coachStore.handleSettingsChange()" />
     </div>
   </div>
