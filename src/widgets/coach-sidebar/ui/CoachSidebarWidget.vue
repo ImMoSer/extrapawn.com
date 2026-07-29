@@ -4,8 +4,6 @@ import { AnalysisPanel, useCoachStore, useCoachOrchestratorStore } from '@/featu
 import { MozerBook, WikiBooksPanel } from '@/features/mozer-book'
 import { EngineEvaluationHeader } from '@/features/analysis'
 import { NButton } from 'naive-ui'
-import { useTaskTodayStore } from '@/features/task-today'
-import { useI18n } from 'vue-i18n'
 
 withDefaults(
   defineProps<{
@@ -16,9 +14,6 @@ withDefaults(
   }
 )
 
-
-const { t } = useI18n()
-const taskTodayStore = useTaskTodayStore()
 const coachStore = useCoachStore()
 const orchestratorStore = useCoachOrchestratorStore()
 
@@ -48,11 +43,6 @@ onUnmounted(() => {
           ▶ Trotzdem spielen (B2)
         </NButton>
       </div>
-    </div>
-    <div v-if="taskTodayStore.isHelpActive" class="help-done-header p-2 bg-warning/10 border-b border-warning/20 mb-2">
-      <NButton block type="warning" class="done-btn font-bold" @click="taskTodayStore.stopHelpMode()">
-        {{ t('features.taskToday.helpDone') }}
-      </NButton>
     </div>
     <div class="sidebar-inner flex-1 min-h-0 w-full flex flex-col">
 

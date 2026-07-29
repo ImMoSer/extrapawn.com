@@ -299,17 +299,14 @@ export const useGameStore = defineStore('game', () => {
   async function handleUserMove(orig: Key, dest: Key) {
     if (gamePhase.value !== 'PLAYING') return
 
-    const { makeUci, parseSquare } = await import('chessops/util')
-    const fromSq = parseSquare(orig)
-    const toSq = parseSquare(dest)
-
-    let intendedUci: string | null = null
-    if (fromSq !== undefined && toSq !== undefined) {
-      intendedUci = makeUci({ from: fromSq, to: toSq })
+    const intendedUci = await boardStore.prepareUserUciMove({ orig, dest })
+    if (!intendedUci) {
+      boardStore.loadPosition(boardStore.fen) // snapback visually
+      return
     }
 
     // Pre-validate move with Strategy
-    if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove && intendedUci) {
+    if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
       const isLegalForStrategy = await currentStrategy.value.validateUserMove(
         intendedUci,
         boardStore.fen,
@@ -321,22 +318,20 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    if (!intendedUci) return
-
     let isCommitted = true
     if (userMoveHandler.value) {
       isCommitted = await userMoveHandler.value(intendedUci)
     } else {
       const fenBefore = boardStore.fen
       const positionBefore = boardStore.chessPosition.clone()
-      const uciMove = await boardStore.handleUserMove({ orig, dest })
-      if (!uciMove) return
+      const moveOk = boardStore.applyUciMove(intendedUci)
+      if (!moveOk) return
 
-      const chessopsMove = (await import('chessops/util')).parseUci(uciMove)
+      const chessopsMove = (await import('chessops/util')).parseUci(intendedUci)
       if (chessopsMove) {
         const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
         const fenAfter = boardStore.fen
-        pgnService.addNode({ san, uci: uciMove, fenBefore, fenAfter })
+        pgnService.addNode({ san, uci: intendedUci, fenBefore, fenAfter })
         boardStore.syncVisualCues()
         GameAudioEngine.playMoveSoundFromSan(san, false)
       }
@@ -353,7 +348,7 @@ export const useGameStore = defineStore('game', () => {
 
     const strategyAtStart = currentStrategy.value
 
-    if (strategyAtStart && isCommitted) {
+    if (strategyAtStart && isCommitted && !userMoveHandler.value) {
       await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
     }
   }

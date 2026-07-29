@@ -5,7 +5,6 @@ import { useAnalysisStore } from '@/features/analysis'
 import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
 import { useThemeStore } from '@/features/settings'
-import { useTaskTodayStore } from '@/features/task-today'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -18,7 +17,6 @@ const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const analysisStore = useAnalysisStore()
-const taskTodayStore = useTaskTodayStore()
 const coachStore = useCoachStore()
 const route = useRoute()
 
@@ -31,7 +29,6 @@ const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.d
 const effectiveAnalysisMode = computed(() => {
   return (
     analysisStore.isPanelVisible ||
-    taskTodayStore.isHelpActive ||
     (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
   )
 })

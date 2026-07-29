@@ -156,7 +156,7 @@ export const useBoardStore = defineStore('board', () => {
     return true
   }
 
-  async function handleUserMove({ orig, dest }: { orig: Key; dest: Key }): Promise<string | null> {
+  async function prepareUserUciMove({ orig, dest }: { orig: Key; dest: Key }): Promise<string | null> {
     const fromSq = parseSquare(orig)
     const toSq = parseSquare(dest)
     if (fromSq === undefined || toSq === undefined) return null
@@ -177,19 +177,24 @@ export const useBoardStore = defineStore('board', () => {
             promotionState.value = null
             if (role) {
               const uci = makeUci({ from: fromSq, to: toSq, promotion: role })
-              const success = applyUciMove(uci)
-              resolve(success ? uci : null)
+              resolve(uci)
             } else {
               resolve(null)
             }
           },
         }
       })
-    } else {
-      const uci = makeUci({ from: fromSq, to: toSq })
-      const success = applyUciMove(uci)
-      return success ? uci : null
     }
+
+    return makeUci({ from: fromSq, to: toSq })
+  }
+
+  async function handleUserMove({ orig, dest }: { orig: Key; dest: Key }): Promise<string | null> {
+    const uci = await prepareUserUciMove({ orig, dest })
+    if (!uci) return null
+
+    const success = applyUciMove(uci)
+    return success ? uci : null
   }
 
   function completePromotion(role: ChessopsRole) {
@@ -246,6 +251,7 @@ export const useBoardStore = defineStore('board', () => {
     setupPosition,
     loadPosition,
     applyUciMove,
+    prepareUserUciMove,
     handleUserMove,
     completePromotion,
     cancelPromotion,

@@ -5,7 +5,6 @@ import {
   TaskTodayReport, 
   TaskSidebar, 
   TaskPlayTopInfo, 
-  TaskPlayRightPanel 
 } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
@@ -67,8 +66,7 @@ onUnmounted(() => {
       <!-- Game board is handled by GameLayout -->
     </template>
     <template #right-panel>
-      <CoachSidebarWidget v-if="taskTodayStore.isHelpActive" />
-      <TaskPlayRightPanel v-else />
+      <CoachSidebarWidget />
     </template>
   </GameLayout>
 </template>

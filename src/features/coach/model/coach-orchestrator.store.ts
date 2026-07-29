@@ -382,6 +382,15 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     moveState.value = 'COMMITTED'
     logger.info(`[ORCHESTRATOR] Move ${san} COMMITTED to mainline. Current FEN: ${committedFen}`)
 
+    // Notify active strategy of committed user move so scenario indices & status update prior to bot move request
+    if (gameStore.currentStrategy?.onUserMoveExecuted) {
+      try {
+        await gameStore.currentStrategy.onUserMoveExecuted(uci, committedFen)
+      } catch (err) {
+        logger.error('[ORCHESTRATOR] Error in strategy onUserMoveExecuted:', err)
+      }
+    }
+
     // Trigger Bot Move if registered
     if (botMoveHandler.value) {
       logger.info('[BOT_MOVE] Triggering bot response...')
