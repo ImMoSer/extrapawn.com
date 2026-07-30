@@ -15,8 +15,6 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch, type PropType
 import { useBoardStore, type PromotionState } from '../model/board.store'
 import PromotionDialog from './PromotionDialog.vue'
 
-
-
 const props = defineProps({
   fen: { type: String, required: true },
   orientation: { type: String as PropType<ChessgroundColor>, required: true },
@@ -79,10 +77,6 @@ const CHESSGROUND_BRUSHES = {
   coachenginePlan: { key: 'P', color: 'var(--color-highlight)', opacity: 0.5, lineWidth: 5 },
 } as const
 
-
-
-
-
 const NAG_SYMBOLS: Record<string, string> = {
   brilliant: '!!',
   great: '!',
@@ -101,7 +95,6 @@ function getNagSymbol(quality: string, nag?: string) {
   if (nag) return nag
   return '!'
 }
-
 
 const QUALITY_BG_HEX: Record<string, string> = {
   brilliant: '#00f6ff',

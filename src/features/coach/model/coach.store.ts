@@ -338,6 +338,9 @@ export const useCoachStore = defineStore('coach', () => {
     explanationLoading.value = true
     selectedMoveIndex.value = null
     explanation.value = null
+    topMoves.value = []
+    posExplanation.value = null
+    lastMoveAnalysis.value = null
 
     try {
       stockfishReady.value = true
@@ -368,6 +371,7 @@ export const useCoachStore = defineStore('coach', () => {
       if (analysisToken !== latestAnalysisToken.value) return
 
       const rawCandidates = data.engine_candidates || []
+      logger.info(`[CoachStore:Analysis] runAnalysis RECEIVED RESPONSE | engine_candidates count: ${rawCandidates.length}`)
       topMoves.value = rawCandidates.map((c: Record<string, unknown>, index: number) => ({
         rank: c.rank || index + 1,
         san: c.san || '',
