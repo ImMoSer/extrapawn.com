@@ -62,7 +62,7 @@ export interface IGameplayStrategy {
   /**
    * Вызывается ПОСЛЕ того как ядро применило ход бота. Удобно для обогащения PGN.
    */
-  onBotMoveExecuted?: (uciMove: string, fen: string) => void | Promise<void>
+  onBotMoveExecuted?: (uciMove: string, fenAfter: string, fenBefore?: string) => void | Promise<void>
 
   /**
    * Валидация хода в рамках сценария (tactical_solution / scenarioOnly / scenarioPlus).

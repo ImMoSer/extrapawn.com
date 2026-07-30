@@ -291,8 +291,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
   }
 
-  async onBotMoveExecuted(): Promise<void> {
-    useCoachStore().analyzeCurrentPosition()
+  async onBotMoveExecuted(uciMove?: string, fenAfter?: string, fenBefore?: string): Promise<void> {
+    if (useCoachStore().isCoachEnabled && uciMove && fenAfter && fenBefore) {
+      await useCoachStore().runAnalysis(fenAfter, true, uciMove, fenBefore)
+    } else {
+      await useCoachStore().analyzeCurrentPosition()
+    }
 
     if (this.scenarioIndex >= this.scenarioMoves.length) {
       if (this.puzzle.strategy === 'scenarioOnly' || this.submode === 'tactics') {

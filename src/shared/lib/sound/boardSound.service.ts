@@ -85,11 +85,12 @@ export class BoardSoundServiceController {
     return audio
   }
 
-  public async play(event: BoardSoundEvent, reason?: string): Promise<void> {
+  public play(event: BoardSoundEvent, _reason?: string): Promise<void> {
+    void _reason
     const pathOrPool = boardSoundDefinitions[event]
     if (!pathOrPool) {
       logger.warn(`[BoardSoundService] Undefined sound event: ${event}`)
-      return
+      return Promise.resolve()
     }
 
     const path = Array.isArray(pathOrPool)
@@ -98,11 +99,11 @@ export class BoardSoundServiceController {
 
     if (!path) {
       logger.warn(`[BoardSoundService] No sound path available for event: ${event}`)
-      return
+      return Promise.resolve()
     }
 
     if (typeof Audio === 'undefined') {
-      return
+      return Promise.resolve()
     }
 
     return new Promise((resolve) => {
@@ -112,9 +113,9 @@ export class BoardSoundServiceController {
         return
       }
 
-      logger.info(
-        `[BOARD_SFX] Playing event: '${event}' [Reason: '${reason || 'unspecified'}'] -> File: '${path}' (Volume: ${(this.volume * 100).toFixed(0)}%)`
-      )
+      // logger.info(
+      //   `[BOARD_SFX] Playing event: '${event}' [Reason: '${reason || 'unspecified'}'] -> File: '${path}' (Volume: ${(this.volume * 100).toFixed(0)}%)`
+      // )
 
       const audio = template.cloneNode(true) as HTMLAudioElement
       audio.volume = this.volume

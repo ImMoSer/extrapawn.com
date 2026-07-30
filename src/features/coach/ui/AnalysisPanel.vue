@@ -3,11 +3,8 @@ import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/sh
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCoachStore } from '../model/coach.store'
-import AboutPosition from './AboutPosition.vue'
-import ChessPieceIcon from './ChessPieceIcon.vue'
 import PgnMoveHistory from './PgnMoveHistory.vue'
 import QualityIcon from './QualityIcon.vue'
-import VisualizerConsole from './VisualizerConsole.vue'
 
 const coachStore = useCoachStore()
 const activeTab = computed({
@@ -82,14 +79,7 @@ const QUALITY_LABEL: Record<string, string> = {
   missed_mate: 'Missed mate',
 }
 
-function sanWithPieces(san: string | null) {
-  if (!san) return { piece: null, rest: '' }
-  const first = san.charAt(0)
-  if (['N', 'B', 'R', 'Q', 'K'].includes(first)) {
-    return { piece: first, rest: san.slice(1) }
-  }
-  return { piece: null, rest: san }
-}
+
 
 function getQualityColor(q: string) {
   return QUALITY_BG[q] || 'var(--color-text-secondary)'
@@ -184,18 +174,8 @@ function getPlanBrief(move: CoachTopMove): string | null {
       </span>
     </div>
 
-      <!-- Tab Views: Console, Book, Wiki, SF, or Analysis -->
-    <template v-if="activeTab === 'console'">
-      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0">
-        <VisualizerConsole
-          :boardHeight="boardHeight"
-          :posExplanation="posExplanation"
-          class="!w-full !h-full !border-none !rounded-none"
-        />
-      </div>
-    </template>
-
-    <template v-else-if="activeTab === 'book' && isSparringRoute">
+    <!-- Tab Views: Book, Wiki, SF, or Analysis -->
+    <template v-if="activeTab === 'book' && isSparringRoute">
       <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
         <slot name="book" />
       </div>
@@ -235,32 +215,6 @@ function getPlanBrief(move: CoachTopMove): string | null {
       </template>
     </div>
 
-    <!-- Opening name + Move history -->
-    <div v-if="openingName || moveHistory.length > 1" class="p-2.5 border-b border-border">
-      <div v-if="openingName" class="text-[11px] text-text-primary font-semibold mb-1 tracking-tight">
-        {{ openingName }}
-      </div>
-      <div v-if="moveHistory.length > 1" class="thin-scroll flex flex-wrap gap-[2px] text-[12px] font-mono max-h-16 overflow-y-auto leading-relaxed">
-        <span
-          v-for="(m, i) in moveHistory.slice(1)"
-          :key="i"
-          class="history-token inline-flex items-center gap-0.5 cursor-pointer"
-          :data-active="historyIndex === i + 1 ? 'true' : 'false'"
-          :class="historyIndex === i + 1 ? 'text-neon-cyan' : (i % 2 === 0 ? 'text-text-primary' : 'text-text-secondary')"
-          @click="emit('select-history-move', { fen: m.fen, index: i + 1 })"
-        >
-          <span v-if="i % 2 === 0" class="text-text-disabled mr-0.5">{{ Math.floor(i / 2) + 1 }}.</span>
-          <ChessPieceIcon
-            v-if="sanWithPieces(m.san).piece"
-            :role="sanWithPieces(m.san).piece!"
-            :color="i % 2 === 0 ? 'white' : 'black'"
-            :size="14"
-            class="mr-0.5"
-          />
-          <span>{{ sanWithPieces(m.san).rest }}</span>
-        </span>
-      </div>
-    </div>
 
     <!-- Last move card -->
     <div v-if="lastMoveAnalysis" class="p-3 border-b border-border">
@@ -519,10 +473,7 @@ function getPlanBrief(move: CoachTopMove): string | null {
       </div>
     </div>
 
-    <!-- About Position Summary Section at bottom -->
-    <div class="p-3 border-t border-border">
-      <AboutPosition :explanation="posExplanation" />
-    </div>
+
     </template>
   </div>
 </template>

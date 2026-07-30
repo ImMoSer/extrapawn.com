@@ -176,10 +176,10 @@ export const useGameStore = defineStore('game', () => {
       }
 
       if (uci && gamePhase.value === 'PLAYING') {
+        const fenBefore = boardStore.fen
         // Apply the bot move in PGN
         const chessopsMove = (await import('chessops/util')).parseUci(uci)
         if (chessopsMove && boardStore.chessPosition.isLegal(chessopsMove)) {
-          const fenBefore = boardStore.fen
           const san = (await import('chessops/san')).makeSan(boardStore.chessPosition, chessopsMove)
           
           boardStore.applyUciMove(uci)
@@ -198,7 +198,7 @@ export const useGameStore = defineStore('game', () => {
         const isGameOver = _checkAndHandleGameOver()
 
         if (!isGameOver && currentStrategy.value.onBotMoveExecuted) {
-          await currentStrategy.value.onBotMoveExecuted(uci, boardStore.fen)
+          await currentStrategy.value.onBotMoveExecuted(uci, boardStore.fen, fenBefore)
         }
       }
     }

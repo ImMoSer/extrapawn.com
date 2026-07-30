@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getEngineDefaults, setEngineDefaults } from '@/shared/lib/engine/coach/engine'
 
 const emit = defineEmits<{
   (e: 'change', payload: { depth: number; multipv: number; version: string; source: string }): void
@@ -9,11 +8,10 @@ const emit = defineEmits<{
 const open = ref(false)
 const wrapRef = ref<HTMLElement | null>(null)
 
-const engineDefaults = getEngineDefaults()
-const depth = ref(engineDefaults.depth || 12)
-const multipv = ref(engineDefaults.multipv || 5)
-const version = ref<string>(engineDefaults.version || 'lite')
-const source = ref<string>(engineDefaults.source || 'remote')
+const depth = ref(12)
+const multipv = ref(3)
+const version = ref<string>('lite')
+const source = ref<string>('remote')
 
 function onClickOutside(e: MouseEvent) {
   if (open.value && wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
@@ -36,7 +34,6 @@ onUnmounted(() => {
 })
 
 function apply() {
-  setEngineDefaults({ depth: depth.value, multipv: multipv.value, version: version.value, source: source.value })
   open.value = false
   emit('change', { depth: depth.value, multipv: multipv.value, version: version.value, source: source.value })
 }
@@ -63,52 +60,13 @@ function apply() {
         Engine settings
       </div>
 
-      <!-- Engine Source Toggle Switch -->
-      <div class="mb-3 p-2.5 rounded-lg border border-border bg-void">
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-text-primary font-semibold text-[11px]">Engine Mode</span>
-          <span
-            class="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded"
-            :class="source === 'remote' ? 'bg-success/15 text-success border border-success/30' : 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30'"
-          >
-            {{ source === 'remote' ? 'Docker Server' : 'Local WASM' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between gap-2 text-[10px] mt-2 px-1">
-          <span class="cursor-pointer" :class="source === 'local' ? 'text-neon-cyan font-bold' : 'text-text-secondary'" @click="source = 'local'">
-            Local (WASM)
-          </span>
-
-          <!-- Sliding Toggle Switch -->
-          <button
-            type="button"
-            role="switch"
-            :aria-checked="source === 'remote'"
-            @click="source = source === 'remote' ? 'local' : 'remote'"
-            title="Toggle Engine Mode (Left: Local WASM, Right: Docker Server)"
-            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-            :class="source === 'remote' ? 'bg-success-deep' : 'bg-cyan-deep'"
-          >
-            <span
-              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
-              :class="source === 'remote' ? 'translate-x-5' : 'translate-x-0'"
-            />
-          </button>
-
-          <span class="cursor-pointer" :class="source === 'remote' ? 'text-success font-bold' : 'text-text-secondary'" @click="source = 'remote'">
-            Docker Server
-          </span>
-        </div>
+      <!-- Server Mode Badge -->
+      <div class="mb-3 p-2 rounded bg-success/10 border border-success/20 text-[10px] text-success leading-tight flex items-center justify-between">
+        <span>⚡ Server Engine Mode Active</span>
+        <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20">Docker</span>
       </div>
 
-      <!-- Server Mode Info Notice when remote is active -->
-      <div v-if="source === 'remote'" class="mb-3 p-2 rounded bg-success/10 border border-success/20 text-[10px] text-success leading-tight">
-        ⚡ Server engine uses fixed settings (Depth: 12, MultiPV: 3) & opening book. Local settings are deactivated.
-      </div>
-
-      <!-- Local Engine Controls (Disabled when remote source is active) -->
-      <div :class="source === 'remote' ? 'opacity-40 pointer-events-none select-none' : ''">
+      <div>
         <!-- Stockfish Version -->
         <div class="mb-3">
           <label for="setting-version" class="block text-text-primary font-semibold mb-1">
@@ -117,8 +75,7 @@ function apply() {
           <select
             id="setting-version"
             v-model="version"
-            :disabled="source === 'remote'"
-            class="w-full bg-elevated border border-border rounded text-text-primary p-1.5 text-[11px] focus:outline-none focus:border-neon-cyan cursor-pointer disabled:cursor-not-allowed"
+            class="w-full bg-elevated border border-border rounded text-text-primary p-1.5 text-[11px] focus:outline-none focus:border-neon-cyan cursor-pointer"
           >
             <option value="lite">Stockfish 18 Lite (~7 MB)</option>
             <option value="full">Stockfish 18 Full (~113 MB)</option>
@@ -135,7 +92,7 @@ function apply() {
               Search depth
             </label>
             <span class="font-mono text-neon-cyan font-bold">
-              {{ source === 'remote' ? 12 : depth }}
+              {{ depth }}
             </span>
           </div>
           <input
@@ -145,8 +102,7 @@ function apply() {
             max="22"
             step="1"
             v-model.number="depth"
-            :disabled="source === 'remote'"
-            class="w-full accent-neon-cyan disabled:cursor-not-allowed"
+            class="w-full accent-neon-cyan"
           />
           <div class="flex justify-between text-[9px] text-text-disabled mt-0.5">
             <span>fast (6)</span>
@@ -164,7 +120,7 @@ function apply() {
               Top moves shown
             </label>
             <span class="font-mono text-neon-cyan font-bold">
-              {{ source === 'remote' ? 3 : multipv }}
+              {{ multipv }}
             </span>
           </div>
           <input
@@ -174,8 +130,7 @@ function apply() {
             max="10"
             step="1"
             v-model.number="multipv"
-            :disabled="source === 'remote'"
-            class="w-full accent-neon-cyan disabled:cursor-not-allowed"
+            class="w-full accent-neon-cyan"
           />
           <div class="flex justify-between text-[9px] text-text-disabled mt-0.5">
             <span>1</span>

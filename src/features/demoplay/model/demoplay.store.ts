@@ -3,7 +3,7 @@ import { useAuthStore } from '@/entities/user'
 import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { useTaskTodayStore } from '@/features/task-today'
 import { usePreferencesStore } from '@/features/settings'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { useCoachStore } from '@/features/coach'
 import type { CoachExplanation } from '@/shared/lib/engine/coach/coach.types'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -213,7 +213,11 @@ export const useDemoplayStore = defineStore('demoplay', () => {
 
     try {
       logger.info(`[Demoplay] Starting Coach analysis for FEN: ${fenToAnalyze}`)
-      const explanation = prefetchedExplanation || await coachEngineManager.getExplanation(fenToAnalyze)
+      const coachStore = useCoachStore()
+      if (!prefetchedExplanation) {
+        await coachStore.runAnalysis(fenToAnalyze, true)
+      }
+      const explanation = prefetchedExplanation || coachStore.posExplanation
 
       // Check if state remains valid after async API request
       const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze
@@ -399,7 +403,9 @@ export const useDemoplayStore = defineStore('demoplay', () => {
 
         if (boardStore.turn === boardStore.orientation) {
           try {
-            explanation = await coachEngineManager.getExplanation(fenToAnalyze)
+            const coachStore = useCoachStore()
+            await coachStore.runAnalysis(fenToAnalyze, true)
+            explanation = coachStore.posExplanation
 
             // Draw the visualizations on the board
             if (explanation?.visual_commands) {

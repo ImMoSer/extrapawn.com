@@ -1,6 +1,6 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
-import { coachEngineManager } from '@/shared/lib/engine/coach/CoachEngineManager'
+import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
@@ -117,7 +117,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
 
     try {
       logger.info(`[Crashtest] Starting Coach analysis for FEN: ${fenToAnalyze}`)
-      const explanation = await coachEngineManager.getExplanation(fenToAnalyze)
+      const coachStore = useCoachStore()
+      await coachStore.runAnalysis(fenToAnalyze, true)
+      const explanation = coachStore.posExplanation
 
       // Check if state remains valid after async API request
       const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze

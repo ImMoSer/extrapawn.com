@@ -4,7 +4,6 @@ import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { useCoachStore } from './coach.store'
 import { uciToSan } from '@/shared/lib/engine/coach/chess'
-import { explainMoveAt } from '@/shared/lib/engine/coach/analysis'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { soundService } from '@/shared/lib/sound.service'
 import { sendCoachWebhook } from '@/shared/api/n8nCoachApi'
@@ -157,10 +156,10 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
         }
       }
     } else if (coachStore.isCoachEnabled) {
-      // Standard Engine Analysis
+      // Standard Engine Analysis (single request evaluates last move AND updates top moves)
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const analysis: any = await explainMoveAt(fenBefore, uciMove)
+        await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
+        const analysis = coachStore.lastMoveAnalysis
         
         logger.info(
           `[UserMoveEval] Move: ${uciMove} (${san}) | Quality: ${analysis?.quality || 'N/A'} | WinRateLoss: ${analysis?.winRateLoss ?? 'N/A'}% | BestMove: ${analysis?.bestMoveSan || 'N/A'}`
@@ -189,14 +188,7 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
           }
         }
       } catch (err) {
-        logger.error('[ORCHESTRATOR] Error evaluating move with explainMoveAt:', err)
-      }
-
-      // Synchronize candidate arrows & top moves for fenAfter
-      try {
-        await coachStore.runAnalysis(fenAfter, true)
-      } catch (err) {
-        logger.error('[ORCHESTRATOR] Error running position analysis for fenAfter:', err)
+        logger.error('[ORCHESTRATOR] Error evaluating move:', err)
       }
     }
 
@@ -438,8 +430,8 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     // Bot move analysis (Scenario Bot)
     if (coachStore.isCoachEnabled) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const analysis: any = await explainMoveAt(fenBefore, uciMove)
+        await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
+        const analysis = coachStore.lastMoveAnalysis
 
         if (analysis) {
           coachStore.lastMoveAnalysis = {
@@ -478,10 +470,8 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
           }
           logger.info(`[BOT_MOVE] Bot blunder detected on ${san} (quality: ${analysis.quality}). Dispatching bot_blunder event.`)
         }
-
-        await coachStore.runAnalysis(fenAfter, true)
       } catch (err) {
-        logger.error('[BOT_MOVE] Error analyzing bot move with explainMoveAt:', err)
+        logger.error('[BOT_MOVE] Error analyzing bot move:', err)
       }
     }
 

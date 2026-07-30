@@ -16,10 +16,7 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
     return false
   }
 
-  // 1. Actively trigger and wait for analysis to finish
-  await coachStore.analyzeCurrentPosition()
-
-  // 2. Perform takeback if the move was flagged
+  // 1. Check takeback status from completed move analysis
   const feedbackStore = useCoachFeedbackStore()
   const preferencesStore = usePreferencesStore()
 

@@ -195,10 +195,11 @@ export class CoachSpeakServiceController {
     }
   }
 
-  private _playVoiceFile(path: string, context?: CoachAudioContext): Promise<void> {
-    logger.info(
-      `[COACH_VOICE] Playing voice track [Reason: '${context?.reason || 'unspecified'}'] -> File: '${path}' (Volume: ${(this.volume * 100).toFixed(0)}%)`
-    )
+  private _playVoiceFile(path: string, _context?: CoachAudioContext): Promise<void> {
+    void _context
+    // logger.info(
+    //   `[COACH_VOICE] Playing voice track [Reason: '${context?.reason || 'unspecified'}'] -> File: '${path}' (Volume: ${(this.volume * 100).toFixed(0)}%)`
+    // )
 
     if (typeof Audio === 'undefined') {
       return Promise.resolve()

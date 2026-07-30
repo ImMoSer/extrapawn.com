@@ -1,6 +1,5 @@
 import { useAuthStore } from '@/entities/user'
 import { apiClient } from '@/shared/api/client'
-import { registerEngineConfigProvider } from '@/shared/lib/engine/coach/engine'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
@@ -220,15 +219,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     setBoardVolume: (vol) => updatePreferences({ audio: { boardVolume: vol } }),
   })
 
-  registerEngineConfigProvider({
-    getEnginePrefs: () => ({
-      useServerCoach: preferences.value.engine.useServerCoach,
-      depth: preferences.value.engine.depth,
-      multipv: preferences.value.engine.multipv,
-    }),
-    setUseServerCoach: (val: boolean) => updatePreferences({ engine: { useServerCoach: val } }),
-    setEngineDefaults: (options: { depth?: number; multipv?: number }) => updatePreferences({ engine: options }),
-  })
+
 
   let saveTimeout: number | null = null
 
