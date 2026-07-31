@@ -385,9 +385,9 @@ export const useCoachStore = defineStore('coach', () => {
         tagline: (c.tagline as string | null) || null,
         plan_brief: (c.plan_brief as string | null) || null,
         wdl: (c.wdl as CoachTopMove['wdl']) || undefined,
-        winP: (c.wdl as Record<string, number>)?.win_p ?? null,
-        drawP: (c.wdl as Record<string, number>)?.draw_p ?? null,
-        lossP: (c.wdl as Record<string, number>)?.loss_p ?? null,
+        whiteP: (c.wdl as Record<string, number>)?.white ?? (c.wdl as Record<string, number>)?.win_p ?? null,
+        drawP: (c.wdl as Record<string, number>)?.draw ?? (c.wdl as Record<string, number>)?.draw_p ?? null,
+        blackP: (c.wdl as Record<string, number>)?.black ?? (c.wdl as Record<string, number>)?.loss_p ?? null,
         popularity: (c.wdl as Record<string, number>)?.popularity ?? null,
         totalGames: (c.wdl as Record<string, number>)?.total_games ?? null,
         pvLine: Array.isArray(c.pv_line) ? c.pv_line : [],
@@ -416,6 +416,14 @@ export const useCoachStore = defineStore('coach', () => {
       if (topMoves.value.length > 0) {
         selectedMoveIndex.value = 0
         explanation.value = (topMoves.value[0].explanation as unknown as CoachLastMoveAnalysis) || null
+        const topMove = topMoves.value[0]
+        if (topMove.isMate) {
+          evalMate.value = topMove.mateIn
+          evalCp.value = null
+        } else {
+          evalMate.value = null
+          evalCp.value = Math.round(topMove.eval_pawns * 100)
+        }
       }
     } catch (err) {
       logger.warn('[CoachStore] Server-driven analysis request failed:', err)
@@ -447,6 +455,14 @@ export const useCoachStore = defineStore('coach', () => {
     if (!topMoves.value[idx]) return
     selectedMoveIndex.value = idx
     explanation.value = (topMoves.value[idx].explanation as unknown as CoachLastMoveAnalysis) || null
+    const move = topMoves.value[idx]
+    if (move.isMate) {
+      evalMate.value = move.mateIn
+      evalCp.value = null
+    } else {
+      evalMate.value = null
+      evalCp.value = Math.round(move.eval_pawns * 100)
+    }
   }
 
   function selectHistoryMove(payload: { fen: string; index: number }) {

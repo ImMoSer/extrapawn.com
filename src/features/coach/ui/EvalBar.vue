@@ -41,7 +41,10 @@ const percentage = computed(() => {
 const label = computed(() => {
   if (props.loading) return '--'
   if (isResult.value) return props.result || ''
-  if (isMate.value) return `${(props.mate ?? 0) >= 0 ? '' : '-'}M${Math.abs(props.mate ?? 0)}`
+  if (isMate.value) {
+    const m = props.mate ?? 0
+    return m > 0 ? `+ M${m}` : m < 0 ? `- M${Math.abs(m)}` : 'M'
+  }
   if (props.evalCp === null || props.evalCp === undefined) return '--'
   const v = (props.evalCp / 100).toFixed(2)
   return props.evalCp > 0 ? `+${v}` : `${v}`

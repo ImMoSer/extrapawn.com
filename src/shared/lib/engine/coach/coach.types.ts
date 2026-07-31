@@ -85,7 +85,6 @@ export interface CoachTopMove {
   draw_p?: number | null
   loss_p?: number | null
   winP?: number | null
-  drawP?: number | null
   lossP?: number | null
   popularity?: number | null
   totalGames?: number | null
@@ -119,7 +118,10 @@ export interface CoachTopMove {
     is_best_move: boolean
     winRateLoss?: number
   }
-  wdl?: { win: number; draw: number; loss: number }
+  wdl?: { white: number; draw: number; black: number; popularity?: number | null; total_games?: number | null } | { win: number; draw: number; loss: number }
+  whiteP?: number | null
+  drawP?: number | null
+  blackP?: number | null
 }
 
 

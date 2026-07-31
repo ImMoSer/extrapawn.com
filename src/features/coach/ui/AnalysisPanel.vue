@@ -125,14 +125,78 @@ function formatGames(n: number) {
   return String(n)
 }
 
-function getWhiteWinP(move: CoachTopMove): number {
-  if (typeof move?.winP !== 'number' || typeof move?.lossP !== 'number') return 0
-  return props.sideToMove === 'w' ? move.winP : move.lossP
+function getWdl(move: CoachTopMove): { white: number; draw: number; black: number } | null {
+  if (!move) return null
+  const wdlObj = move.wdl as Record<string, number> | undefined
+  if (wdlObj && typeof wdlObj.white === 'number' && typeof wdlObj.draw === 'number' && typeof wdlObj.black === 'number') {
+    return { white: wdlObj.white, draw: wdlObj.draw, black: wdlObj.black }
+  }
+  const m = move as unknown as Record<string, unknown>
+  if (typeof m.whiteP === 'number' && typeof m.drawP === 'number' && typeof m.blackP === 'number') {
+    return { white: m.whiteP as number, draw: m.drawP as number, black: m.blackP as number }
+  }
+  if (typeof move.winP === 'number' && typeof move.drawP === 'number' && typeof move.lossP === 'number') {
+    const isWhite = props.sideToMove === 'w'
+    return {
+      white: isWhite ? move.winP : move.lossP,
+      draw: move.drawP,
+      black: isWhite ? move.lossP : move.winP,
+    }
+  }
+  return null
 }
 
-function getBlackWinP(move: CoachTopMove): number {
-  if (typeof move?.winP !== 'number' || typeof move?.lossP !== 'number') return 0
-  return props.sideToMove === 'w' ? move.lossP : move.winP
+function getEvalBadgeInfo(move: CoachTopMove) {
+  if (move?.isMate || (move?.mateIn !== null && move?.mateIn !== undefined && move?.mateIn !== 0)) {
+    const m = move.mateIn ?? 0
+    if (m > 0) {
+      return {
+        text: `+ M${m}`,
+        color: 'var(--color-success)',
+        bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+        border: 'color-mix(in srgb, var(--color-success) 30%, transparent)',
+      }
+    } else if (m < 0) {
+      return {
+        text: `- M${Math.abs(m)}`,
+        color: 'var(--color-danger)',
+        bg: 'color-mix(in srgb, var(--color-danger) 12%, transparent)',
+        border: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+      }
+    }
+  }
+
+  if (typeof move?.eval_pawns === 'number') {
+    if (move.eval_pawns > 0) {
+      return {
+        text: `+${move.eval_pawns.toFixed(2)}`,
+        color: 'var(--color-success)',
+        bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+        border: 'color-mix(in srgb, var(--color-success) 30%, transparent)',
+      }
+    } else if (move.eval_pawns < 0) {
+      return {
+        text: `${move.eval_pawns.toFixed(2)}`,
+        color: 'var(--color-danger)',
+        bg: 'color-mix(in srgb, var(--color-danger) 12%, transparent)',
+        border: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+      }
+    } else {
+      return {
+        text: '0.00',
+        color: 'var(--color-text-secondary)',
+        bg: 'color-mix(in srgb, var(--color-text-secondary) 10%, transparent)',
+        border: 'color-mix(in srgb, var(--color-text-secondary) 20%, transparent)',
+      }
+    }
+  }
+
+  return {
+    text: '--',
+    color: 'var(--color-text-secondary)',
+    bg: 'color-mix(in srgb, var(--color-text-secondary) 10%, transparent)',
+    border: 'color-mix(in srgb, var(--color-text-secondary) 20%, transparent)',
+  }
 }
 
 function getCharacter(move: CoachTopMove): string | null {
@@ -317,12 +381,12 @@ function getPlanBrief(move: CoachTopMove): string | null {
           <span
             class="ml-auto text-[11px] font-bold font-mono px-2 py-0.5 rounded-full border tracking-tight"
             :style="{
-              backgroundColor: move.eval_pawns > 0 ? 'rgba(0, 255, 85, 0.12)' : move.eval_pawns < 0 ? 'rgba(255, 7, 58, 0.12)' : 'rgba(139, 147, 168, 0.10)',
-              color: move.eval_pawns > 0 ? 'var(--color-success)' : move.eval_pawns < 0 ? 'var(--color-danger)' : 'var(--color-text-secondary)',
-              borderColor: move.eval_pawns > 0 ? 'rgba(0, 255, 85, 0.30)' : move.eval_pawns < 0 ? 'rgba(255, 7, 58, 0.30)' : 'rgba(139, 147, 168, 0.20)',
+              backgroundColor: getEvalBadgeInfo(move).bg,
+              color: getEvalBadgeInfo(move).color,
+              borderColor: getEvalBadgeInfo(move).border,
             }"
           >
-            {{ move.isMate ? (move.mateIn && move.mateIn > 0 ? `+ M${move.mateIn}` : `- M${Math.abs(move.mateIn || 0)}`) : (move.eval_pawns > 0 ? `+${move.eval_pawns.toFixed(2)}` : move.eval_pawns.toFixed(2)) }}
+            {{ getEvalBadgeInfo(move).text }}
           </span>
         </div>
 
@@ -357,13 +421,13 @@ function getPlanBrief(move: CoachTopMove): string | null {
 
         <!-- 3-Color Opening Statistics W/D/L Bar -->
         <div
-          v-if="move.winP !== null && move.winP !== undefined && move.drawP !== null && move.lossP !== null"
+          v-if="getWdl(move)"
           class="mt-1.5 pt-1.5 border-t border-border/60"
         >
           <div class="flex items-center justify-between text-[10px] mb-1 font-mono">
-            <span class="text-success font-bold">{{ getWhiteWinP(move) }}% W</span>
-            <span class="text-neon-purple font-bold">{{ move.drawP }}% D</span>
-            <span class="text-danger font-bold">{{ getBlackWinP(move) }}% L</span>
+            <span class="text-success font-bold">{{ getWdl(move)!.white }}% W</span>
+            <span class="text-neon-purple font-bold">{{ getWdl(move)!.draw }}% D</span>
+            <span class="text-danger font-bold">{{ getWdl(move)!.black }}% L</span>
             <span v-if="move.popularity !== null && move.popularity !== undefined" class="text-text-secondary text-[9px] font-normal" :title="move.totalGames ? `${formatGames(move.totalGames)} games` : ''">
               ({{ move.popularity }}%)
             </span>
@@ -375,18 +439,18 @@ function getPlanBrief(move: CoachTopMove): string | null {
           <div class="h-1.5 w-full bg-void rounded-full overflow-hidden flex border border-border">
             <div
               class="bg-success h-full transition-all duration-300"
-              :style="{ width: `${getWhiteWinP(move)}%` }"
-              :title="`White Wins: ${getWhiteWinP(move)}%`"
+              :style="{ width: `${getWdl(move)!.white}%` }"
+              :title="`White Wins: ${getWdl(move)!.white}%`"
             />
             <div
               class="bg-neon-purple h-full transition-all duration-300"
-              :style="{ width: `${move.drawP}%` }"
-              :title="`Draws: ${move.drawP}%`"
+              :style="{ width: `${getWdl(move)!.draw}%` }"
+              :title="`Draws: ${getWdl(move)!.draw}%`"
             />
             <div
               class="bg-danger h-full transition-all duration-300"
-              :style="{ width: `${getBlackWinP(move)}%` }"
-              :title="`Black Wins: ${getBlackWinP(move)}%`"
+              :style="{ width: `${getWdl(move)!.black}%` }"
+              :title="`Black Wins: ${getWdl(move)!.black}%`"
             />
           </div>
         </div>

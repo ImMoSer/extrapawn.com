@@ -6,6 +6,7 @@
 4. **Validierung**: Sicherstellen, dass die Prüfungen `pnpm type-check` und `pnpm lint` ohne Fehler und Warnungen durchlaufen.
 5. **Technische Schulden**: Technische Schulden, Altlasten oder Architektur-Verstöße im bestehenden Code müssen sofort gemeldet werden.
 6. **Striktes Fail-Fast-Prinzip**: Keine defensiven Fallbacks, automatischen Typ-Konvertierungen, Standardwerte (Fallback-Values) oder stillschweigenden Fehlerkorrekturen bei unerwarteten, unvollständigen oder unklaren Datenzuständen einbauen. Jede Abweichung vom erwarteten Zustand muss sofort hart per Exception oder Error-Log fehlschlagen, damit Fehler direkt in der Entwicklung sichtbar und behoben werden.
+7. **Design System & Strikte Farbpalette (`DESIGN.md` / `main.css`)**: Es ist strengstens verboten, Farben frei zu erfinden oder im Code inline zu hardcoden (z. B. Hex-Codes wie `#00ff55` oder `rgba(0, 255, 85, 0.12)`). Alle Farben MÜSSEN aus der festgelegten Farbpalette (`DESIGN.md` / `main.css`) als CSS-Variablen (z. B. `var(--color-success)`, `color-mix(...)`) oder entsprechende Tailwind-Theme-Klassen bezogen werden.
 
 ## Bekannte Paket-Blocker / Version Locks
 
