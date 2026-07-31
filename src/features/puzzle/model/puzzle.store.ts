@@ -113,7 +113,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     }
     if (puzzleId && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleId)) {
       isDiscoveryMode.value = false
-      void loadNewPuzzle(submode, { puzzleId })
+      void loadPuzzleById(submode, puzzleId)
     } else if (!activePuzzle.value) {
       startDiscovery(submode)
     } else {
@@ -340,12 +340,27 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     gameStore.setGamePhase('LOADING')
     feedbackMessage.value = t('shared.app.loading')
 
-    const mergedParams = { ...activeParams.value, ...queryParams, type }
-    activeParams.value = mergedParams
+    const targetPuzzleId = queryParams.puzzleId
+    const baseActiveParams = { ...activeParams.value }
+    delete baseActiveParams.puzzleId
+
+    let category = queryParams.category || baseActiveParams.category
+    if (!category) {
+      if (type === 'tactics') category = 'fork'
+      else if (type === 'practical_chess') category = 'extraPawn'
+      else category = 'pawn'
+    }
+    const difficulty = queryParams.difficulty || baseActiveParams.difficulty || 'Novice'
+
+    activeParams.value = {
+      type,
+      category,
+      difficulty,
+    }
 
     try {
       let mappedPuzzle: PuzzlePuzzle
-      if (isDiscoveryMode.value) {
+      if (isDiscoveryMode.value && !targetPuzzleId) {
         if (discoveryQueue.value.length === 0) {
           await refillDiscoveryQueue(type)
         }
@@ -361,20 +376,12 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         }
       } else {
         let puzzle: PuzzlePuzzle
-        if (mergedParams.puzzleId) {
+        if (targetPuzzleId) {
           puzzle = await apiClient<PuzzlePuzzle>(
-            `/play-puzzle/puzzle/${mergedParams.puzzleId}?puzzle_type=${type}`
+            `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`
           )
         } else {
-          let category = mergedParams.category
-          if (!category) {
-            if (type === 'tactics') category = 'fork'
-            else if (type === 'practical_chess') category = 'extraPawn'
-            else category = 'pawn'
-          }
-          const difficulty = mergedParams.difficulty || 'Novice'
           const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
-
           puzzle = await apiClient<PuzzlePuzzle>(url)
         }
 
@@ -433,6 +440,16 @@ export const usePuzzleStore = defineStore('puzzle', () => {
           router.push('/')
        }
     }
+  }
+
+  async function loadPuzzleById(type: string, puzzleId: string) {
+    return loadNewPuzzle(type, { puzzleId })
+  }
+
+  async function loadNextPuzzle(type: string, queryParams: Partial<PuzzleParams> = {}) {
+    const cleanParams = { ...queryParams }
+    delete cleanParams.puzzleId
+    return loadNewPuzzle(type, cleanParams)
   }
 
   async function handleRestart() {
@@ -515,6 +532,8 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     startDiscovery,
     initialize,
     loadNewPuzzle,
+    loadPuzzleById,
+    loadNextPuzzle,
     guessColor,
     correctColor,
     handleRestart,

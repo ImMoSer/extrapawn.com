@@ -25,7 +25,7 @@ const puzzleStore = usePuzzleStore()
 const coachStore = useCoachStore()
 
 function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string }) {
-  puzzleStore.loadNewPuzzle(payload.type, {
+  puzzleStore.loadNextPuzzle(payload.type, {
     category: payload.category,
     difficulty: payload.difficulty
   })
@@ -99,7 +99,7 @@ onUnmounted(() => {
             size="small"
             secondary
             @click="
-              puzzleStore.loadNewPuzzle(
+              puzzleStore.loadNextPuzzle(
                 puzzleStore.activePuzzle?.puzzle_type || props.submode,
                 puzzleStore.activeParams,
               )
