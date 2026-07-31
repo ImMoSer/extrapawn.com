@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTaskTodayStore, getPlanCost, TRAINING_PLAN_CONFIGS, type SubModeType, type SubModeConfig } from '../model/taskToday.store'
+import { useTaskTodayStore, getPlanCost, getSubModeScopeConfig, type SubModeType } from '../model/taskToday.store'
 import {
   NText,
   NList,
@@ -15,7 +15,7 @@ import {
   ChevronForwardOutline,
   TimeOutline
 } from '@vicons/ionicons5'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/entities/user'
@@ -120,12 +120,21 @@ const selectedStrategy = computed({
   }
 })
 
+const PLAN_TYPE_TABS = [
+  { key: 'taskToday', label: 'ALL IN' },
+  { key: 'tactics', label: 'TACTICS' },
+  { key: 'finish_him', label: 'FINISH HIM' },
+  { key: 'practical_chess', label: 'PRACTICAL' }
+] as const
+
+const selectedPlanType = ref<'taskToday' | 'tactics' | 'finish_him' | 'practical_chess'>('taskToday')
+
 const isDiffDisabled = (diff: 'Novice' | 'Pro' | 'Master') => {
   const hasTierAccess = (diff === 'Novice' && currentUserLevel.value >= 1) ||
                         (diff === 'Pro' && currentUserLevel.value >= 2) ||
                         (diff === 'Master' && currentUserLevel.value >= 3)
   if (!hasTierAccess) return false
-  return authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff) : false
+  return authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff, selectedPlanType.value) : false
 }
 
 const isStartingPlan = ref(false)
@@ -138,14 +147,21 @@ const { data: currentPlanData } = useCurrentTrainingPlanQuery(isAuth.value)
 // Query for history
 const { data: historyData } = useTrainingPlanHistoryQuery(isAuth.value)
 
-// Extract completed difficulties for today
-const completedDifficulties = computed(() => {
-  return currentPlanData.value?.completed_difficulties || []
-})
-
 const completedHistory = computed(() => {
   return (historyData.value || []).filter(p => p.is_completed)
 })
+
+const showActivePlanModal = ref(false)
+
+watch(
+  () => currentPlanData.value?.active,
+  (isActive: boolean | undefined) => {
+    if (isActive) {
+      showActivePlanModal.value = true
+    }
+  },
+  { immediate: true }
+)
 
 const handleResumeActivePlan = async () => {
   if (currentPlanData.value) {
@@ -168,6 +184,7 @@ const handleCancelActivePlan = () => {
     onPositiveClick: async () => {
       try {
         await taskTodayStore.quitTaskToday()
+        showActivePlanModal.value = false
         message.success(t('features.taskToday.feedback.cancelSuccess'))
         queryClient.invalidateQueries({ queryKey: ['user-cabinet', 'training-plan'] })
       } catch (err) {
@@ -176,6 +193,15 @@ const handleCancelActivePlan = () => {
       }
     }
   })
+}
+
+const handleContinueActivePlanFromModal = async () => {
+  showActivePlanModal.value = false
+  await handleResumeActivePlan()
+}
+
+const handleCancelActivePlanFromModal = () => {
+  handleCancelActivePlan()
 }
 
 const recommendedStrategies = computed(() => {
@@ -213,13 +239,18 @@ const recommendedStrategies = computed(() => {
 const selectedPlanPreview = computed(() => {
   const strategy = selectedStrategy.value
   const diff = selectedDifficulty.value
+  const pType = selectedPlanType.value
   const recs = recommendedStrategies.value[strategy]
   if (!recs) return null
 
-  const planConfig = TRAINING_PLAN_CONFIGS[diff]
   let totalTasks = 0
 
-  const groups = (Object.entries(planConfig) as [SubModeType, SubModeConfig][]).map(([subMode, subConfig]) => {
+  const subModesToPreview: SubModeType[] = pType === 'taskToday'
+    ? ['tactics', 'finish_him', 'practical_chess']
+    : [pType as SubModeType]
+
+  const groups = subModesToPreview.map((subMode) => {
+    const subConfig = getSubModeScopeConfig(diff, subMode, pType)
     const cats = (recs[subMode] || []).slice(0, subConfig.categories)
     const totalForGroup = cats.length * subConfig.puzzlesPerCategory
     totalTasks += totalForGroup
@@ -241,6 +272,7 @@ const selectedPlanPreview = computed(() => {
   return {
     difficulty: diff,
     strategy,
+    planType: pType,
     totalTasks,
     groups
   }
@@ -273,7 +305,8 @@ const handleStartPlan = async () => {
     const success = await taskTodayStore.generateAndStartPlan(
       selectedStrategy.value,
       selectedDifficulty.value,
-      formattedRecs
+      formattedRecs,
+      selectedPlanType.value
     )
 
     if (success) {
@@ -314,6 +347,25 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
       <!-- Left Column: Setup & Selectors -->
       <div class="dashboard-card setup-card">
         <div class="setup-section">
+          <!-- 4 Mode Tabs -->
+          <div class="mode-tabs-container mb-6 flex gap-2 p-1 bg-void/50 rounded-xl border border-border">
+            <button
+              v-for="tab in PLAN_TYPE_TABS"
+              :key="tab.key"
+              class="mode-tab-btn flex-1 py-2.5 px-2 rounded-lg font-display text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer"
+              :class="{
+                'bg-neon-cyan text-void shadow-[0_0_12px_rgba(0,229,255,0.4)]': selectedPlanType === tab.key && tab.key === 'taskToday',
+                'bg-neon-cyan/90 text-void shadow-[0_0_12px_rgba(0,229,255,0.4)]': selectedPlanType === tab.key && tab.key === 'tactics',
+                'bg-neon-purple text-white shadow-[0_0_12px_rgba(176,0,255,0.4)]': selectedPlanType === tab.key && tab.key === 'finish_him',
+                'bg-success text-void shadow-[0_0_12px_rgba(0,255,85,0.4)]': selectedPlanType === tab.key && tab.key === 'practical_chess',
+                'text-text-secondary hover:text-text-primary hover:bg-surface/50': selectedPlanType !== tab.key
+              }"
+              @click="selectedPlanType = tab.key"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
           <h2 class="section-title">{{ t('features.taskToday.chooseDifficulty') }}</h2>
           <div class="difficulty-options">
             <button 
@@ -322,7 +374,6 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               class="diff-btn"
               :class="{ 
                 active: selectedDifficulty === diff,
-                completed: completedDifficulties.includes(diff),
                 'disabled-diff': (diff === 'Novice' && currentUserLevel < 1) || (diff === 'Pro' && currentUserLevel < 2) || (diff === 'Master' && currentUserLevel < 3)
               }"
               :disabled="isDiffDisabled(diff)"
@@ -330,12 +381,9 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             >
               <span class="diff-name">
                 {{ t('puzzleCategories.difficulties.level_' + diff.toLowerCase()) }}
-                <span class="diff-cost-badge">({{ getPlanCost(diff) }} PC)</span>
+                <span class="diff-cost-badge">({{ getPlanCost(diff, selectedPlanType) }} PC)</span>
               </span>
-              <span class="diff-status" v-if="completedDifficulties.includes(diff)">
-                ✓ {{ t('features.taskToday.completedStatus') }}
-              </span>
-              <span class="diff-status expensive" v-else-if="authStore.userProfile && authStore.userProfile.PawnCoins < getPlanCost(diff)">
+              <span class="diff-status expensive" v-if="authStore.userProfile && authStore.userProfile.PawnCoins < getPlanCost(diff, selectedPlanType)">
                 {{ t('features.taskToday.insufficientCoinsBadge') }}
               </span>
             </button>
@@ -372,11 +420,11 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             size="large" 
             block 
             :loading="isStartingPlan"
-            :disabled="!!currentPlanData?.active || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(selectedDifficulty) : false)"
+            :disabled="!!currentPlanData?.active || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(selectedDifficulty, selectedPlanType) : false)"
             @click="handleStartPlan"
             class="dashboard-start-btn"
           >
-            {{ t('features.taskToday.startTrainingBtn') }}
+            {{ t('features.taskToday.startTrainingBtn') }} ({{ getPlanCost(selectedDifficulty, selectedPlanType) }} PC)
           </NButton>
         </div>
       </div>
@@ -387,7 +435,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
         <div v-if="selectedPlanPreview" class="preview-content">
           <div class="preview-summary">
             <span class="preview-strategy-name">{{ selectedPlanPreview.strategy.toUpperCase() }}</span>
-            <span class="preview-cost">{{ getPlanCost(selectedPlanPreview.difficulty) }} PawnCoins</span>
+            <span class="preview-cost">{{ getPlanCost(selectedPlanPreview.difficulty, selectedPlanPreview.planType) }} PawnCoins</span>
             <span class="preview-task-count">{{ t('features.taskToday.previewTasks', { count: selectedPlanPreview.totalTasks }) }}</span>
           </div>
 
@@ -421,25 +469,6 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
           {{ t('features.taskToday.history') }}
         </h2>
         <NScrollbar style="max-height: 520px;">
-          <!-- Laufender Run -->
-          <div v-if="currentPlanData?.active" class="active-plan-banner">
-            <div class="active-plan-info">
-              <span class="active-plan-label">{{ t('features.taskToday.runningTraining') }}</span>
-              <div class="active-plan-meta">
-                <NTag size="small" type="success" class="pulse-tag">ACTIVE</NTag>
-                <span class="active-plan-strat">{{ currentPlanData.strategy }} ({{ currentPlanData.difficulty }})</span>
-              </div>
-            </div>
-            <div class="active-plan-actions">
-              <NButton type="success" size="medium" @click="handleResumeActivePlan" class="complete-btn">
-                {{ t('features.taskToday.resumeActiveBtn') }}
-              </NButton>
-              <NButton type="error" size="medium" ghost @click="handleCancelActivePlan" class="cancel-btn">
-                {{ t('features.taskToday.cancelActiveBtn') }}
-              </NButton>
-            </div>
-          </div>
-
           <NList hoverable clickable bordered v-if="completedHistory.length > 0">
             <NListItem 
               v-for="plan in completedHistory" 
@@ -451,6 +480,9 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
                   <span class="history-date">{{ plan.date }}</span>
                   <div class="history-tags">
                     <NTag size="small" :type="plan.difficulty === 'Master' ? 'error' : plan.difficulty === 'Pro' ? 'warning' : 'info'">{{ plan.difficulty }}</NTag>
+                    <NTag size="small" :type="plan.plan_type === 'tactics' ? 'info' : plan.plan_type === 'finish_him' ? 'warning' : plan.plan_type === 'practical_chess' ? 'success' : 'default'" secondary style="margin-left: 4px;">
+                      {{ plan.plan_type === 'tactics' ? 'TACTICS' : plan.plan_type === 'finish_him' ? 'FINISH HIM' : plan.plan_type === 'practical_chess' ? 'PRACTICAL' : 'ALL IN' }}
+                    </NTag>
                     <span class="history-strat">{{ plan.strategy }}</span>
                   </div>
                 </div>
@@ -464,6 +496,72 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
         </NScrollbar>
       </div>
     </div>
+
+    <!-- Active Training Modal -->
+    <NModal
+      :show="showActivePlanModal"
+      @update:show="(v: boolean) => showActivePlanModal = v"
+      transform-origin="center"
+      :mask-closable="false"
+      :close-on-esc="false"
+      style="max-width: 480px; width: 90vw;"
+    >
+      <NCard
+        :bordered="false"
+        size="huge"
+        role="dialog"
+        aria-modal="true"
+        class="bg-surface text-text-primary rounded-2xl border border-border shadow-2xl p-2"
+      >
+        <div class="flex flex-col gap-4 text-center items-center py-2">
+          <!-- Active Status Tags -->
+          <div class="flex items-center gap-2">
+            <NTag size="medium" type="success" class="pulse-tag font-condensed font-bold">ACTIVE</NTag>
+            <NTag
+              size="medium"
+              :type="currentPlanData?.plan_type === 'tactics' ? 'info' : currentPlanData?.plan_type === 'finish_him' ? 'warning' : currentPlanData?.plan_type === 'practical_chess' ? 'success' : 'default'"
+              secondary
+              class="font-display font-bold"
+            >
+              {{ currentPlanData?.plan_type === 'tactics' ? 'TACTICS' : currentPlanData?.plan_type === 'finish_him' ? 'FINISH HIM' : currentPlanData?.plan_type === 'practical_chess' ? 'PRACTICAL' : 'ALL IN' }}
+            </NTag>
+          </div>
+
+          <!-- Header -->
+          <h2 class="font-display text-2xl font-bold tracking-wide text-text-primary m-0">
+            {{ t('features.taskToday.runningTraining') }}
+          </h2>
+
+          <!-- Strategy & Difficulty -->
+          <div class="px-4 py-3 bg-elevated/70 border border-border rounded-xl w-full">
+            <span class="font-display text-lg font-semibold text-neon-cyan block">
+              {{ currentPlanData?.strategy }} ({{ currentPlanData?.difficulty }})
+            </span>
+          </div>
+
+          <!-- Buttons: Cancel (Left), Continue (Right) -->
+          <div class="flex gap-4 w-full mt-2">
+            <NButton
+              type="error"
+              secondary
+              size="large"
+              class="flex-1 font-display font-bold"
+              @click="handleCancelActivePlanFromModal"
+            >
+              {{ t('shared.buttons.cancel') }}
+            </NButton>
+            <NButton
+              type="success"
+              size="large"
+              class="flex-1 font-display font-bold shadow-[0_0_15px_rgba(0,255,85,0.3)]"
+              @click="handleContinueActivePlanFromModal"
+            >
+              {{ t('shared.buttons.continue', 'Weiter') }}
+            </NButton>
+          </div>
+        </div>
+      </NCard>
+    </NModal>
   </div>
 </template>
 

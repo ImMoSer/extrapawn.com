@@ -535,6 +535,7 @@ export interface DailyTrainingPlanPuzzle {
 export interface TrainingPlanPuzzlesJson {
   strategy: string
   difficulty: string
+  plan_type?: string
   date: string
   puzzles: DailyTrainingPlanPuzzle[]
 }
@@ -575,6 +576,7 @@ export interface DailyTrainingPlanEntity {
   date: string
   difficulty: string
   strategy: string
+  plan_type?: string
   is_completed: boolean
   tasks_json: TrainingPlanPuzzlesJson
   report_json?: CompletedPlanReport
@@ -612,6 +614,7 @@ export interface TrainingPlanCurrentResponse {
   overall_progress_percent?: number
   difficulty?: string
   strategy?: string
+  plan_type?: string
   recommendations?: TrainingPlanRecommendations
   completed_difficulties?: string[]
   report_json?: CompletedPlanReport

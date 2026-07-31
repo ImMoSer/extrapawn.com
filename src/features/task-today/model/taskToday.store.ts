@@ -41,8 +41,15 @@ export interface TrainingTask {
 export interface TrainingPlan {
   level: string
   strategy: string
+  plan_type?: string
   date: string
   tasks: TrainingTask[]
+}
+
+export interface CustomPlanSelection {
+  difficulty: 'Novice' | 'Pro' | 'Master'
+  strategyName: string
+  selections: Record<SubModeType, Array<{ category: string; count: number }>>
 }
 
 export interface PuzzleResult {
@@ -85,7 +92,45 @@ export const TRAINING_PLAN_CONFIGS: Record<'Novice' | 'Pro' | 'Master', Record<S
   }
 }
 
-export function getPlanCost(difficulty: 'Novice' | 'Pro' | 'Master'): number {
+export interface ModeScopeConfig {
+  categories: number
+  puzzlesPerCategory: number
+}
+
+export function getSubModeScopeConfig(
+  difficulty: 'Novice' | 'Pro' | 'Master',
+  subMode: SubModeType,
+  planType: string = 'taskToday'
+): ModeScopeConfig {
+  if (planType !== 'taskToday') {
+    if (subMode === 'tactics') {
+      return { categories: 5, puzzlesPerCategory: 20 }
+    }
+    if (subMode === 'finish_him') {
+      return { categories: 5, puzzlesPerCategory: 5 }
+    }
+    if (subMode === 'practical_chess') {
+      return { categories: 5, puzzlesPerCategory: 5 }
+    }
+  }
+
+  return TRAINING_PLAN_CONFIGS[difficulty][subMode]
+}
+
+export function getPlanCost(
+  difficulty: 'Novice' | 'Pro' | 'Master',
+  planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
+): number {
+  if (planType === 'tactics') {
+    return 5 * 20 * 1
+  }
+  if (planType === 'finish_him') {
+    return 5 * 5 * 5
+  }
+  if (planType === 'practical_chess') {
+    return 5 * 5 * 5
+  }
+
   const config = TRAINING_PLAN_CONFIGS[difficulty]
   let totalCost = 0
 
@@ -215,9 +260,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   // --- Store Actions ---
 
   function startTimer() {
+    stopTimer()
     startTime.value = Date.now()
     elapsedTimeBeforePause.value = 0
-    if (timerInterval) clearInterval(timerInterval)
+    currentTimeMs.value = 0
     timerInterval = window.setInterval(() => {
       currentTimeMs.value = elapsedTimeBeforePause.value + (Date.now() - startTime.value)
     }, 100)
@@ -264,6 +310,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     const puzzle = currentPuzzle.value
     if (!puzzle) return
 
+    startTimer()
+
     const userColor = determineHumanColor(puzzle)
     const planId = activePlanId.value || 'current'
 
@@ -303,6 +351,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   async function handlePuzzleFailure() {
     console.log('[TaskToday] Failed! Moving to back of queue...')
+    stopTimer()
     GameAudioEngine.playFeatureError()
     const puzzle = currentPuzzle.value
     if (puzzle) {
@@ -453,9 +502,11 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         body: JSON.stringify({
           difficulty: trainingPlan.value.level,
           strategy: trainingPlan.value.strategy,
+          plan_type: trainingPlan.value.plan_type || 'taskToday',
           tasks_json: {
             strategy: trainingPlan.value.strategy,
             difficulty: trainingPlan.value.level,
+            plan_type: trainingPlan.value.plan_type || 'taskToday',
             date: trainingPlan.value.date,
             puzzles: allPuzzles
           }
@@ -471,9 +522,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   async function generateAndStartPlan(
     strategyName: 'Discovery' | 'Hardcore' | 'Warmup',
     difficulty: 'Novice' | 'Pro' | 'Master',
-    recommendations: Record<string, string[]>
+    recommendations: Record<string, string[]>,
+    planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
   ) {
-    const cost = getPlanCost(difficulty)
+    const cost = getPlanCost(difficulty, planType)
     const availableCoins = authStore.userProfile?.PawnCoins ?? 0
     if (availableCoins < cost) {
       const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', cost, availableCoins)
@@ -507,21 +559,23 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       completedResults.value = {}
       puzzleAttempts.value = {}
 
-      const planConfig = TRAINING_PLAN_CONFIGS[difficulty]
-
       const plan: TrainingPlan = {
         level: difficulty,
         strategy: strategyName,
+        plan_type: planType,
         date: todayStr,
         tasks: []
       }
 
-      // We iterate over the sub-modes from config and apply parameters
-      for (const [subMode, subConfig] of Object.entries(planConfig) as [SubModeType, SubModeConfig][]) {
+      const subModesToRun: SubModeType[] = planType === 'taskToday'
+        ? ['tactics', 'finish_him', 'practical_chess']
+        : [planType as SubModeType]
+
+      for (const subMode of subModesToRun) {
+        const subConfig = getSubModeScopeConfig(difficulty, subMode, planType)
         const catCount = subConfig.categories
         const limitPerCategory = subConfig.puzzlesPerCategory
 
-        // Take only the number of categories allowed for this difficulty
         const categories = (recommendations[subMode] || []).slice(0, catCount)
         const allPuzzlesForMode: WorkoutPuzzle[] = []
         const themes: { name: string; count: number }[] = []
@@ -568,6 +622,119 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to generate and start plan:', err)
+      if (err instanceof InsufficientPawnCoinsError) {
+        authStore.setDailyLimitExceeded(true)
+      }
+      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
+      return false
+    }
+  }
+
+  async function generateAndStartCustomPlan(customConfig: CustomPlanSelection) {
+    const { difficulty, strategyName, selections } = customConfig
+
+    let totalCost = 0
+    for (const [subMode, items] of Object.entries(selections)) {
+      const costPerPuzzle = subMode === 'tactics' ? 1 : 5
+      for (const item of items) {
+        totalCost += item.count * costPerPuzzle
+      }
+    }
+
+    const availableCoins = authStore.userProfile?.PawnCoins ?? 0
+    if (availableCoins < totalCost) {
+      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', totalCost, availableCoins)
+      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
+      return false
+    }
+
+    try {
+      const billingRes = await apiClient<{ success: boolean; PawnCoins: number; dailyLimit: number; spentToday: number }>('/billing/plan', {
+        method: 'POST',
+        body: JSON.stringify({ cost: totalCost })
+      })
+      if (billingRes && billingRes.PawnCoins !== undefined) {
+        authStore.updateUserStats({
+          PawnCoins: billingRes.PawnCoins,
+          dailyLimit: billingRes.dailyLimit,
+          spentToday: billingRes.spentToday
+        })
+      }
+
+      gameStore.setBotEngineId('maia-2200')
+      isPlaying.value = false
+      isFinished.value = false
+
+      const todayStr = new Date().toISOString().split('T')[0] || ''
+
+      const tasks: TrainingTask[] = []
+      tasksPuzzles.value = {}
+      solvedPuzzlesPerTask.value = {}
+      completedResults.value = {}
+      puzzleAttempts.value = {}
+
+      const plan: TrainingPlan = {
+        level: difficulty,
+        strategy: strategyName,
+        plan_type: 'custom',
+        date: todayStr,
+        tasks: []
+      }
+
+      for (const [subMode, items] of Object.entries(selections) as [SubModeType, Array<{ category: string; count: number }>][]) {
+        if (!items || items.length === 0) continue
+
+        const allPuzzlesForMode: WorkoutPuzzle[] = []
+        const themes: { name: string; count: number }[] = []
+
+        for (const item of items) {
+          if (item.count <= 0) continue
+          themes.push({ name: item.category, count: item.count })
+
+          try {
+            const puzzles = await apiClient<WorkoutPuzzle[]>(
+              `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${item.category}&limit=${item.count}`
+            )
+            if (puzzles && puzzles.length > 0) {
+              allPuzzlesForMode.push(...puzzles)
+            }
+          } catch (err) {
+            console.error(`[TaskTodayStore] Failed to fetch custom puzzles for ${subMode}/${item.category}:`, err)
+            if (err instanceof InsufficientPawnCoinsError) {
+              throw err
+            }
+          }
+        }
+
+        if (allPuzzlesForMode.length > 0) {
+          tasksPuzzles.value[subMode] = allPuzzlesForMode
+          tasks.push({
+            mode: 'playPuzzle',
+            sub_mode: subMode,
+            themes
+          })
+        }
+      }
+
+      if (tasks.length === 0) {
+        throw new Error('No puzzles loaded for custom plan.')
+      }
+
+      plan.tasks = tasks
+      trainingPlan.value = plan
+      currentTaskIndex.value = 0
+      isPlaying.value = true
+      isFinished.value = false
+
+      saveState()
+      await startPlanOnBackend()
+
+      soundService.playSound('app_game_entry', 'taskTodayStore.startCustomPlan')
+      playCurrentPuzzle()
+
+      return true
+    } catch (err) {
+      console.error('[TaskTodayStore] Failed to generate custom plan:', err)
       if (err instanceof InsufficientPawnCoinsError) {
         authStore.setDailyLimitExceeded(true)
       }
@@ -810,6 +977,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       trainingPlan.value = {
         level: planData.difficulty || tasks_json.difficulty || 'Novice',
         strategy: planData.strategy || tasks_json.strategy || 'Replay',
+        plan_type: planData.plan_type || tasks_json.plan_type || 'taskToday',
         date: planData.date || tasks_json.date || (new Date().toISOString().split('T')[0] || ''),
         tasks
       }
@@ -853,6 +1021,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     formatMs,
     startTaskToday,
     generateAndStartPlan,
+    generateAndStartCustomPlan,
     replayPlan,
     quitTaskToday,
     pauseTaskToday,
