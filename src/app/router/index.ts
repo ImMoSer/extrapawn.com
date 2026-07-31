@@ -150,10 +150,6 @@ const router = createRouter({
       redirect: '/workout',
     },
     {
-      path: '/theory-endings',
-      redirect: '/endgames',
-    },
-    {
       path: '/task-today/:planId?/:puzzleType?/:puzzleId?',
       name: 'task-today',
       component: () => import('@/pages/task-today/ui/TaskTodayPage.vue'),
@@ -169,10 +165,6 @@ const router = createRouter({
       name: 'endgame-analysis',
       component: () => import('@/pages/endgame-analysis/ui/EndgameAnalysisPage.vue'),
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/practical-chess',
-      redirect: '/endgames',
     },
     {
       path: '/open-flow-test',

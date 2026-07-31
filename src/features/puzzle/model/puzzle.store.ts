@@ -360,18 +360,24 @@ export const usePuzzleStore = defineStore('puzzle', () => {
           strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
         }
       } else {
-        let category = mergedParams.category
-        if (!category) {
-          if (type === 'tactics') category = 'fork'
-          else if (type === 'practical_chess') category = 'extraPawn'
-          else category = 'pawn'
-        }
-        const difficulty = mergedParams.difficulty || 'Novice'
-        
-        const puzzleIdParam = mergedParams.puzzleId ? `&puzzle_id=${mergedParams.puzzleId}` : ''
-        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}${puzzleIdParam}`
+        let puzzle: PuzzlePuzzle
+        if (mergedParams.puzzleId) {
+          puzzle = await apiClient<PuzzlePuzzle>(
+            `/play-puzzle/puzzle/${mergedParams.puzzleId}?puzzle_type=${type}`
+          )
+        } else {
+          let category = mergedParams.category
+          if (!category) {
+            if (type === 'tactics') category = 'fork'
+            else if (type === 'practical_chess') category = 'extraPawn'
+            else category = 'pawn'
+          }
+          const difficulty = mergedParams.difficulty || 'Novice'
+          const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
 
-        const puzzle = await apiClient<PuzzlePuzzle>(url)
+          puzzle = await apiClient<PuzzlePuzzle>(url)
+        }
+
         if (!puzzle) {
           throw new Error('[PuzzleStore] Puzzle data is null from API. Fail-Fast!')
         }

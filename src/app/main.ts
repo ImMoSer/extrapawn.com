@@ -43,7 +43,7 @@ async function boot() {
     if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
       localStorage.setItem(
         'redirect_after_login',
-        window.location.pathname + window.location.search,
+        window.location.pathname + window.location.search + window.location.hash,
       )
     }
 
@@ -79,10 +79,13 @@ async function boot() {
   setupErrorHandler(app)
 
   // Handle post-login redirects
+  await router.isReady()
   const redirectPath = localStorage.getItem('redirect_after_login')
   if (redirectPath) {
     localStorage.removeItem('redirect_after_login')
-    router.push(redirectPath)
+    if (redirectPath !== router.currentRoute.value.fullPath) {
+      await router.push(redirectPath)
+    }
   }
 
   // Phase 3: Mount Main App (Cabinet)
