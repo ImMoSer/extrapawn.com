@@ -30,6 +30,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private prevScenarioIndex = 0
   private prevPlayoutMode = false
   private nextPuzzleTimeout: number | null = null
+  private isDestroyed = false
 
   constructor(
     puzzle: PuzzlePuzzle,
@@ -85,6 +86,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onDestroy() {
+    this.isDestroyed = true
     if (this.nextPuzzleTimeout) {
       clearTimeout(this.nextPuzzleTimeout)
       this.nextPuzzleTimeout = null
@@ -129,6 +131,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   private async triggerSuccess(reason: string = 'scenario_complete'): Promise<void> {
+    if (this.isDestroyed) return
+
     if (this.callbacks?.onSuccess) {
       await this.callbacks.onSuccess()
       return
@@ -142,11 +146,14 @@ export class PuzzleStrategy implements IGameplayStrategy {
       this.humanColor,
     )
     this.nextPuzzleTimeout = window.setTimeout(() => {
+      if (this.isDestroyed) return
       this.store.loadNewPuzzle(this.puzzle.puzzle_type)
     }, this.config.nextPuzzleDelayMs)
   }
 
   private async triggerFailure(): Promise<void> {
+    if (this.isDestroyed) return
+
     if (this.callbacks?.onFailure) {
       await this.callbacks.onFailure()
       return
@@ -160,6 +167,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       this.humanColor,
     )
     this.nextPuzzleTimeout = window.setTimeout(() => {
+      if (this.isDestroyed) return
       this.store.localRestart()
     }, this.config.restartDelayMs)
   }
@@ -323,8 +331,10 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onGameOver(status: GameStatusInfo): void {
-    if (this.callbacks?.onGameOver) {
-      this.callbacks.onGameOver(status)
+    if (this.isDestroyed) return
+
+    if (this.callbacks) {
+      this.callbacks.onGameOver?.(status)
       return
     }
 
@@ -334,11 +344,13 @@ export class PuzzleStrategy implements IGameplayStrategy {
       if (isWin) {
         soundService.playSound('game_tacktics_success')
         this.nextPuzzleTimeout = window.setTimeout(() => {
+          if (this.isDestroyed) return
           this.store.loadNewPuzzle(this.puzzle.puzzle_type)
         }, this.config.nextPuzzleDelayMs)
       } else {
         soundService.playSound('game_tacktics_error')
         this.nextPuzzleTimeout = window.setTimeout(() => {
+          if (this.isDestroyed) return
           this.store.localRestart()
         }, this.config.restartDelayMs)
       }

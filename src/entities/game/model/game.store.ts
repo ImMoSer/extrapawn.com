@@ -23,6 +23,7 @@ export const useGameStore = defineStore('game', () => {
 
   const userMovesCount = ref(0)
   const isGameActive = ref(false)
+  const isMoveProcessing = ref(false)
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const isFreePlay = ref(false)
@@ -304,59 +305,69 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function handleUserMove(orig: Key, dest: Key) {
-    if (gamePhase.value !== 'PLAYING') return
-
-    const intendedUci = await boardStore.prepareUserUciMove({ orig, dest })
-    if (!intendedUci) {
-      boardStore.loadPosition(boardStore.fen) // snapback visually
+    if (gamePhase.value !== 'PLAYING' || isMoveProcessing.value) {
+      if (isMoveProcessing.value) {
+        logger.warn('[GameStore] Rejected handleUserMove: move transaction already in progress.')
+      }
       return
     }
 
-    // Pre-validate move with Strategy
-    if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
-      const isLegalForStrategy = await currentStrategy.value.validateUserMove(
-        intendedUci,
-        boardStore.fen,
-      )
-      if (!isLegalForStrategy) {
-        logger.warn(`[GameStore] Move ${intendedUci} rejected by Strategy.`)
+    isMoveProcessing.value = true
+    try {
+      const intendedUci = await boardStore.prepareUserUciMove({ orig, dest })
+      if (!intendedUci) {
         boardStore.loadPosition(boardStore.fen) // snapback visually
         return
       }
-    }
 
-    let isCommitted = true
-    if (userMoveHandler.value) {
-      isCommitted = await userMoveHandler.value(intendedUci)
-    } else {
-      const fenBefore = boardStore.fen
-      const positionBefore = boardStore.chessPosition.clone()
-      const moveOk = boardStore.applyUciMove(intendedUci)
-      if (!moveOk) return
-
-      const chessopsMove = (await import('chessops/util')).parseUci(intendedUci)
-      if (chessopsMove) {
-        const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
-        const fenAfter = boardStore.fen
-        pgnService.addNode({ san, uci: intendedUci, fenBefore, fenAfter })
-        boardStore.syncVisualCues()
-        GameAudioEngine.playMoveSoundFromSan(san, false)
+      // Pre-validate move with Strategy
+      if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
+        const isLegalForStrategy = await currentStrategy.value.validateUserMove(
+          intendedUci,
+          boardStore.fen,
+        )
+        if (!isLegalForStrategy) {
+          logger.warn(`[GameStore] Move ${intendedUci} rejected by Strategy.`)
+          boardStore.loadPosition(boardStore.fen) // snapback visually
+          return
+        }
       }
-    }
 
-    if (userMovesCount.value === 0) {
-      isGameActive.value = true
-    }
-    userMovesCount.value++
+      let isCommitted = true
+      if (userMoveHandler.value) {
+        isCommitted = await userMoveHandler.value(intendedUci)
+      } else {
+        const fenBefore = boardStore.fen
+        const positionBefore = boardStore.chessPosition.clone()
+        const moveOk = boardStore.applyUciMove(intendedUci)
+        if (!moveOk) return
 
-    if (isFreePlay.value) {
-      return
-    }
+        const chessopsMove = (await import('chessops/util')).parseUci(intendedUci)
+        if (chessopsMove) {
+          const san = (await import('chessops/san')).makeSan(positionBefore, chessopsMove)
+          const fenAfter = boardStore.fen
+          pgnService.addNode({ san, uci: intendedUci, fenBefore, fenAfter })
+          boardStore.syncVisualCues()
+          GameAudioEngine.playMoveSoundFromSan(san, false)
+        }
+      }
 
-    const strategyAtStart = currentStrategy.value
+      if (userMovesCount.value === 0) {
+        isGameActive.value = true
+      }
+      userMovesCount.value++
 
-    if (strategyAtStart && isCommitted && !userMoveHandler.value) {
-      await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
+      if (isFreePlay.value) {
+        return
+      }
+
+      const strategyAtStart = currentStrategy.value
+
+      if (strategyAtStart && isCommitted && !userMoveHandler.value) {
+        await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
+      }
+    } finally {
+      isMoveProcessing.value = false
     }
   }
 
@@ -407,6 +418,7 @@ export const useGameStore = defineStore('game', () => {
   return {
     gamePhase,
     isGameActive,
+    isMoveProcessing,
     playerColor,
     currentStrategy,
     isFreePlay,

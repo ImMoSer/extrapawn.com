@@ -172,6 +172,16 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const elapsedTimeBeforePause = ref(0)
   const currentTimeMs = ref(0)
   let timerInterval: number | null = null
+  let nextPuzzleTimeout: number | null = null
+  const activeSessionToken = ref(0)
+
+  function cancelPendingTransition() {
+    if (nextPuzzleTimeout !== null) {
+      clearTimeout(nextPuzzleTimeout)
+      nextPuzzleTimeout = null
+    }
+    activeSessionToken.value++
+  }
 
   const activeTask = computed(() => trainingPlan.value?.tasks[currentTaskIndex.value] || null)
 
@@ -307,6 +317,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   }
 
   function playCurrentPuzzle() {
+    cancelPendingTransition()
     const puzzle = currentPuzzle.value
     if (!puzzle) return
 
@@ -383,9 +394,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
+    cancelPendingTransition()
+    const currentToken = activeSessionToken.value
     const preferencesStore = usePreferencesStore()
-    setTimeout(() => {
-      playCurrentPuzzle()
+    nextPuzzleTimeout = window.setTimeout(() => {
+      if (activeSessionToken.value === currentToken) {
+        playCurrentPuzzle()
+      }
     }, preferencesStore.preferences.delays.restartDelayMs)
   }
 
@@ -451,9 +466,13 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       }
     }
 
+    cancelPendingTransition()
+    const currentToken = activeSessionToken.value
     const preferencesStore = usePreferencesStore()
-    setTimeout(() => {
-      playCurrentPuzzle()
+    nextPuzzleTimeout = window.setTimeout(() => {
+      if (activeSessionToken.value === currentToken) {
+        playCurrentPuzzle()
+      }
     }, preferencesStore.preferences.delays.nextPuzzleDelayMs)
   }
 

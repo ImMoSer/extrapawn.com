@@ -260,9 +260,10 @@ export const useDemoplayStore = defineStore('demoplay', () => {
 
       // Calculate move delay dynamically (skip if we already visualized during prefetched delay)
       let delay = prefetchedExplanation ? 0 : preferencesStore.preferences.delays.demoPlayMoveMs
-      const topMove = explanation?.engine_top_moves?.[0]
-      if (!prefetchedExplanation && topMove && topMove.mate !== null) {
-        const n = Math.abs(topMove.mate)
+      const topMove = coachStore.topMoves[0]
+      const mateValue = topMove ? (topMove.mateIn ?? topMove.mate ?? null) : null
+      if (!prefetchedExplanation && topMove && mateValue !== null) {
+        const n = Math.abs(mateValue)
         if (initialMateMoves.value === null) {
           initialMateMoves.value = n
         }
@@ -279,8 +280,8 @@ export const useDemoplayStore = defineStore('demoplay', () => {
         } else {
           delay = MM
         }
-        logger.info(`[Demoplay] Forced mate in ${topMove.mate} detected (initial N=${N}). Dynamic delay scaled to ${delay}ms.`)
-      } else if (topMove && topMove.mate === null) {
+        logger.info(`[Demoplay] Forced mate in ${mateValue} detected (initial N=${N}). Dynamic delay scaled to ${delay}ms.`)
+      } else if (topMove && mateValue === null) {
         initialMateMoves.value = null
       }
 
@@ -315,7 +316,7 @@ export const useDemoplayStore = defineStore('demoplay', () => {
       }
 
       // Get the best move from the coach
-      const bestMoveUci = explanation?.engine_top_moves?.[0]?.uci
+      const bestMoveUci = coachStore.topMoves[0]?.uci || (explanation?.engine_candidates?.[0] as { uci?: string })?.uci
       if (!bestMoveUci || bestMoveUci.length < 4) {
         logger.error('[Demoplay] No valid best move returned by Coach.')
         isDemoplayAnalyzing.value = false

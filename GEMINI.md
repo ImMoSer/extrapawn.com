@@ -1,6 +1,6 @@
 # GEMINI.md - Entwicklungsrichtlinien
 
-1. **Qualität und Nachhaltigkeit vor Geschwindigkeit**: Nutzung von Feature-Sliced Design (Entities dürfen keine Features importieren). Code muss Production-Grade sein. Absolute Sperre für Quick & Dirty Fixes!
+1. **Qualität, Architektur und Nachhaltigkeit vor Geschwindigkeit**: Nutzung von Feature-Sliced Design (Entities dürfen keine Features importieren). Code muss Production-Grade sein. Absolute Sperre für Quick & Dirty Fixes, Symptombekämpfung ("Костыли") oder einfache Auswege! Wenn zwei Wege zur Auswahl stehen — ein einfacher/symptomatischer ("Quick Fix / Костыль") und ein sauberer architektonischer —, MUSS der Agent IMMER den sauberen architektonischen Weg wählen und vorschlagen. Provisorische Lösungen ("Костыли") müssen früher oder später umgebaut werden, weshalb von Anfang an ohne Ausnahmen der korrekte, nachhaltige Weg gewählt werden muss.
 2. **Strikte Typisierung**: Vermeiden von `"warning Unexpected any"`. Immer einen spezifischen Typen definieren (`@typescript-eslint/no-explicit-any`).
 3. **Freigabe-Prozess (Workflow Control)**: Wenn die Nachricht mit **"NOK"** endet, bedeutet das: Kein Code und keine Modifikationen im nächsten Schritt. Modifikationen und Code-Generierung werden ausschließlich mit einem **"OK"** freigegeben.
 4. **Validierung**: Sicherstellen, dass die Prüfungen `pnpm type-check` und `pnpm lint` ohne Fehler und Warnungen durchlaufen.

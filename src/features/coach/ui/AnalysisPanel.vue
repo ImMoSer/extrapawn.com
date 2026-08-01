@@ -200,16 +200,20 @@ function getEvalBadgeInfo(move: CoachTopMove) {
 }
 
 function getCharacter(move: CoachTopMove): string | null {
-  if (!props.posExplanation || !props.posExplanation.engine_top_moves) return null
+  if (move.character) return move.character
+  const candidates = props.posExplanation?.engine_candidates || props.posExplanation?.engine_top_moves
+  if (!candidates) return null
   const moveUci = move.move || move.uci
-  const found = props.posExplanation.engine_top_moves.find((em) => em.uci === moveUci)
+  const found = (candidates as CoachTopMove[]).find((em) => em.uci === moveUci)
   return found?.character || null
 }
 
 function getPlanBrief(move: CoachTopMove): string | null {
-  if (!props.posExplanation || !props.posExplanation.engine_top_moves) return null
+  if (move.plan_brief) return move.plan_brief
+  const candidates = props.posExplanation?.engine_candidates || props.posExplanation?.engine_top_moves
+  if (!candidates) return null
   const moveUci = move.move || move.uci
-  const found = props.posExplanation.engine_top_moves.find((em) => em.uci === moveUci)
+  const found = (candidates as CoachTopMove[]).find((em) => em.uci === moveUci)
   return found?.plan_brief || null
 }
 </script>

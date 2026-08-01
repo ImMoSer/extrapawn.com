@@ -194,7 +194,8 @@ export interface CoachExplanation {
     tts_string?: string
     zwischenzug?: Record<string, unknown>
   }
-  engine_top_moves: CoachTopMove[]
+  engine_top_moves?: CoachTopMove[]
+  engine_candidates?: CoachTopMove[] | Record<string, unknown>[]
   visual_commands: CoachVisualCommands
   tactics?: Record<string, unknown>
   endgame?: Record<string, unknown>

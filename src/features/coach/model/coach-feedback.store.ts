@@ -130,19 +130,20 @@ export const useCoachFeedbackStore = defineStore('coach-feedback', () => {
         }
       }
 
-      if (coachStore.topMoves.length > 0 && coachStore.currentExplanation?.engine_top_moves) {
+      const candidates = coachStore.currentExplanation?.engine_candidates || coachStore.currentExplanation?.engine_top_moves
+      if (coachStore.topMoves.length > 0) {
         logObj.topMoves = coachStore.topMoves.slice(0, 3).map((m: CoachTopMove) => {
-          const enriched = coachStore.currentExplanation?.engine_top_moves.find((em: CoachTopMove) => em.san === m.san)
+          const enriched = (candidates as CoachTopMove[] | undefined)?.find((em: CoachTopMove) => em.san === m.san || em.uci === m.uci)
           return {
             rank: m.rank,
             san: m.san,
             eval: m.isMate ? `M${m.mateIn}` : (m.eval_pawns > 0 ? `+${m.eval_pawns}` : `${m.eval_pawns}`),
-            plan: enriched?.plan_brief || null,
-            tagline: m.tagline || null,
-            quality: enriched?.explanation?.quality ? (QUALITY_LABEL[enriched.explanation.quality] || enriched.explanation.quality) : null,
-            summary: enriched?.explanation?.summary || null,
-            details: enriched?.explanation?.details || null,
-            character: enriched?.character || null,
+            plan: m.plan_brief || enriched?.plan_brief || null,
+            tagline: m.tagline || enriched?.tagline || null,
+            quality: m.explanation?.quality ? (QUALITY_LABEL[m.explanation.quality] || m.explanation.quality) : (enriched?.explanation?.quality ? (QUALITY_LABEL[enriched.explanation.quality] || enriched.explanation.quality) : null),
+            summary: m.explanation?.summary || enriched?.explanation?.summary || null,
+            details: m.explanation?.details || enriched?.explanation?.details || null,
+            character: m.character || enriched?.character || null,
           }
         })
       }

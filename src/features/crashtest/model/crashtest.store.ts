@@ -30,7 +30,6 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   })
 
   const isCrashtestAnalyzing = ref(false)
-  const lastPlayedOrAnalyzedFen = ref<string | null>(null)
 
   function getPromotionRole(char: string): ChessopsRole {
     switch (char) {
@@ -110,34 +109,21 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     return allShapes
   }
 
+  const coachStore = useCoachStore()
+  const lastPlayedFen = ref<string | null>(null)
+
   // Trigger coach analysis and perform crashtest move
   async function triggerCrashtest(fenToAnalyze: string) {
-    if (isCrashtestAnalyzing.value) return
+    if (isCrashtestAnalyzing.value) {
+      logger.info('[DEBUG] [Crashtest] Trigger skipped: already analyzing a move.')
+      return
+    }
     isCrashtestAnalyzing.value = true
+    logger.info(`[DEBUG] [Crashtest] Starting move execution pipeline for FEN: ${fenToAnalyze}`)
 
     try {
-      logger.info(`[Crashtest] Starting Coach analysis for FEN: ${fenToAnalyze}`)
-      const coachStore = useCoachStore()
-      await coachStore.runAnalysis(fenToAnalyze, true)
+      // Draw visualizations if available
       const explanation = coachStore.posExplanation
-
-      // Check if state remains valid after async API request
-      const postAnalysisFenChanged = boardStore.fen !== fenToAnalyze
-      const postAnalysisPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
-      const postAnalysisCrashtestDisabled = !isCrashtestEnabled.value
-
-      if (postAnalysisFenChanged || postAnalysisPhaseInvalid || postAnalysisCrashtestDisabled) {
-        logger.info(
-          `[Crashtest] Cleanly aborting analysis due to state change: ` +
-          `fenChanged=${postAnalysisFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
-          `gamePhase=${gameStore.gamePhase}, ` +
-          `crashtestEnabled=${isCrashtestEnabled.value}`
-        )
-        isCrashtestAnalyzing.value = false
-        return
-      }
-
-      // Draw the visualizations on the board
       if (explanation?.visual_commands) {
         const commands = Object.values(explanation.visual_commands).flat().join(';')
         if (commands) {
@@ -150,35 +136,50 @@ export const useCrashtestStore = defineStore('crashtest', () => {
         boardStore.setCoachShapes([])
       }
 
-      // Wait crashtest delay from preferences before executing the move
+      // Wait crashtest delay from preferences before executing move
       const delay = preferencesStore.preferences.delays.crashtestDelayMs
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      if (delay > 0) {
+        logger.info(`[DEBUG] [Crashtest] Waiting configured delay: ${delay}ms`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
 
-      // Check state again after delay
-      const postDelayFenChanged = boardStore.fen !== fenToAnalyze
-      const postDelayPhaseInvalid = gameStore.gamePhase !== 'PLAYING'
-      const postDelayCrashtestDisabled = !isCrashtestEnabled.value
-
-      if (postDelayFenChanged || postDelayPhaseInvalid || postDelayCrashtestDisabled) {
-        logger.info(
-          `[Crashtest] Cleanly aborting after wait delay due to state change: ` +
-          `fenChanged=${postDelayFenChanged} (current=${boardStore.fen}, expected=${fenToAnalyze}), ` +
-          `gamePhase=${gameStore.gamePhase}, ` +
-          `crashtestEnabled=${isCrashtestEnabled.value}`
-        )
-        isCrashtestAnalyzing.value = false
+      // Check state validity after delay
+      if (boardStore.fen !== fenToAnalyze) {
+        logger.warn(`[DEBUG] [Crashtest] Aborted after delay: FEN changed from ${fenToAnalyze} to ${boardStore.fen}`)
+        return
+      }
+      if (gameStore.gamePhase !== 'PLAYING') {
+        logger.warn(`[DEBUG] [Crashtest] Aborted after delay: gamePhase is ${gameStore.gamePhase}`)
+        return
+      }
+      if (!isCrashtestEnabled.value) {
+        logger.warn('[DEBUG] [Crashtest] Aborted after delay: crashtest was disabled')
+        return
+      }
+      if (gameStore.isMoveProcessing) {
+        logger.warn('[DEBUG] [Crashtest] Aborted after delay: gameStore.isMoveProcessing is true')
         return
       }
 
-      // Get the best move from the coach
-      const bestMoveUci = explanation?.engine_top_moves?.[0]?.uci
+      // Get 1st line move from coach analysis or fallback to Stockfish engine
+      let bestMoveUci = coachStore.topMoves[0]?.uci || (explanation?.engine_candidates?.[0] as { uci?: string })?.uci
+
       if (!bestMoveUci || bestMoveUci.length < 4) {
-        logger.error('[Crashtest] No valid best move returned by Coach.')
-        isCrashtestAnalyzing.value = false
+        logger.info('[DEBUG] [Crashtest] Coach topMove not ready, requesting Stockfish fallback 1st line move...')
+        try {
+          const { enginePlayService } = await import('@/entities/game')
+          bestMoveUci = (await enginePlayService.getBestMove(gameStore.botEngineId, fenToAnalyze)) || undefined
+        } catch (err) {
+          logger.error('[DEBUG] [Crashtest] Stockfish engine fallback failed:', err)
+        }
+      }
+
+      if (!bestMoveUci || bestMoveUci.length < 4) {
+        logger.error('[DEBUG] [Crashtest] No valid move found (Coach empty & Stockfish fallback failed). Aborting.')
         return
       }
 
-      logger.info(`[Crashtest] Crashtesting best move: ${bestMoveUci}`)
+      logger.info(`[DEBUG] [Crashtest] Executing 1st line move: ${bestMoveUci} for FEN: ${fenToAnalyze}`)
       const orig = bestMoveUci.substring(0, 2) as Key
       const dest = bestMoveUci.substring(2, 4) as Key
       const promoChar = bestMoveUci.length === 5 ? bestMoveUci.charAt(4) : null
@@ -189,49 +190,73 @@ export const useCrashtestStore = defineStore('crashtest', () => {
           if (boardStore.promotionState) {
             const role = getPromotionRole(promoChar)
             boardStore.completePromotion(role)
-            logger.info(`[Crashtest] Auto-completed promotion to: ${role}`)
+            logger.info(`[DEBUG] [Crashtest] Auto-completed promotion to: ${role}`)
           }
         }, 50)
       }
 
-      // Release the analysis lock before executing the move
-      isCrashtestAnalyzing.value = false
+      // Record played FEN right before move execution to prevent duplicate triggers
+      lastPlayedFen.value = fenToAnalyze
 
       // Make the move like a real user using gameStore.handleUserMove
       await gameStore.handleUserMove(orig, dest)
+      logger.info(`[DEBUG] [Crashtest] Successfully completed handleUserMove(${orig}->${dest})`)
     } catch (e) {
-      logger.error('[Crashtest] Error during crashtest execution', e)
+      logger.error('[DEBUG] [Crashtest] Exception during crashtest execution:', e)
+    } finally {
       isCrashtestAnalyzing.value = false
     }
   }
 
   let isInitialized = false
 
-  // Watch board FEN and trigger if it's the user's turn
+  // Watch board FEN, turn, phase, and coach analysis status
   function init() {
     if (isInitialized) return
     isInitialized = true
 
-    logger.info('[CrashtestStore] Initializing global crashtest watchers.')
+    logger.info('[DEBUG] [CrashtestStore] Initializing synthetic user crashtest watchers.')
 
     watch(
-      [() => boardStore.fen, () => boardStore.turn, () => gameStore.gamePhase, isCrashtestEnabled],
-      ([newFen, newTurn, gamePhase, crashtestEnabled]) => {
-        if (!isMo3ep.value || !crashtestEnabled || gamePhase !== 'PLAYING') {
+      [
+        () => boardStore.fen,
+        () => boardStore.turn,
+        () => gameStore.gamePhase,
+        () => gameStore.isMoveProcessing,
+        () => coachStore.isAnalyzing,
+        () => isCrashtestAnalyzing.value,
+        isCrashtestEnabled
+      ],
+      ([newFen, newTurn, gamePhase, isMoveProcessing, isAnalyzing, isCrashtestAnalyzingVal, crashtestEnabled]) => {
+        if (!isMo3ep.value) return
+        if (!crashtestEnabled) return
+
+        if (gamePhase !== 'PLAYING') {
+          logger.info(`[DEBUG] [Crashtest Watcher] Idle: gamePhase is '${gamePhase}'`)
           return
         }
-
-        // It must be the user's turn to move (determined by board orientation)
+        if (isMoveProcessing) {
+          logger.info('[DEBUG] [Crashtest Watcher] Idle: move transaction currently in progress')
+          return
+        }
+        if (isAnalyzing) {
+          logger.info('[DEBUG] [Crashtest Watcher] Waiting: Coach is currently analyzing FEN position...')
+          return
+        }
+        if (isCrashtestAnalyzingVal) {
+          logger.info('[DEBUG] [Crashtest Watcher] Waiting: crashtest move execution is currently in progress...')
+          return
+        }
         if (newTurn !== boardStore.orientation) {
+          logger.info(`[DEBUG] [Crashtest Watcher] Idle: turn is ${newTurn}, user color is ${boardStore.orientation}`)
+          return
+        }
+        if (newFen === lastPlayedFen.value) {
+          logger.info(`[DEBUG] [Crashtest Watcher] Idle: FEN ${newFen} was already played`)
           return
         }
 
-        // Only run once per FEN state
-        if (newFen === lastPlayedOrAnalyzedFen.value) {
-          return
-        }
-
-        lastPlayedOrAnalyzedFen.value = newFen
+        logger.info(`[DEBUG] [Crashtest Watcher] All conditions met! Triggering move for FEN: ${newFen}`)
         triggerCrashtest(newFen)
       },
       { immediate: true }
