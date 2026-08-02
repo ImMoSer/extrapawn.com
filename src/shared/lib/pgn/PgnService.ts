@@ -803,6 +803,33 @@ class PgnServiceController {
   public getCurrentPly(): number {
     return this.currentNode.ply
   }
+
+  public getAnalysisPayloadContext(overrideLastMoveUci?: string | null): {
+    startFen: string
+    moves: string[]
+  } {
+    const startFen = this.rootNode.fenAfter || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    const pathNodes: PgnNode[] = []
+    let curr: PgnNode | undefined = this.currentNode
+    while (curr && curr.parent) {
+      pathNodes.unshift(curr)
+      curr = curr.parent
+    }
+
+    const moves = pathNodes.map((n) => n.uci).filter((u): u is string => !!u)
+
+    if (overrideLastMoveUci) {
+      const trimmedOverride = overrideLastMoveUci.trim()
+      if (trimmedOverride && (moves.length === 0 || moves[moves.length - 1] !== trimmedOverride)) {
+        moves.push(trimmedOverride)
+      }
+    }
+
+    return {
+      startFen,
+      moves,
+    }
+  }
 }
 
 export const pgnService = new PgnServiceController()

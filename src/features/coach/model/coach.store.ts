@@ -5,6 +5,7 @@ import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 
 import { useBoardStore } from '@/entities/game'
+import { useAuthStore } from '@/entities/user'
 import { parseVisualCommands } from '@/shared/lib/engine/coach/visualizer'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -28,6 +29,7 @@ export function getBrushForQuality(quality?: string | null): string {
 
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
+  const authStore = useAuthStore()
 
   // Coach Enabled State
   const isCoachEnabled = ref(true)
@@ -312,26 +314,18 @@ export const useCoachStore = defineStore('coach', () => {
   ) {
     if (!currentFen) return
 
-    let lastMoveUci: string | null = overrideLastMoveUci ?? null
-    const idx = historyIndex.value
-    const history = moveHistory.value
-    if (lastMoveUci === null && idx > 0 && history && history[idx] && history[idx - 1]) {
-      const prev = history[idx - 1]
-      const curr = history[idx]
-      if (curr && curr.san && prev && prev.fen) {
-        lastMoveUci = getUciFromSan(prev.fen, curr.san)
-      }
-    }
+    const { startFen, moves } = pgnService.getAnalysisPayloadContext(overrideLastMoveUci)
+    const lastMoveUci = moves.length > 0 ? moves[moves.length - 1] : null
 
-    const reqUci = lastMoveUci || 'null'
-    if (!force && currentFen === lastFetchedFen.value && reqUci === lastFetchedUci.value) {
-      logger.info(`[UCI_FEN_REQUEST] SKIPPED (Duplicate) | FEN: ${currentFen} | UCI: ${reqUci}`)
+    const payloadKeyUci = lastMoveUci || 'null'
+    if (!force && currentFen === lastFetchedFen.value && payloadKeyUci === lastFetchedUci.value) {
+      logger.info(`[UCI_FEN_REQUEST] SKIPPED (Duplicate) | FEN: ${currentFen} | UCI: ${payloadKeyUci}`)
       return
     }
 
     fen.value = currentFen
     lastFetchedFen.value = currentFen
-    lastFetchedUci.value = reqUci
+    lastFetchedUci.value = payloadKeyUci
     const analysisToken = ++latestAnalysisToken.value
 
     topMovesLoading.value = true
@@ -344,10 +338,13 @@ export const useCoachStore = defineStore('coach', () => {
 
     try {
       stockfishReady.value = true
-      showLoadingBanner.value = false
+      const userId = authStore.effectiveLichessUsername || authStore.userProfile?.username || authStore.userProfile?.id || 'default_user'
 
-      const reqFenBefore = overrideFenBefore || ((idx > 0 && history && history[idx - 1]?.fen) ? history[idx - 1].fen : currentFen)
-      const payload = { fen_before: reqFenBefore, last_move_uci: reqUci }
+      const payload = {
+        user_id: userId,
+        start_fen: startFen,
+        moves,
+      }
 
       const startTime = performance.now()
 
