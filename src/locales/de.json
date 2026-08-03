@@ -394,10 +394,17 @@
     "tierRestriction": {
       "title": "Abonnement erforderlich",
       "cancelBtn": "Abbrechen",
-      "upgradeBtn": "Tarife",
-      "basic": "Bitte melde dich an, um Basis-Aufgaben zu spielen.",
-      "premium": "Abonnement erforderlich (VIP, Dame oder König), um auf diese Aufgaben zuzugreifen.",
-      "premiumPlus": "Abonnement erforderlich (VIP, Dame oder König), um auf diese Aufgaben zuzugreifen.",
+      "upgradeBtn": "Abo kaufen",
+      "message": "Ein Abonnement (VIP, Dame oder König) ist erforderlich, um diese Funktion zu nutzen.",
+      "getGiftCode": "Kostenloses VIP holen (Telegram)",
+      "enterGiftCode": "Geschenkcode eingeben",
+      "activateBtn": "Aktivieren",
+      "giftPlaceholder": "8-stelligen Code eingeben...",
+      "giftSuccess": "7-Tage-VIP-Geschenkabonnement aktiviert!",
+      "giftInvalid": "Ungültiger oder bereits verwendeter Geschenkcode.",
+      "basic": "Bitte melde dich an, um auf diese Funktion zuzugreifen.",
+      "premium": "Ein Abonnement (VIP, Dame oder König) ist erforderlich, um diese Funktion zu nutzen.",
+      "premiumPlus": "Ein Abonnement (VIP, Dame oder König) ist erforderlich, um diese Funktion zu nutzen.",
       "makeTaskToday": "Tagesaufgabe starten"
     }
   },
@@ -437,7 +444,7 @@
       },
       "polar": {
         "successTitle": "Zahlung erfolgreich! 🎉",
-        "successMessage": "Vielen Dank für dein Abo. Dein Konto wurde hochgestuft und dein PawnCoins-Guthaben entspricht deiner neuen Stufe.",
+        "successMessage": "Vielen Dank für dein Abo. Dein Konto wurde hochgestuft.",
         "ok": "Training starten"
       },
       "gift": {
@@ -466,7 +473,6 @@
         "byRating": "nach Rating"
       },
       "stats": {
-        "pawncoinsLabel": "PawnCoins",
         "bestRatingsTitle": "Beste Ratings",
         "improve": "Verbessern",
         "noData": "Keine Daten für den Zeitraum.",
@@ -513,24 +519,20 @@
         "pawn": {
           "name": "Bauer",
           "role": "Kostenlos für alle, um die App kennenzulernen.",
-          "description": "Tägliche Auffüllung auf bis zu {pawncoins} PawnCoins",
           "price": "Dauerhaft kostenlos"
         },
         "vip": {
           "name": "VIP",
-          "role": "Exklusiver Bonus für die Top 20 Club-Performer.",
-          "description": "Tägliche Auffüllung auf bis zu {pawncoins} PawnCoins"
+          "role": "Exklusiver Bonus für die Top 20 Club-Performer."
         },
         "queen": {
           "name": "Dame",
           "role": "Der Standard für ambitionierte Vereinsspieler.",
-          "description": "Tägliche Auffüllung auf bis zu {pawncoins} PawnCoins",
           "price": "9,99 € / Monat"
         },
         "king": {
           "name": "König",
           "role": "Das Kraftpaket für Profis & Analysten.",
-          "description": "Tägliche Auffüllung auf bis zu {pawncoins} PawnCoins",
           "price": "19,99 € / Monat"
         },
         "price": {
@@ -543,7 +545,7 @@
         "howItWorks": "📅 Wie funktioniert es?",
         "p1": "Unser Bonus-Programm belohnt die Top 20 aktiven Mitglieder des xtrapawn Clubs auf Lichess.",
         "p2": "Die Boni werden automatisch vergeben. Die Berechnung erfolgt täglich um 05:29 Uhr (UTC+1) basierend auf der Performance der letzten 30 Tage.",
-        "p3": "Spieler in den Top 20 der Club-Rangliste erhalten den VIP-Status (1000 PawnCoins täglich).",
+        "p3": "Spieler in den Top 20 der Club-Rangliste erhalten den VIP-Status.",
         "p5": "Der Status wird täglich aktualisiert und ist bis zur nächsten Berechnung gültig.",
         "homepageLink": "Club Homepage",
         "alertText": "Lieber erspielen statt kaufen? Schau dir unser",
@@ -554,16 +556,6 @@
         "p7": "Änderungen am Bonusprogramm vorbehalten.",
         "p8": "Viel Erfolg beim Training!",
         "moreInfo": "Mehr Infos hier"
-      },
-      "costs": {
-        "title": "Modul-Kosten",
-        "pawncoinLabel": "PawnCoins"
-      },
-      "insufficientCoins": {
-        "title": "Unzureichende PawnCoins",
-        "message": "Das Starten dieses Spiels erfordert {required} PawnCoins. Du hast aktuell: {available}.",
-        "subMessage": "Auf der Preisseite erfährst du mehr darüber, wie du dein Guthaben aufladen kannst.",
-        "goToPricing": "Zu den Preisen"
       },
       "upgrade": {
         "title": "Abo Upgrade",

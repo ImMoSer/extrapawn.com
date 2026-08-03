@@ -367,12 +367,6 @@ export type SubscriptionTier =
   | 'pawn'
   | 'VIP'
   | 'vip'
-  | 'Knight'
-  | 'knight'
-  | 'Bishop'
-  | 'bishop'
-  | 'Rook'
-  | 'rook'
   | 'Queen'
   | 'queen'
   | 'King'
@@ -409,9 +403,6 @@ export interface TodayActivity {
 export interface UserStatsUpdate {
   id?: string
   username?: string
-  PawnCoins: number
-  dailyLimit?: number
-  spentToday?: number
   today_activity?: TodayActivity
   finish_him?: GameModeProfileDto
   theory?: GameModeProfileDto
@@ -426,18 +417,13 @@ export interface GameResultResponse {
   newRating?: number
   attempts?: number
   info?: string
-  dailyLimit?: number
-  spentToday?: number
-  PawnCoins?: number
   userStatsUpdate?: UserStatsUpdate
 }
 
 export interface UserSessionProfile extends LichessUserProfile {
-  PawnCoins: number
-  dailyLimit: number
-  spentToday: number
   base_puzzle_rating: number
   subscriptionTier: SubscriptionTier
+  telegram?: boolean
   activeTier?: SubscriptionTier
   polarTier?: SubscriptionTier | null
   isPolarCustomer?: boolean

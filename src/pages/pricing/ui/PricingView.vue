@@ -18,21 +18,13 @@ import {
   NTag,
   NText,
   NTooltip,
-  NIcon,
   useMessage,
 } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { GAME_MODES } from '@/shared/config/gameModes.config'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
-
-// Subscription values and colors
-const PAWN_COINS = 250
-const VIP_COINS = 1000
-const QUEEN_COINS = 5000
-const KING_COINS = 10000
 
 const PAWN_COLOR = 'var(--text-color-3)'
 const VIP_COLOR = 'var(--neon-purple)'
@@ -50,9 +42,9 @@ const upgradeSuccess = ref(false)
 
 const tierRanks: Record<string, number> = {
   pawn: 0,
-  vip: 3,
-  queen: 4,
-  king: 5,
+  vip: 1,
+  queen: 2,
+  king: 3,
 }
 
 const currentUserTier = computed(() => {
@@ -82,7 +74,6 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       name: t('pages.pricing.tiers.pawn.name'),
       role: t('pages.pricing.tiers.pawn.role'),
       icon: '/piece/alpha/wP.svg',
-      pawncoins: PAWN_COINS,
       color: PAWN_COLOR,
       price: t('pages.pricing.tiers.pawn.price'),
       isPurchasable: false,
@@ -92,7 +83,6 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       name: t('pages.pricing.tiers.vip.name'),
       role: t('pages.pricing.tiers.vip.role'),
       icon: '/piece/alpha/wR.svg',
-      pawncoins: VIP_COINS,
       color: VIP_COLOR,
       price: t('pages.pricing.tiers.price.bonus'),
       isPurchasable: false,
@@ -103,7 +93,6 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       name: t('pages.pricing.tiers.queen.name'),
       role: t('pages.pricing.tiers.queen.role'),
       icon: '/piece/alpha/wQ.svg',
-      pawncoins: QUEEN_COINS,
       color: QUEEN_COLOR,
       price: t('pages.pricing.tiers.queen.price'),
       isPurchasable: true,
@@ -113,7 +102,6 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       name: t('pages.pricing.tiers.king.name'),
       role: t('pages.pricing.tiers.king.role'),
       icon: '/piece/alpha/wK.svg',
-      pawncoins: KING_COINS,
       color: KING_COLOR,
       price: t('pages.pricing.tiers.king.price'),
       isPurchasable: true,
@@ -129,14 +117,11 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
 
     if (tier.isPurchasable) {
       if (!isPolarCustomer.value) {
-        // Nicht-Abonnenten (oder reine Gift-User ohne Polar-Abo) dürfen ALLES kaufen.
-        // Nichts davon zählt als "Upgrade" bei Polar, sondern als neues Abo.
         canBuy = true
         isUpgrade = false
       } else {
-        // Polar-Abonnenten können nur in echt höhere Tiers per Button upgraden.
         canBuy = rank > polarUserRank.value
-        isUpgrade = canBuy && polarUserRank.value >= 3
+        isUpgrade = canBuy && polarUserRank.value >= 2
       }
     }
 
@@ -150,20 +135,10 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
   })
 })
 
-const gameCosts = computed(() => {
-  return [
-    { ...GAME_MODES.theory_endings, cost: 5 },
-    { ...GAME_MODES.practical_chess, cost: 5 },
-    { ...GAME_MODES.finish_him, cost: 5 },
-    { ...GAME_MODES.tactics, cost: 1 },
-  ]
-})
-
 interface SubscriptionTier {
   id: string
   name: string
   icon: string
-  pawncoins: number
   color: string
   price?: string
   highlight?: boolean
@@ -311,19 +286,6 @@ const handleCheckout = async (tier: SubscriptionTier) => {
               </template>
 
               <div class="tier-card-body">
-                <div class="pawncoins-container" :style="{ '--tier-color': tier.color }">
-                  <div v-if="tier.isLimitless" class="limitless-wrapper">
-                    <span class="rainbow-text limitless-symbol">∞</span>
-                    <span class="limitless-label">{{ t('shared.app.limitless') }}</span>
-                  </div>
-                  <template v-else>
-                    <span class="pawncoins-val">{{ tier.pawncoins }}</span>
-                    <span class="pawncoins-lbl">PawnCoins / {{ t('shared.app.global', 'Tag').toLowerCase() }}</span>
-                  </template>
-                </div>
-
-                <n-divider dashed style="margin: 12px 0" />
-
                 <!-- Action Button or Status Badge -->
                 <div class="tier-action-container">
                   <n-button
@@ -366,32 +328,6 @@ const handleCheckout = async (tier: SubscriptionTier) => {
             </n-card>
           </n-gi>
         </n-grid>
-
-        <n-divider title-placement="left">
-          <n-h2 prefix="bar" align-text type="warning">
-            {{ t('pages.pricing.costs.title') }}
-          </n-h2>
-        </n-divider>
-
-        <div class="pricing-game-costs-list">
-          <div
-            v-for="game in gameCosts"
-            :key="game.key"
-            class="cost-item"
-            :style="{ borderLeftColor: game.color }"
-          >
-            <div class="cost-item-left">
-              <n-icon size="26" :color="game.color" class="cost-item-icon">
-                <component :is="game.icon" />
-              </n-icon>
-              <span class="cost-item-name">{{ t(game.labelKey) }}</span>
-            </div>
-            <div class="cost-item-right">
-              <span class="cost-coin-value" :style="{ color: game.color }">{{ game.cost }}</span>
-              <span class="cost-coin-label">PC</span>
-            </div>
-          </div>
-        </div>
       </n-space>
     </n-layout-content>
 
@@ -419,8 +355,7 @@ const handleCheckout = async (tier: SubscriptionTier) => {
         <n-divider />
         <n-text strong>{{ t('pages.pricing.bonusInfo.howItWorks') }}</n-text>
         <n-space vertical :size="8">
-          <n-tag type="info">{{ t('pages.pricing.bonusInfo.knight') }}</n-tag>
-          <n-tag type="warning">{{ t('pages.pricing.bonusInfo.bishop') }}</n-tag>
+          <n-tag type="warning">{{ t('pages.pricing.bonusInfo.vip') }}</n-tag>
           <router-link
             to="/bonus"
             style="
@@ -683,47 +618,6 @@ const handleCheckout = async (tier: SubscriptionTier) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.pawncoins-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 80px;
-  margin: 12px 0;
-}
-
-.limitless-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.limitless-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-color-3);
-  margin-top: -5px;
-}
-
-.pawncoins-val {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--tier-color);
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.08);
-  font-family: 'Fira Code', monospace;
-  line-height: 1;
-}
-
-.pawncoins-lbl {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-color-3);
-  margin-top: 6px;
-  text-align: center;
 }
 
 .tier-action-container {

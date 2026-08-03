@@ -8,7 +8,7 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-import { InsufficientPawnCoinsError } from '@/shared/api/client'
+import { hasFullAccess } from '@/shared/config/tier.config'
 
 import { AboutPage } from '@/pages/about'
 import { LegalPage } from '@/pages/legal'
@@ -89,6 +89,7 @@ const router = createRouter({
       meta: {
         isGame: true,
         requiresAuth: true,
+        requiresPaid: true,
         game: 'repertoire-training',
         seo: {
           titleKey: 'seo.repertoireTraining.title',
@@ -102,6 +103,7 @@ const router = createRouter({
       component: UserCabinetPage,
       meta: {
         requiresAuth: true,
+        requiresPaid: true,
         seo: {
           titleKey: 'seo.userCabinet.title',
           descriptionKey: 'seo.userCabinet.description',
@@ -200,17 +202,9 @@ router.beforeEach(async (to, from) => {
   }
 
   const requiresAuth = to.meta.requiresAuth
+  const requiresPaid = to.meta.requiresPaid
   const isAuthenticated = authStore.isAuthenticated
-
-  if (to.meta.isGame && authStore.isDailyLimitExceeded()) {
-    const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
-    uiStore.handlePawnCoinsError(
-      error,
-      () => {}
-    )
-    return '/pricing'
-  }
-
+  const userHasFullAccess = hasFullAccess(authStore.userProfile?.subscriptionTier)
 
   if (requiresAuth && !isAuthenticated) {
     localStorage.setItem('redirect_after_login', to.fullPath)
@@ -228,6 +222,14 @@ router.beforeEach(async (to, from) => {
       authStore.login()
     }
     return false
+  }
+
+  if (requiresPaid && !userHasFullAccess) {
+    const res = await uiStore.showRestrictionModal(undefined, authStore.userProfile?.telegram)
+    if (res === 'confirm') {
+      return '/pricing'
+    }
+    return '/'
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {

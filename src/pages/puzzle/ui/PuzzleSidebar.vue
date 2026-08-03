@@ -7,7 +7,6 @@ import {
   FINISH_HIM_CATEGORIES,
   PRACTICAL_CHESS_CATEGORIES,
   THEORY_ENDING_CATEGORIES,
-  type SubscriptionTier,
 } from '@/shared/types/api.types'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
 import { CompassOutline, SchoolOutline } from '@vicons/ionicons5'
@@ -18,7 +17,6 @@ import {
   NRadioGroup,
   NScrollbar,
   NText,
-  useDialog,
 } from 'naive-ui'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -34,41 +32,13 @@ const emit = defineEmits<{
 
 const { t, te } = useI18n()
 const authStore = useAuthStore()
-const dialog = useDialog()
 const router = useRouter()
 
-const TIER_LEVELS: Record<string, number> = {
-  Guest: 0,
-  Pawn: 1,
-  pawn: 1,
-  VIP: 3,
-  vip: 3,
-  Knight: 3,
-  knight: 3,
-  Bishop: 3,
-  bishop: 3,
-  Rook: 3,
-  rook: 3,
-  Queen: 3,
-  queen: 3,
-  King: 3,
-  king: 3,
-  administrator: 4,
-}
+import { hasFullAccess } from '@/shared/config/tier.config'
 
-const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) {
-    return 'Guest'
-  }
-  const tier = authStore.userProfile.subscriptionTier
-  if (!(tier in TIER_LEVELS)) {
-    throw new Error(`[PuzzleSidebar] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
-  }
-  return tier as SubscriptionTier
-})
-
-const currentUserLevel = computed<number>(() => {
-  return TIER_LEVELS[currentUserTier.value] ?? 0
+const hasFullAccessUser = computed<boolean>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) return false
+  return hasFullAccess(authStore.userProfile.subscriptionTier)
 })
 
 
@@ -169,15 +139,14 @@ const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interfer
 
 const basicTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? basicTacticKeys : basicEndgameKeys
-  const isDisabled = currentUserLevel.value < 1
   return themeOptions.value
     .filter(opt => keys.includes(opt.value))
-    .map(opt => ({ ...opt, disabled: isDisabled }))
+    .map(opt => ({ ...opt, disabled: false }))
 })
 
 const premiumTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumTacticKeys : premiumEndgameKeys
-  const isDisabled = currentUserLevel.value < 2
+  const isDisabled = !hasFullAccessUser.value
   return themeOptions.value
     .filter(opt => keys.includes(opt.value))
     .map(opt => ({ ...opt, disabled: isDisabled }))
@@ -185,31 +154,29 @@ const premiumTierOptions = computed(() => {
 
 const premiumPlusTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumPlusTacticKeys : premiumPlusEndgameKeys
-  const isDisabled = currentUserLevel.value < 3
+  const isDisabled = !hasFullAccessUser.value
   return themeOptions.value
     .filter(opt => keys.includes(opt.value))
     .map(opt => ({ ...opt, disabled: isDisabled }))
 })
 
-function showRestrictionModal(messageText: string) {
-  dialog.warning({
-    title: t('puzzleCategories.tierRestriction.title'),
-    content: messageText,
-    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
-    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
-    onPositiveClick: () => {
-      router.push('/pricing')
-    }
-  })
+import { useUiStore } from '@/shared/ui/model/ui.store'
+const uiStore = useUiStore()
+
+async function showRestrictionModal(messageText: string) {
+  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
+  if (res === 'confirm') {
+    router.push('/pricing')
+  } else if (res === 'cancel') {
+    router.push('/')
+  }
 }
 
 function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
   if (tierType === 'basic') {
     showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-  } else if (tierType === 'premium') {
+  } else if (tierType === 'premium' || tierType === 'premiumPlus') {
     showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-  } else if (tierType === 'premiumPlus') {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
   } else {
     throw new Error(`[PuzzleSidebar] Unsupported tier restriction type: "${tierType}". Fail-Fast!`)
   }
@@ -222,16 +189,8 @@ const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
   set: (newDiff) => {
-    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-      return
-    }
-    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
+    if (newDiff !== 'Novice' && !hasFullAccessUser.value) {
       showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-      return
-    }
-    if (newDiff === 'Master' && currentUserLevel.value < 3) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
       return
     }
 
@@ -340,13 +299,13 @@ const isPuzzleActive = computed(() => {
           <div class="form-group difficulty-section">
             <n-text class="input-label">{{ t('features.coach.difficultyLabel') }}</n-text>
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
-              <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">
+              <n-radio-button value="Novice">
                 {{ t('puzzleCategories.difficulties.level_novice') }}
               </n-radio-button>
-              <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">
+              <n-radio-button value="Pro" :class="{ 'disabled-diff': !hasFullAccessUser }">
                 {{ t('puzzleCategories.difficulties.level_pro') }}
               </n-radio-button>
-              <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">
+              <n-radio-button value="Master" :class="{ 'disabled-diff': !hasFullAccessUser }">
                 {{ t('puzzleCategories.difficulties.level_master') }}
               </n-radio-button>
             </n-radio-group>

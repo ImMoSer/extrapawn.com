@@ -3,12 +3,10 @@ import {
   useBoardStore,
   GameAudioEngine
 } from '@/entities/game'
+import { computed, ref, watch } from 'vue'
 import { soundService } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
-import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
-import { useAuthStore } from '@/entities/user'
-import { useUiStore } from '@/shared/ui/model/ui.store'
+import { apiClient } from '@/shared/api/client'
 import { useRouter } from 'vue-router'
 import { parseFen } from 'chessops/fen'
 import { PuzzleStrategy } from '@/features/puzzle'
@@ -111,36 +109,8 @@ export function getSubModeScopeConfig(
   return TRAINING_PLAN_CONFIGS[difficulty][subMode]
 }
 
-export function getPlanCost(
-  difficulty: 'Novice' | 'Pro' | 'Master',
-  planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
-): number {
-  if (planType === 'tactics') {
-    return 5 * 20 * 1
-  }
-  if (planType === 'finish_him') {
-    return 5 * 5 * 5
-  }
-  if (planType === 'practical_chess') {
-    return 5 * 5 * 5
-  }
-
-  const config = TRAINING_PLAN_CONFIGS[difficulty]
-  let totalCost = 0
-
-  for (const [subMode, subConfig] of Object.entries(config)) {
-    const puzzleCount = subConfig.categories * subConfig.puzzlesPerCategory
-    const costPerPuzzle = subMode === 'tactics' ? 1 : 5
-    totalCost += puzzleCount * costPerPuzzle
-  }
-
-  return totalCost
-}
-
 export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
-  const authStore = useAuthStore()
-  const uiStore = useUiStore()
   const router = useRouter()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
@@ -444,7 +414,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       )
     }
 
-    const allDone = trainingPlan.value?.tasks.every(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
+    const allDone = trainingPlan.value?.tasks.every((t: TrainingTask) => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
     if (allDone) {
       isPlaying.value = false
       isFinished.value = true
@@ -454,7 +424,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
 
     if (currentPuzzles.value.length === 0) {
-      const nextIdx = trainingPlan.value?.tasks.findIndex(t => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
+      const nextIdx = trainingPlan.value?.tasks.findIndex((t: TrainingTask) => (tasksPuzzles.value[t.sub_mode]?.length || 0) > 0)
       if (nextIdx !== undefined && nextIdx !== -1) {
         currentTaskIndex.value = nextIdx
       }
@@ -498,7 +468,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     Object.keys(tasksPuzzles.value).forEach(subMode => {
       const list = tasksPuzzles.value[subMode]
       if (list) {
-        list.forEach(p => {
+        list.forEach((p: WorkoutPuzzle) => {
           allPuzzles.push({
             puzzle_id: p.puzzle_id,
             sub_mode: p.puzzle_type,
@@ -538,28 +508,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     recommendations: Record<string, string[]>,
     planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
   ) {
-    const cost = getPlanCost(difficulty, planType)
-    const availableCoins = authStore.userProfile?.PawnCoins ?? 0
-    if (availableCoins < cost) {
-      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', cost, availableCoins)
-      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
-      return false
-    }
-
     try {
-      // Charge the plan upfront
-      const billingRes = await apiClient<{ success: boolean; PawnCoins: number; dailyLimit: number; spentToday: number }>('/billing/plan', {
-        method: 'POST',
-        body: JSON.stringify({ cost })
-      })
-      if (billingRes && billingRes.PawnCoins !== undefined) {
-        authStore.updateUserStats({
-          PawnCoins: billingRes.PawnCoins,
-          dailyLimit: billingRes.dailyLimit,
-          spentToday: billingRes.spentToday
-        })
-      }
-
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
@@ -604,9 +553,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             }
           } catch (err) {
             console.error(`[TaskTodayStore] Failed to fetch puzzles for ${subMode}/${cat}:`, err)
-            if (err instanceof InsufficientPawnCoinsError) {
-              throw err
-            }
           }
         }
 
@@ -635,10 +581,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to generate and start plan:', err)
-      if (err instanceof InsufficientPawnCoinsError) {
-        authStore.setDailyLimitExceeded(true)
-      }
-      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
       return false
     }
   }
@@ -646,34 +588,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   async function generateAndStartCustomPlan(customConfig: CustomPlanSelection) {
     const { difficulty, strategyName, selections } = customConfig
 
-    let totalCost = 0
-    for (const [subMode, items] of Object.entries(selections)) {
-      const costPerPuzzle = subMode === 'tactics' ? 1 : 5
-      for (const item of items) {
-        totalCost += item.count * costPerPuzzle
-      }
-    }
-
-    const availableCoins = authStore.userProfile?.PawnCoins ?? 0
-    if (availableCoins < totalCost) {
-      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', totalCost, availableCoins)
-      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
-      return false
-    }
-
     try {
-      const billingRes = await apiClient<{ success: boolean; PawnCoins: number; dailyLimit: number; spentToday: number }>('/billing/plan', {
-        method: 'POST',
-        body: JSON.stringify({ cost: totalCost })
-      })
-      if (billingRes && billingRes.PawnCoins !== undefined) {
-        authStore.updateUserStats({
-          PawnCoins: billingRes.PawnCoins,
-          dailyLimit: billingRes.dailyLimit,
-          spentToday: billingRes.spentToday
-        })
-      }
-
       gameStore.setBotEngineId('maia-2200')
       isPlaying.value = false
       isFinished.value = false
@@ -713,9 +628,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
             }
           } catch (err) {
             console.error(`[TaskTodayStore] Failed to fetch custom puzzles for ${subMode}/${item.category}:`, err)
-            if (err instanceof InsufficientPawnCoinsError) {
-              throw err
-            }
           }
         }
 
@@ -748,10 +660,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       return true
     } catch (err) {
       console.error('[TaskTodayStore] Failed to generate custom plan:', err)
-      if (err instanceof InsufficientPawnCoinsError) {
-        authStore.setDailyLimitExceeded(true)
-      }
-      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
       return false
     }
   }
@@ -837,10 +745,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       console.log('[TaskTodayStore] Successfully saved plan progress to backend.')
     } catch (err) {
       console.error('[TaskTodayStore] Failed to save plan progress to backend:', err)
-      if (err instanceof InsufficientPawnCoinsError) {
-        authStore.setDailyLimitExceeded(true)
-      }
-      await uiStore.handlePawnCoinsError(err, () => router.push('/pricing'))
     }
   }
 

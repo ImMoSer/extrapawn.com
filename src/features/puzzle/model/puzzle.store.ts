@@ -10,12 +10,11 @@ import {
   GameAudioEngine,
   type GameStatusInfo,
 } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { useCrashtestStore } from '@/features/crashtest'
-import { apiClient, InsufficientPawnCoinsError } from '@/shared/api/client'
+import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
@@ -69,7 +68,6 @@ function getStrategyType(submode: PuzzleSubmode): PuzzleStrategyType {
 export const usePuzzleStore = defineStore('puzzle', () => {
   const gameStore = useGameStore()
   const boardStore = useBoardStore()
-  const authStore = useAuthStore()
   const uiStore = useUiStore()
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
@@ -190,31 +188,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         feedbackMessage.value = t('features.puzzle.feedback.loss')
       }
     }
-
-    try {
-      if (!puzzle || !puzzle.puzzle_type) {
-        throw new Error('[PuzzleStore] Puzzle or puzzle_type is missing during game over. Fail-Fast!')
-      }
-
-      const response = await apiClient<{ PawnCoins: number; dailyLimit: number; spentToday: number }>(
-        `/billing/${puzzle.puzzle_type}`,
-        { method: 'GET' }
-      )
-
-      if (response && response.PawnCoins !== undefined) {
-        authStore.updateUserStats({
-          PawnCoins: response.PawnCoins,
-          dailyLimit: response.dailyLimit,
-          spentToday: response.spentToday
-        })
-      }
-    } catch (error) {
-      logger.error('[PuzzleStore] Failed to trigger billing:', error)
-      if (error instanceof InsufficientPawnCoinsError) {
-        authStore.setDailyLimitExceeded(true)
-      }
-      await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'))
-    }
   }
 
   function setProcessingGameOver(value: boolean) {
@@ -326,17 +299,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       }
     }
 
-    if (authStore.isDailyLimitExceeded()) {
-      const error = new InsufficientPawnCoinsError('Daily PawnCoins limit exceeded', 5, 0)
-      await uiStore.handlePawnCoinsError(
-        error,
-        () => router.push('/pricing'),
-        () => router.push('/')
-      )
-      gameStore.setGamePhase('IDLE')
-      return
-    }
-
     gameStore.setGamePhase('LOADING')
     feedbackMessage.value = t('shared.app.loading')
 
@@ -432,13 +394,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
       }
     } catch (error) {
-       const handled = await uiStore.handlePawnCoinsError(error, () => router.push('/pricing'), () => router.push('/'))
-       if (!handled) {
-          logger.error('[PuzzleStore] Failed to load puzzle:', error)
-          feedbackMessage.value = t('features.puzzle.feedback.loadFailed')
-          gameStore.setGamePhase('IDLE')
-          router.push('/')
-       }
+      logger.error('[PuzzleStore] Failed to load puzzle:', error)
+      feedbackMessage.value = t('features.puzzle.feedback.loadFailed')
+      gameStore.setGamePhase('IDLE')
+      router.push('/')
     }
   }
 

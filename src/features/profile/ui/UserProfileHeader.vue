@@ -19,9 +19,7 @@ const userProfile = computed(() => props.profileOverride || storeProfile.value)
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
-  Knight: 'wN.svg',
-  Bishop: 'wB.svg',
-  Rook: 'wR.svg',
+  VIP: 'wR.svg',
   Queen: 'wQ.svg',
   King: 'wK.svg',
   Administrator: 'wK.svg',
@@ -127,7 +125,6 @@ onUnmounted(() => {
 })
 
 const avatarSize = computed(() => (isMobile.value ? 75 : 150))
-const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
 
 const polarStatusType = computed(() => {
   const status = userProfile.value?.polarStatus
@@ -178,21 +175,6 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
               {{ t('pages.userCabinet.subscription.reactivate') }}
             </n-button>
           </n-space>
-
-          <div class="mt-1">
-            <n-statistic :label="t('pages.userCabinet.stats.pawncoinsLabel')">
-              <template #prefix>🪙</template>
-              <template #default>
-                <span v-if="isLimitless" class="bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 bg-[length:200%_auto] bg-clip-text text-transparent animate-rainbow text-4xl align-middle leading-none font-bold font-condensed">∞</span>
-                <span v-else class="font-condensed font-bold text-neon-cyan">{{
-                  (userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)
-                }}</span>
-              </template>
-              <template #suffix>
-                <span v-if="!isLimitless" class="font-condensed text-text-secondary"> / {{ userProfile.dailyLimit || 0 }}</span>
-              </template>
-            </n-statistic>
-          </div>
         </div>
       </div>
 

@@ -114,7 +114,7 @@ const finishedReport = computed(() => {
   let totalRatingSum = 0
   let puzzlesWithRatingCount = 0
 
-  const subModeBreakdown = plan.tasks.map(task => {
+  const subModeBreakdown = plan.tasks.map((task: { sub_mode: string }) => {
     const subMode = task.sub_mode
     const solvedList = taskTodayStore.solvedPuzzlesPerTask[subMode] || []
     const count = solvedList.length
@@ -127,7 +127,7 @@ const finishedReport = computed(() => {
 
     const categoryMap = new Map<string, { solved: number; failed: number; timeMs: number; ratingSum: number; ratingCount: number }>()
 
-    solvedList.forEach(p => {
+    solvedList.forEach((p: { puzzle_id: string; category?: string; rating?: number | string }) => {
       const res = results[p.puzzle_id]
       if (res) {
         const time = res.time || 0

@@ -168,10 +168,6 @@ class AuthServiceController {
     return this.state.error
   }
 
-  public getPawnCoins(): number | null {
-    return this.state.userProfile?.PawnCoins ?? null
-  }
-
   public updateUserProfile(updatedData: Partial<UserSessionProfile>) {
     if (this.state.userProfile) {
       const newProfile = { ...this.state.userProfile, ...updatedData }

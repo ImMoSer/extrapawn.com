@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useTaskTodayStore, getPlanCost, getSubModeScopeConfig, type SubModeType } from '../model/taskToday.store'
+import { useTaskTodayStore, getSubModeScopeConfig, type SubModeType } from '../model/taskToday.store'
+import { hasFullAccess } from '@/shared/config/tier.config'
 import {
   NText,
   NList,
@@ -24,7 +25,7 @@ import {
   useTrainingPlanHistoryQuery
 } from '@/shared/api/queries/userCabinet.queries'
 import { useQueryClient } from '@tanstack/vue-query'
-import type { DailyTrainingPlanEntity, RecommendationEntry, SubscriptionTier } from '@/shared/types/api.types'
+import type { DailyTrainingPlanEntity, RecommendationEntry } from '@/shared/types/api.types'
 
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
@@ -34,68 +35,27 @@ const dialog = useDialog()
 const queryClient = useQueryClient()
 const router = useRouter()
 
-const TIER_LEVELS: Record<string, number> = {
-  Guest: 0,
-  Pawn: 1,
-  pawn: 1,
-  VIP: 3,
-  vip: 3,
-  Knight: 3,
-  knight: 3,
-  Bishop: 3,
-  bishop: 3,
-  Rook: 3,
-  rook: 3,
-  Queen: 3,
-  queen: 3,
-  King: 3,
-  king: 3,
-  administrator: 4,
-}
-
-const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) {
-    return 'Guest'
-  }
-  const tier = authStore.userProfile.subscriptionTier
-  if (!(tier in TIER_LEVELS)) {
-    throw new Error(`[TaskTodayDashboard] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
-  }
-  return tier as SubscriptionTier
+const hasFullAccessUser = computed<boolean>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) return false
+  return hasFullAccess(authStore.userProfile.subscriptionTier)
 })
 
-const currentUserLevel = computed<number>(() => {
-  return TIER_LEVELS[currentUserTier.value] ?? 0
-})
+import { useUiStore } from '@/shared/ui/model/ui.store'
+const uiStore = useUiStore()
 
-function showRestrictionModal(messageText: string) {
-  dialog.warning({
-    title: t('puzzleCategories.tierRestriction.title'),
-    content: messageText,
-    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
-    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
-    onPositiveClick: () => {
-      router.push('/pricing')
-    }
-  })
+async function showRestrictionModal(messageText?: string) {
+  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
+  if (res === 'confirm') {
+    router.push('/pricing')
+  } else if (res === 'cancel') {
+    router.push('/')
+  }
 }
 
 const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedDifficulty = computed({
   get: () => _selectedDifficulty.value,
   set: (newDiff) => {
-    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-      return
-    }
-    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-      return
-    }
-    if (newDiff === 'Master' && currentUserLevel.value < 3) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
-      return
-    }
     _selectedDifficulty.value = newDiff
   }
 })
@@ -104,18 +64,6 @@ const _selectedStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup'>('Discovery')
 const selectedStrategy = computed({
   get: () => _selectedStrategy.value,
   set: (newStrat) => {
-    if (newStrat === 'Discovery' && currentUserLevel.value < 1) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-      return
-    }
-    if (newStrat === 'Hardcore' && currentUserLevel.value < 2) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-      return
-    }
-    if (newStrat === 'Warmup' && currentUserLevel.value < 3) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
-      return
-    }
     _selectedStrategy.value = newStrat
   }
 })
@@ -129,12 +77,8 @@ const PLAN_TYPE_TABS = [
 
 const selectedPlanType = ref<'taskToday' | 'tactics' | 'finish_him' | 'practical_chess'>('taskToday')
 
-const isDiffDisabled = (diff: 'Novice' | 'Pro' | 'Master') => {
-  const hasTierAccess = (diff === 'Novice' && currentUserLevel.value >= 1) ||
-                        (diff === 'Pro' && currentUserLevel.value >= 2) ||
-                        (diff === 'Master' && currentUserLevel.value >= 3)
-  if (!hasTierAccess) return false
-  return authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(diff, selectedPlanType.value) : false
+const isDiffDisabled = () => {
+  return false
 }
 
 const isStartingPlan = ref(false)
@@ -279,6 +223,10 @@ const selectedPlanPreview = computed(() => {
 })
 
 const handleStartPlan = async () => {
+  if (!hasFullAccessUser.value) {
+    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+    return
+  }
   isStartingPlan.value = true
   try {
     const rawRecommendations = currentPlanData.value?.recommendations
@@ -374,17 +322,13 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               class="diff-btn"
               :class="{ 
                 active: selectedDifficulty === diff,
-                'disabled-diff': (diff === 'Novice' && currentUserLevel < 1) || (diff === 'Pro' && currentUserLevel < 2) || (diff === 'Master' && currentUserLevel < 3)
+                'disabled-diff': !hasFullAccessUser
               }"
-              :disabled="isDiffDisabled(diff)"
+              :disabled="isDiffDisabled()"
               @click="selectedDifficulty = diff"
             >
               <span class="diff-name">
                 {{ t('puzzleCategories.difficulties.level_' + diff.toLowerCase()) }}
-                <span class="diff-cost-badge">({{ getPlanCost(diff, selectedPlanType) }} PC)</span>
-              </span>
-              <span class="diff-status expensive" v-if="authStore.userProfile && authStore.userProfile.PawnCoins < getPlanCost(diff, selectedPlanType)">
-                {{ t('features.taskToday.insufficientCoinsBadge') }}
               </span>
             </button>
           </div>
@@ -400,7 +344,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               :class="{ 
                 active: selectedStrategy === strat,
                 [strat.toLowerCase()]: true,
-                'disabled-strat': (strat === 'Discovery' && currentUserLevel < 1) || (strat === 'Hardcore' && currentUserLevel < 2) || (strat === 'Warmup' && currentUserLevel < 3)
+                'disabled-strat': !hasFullAccessUser
               }"
               @click="selectedStrategy = strat"
             >
@@ -420,11 +364,11 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             size="large" 
             block 
             :loading="isStartingPlan"
-            :disabled="!!currentPlanData?.active || (authStore.userProfile ? authStore.userProfile.PawnCoins < getPlanCost(selectedDifficulty, selectedPlanType) : false)"
+            :disabled="!!currentPlanData?.active"
             @click="handleStartPlan"
             class="dashboard-start-btn"
           >
-            {{ t('features.taskToday.startTrainingBtn') }} ({{ getPlanCost(selectedDifficulty, selectedPlanType) }} PC)
+            {{ t('features.taskToday.startTrainingBtn') }}
           </NButton>
         </div>
       </div>
@@ -435,7 +379,6 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
         <div v-if="selectedPlanPreview" class="preview-content">
           <div class="preview-summary">
             <span class="preview-strategy-name">{{ selectedPlanPreview.strategy.toUpperCase() }}</span>
-            <span class="preview-cost">{{ getPlanCost(selectedPlanPreview.difficulty, selectedPlanPreview.planType) }} PawnCoins</span>
             <span class="preview-task-count">{{ t('features.taskToday.previewTasks', { count: selectedPlanPreview.totalTasks }) }}</span>
           </div>
 

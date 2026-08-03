@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-import { ApiError, InsufficientPawnCoinsError, RateLimitError } from './errors'
-export { ApiError, InsufficientPawnCoinsError, RateLimitError }
+import { ApiError, RateLimitError } from './errors'
+export { ApiError, RateLimitError }
 
 export const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL as string
 

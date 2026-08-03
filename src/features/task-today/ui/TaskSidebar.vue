@@ -45,7 +45,7 @@ const isTaskCompleted = (subMode: string) => {
 const solvedTimesSumMs = computed(() => {
   return Object.values(taskTodayStore.completedResults)
     .filter((r) => r.status === 'solved')
-    .reduce((sum, r) => sum + r.time, 0)
+    .reduce((sum: number, r) => sum + r.time, 0)
 })
 
 const solvedPuzzlesCount = computed(() => {
@@ -53,7 +53,7 @@ const solvedPuzzlesCount = computed(() => {
 })
 
 const totalAttemptsCount = computed(() => {
-  return Object.values(taskTodayStore.puzzleAttempts).reduce((sum, att) => sum + att, 0)
+  return Object.values(taskTodayStore.puzzleAttempts).reduce((sum: number, att: number) => sum + att, 0)
 })
 
 const displayList = computed(() => {
@@ -64,13 +64,13 @@ const displayList = computed(() => {
   const solved = taskTodayStore.solvedPuzzlesPerTask[subMode] || []
   const queue = taskTodayStore.tasksPuzzles[subMode] || []
 
-  const solvedItems = solved.map((p) => ({
+  const solvedItems = solved.map((p: { puzzle_id: string }) => ({
     ...p,
     result: results[p.puzzle_id],
     isCurrent: false,
   }))
 
-  const queueItems = queue.map((p, index) => ({
+  const queueItems = queue.map((p: { puzzle_id: string }, index: number) => ({
     ...p,
     result: results[p.puzzle_id],
     isCurrent: index === 0,
@@ -135,7 +135,7 @@ const getPuzzleStatus = (puzzleId: string) => {
               {{ task.sub_mode.replace('_', ' ') }}
             </span>
             <span class="text-[10px] text-slate-400 truncate flex-1">
-              ({{ task.themes.map((t) => t.name).join(', ') }})
+              ({{ task.themes.map((t: { name: string }) => t.name).join(', ') }})
             </span>
             <span class="font-condensed font-semibold text-[11px] text-slate-400 shrink-0 ml-auto">
               {{ taskTodayStore.tasksPuzzles[task.sub_mode]?.length || 0 }} left

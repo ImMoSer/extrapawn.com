@@ -394,10 +394,17 @@
     "tierRestriction": {
       "title": "Subscription Required",
       "cancelBtn": "Cancel",
-      "upgradeBtn": "Pricing",
-      "basic": "Please log in to play Basic puzzles.",
-      "premium": "Subscription required (VIP, Queen, or King) to access these puzzles.",
-      "premiumPlus": "Subscription required (VIP, Queen, or King) to access these puzzles.",
+      "upgradeBtn": "Buy Subscription",
+      "message": "Subscription required (VIP, Queen, or King) to access this functionality.",
+      "getGiftCode": "Get Free VIP (Telegram)",
+      "enterGiftCode": "Enter Gift Code",
+      "activateBtn": "Activate",
+      "giftPlaceholder": "Enter 8-character code...",
+      "giftSuccess": "7-day VIP gift subscription activated!",
+      "giftInvalid": "Invalid or already used gift code.",
+      "basic": "Please log in to access this feature.",
+      "premium": "Subscription required (VIP, Queen, or King) to access this functionality.",
+      "premiumPlus": "Subscription required (VIP, Queen, or King) to access this functionality.",
       "makeTaskToday": "Start Daily Task"
     }
   },
@@ -437,7 +444,7 @@
       },
       "polar": {
         "successTitle": "Payment Successful! 🎉",
-        "successMessage": "Thank you for subscribing. Your account has been upgraded and your PawnCoins balance corresponds to your new tier.",
+        "successMessage": "Thank you for subscribing. Your account has been upgraded.",
         "ok": "Start Training"
       },
       "gift": {
@@ -466,7 +473,6 @@
         "byRating": "by rating"
       },
       "stats": {
-        "pawncoinsLabel": "PawnCoins",
         "bestRatingsTitle": "Best Ratings",
         "improve": "Improve",
         "noData": "No data for the selected period.",
@@ -513,24 +519,20 @@
         "pawn": {
           "name": "Pawn",
           "role": "Free for everyone to get to know the app.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
           "price": "Free forever"
         },
         "vip": {
           "name": "VIP",
-          "role": "Exclusive bonus for Top 20 club performers.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins"
+          "role": "Exclusive bonus for Top 20 club performers."
         },
         "queen": {
           "name": "Queen",
           "role": "The \"Standard\" for ambitious club players.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
           "price": "9.99 € / Month"
         },
         "king": {
           "name": "King",
           "role": "The \"Full-Power\" package for pros & analysts.",
-          "description": "Daily replenishment up to {pawncoins} PawnCoins",
           "price": "19.99 € / Month"
         },
         "price": {
@@ -543,7 +545,7 @@
         "howItWorks": "📅 How does it work?",
         "p1": "Our bonus program rewards the Top 20 active members of the xtrapawn club on Lichess.",
         "p2": "Bonuses are assigned automatically. The calculation is done daily at 05:29 AM (UTC+1) based on performance over the last 30 days.",
-        "p3": "Players in the Top 20 club leaderboard receive the VIP status (1000 PawnCoins daily).",
+        "p3": "Players in the Top 20 club leaderboard receive the VIP status.",
         "p5": "Status is updated daily and remains valid until the next calculation.",
         "homepageLink": "Club Homepage",
         "alertText": "Prefer to earn instead of buy? Check out our",
@@ -554,16 +556,6 @@
         "p7": "Bonus program structure subject to change.",
         "p8": "Good luck with your training!",
         "moreInfo": "More info here"
-      },
-      "costs": {
-        "title": "Game Mode Costs",
-        "pawncoinLabel": "PawnCoins"
-      },
-      "insufficientCoins": {
-        "title": "Insufficient PawnCoins",
-        "message": "Starting this game requires {required} PawnCoins. You currently have: {available}.",
-        "subMessage": "You can learn more about how to top up your balance on the pricing page.",
-        "goToPricing": "Go to Pricing"
       },
       "upgrade": {
         "title": "Subscription Upgrade",

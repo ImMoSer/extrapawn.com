@@ -1,77 +1,22 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/entities/user'
-import type { GameLaunchOptions, PlayPuzzleType, SubscriptionTier, UserProfileStatEntry } from '@/shared/types/api.types'
+import type { GameLaunchOptions, PlayPuzzleType, UserProfileStatEntry } from '@/shared/types/api.types'
 import { CloseOutline, ExpandOutline } from '@vicons/ionicons5'
 import { PieChart } from 'echarts/charts'
 import { LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { useDialog } from 'naive-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, type PropType } from 'vue'
 import VChart from 'vue-echarts'
 import { useI18n } from 'vue-i18n'
+
 import { useRouter } from 'vue-router'
 
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent, TitleComponent])
 
 const { t, te } = useI18n()
-const authStore = useAuthStore()
-const dialog = useDialog()
 const router = useRouter()
 
-const TIER_LEVELS: Record<string, number> = {
-  Guest: 0,
-  Pawn: 1,
-  pawn: 1,
-  VIP: 3,
-  vip: 3,
-  Knight: 3,
-  knight: 3,
-  Bishop: 3,
-  bishop: 3,
-  Rook: 3,
-  rook: 3,
-  Queen: 3,
-  queen: 3,
-  King: 3,
-  king: 3,
-  administrator: 4,
-}
 
-const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) {
-    return 'Guest'
-  }
-  const tier = authStore.userProfile.subscriptionTier
-  if (!(tier in TIER_LEVELS)) {
-    throw new Error(`[ThemeRoseChart] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
-  }
-  return tier as SubscriptionTier
-})
-
-const currentUserLevel = computed<number>(() => {
-  return TIER_LEVELS[currentUserTier.value] ?? 0
-})
-
-function showRestrictionModal(messageText: string) {
-  dialog.warning({
-    title: t('puzzleCategories.tierRestriction.title'),
-    content: messageText,
-    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
-    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
-    onPositiveClick: () => {
-      router.push('/pricing')
-    }
-  })
-}
-
-const basicEndgameKeys = ['pawnEnding', 'rookEnding', 'bishopVsPawns', 'knightVsPawns', 'rookVsPawns', 'extraPawn', 'extrapawn']
-const premiumEndgameKeys = ['sameColorBishops', 'oppositeColorBishops', 'knightEnding', 'bishopVsKnight', 'doubleRookEnding', 'rookVsMinor', 'queenEnding']
-const premiumPlusEndgameKeys = ['queenVsRook', 'rookVsTwoMinors', 'queenVsMinors', 'queenVsRookMinor', 'queenMinorVsQueenMinor', 'rookMinorVsRook', 'rookMinorVsRookMinor']
-
-const basicTacticKeys = ['hangingPiece', 'fork', 'pin', 'backRankMate', 'skewer', 'discoveredAttack']
-const premiumTacticKeys = ['capturingDefender', 'attraction', 'deflection', 'trappedPiece', 'kingAttack', 'advancedPawn', 'xRayAttack']
-const premiumPlusTacticKeys = ['sacrifice', 'intermezzo', 'clearance', 'interference', 'quietMove', 'defensiveMove', 'zugzwang']
 
 import { tokens } from '@/shared/theme/tokens'
 
@@ -144,25 +89,7 @@ const emit = defineEmits<{
 }>()
 
 const activePuzzleType = ref<PlayPuzzleType>(props.initialPuzzleType)
-const _activeDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
-const activeDifficulty = computed({
-  get: () => _activeDifficulty.value,
-  set: (newDiff) => {
-    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-      return
-    }
-    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-      return
-    }
-    if (newDiff === 'Master' && currentUserLevel.value < 3) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
-      return
-    }
-    _activeDifficulty.value = newDiff
-  }
-})
+const activeDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 
 const activePopup = ref<{ visible: boolean; x: number; y: number; data: PopupData | null }>({
   visible: false,
@@ -215,21 +142,6 @@ const currentThemes = computed<ThemeStat[]>(() => {
       success: item.puzzles_solved,
       requested: item.puzzles_solved + item.puzzles_failed,
     }
-  }).filter((item) => {
-    const cat = item.category
-    const isTactic = activePuzzleType.value === 'tactics'
-    const tierLevel = currentUserLevel.value
-
-    const isBasic = isTactic ? basicTacticKeys.includes(cat) : basicEndgameKeys.includes(cat)
-    if (isBasic) return tierLevel >= 1
-
-    const isPremium = isTactic ? premiumTacticKeys.includes(cat) : premiumEndgameKeys.includes(cat)
-    if (isPremium) return tierLevel >= 2
-
-    const isPremiumPlus = isTactic ? premiumPlusTacticKeys.includes(cat) : premiumPlusEndgameKeys.includes(cat)
-    if (isPremiumPlus) return tierLevel >= 3
-
-    return tierLevel >= 3
   })
 })
 

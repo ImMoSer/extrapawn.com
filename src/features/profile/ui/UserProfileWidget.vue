@@ -1,15 +1,13 @@
 <!-- src/components/UserStats.vue -->
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
-import { LockClosedOutline, WalletOutline } from '@vicons/ionicons5'
+import { LockClosedOutline } from '@vicons/ionicons5'
 import {
   NAvatar,
   NButton,
   NCard,
   NIcon,
-  NNumberAnimation,
   NSpace,
-  NStatistic,
   NTag,
   NText,
 } from 'naive-ui'
@@ -27,9 +25,7 @@ const handleLogin = () => {
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
-  Knight: 'wN.svg',
-  Bishop: 'wB.svg',
-  Rook: 'wR.svg',
+  VIP: 'wR.svg',
   Queen: 'wQ.svg',
   King: 'wK.svg',
   Administrator: 'wK.svg',
@@ -42,7 +38,6 @@ const avatarUrl = computed(() => {
   }
   return 'https://lichess1.org/assets/images/avatar_default.png'
 })
-const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
 </script>
 
 <template>
@@ -50,7 +45,7 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
     <div v-if="isAuthenticated && userProfile" class="stats-view">
       <n-card :bordered="false" size="small" class="profile-card">
         <n-space vertical :size="16">
-          <!-- Header: Avatar, Name & PawnCoins -->
+          <!-- Header: Avatar, Name & Subscription Tier -->
           <n-space align="center" justify="space-between" :size="12" style="width: 100%">
             <n-space align="center" :size="12">
               <n-avatar
@@ -73,28 +68,6 @@ const isLimitless = computed(() => (userProfile.value?.dailyLimit || 0) > 90000)
                 </n-tag>
               </n-space>
             </n-space>
-
-            <n-statistic
-              :label="t('pages.userCabinet.stats.pawncoinsLabel')"
-              class="header-pawncoins"
-            >
-              <template #prefix>
-                <n-icon color="#f0a020">
-                  <WalletOutline />
-                </n-icon>
-              </template>
-              <template #default>
-                <span v-if="isLimitless" class="rainbow-text limitless-symbol">∞</span>
-                <n-number-animation
-                  v-else
-                  :from="0"
-                  :to="(userProfile.dailyLimit || 0) - (userProfile.spentToday || 0)"
-                />
-              </template>
-              <template #suffix>
-                <span v-if="!isLimitless" class="limit-text"> / {{ userProfile.dailyLimit || 0 }}</span>
-              </template>
-            </n-statistic>
           </n-space>
         </n-space>
       </n-card>

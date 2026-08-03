@@ -25,74 +25,34 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
 const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
 
 const { data: currentPlanData } = useCurrentTrainingPlanQuery(props.isAuthenticated)
 
-const TIER_LEVELS: Record<string, number> = {
-  Guest: 0,
-  Pawn: 1,
-  pawn: 1,
-  VIP: 3,
-  vip: 3,
-  Knight: 3,
-  knight: 3,
-  Bishop: 3,
-  bishop: 3,
-  Rook: 3,
-  rook: 3,
-  Queen: 3,
-  queen: 3,
-  King: 3,
-  king: 3,
-  administrator: 4,
-}
+import { hasFullAccess } from '@/shared/config/tier.config'
 
-const currentUserTier = computed<SubscriptionTier | 'Guest'>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) {
-    return 'Guest'
-  }
-  const tier = authStore.userProfile.subscriptionTier
-  if (!(tier in TIER_LEVELS)) {
-    throw new Error(`[DailyTrainingWidget] Unexpected subscriptionTier: "${tier}". Fail-Fast!`)
-  }
-  return tier as SubscriptionTier
+const hasFullAccessUser = computed<boolean>(() => {
+  if (!authStore.isAuthenticated || !authStore.userProfile) return false
+  return hasFullAccess(authStore.userProfile.subscriptionTier)
 })
 
-const currentUserLevel = computed<number>(() => {
-  return TIER_LEVELS[currentUserTier.value] ?? 0
-})
+import { useUiStore } from '@/shared/ui/model/ui.store'
+const uiStore = useUiStore()
 
-function showRestrictionModal(messageText: string) {
-  dialog.warning({
-    title: t('puzzleCategories.tierRestriction.title'),
-    content: messageText,
-    positiveText: t('puzzleCategories.tierRestriction.upgradeBtn'),
-    negativeText: t('puzzleCategories.tierRestriction.cancelBtn'),
-    onPositiveClick: () => {
-      router.push('/pricing')
-    }
-  })
+async function showRestrictionModal(messageText?: string) {
+  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
+  if (res === 'confirm') {
+    router.push('/pricing')
+  } else if (res === 'cancel') {
+    router.push('/')
+  }
 }
 
 const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedDifficulty = computed({
   get: () => _selectedDifficulty.value,
   set: (newDiff) => {
-    if (newDiff === 'Novice' && currentUserLevel.value < 1) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-      return
-    }
-    if (newDiff === 'Pro' && currentUserLevel.value < 2) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-      return
-    }
-    if (newDiff === 'Master' && currentUserLevel.value < 3) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
-      return
-    }
     _selectedDifficulty.value = newDiff
   }
 })
@@ -189,16 +149,8 @@ const showOverwriteConfirm = ref(false)
 const pendingStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup' | null>(null)
 
 const confirmStartPlan = (strategyName: 'Discovery' | 'Hardcore' | 'Warmup') => {
-  if (strategyName === 'Discovery' && currentUserLevel.value < 1) {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
-    return
-  }
-  if (strategyName === 'Hardcore' && currentUserLevel.value < 2) {
+  if (!hasFullAccessUser.value) {
     showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-    return
-  }
-  if (strategyName === 'Warmup' && currentUserLevel.value < 3) {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.premiumPlus'))
     return
   }
 

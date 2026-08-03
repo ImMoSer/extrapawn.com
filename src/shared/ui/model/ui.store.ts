@@ -2,11 +2,13 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import i18n from '@/shared/config/i18n'
-import { InsufficientPawnCoinsError } from '@/shared/api/client'
 
 const t = i18n.global.t
 
 type ResolveFunction = (value: 'confirm' | 'cancel' | 'extra' | null) => void
+
+export type ModalVariant = 'primary' | 'danger' | 'warning' | 'info'
+export type ModalIcon = 'lock' | 'warning' | 'info' | null
 
 interface ConfirmationOptions {
   confirmText?: string
@@ -15,6 +17,9 @@ interface ConfirmationOptions {
   showCancel?: boolean
   showExtra?: boolean
   persistent?: boolean
+  variant?: ModalVariant
+  icon?: ModalIcon
+  telegramAttached?: boolean
 }
 
 export const useUiStore = defineStore('ui', () => {
@@ -28,6 +33,9 @@ export const useUiStore = defineStore('ui', () => {
   const modalExtraText = ref('')
   const isCancelButtonVisible = ref(true)
   const isExtraButtonVisible = ref(false)
+  const modalVariant = ref<ModalVariant>('primary')
+  const modalIcon = ref<ModalIcon>(null)
+  const modalTelegramAttached = ref(false)
 
   let resolvePromise: ResolveFunction | null = null
 
@@ -44,6 +52,9 @@ export const useUiStore = defineStore('ui', () => {
     isCancelButtonVisible.value = options.showCancel ?? true
     isExtraButtonVisible.value = options.showExtra ?? false
     isModalPersistent.value = options.persistent ?? false
+    modalVariant.value = options.variant || 'primary'
+    modalIcon.value = options.icon ?? null
+    modalTelegramAttached.value = options.telegramAttached ?? false
     isModalVisible.value = true
 
     return new Promise<'confirm' | 'cancel' | 'extra' | null>((resolve) => {
@@ -51,40 +62,22 @@ export const useUiStore = defineStore('ui', () => {
     })
   }
 
-  /**
-   * Centralized handler for InsufficientPawnCoinsError.
-   * Shows the confirmation modal and executes a callback if the user confirms (e.g., redirect to pricing).
-   */
-  async function handlePawnCoinsError(
-    error: unknown,
-    onPricingRedirect?: () => void,
-    onCancel?: () => void,
-  ): Promise<boolean> {
-    if (error instanceof InsufficientPawnCoinsError) {
-      const e = error as InsufficientPawnCoinsError
-      const confirmed = await showConfirmation(
-        t('pages.pricing.insufficientCoins.title'),
-        t('pages.pricing.insufficientCoins.message', {
-          required: e.required,
-          available: e.available,
-        }) +
-          '\n\n' +
-          t('pages.pricing.insufficientCoins.subMessage'),
-        {
-          confirmText: t('pages.pricing.insufficientCoins.goToPricing'),
-          showCancel: false,
-          persistent: true,
-        },
-      )
-
-      if (confirmed === 'confirm') {
-        if (onPricingRedirect) onPricingRedirect()
-      } else {
-        if (onCancel) onCancel()
-      }
-      return true
-    }
-    return false
+  function showRestrictionModal(
+    customMessage?: string,
+    telegramAttached?: boolean,
+  ): Promise<'confirm' | 'cancel' | 'extra' | null> {
+    return showConfirmation(
+      t('puzzleCategories.tierRestriction.title'),
+      customMessage || t('puzzleCategories.tierRestriction.message'),
+      {
+        confirmText: t('puzzleCategories.tierRestriction.upgradeBtn'),
+        cancelText: t('puzzleCategories.tierRestriction.cancelBtn'),
+        showCancel: true,
+        variant: 'primary',
+        icon: 'lock',
+        telegramAttached: telegramAttached ?? false,
+      },
+    )
   }
 
   function handleConfirm() {
@@ -127,6 +120,9 @@ export const useUiStore = defineStore('ui', () => {
     isCancelButtonVisible.value = true
     isExtraButtonVisible.value = false
     isModalPersistent.value = false
+    modalVariant.value = 'primary'
+    modalIcon.value = null
+    modalTelegramAttached.value = false
   }
 
   return {
@@ -139,8 +135,11 @@ export const useUiStore = defineStore('ui', () => {
     modalExtraText,
     isCancelButtonVisible,
     isExtraButtonVisible,
+    modalVariant,
+    modalIcon,
+    modalTelegramAttached,
     showConfirmation,
-    handlePawnCoinsError,
+    showRestrictionModal,
     handleConfirm,
     handleCancel,
     handleExtra,
