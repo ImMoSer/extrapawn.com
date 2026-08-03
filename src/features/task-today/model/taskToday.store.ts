@@ -74,22 +74,16 @@ export interface SubModeConfig {
 
 export type SubModeType = 'tactics' | 'finish_him' | 'practical_chess'
 
+const PRO_SCOPE_CONFIG: Record<SubModeType, SubModeConfig> = {
+  tactics: { categories: 4, puzzlesPerCategory: 25 },
+  finish_him: { categories: 2, puzzlesPerCategory: 5 },
+  practical_chess: { categories: 2, puzzlesPerCategory: 5 }
+}
+
 export const TRAINING_PLAN_CONFIGS: Record<'Novice' | 'Pro' | 'Master', Record<SubModeType, SubModeConfig>> = {
-  Novice: {
-    tactics: { categories: 2, puzzlesPerCategory: 50 },
-    finish_him: { categories: 1, puzzlesPerCategory: 10 },
-    practical_chess: { categories: 1, puzzlesPerCategory: 10 }
-  },
-  Pro: {
-    tactics: { categories: 4, puzzlesPerCategory: 25 },
-    finish_him: { categories: 2, puzzlesPerCategory: 5 },
-    practical_chess: { categories: 2, puzzlesPerCategory: 5 }
-  },
-  Master: {
-    tactics: { categories: 5, puzzlesPerCategory: 20 },
-    finish_him: { categories: 3, puzzlesPerCategory: 5 },
-    practical_chess: { categories: 3, puzzlesPerCategory: 5 }
-  }
+  Novice: PRO_SCOPE_CONFIG,
+  Pro: PRO_SCOPE_CONFIG,
+  Master: PRO_SCOPE_CONFIG
 }
 
 export interface ModeScopeConfig {

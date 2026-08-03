@@ -205,8 +205,7 @@ const currentThemes = computed<ThemeStat[]>(() => {
 
   const rawThemes = stats.filter((s) => {
     return s.game_mode === 'playPuzzle' &&
-           s.sub_mode === activePuzzleType.value &&
-           s.difficulty === activeDifficulty.value
+           s.sub_mode === activePuzzleType.value
   })
 
   return rawThemes.map((item) => {
@@ -434,14 +433,6 @@ const handleTabChange = (type: PlayPuzzleType) => {
       </div>
     </div>
 
-    <div class="flex justify-center mt-4">
-      <n-radio-group v-model:value="activeDifficulty" size="small" class="[&_.disabled-diff]:opacity-45 [&_.disabled-diff]:cursor-not-allowed">
-        <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
-        <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
-        <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
-      </n-radio-group>
-    </div>
-
     <!-- Zoom Modal -->
     <n-modal v-model:show="showModal" preset="card" class="zoom-modal" :title="title" style="width: 90vw; max-width: 1200px">
       <div class="flex flex-col gap-4">
@@ -451,12 +442,6 @@ const handleTabChange = (type: PlayPuzzleType) => {
             <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
             <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
           </n-tabs>
-
-          <n-radio-group v-model:value="activeDifficulty" size="medium" class="[&_.disabled-diff]:opacity-45 [&_.disabled-diff]:cursor-not-allowed">
-            <n-radio-button value="Novice" :class="{ 'disabled-diff': currentUserLevel < 1 }">{{ t('puzzleCategories.difficulties.level_novice') }}</n-radio-button>
-            <n-radio-button value="Pro" :class="{ 'disabled-diff': currentUserLevel < 2 }">{{ t('puzzleCategories.difficulties.level_pro') }}</n-radio-button>
-            <n-radio-button value="Master" :class="{ 'disabled-diff': currentUserLevel < 3 }">{{ t('puzzleCategories.difficulties.level_master') }}</n-radio-button>
-          </n-radio-group>
         </div>
         <div class="w-full h-[60vh]">
           <v-chart v-if="chartData.length > 0" class="w-full h-full" :option="option" autoresize />
@@ -477,7 +462,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
     <Teleport to="body">
       <div v-if="activePopup.visible && activePopup.data" ref="popupRef" class="fixed z-[9999] bg-elevated/90 backdrop-blur-md border border-neon-cyan/50 rounded-lg p-3 shadow-elevated min-w-[200px]" :style="{ top: `${activePopup.y}px`, left: `${activePopup.x}px` }">
         <div class="flex justify-between items-center mb-2 border-b border-border pb-1.5">
-          <span class="font-bold text-text-primary text-xs">{{ activePopup.data.modeName }} {{ activePopup.data.subModeName }}</span>
+          <span class="font-bold text-text-primary text-xs">{{ activePopup.data.modeName }}</span>
           <n-button circle size="tiny" type="error" ghost @click="activePopup.visible = false">
             <template #icon><n-icon :component="CloseOutline" /></template>
           </n-button>

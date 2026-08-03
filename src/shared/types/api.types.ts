@@ -477,7 +477,7 @@ export interface UserProfileStatEntry {
   game_mode: string
   sub_mode: string
   category: string
-  difficulty: string
+  difficulty?: string
   puzzles_solved: number
   puzzles_failed: number
   rating: number

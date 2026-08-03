@@ -271,18 +271,6 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true }
   )
 
-  function getUciFromSan(prevFen: string, san: string): string | null {
-    try {
-      const c = new Chess(prevFen)
-      const verboseMoves = c.moves({ verbose: true })
-      const m = verboseMoves.find((move) => move.san === san)
-      if (m) return m.from + m.to + (m.promotion || '')
-    } catch {
-      /* ignore */
-    }
-    return null
-  }
-
 
 
   // Sync lastMoveAnalysis quality to boardStore.lastNag for vector SVG rendering
@@ -313,6 +301,9 @@ export const useCoachStore = defineStore('coach', () => {
     overrideFenBefore?: string | null
   ) {
     if (!currentFen) return
+    if (overrideFenBefore) {
+      logger.info(`[UCI_FEN_REQUEST] overrideFenBefore: ${overrideFenBefore}`)
+    }
 
     const { startFen, moves } = pgnService.getAnalysisPayloadContext(overrideLastMoveUci)
     const lastMoveUci = moves.length > 0 ? moves[moves.length - 1] : null
