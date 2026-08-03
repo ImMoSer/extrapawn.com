@@ -663,6 +663,7 @@
       "newGameModal": {
         "title": "Новая игра в спарринге",
         "chooseColor": "Выберите ваш цвет",
+        "chooseEngine": "Сила соперника",
         "white": "Белые",
         "whiteSub": "Вы ходите первыми",
         "black": "Черные",

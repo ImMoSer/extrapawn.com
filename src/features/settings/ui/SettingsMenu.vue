@@ -35,6 +35,16 @@ const { isAuthenticated } = storeToRefs(authStore)
 const { t } = useI18n()
 
 const isOpen = ref(false)
+const boardTabRef = ref<HTMLElement | null>(null)
+const expandedCollapseNames = ref<string[]>([])
+
+const handleCollapseChange = (expandedNames: string[]) => {
+  if (expandedNames.includes('board_pieces')) {
+    setTimeout(() => {
+      boardTabRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, 150)
+  }
+}
 
 // Local draft preferences state that is cloned from the store when opening the drawer
 const draftPreferences = ref<UserPreferencesDto>(
@@ -106,7 +116,7 @@ const handleAuthAction = () => {
       <n-drawer-content closable :title="t('features.settings.title')" class="settings-drawer-content">
         <div class="drawer-inner-layout">
           
-          <!-- Top level Language Selector (non-collapsible) -->
+          <!-- 1. Top level Language Selector -->
           <div class="settings-section-card language-section-card">
             <div class="section-label">{{ t('features.settings.language') }}</div>
             <div class="language-selector">
@@ -122,176 +132,171 @@ const handleAuthAction = () => {
             </div>
           </div>
 
-          <!-- Collapse Accordion Section -->
-          <n-collapse :default-expanded-names="['ui']" accordion>
+          <!-- 2. Sound & Audio Settings (Top level) -->
+          <div class="settings-section-card">
+            <div class="section-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+              <n-icon><VolumeHighOutline /></n-icon>
+              <span>{{ t('features.settings.sounds.title') }}</span>
+            </div>
             
-            <!-- 1. Theme & UI Styling -->
-            <n-collapse-item name="ui">
-              <template #header>
-                <div class="collapse-header-title">
-                  <n-icon><ColorPaletteOutline /></n-icon>
-                  <span>{{ t('features.settings.selectBoard') }} & {{ t('features.settings.selectPieces') }}</span>
-                </div>
-              </template>
-              
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.board') }}</div>
-                <div class="board-selector-grid">
-                  <div
-                    v-for="board in themeStore.availableBoards"
-                    :key="board.name"
-                    class="selector-item board-item"
-                    :class="{ selected: board.name === draftPreferences.theme.board }"
-                    @click="draftPreferences.theme.board = board.name"
-                  >
-                    <img :src="`/board/jpg_png/${board.thumbnailFile}`" :alt="board.name" />
-                  </div>
-                </div>
+            <div style="margin-bottom: 10px;">
+              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.sounds.voice') }}</div>
+              <div class="slider-row">
+                <n-slider v-model:value="draftPreferences.audio.voiceVolume" :min="0" :max="1" :step="0.1" />
+                <span class="value-badge">{{ Math.round(draftPreferences.audio.voiceVolume * 100) }}%</span>
               </div>
+            </div>
 
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.pieces') }}</div>
-                <div class="piece-selector-grid">
-                  <div
-                    v-for="pieceSet in themeStore.availablePieceSets"
-                    :key="pieceSet.name"
-                    class="selector-item piece-item"
-                    :class="{ selected: pieceSet.name === draftPreferences.theme.pieces }"
-                    @click="draftPreferences.theme.pieces = pieceSet.name"
-                  >
-                    <img :src="pieceSet.previewPieceFile" :alt="pieceSet.name" />
-                  </div>
-                </div>
+            <div>
+              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.sounds.board') }}</div>
+              <div class="slider-row">
+                <n-slider v-model:value="draftPreferences.audio.boardVolume" :min="0" :max="1" :step="0.1" />
+                <span class="value-badge">{{ Math.round(draftPreferences.audio.boardVolume * 100) }}%</span>
               </div>
+            </div>
+          </div>
 
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.animationDuration') }}</div>
+          <!-- 3. Animation Duration (Top level, extracted from board tab) -->
+          <div class="settings-section-card">
+            <div class="section-label">{{ t('features.settings.animationDuration') }}</div>
+            <div class="slider-row">
+              <n-slider v-model:value="draftPreferences.theme.animationDuration" :min="0" :max="500" :step="50" />
+              <span class="value-badge">{{ draftPreferences.theme.animationDuration }}ms</span>
+            </div>
+          </div>
+
+          <!-- 4. Gameplay & Bot Delays (Top level) -->
+          <div class="settings-section-card">
+            <div class="section-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+              <n-icon><GameControllerOutline /></n-icon>
+              <span>{{ t('features.settings.gameplayBotDelays') }}</span>
+            </div>
+
+            <!-- Bot Thinking Delay -->
+            <div style="margin-bottom: 12px;">
+              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.botThinkingDelay') }}</div>
+              <div class="slider-row">
+                <n-slider v-model:value="draftPreferences.delays.botDelayMs" :min="50" :max="5000" :step="50" />
+                <span class="value-badge">{{ draftPreferences.delays.botDelayMs }}ms</span>
+              </div>
+            </div>
+
+            <!-- Dev Crashtest Move Delay -->
+            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
+              <div class="section-label" style="color: var(--neon-bordeaux, #d9004c); font-weight: bold;">Crashtest Speed (Overrides All)</div>
+              <div class="slider-row">
+                <n-slider v-model:value="draftPreferences.delays.crashtestDelayMs" :min="0" :max="1000" :step="50" />
+                <span class="value-badge" style="background: rgba(217, 0, 76, 0.2); border-color: rgba(217, 0, 76, 0.4);">{{ draftPreferences.delays.crashtestDelayMs }}ms</span>
+              </div>
+            </div>
+
+            <!-- Dev Crashtest switch -->
+            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
+              <div class="dev-crashtest-row">
+                <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
+                <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
+              </div>
+            </div>
+
+            <!-- Dev Demoplay switch -->
+            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-demoplay-card" style="margin-bottom: 8px;">
+              <div class="dev-demoplay-row">
+                <span class="dev-demoplay-label">Demo Play</span>
+                <n-switch
+                  v-model:value="draftDemoplayEnabled"
+                  :disabled="draftPreferences.gameplay.global_crashtest"
+                  size="medium"
+                />
+              </div>
+            </div>
+
+            <!-- Dev Demoplay Configuration Options -->
+            <div v-if="crashtestStore.isMo3ep" class="dev-demoplay-settings-group">
+              <div class="settings-section-card dev-demoplay-subcard">
+                <div class="section-label">demoThinkingBeforVisualizeMs</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.theme.animationDuration" :min="0" :max="500" :step="100" />
-                  <span class="value-badge">{{ draftPreferences.theme.animationDuration }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.demoThinkingBeforVisualizeMs" :min="1000" :max="10000" :step="500" />
+                  <span class="value-badge">{{ draftPreferences.delays.demoThinkingBeforVisualizeMs }}ms</span>
                 </div>
               </div>
-            </n-collapse-item>
 
-            <!-- 2. Sound & Audio Settings -->
-            <n-collapse-item name="audio">
-              <template #header>
-                <div class="collapse-header-title">
-                  <n-icon><VolumeHighOutline /></n-icon>
-                  <span>{{ t('features.settings.sounds.title') }}</span>
-                </div>
-              </template>
-              
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.sounds.voice') }}</div>
+              <div class="settings-section-card dev-demoplay-subcard">
+                <div class="section-label">demoFirstVisualizeMs</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.audio.voiceVolume" :min="0" :max="1" :step="0.1" />
-                  <span class="value-badge">{{ Math.round(draftPreferences.audio.voiceVolume * 100) }}%</span>
+                  <n-slider v-model:value="draftPreferences.delays.demoFirstVisualizeMs" :min="1000" :max="5000" :step="500" />
+                  <span class="value-badge">{{ draftPreferences.delays.demoFirstVisualizeMs }}ms</span>
                 </div>
               </div>
 
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.sounds.board') }}</div>
+              <div class="settings-section-card dev-demoplay-subcard">
+                <div class="section-label">demoPlayMoveMs</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.audio.boardVolume" :min="0" :max="1" :step="0.1" />
-                  <span class="value-badge">{{ Math.round(draftPreferences.audio.boardVolume * 100) }}%</span>
+                  <n-slider v-model:value="draftPreferences.delays.demoPlayMoveMs" :min="100" :max="3000" :step="100" />
+                  <span class="value-badge">{{ draftPreferences.delays.demoPlayMoveMs }}ms</span>
                 </div>
               </div>
-            </n-collapse-item>
 
-            <!-- 3. Gameplay & Bot Delays -->
-            <n-collapse-item name="gameplay">
-              <template #header>
-                <div class="collapse-header-title">
-                  <n-icon><GameControllerOutline /></n-icon>
-                  <span>{{ t('features.settings.gameplayBotDelays') }}</span>
-                </div>
-              </template>
-
-              <!-- Bot Thinking Delay -->
-              <div class="settings-section-card">
-                <div class="section-label">{{ t('features.settings.botThinkingDelay') }}</div>
+              <div class="settings-section-card dev-demoplay-subcard">
+                <div class="section-label">demopMateMultiplierMs</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.botDelayMs" :min="250" :max="5000" :step="250" />
-                  <span class="value-badge">{{ draftPreferences.delays.botDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.demopMateMultiplierMs" :min="10" :max="200" :step="10" />
+                  <span class="value-badge">{{ draftPreferences.delays.demopMateMultiplierMs }}ms</span>
                 </div>
               </div>
 
-
-
-              <!-- Dev Crashtest Move Delay -->
-              <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card">
-                <div class="section-label" style="color: var(--neon-bordeaux, #d9004c); font-weight: bold;">Crashtest Speed (Overrides All)</div>
+              <div class="settings-section-card dev-demoplay-subcard">
+                <div class="section-label">demoStayBeforNextMs</div>
                 <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.crashtestDelayMs" :min="0" :max="1000" :step="50" />
-                  <span class="value-badge" style="background: rgba(217, 0, 76, 0.2); border-color: rgba(217, 0, 76, 0.4);">{{ draftPreferences.delays.crashtestDelayMs }}ms</span>
+                  <n-slider v-model:value="draftPreferences.delays.demoStayBeforNextMs" :min="1000" :max="5000" :step="500" />
+                  <span class="value-badge">{{ draftPreferences.delays.demoStayBeforNextMs }}ms</span>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Dev Crashtest switch -->
-              <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card">
-                <div class="dev-crashtest-row">
-                  <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
-                  <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
-                </div>
-              </div>
-
-              <!-- Dev Demoplay switch -->
-              <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-demoplay-card">
-                <div class="dev-demoplay-row">
-                  <span class="dev-demoplay-label">Demo Play</span>
-                  <n-switch
-                    v-model:value="draftDemoplayEnabled"
-                    :disabled="draftPreferences.gameplay.global_crashtest"
-                    size="medium"
-                  />
-                </div>
-              </div>
-
-              <!-- Dev Demoplay Configuration Options -->
-              <div v-if="crashtestStore.isMo3ep" class="dev-demoplay-settings-group">
-                <div class="settings-section-card dev-demoplay-subcard">
-                  <div class="section-label">demoThinkingBeforVisualizeMs</div>
-                  <div class="slider-row">
-                    <n-slider v-model:value="draftPreferences.delays.demoThinkingBeforVisualizeMs" :min="1000" :max="10000" :step="500" />
-                    <span class="value-badge">{{ draftPreferences.delays.demoThinkingBeforVisualizeMs }}ms</span>
+          <!-- 5. Board & Pieces Tab at the Bottom -->
+          <div ref="boardTabRef">
+            <n-collapse v-model:expanded-names="expandedCollapseNames" @update:expanded-names="handleCollapseChange">
+              <n-collapse-item name="board_pieces">
+                <template #header>
+                  <div class="collapse-header-title">
+                    <n-icon><ColorPaletteOutline /></n-icon>
+                    <span>{{ t('features.settings.selectBoard') }} & {{ t('features.settings.selectPieces') }}</span>
+                  </div>
+                </template>
+                
+                <div class="settings-section-card">
+                  <div class="section-label">{{ t('features.settings.board') }}</div>
+                  <div class="board-selector-grid">
+                    <div
+                      v-for="board in themeStore.availableBoards"
+                      :key="board.name"
+                      class="selector-item board-item"
+                      :class="{ selected: board.name === draftPreferences.theme.board }"
+                      @click="draftPreferences.theme.board = board.name"
+                    >
+                      <img :src="`/board/jpg_png/${board.thumbnailFile}`" :alt="board.name" />
+                    </div>
                   </div>
                 </div>
 
-                <div class="settings-section-card dev-demoplay-subcard">
-                  <div class="section-label">demoFirstVisualizeMs</div>
-                  <div class="slider-row">
-                    <n-slider v-model:value="draftPreferences.delays.demoFirstVisualizeMs" :min="1000" :max="5000" :step="500" />
-                    <span class="value-badge">{{ draftPreferences.delays.demoFirstVisualizeMs }}ms</span>
+                <div class="settings-section-card">
+                  <div class="section-label">{{ t('features.settings.pieces') }}</div>
+                  <div class="piece-selector-grid">
+                    <div
+                      v-for="pieceSet in themeStore.availablePieceSets"
+                      :key="pieceSet.name"
+                      class="selector-item piece-item"
+                      :class="{ selected: pieceSet.name === draftPreferences.theme.pieces }"
+                      @click="draftPreferences.theme.pieces = pieceSet.name"
+                    >
+                      <img :src="pieceSet.previewPieceFile" :alt="pieceSet.name" />
+                    </div>
                   </div>
                 </div>
-
-                <div class="settings-section-card dev-demoplay-subcard">
-                  <div class="section-label">demoPlayMoveMs</div>
-                  <div class="slider-row">
-                    <n-slider v-model:value="draftPreferences.delays.demoPlayMoveMs" :min="100" :max="3000" :step="100" />
-                    <span class="value-badge">{{ draftPreferences.delays.demoPlayMoveMs }}ms</span>
-                  </div>
-                </div>
-
-                <div class="settings-section-card dev-demoplay-subcard">
-                  <div class="section-label">demopMateMultiplierMs</div>
-                  <div class="slider-row">
-                    <n-slider v-model:value="draftPreferences.delays.demopMateMultiplierMs" :min="10" :max="200" :step="10" />
-                    <span class="value-badge">{{ draftPreferences.delays.demopMateMultiplierMs }}ms</span>
-                  </div>
-                </div>
-
-                <div class="settings-section-card dev-demoplay-subcard">
-                  <div class="section-label">demoStayBeforNextMs</div>
-                  <div class="slider-row">
-                    <n-slider v-model:value="draftPreferences.delays.demoStayBeforNextMs" :min="1000" :max="5000" :step="500" />
-                    <span class="value-badge">{{ draftPreferences.delays.demoStayBeforNextMs }}ms</span>
-                  </div>
-                </div>
-              </div>
-            </n-collapse-item>
-          </n-collapse>
+              </n-collapse-item>
+            </n-collapse>
+          </div>
 
           <!-- Bottom Save and authentication buttons -->
           <div class="drawer-footer">

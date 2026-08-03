@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   NModal,
@@ -9,14 +9,27 @@ import {
 } from 'naive-ui'
 import { ExitOutline, PlayCircleOutline } from '@vicons/ionicons5'
 import { useSparringStore } from '../model/sparring.store'
+import { useEngineSelectionStore, ENGINE_NAMES } from '@/features/engine'
+import type { EngineId } from '@/shared/types/api.types'
 
 const sparringStore = useSparringStore()
+const engineStore = useEngineSelectionStore()
 const router = useRouter()
 
 const selectedColor = ref<'white' | 'black'>('white')
+const selectedEngine = ref<EngineId>(engineStore.selectedEngine)
+
+const availableEngines = engineStore.availableEngines
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
+watch(() => sparringStore.isNewGameModalOpen, (isOpen) => {
+  if (isOpen) {
+    selectedEngine.value = engineStore.selectedEngine
+  }
+})
+
 function handleStartGame() {
+  engineStore.setEngine(selectedEngine.value)
   sparringStore.startNewGame(
     {
       color: selectedColor.value,
@@ -38,7 +51,7 @@ function handleExit() {
     :mask-closable="false"
     preset="card"
     class="new-game-modal glass-modal"
-    style="width: 480px; max-width: 90vw;"
+    style="width: 520px; max-width: 92vw;"
     :title="$t('features.sparring.newGameModal.title')"
     @close="sparringStore.closeNewGameModal"
   >
@@ -65,6 +78,22 @@ function handleExit() {
             <div class="piece-icon black-piece">♚</div>
             <div class="card-label">{{ $t('features.sparring.newGameModal.black') }}</div>
             <div class="card-sub">{{ $t('features.sparring.newGameModal.blackSub') }}</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section: Opponent Strength (Engine Selection) -->
+      <div class="section-block">
+        <n-text class="section-title">{{ $t('features.sparring.newGameModal.chooseEngine') }}</n-text>
+        <div class="engine-options-grid">
+          <button
+            v-for="engineId in availableEngines"
+            :key="engineId"
+            type="button"
+            :class="['engine-card', { active: selectedEngine === engineId }]"
+            @click="selectedEngine = engineId"
+          >
+            <div class="engine-name">{{ ENGINE_NAMES[engineId] }}</div>
           </button>
         </div>
       </div>
@@ -196,6 +225,44 @@ function handleExit() {
   font-size: 0.78rem;
   color: var(--color-text-muted, #71717a);
   margin-top: 2px;
+}
+
+.engine-options-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.engine-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    border-color: var(--neon-cyan, #00e5ff);
+    background: rgba(0, 229, 255, 0.12);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+  }
+}
+
+.engine-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
 }
 
 .modal-footer {

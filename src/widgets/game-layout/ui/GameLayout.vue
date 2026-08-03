@@ -10,9 +10,15 @@ import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
-const props = defineProps<{
-  boardLocked?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    boardLocked?: boolean
+    hideEngineSelector?: boolean
+  }>(),
+  {
+    hideEngineSelector: false,
+  }
+)
 
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
@@ -21,6 +27,8 @@ const analysisStore = useAnalysisStore()
 const coachStore = useCoachStore()
 const route = useRoute()
 
+const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
+const shouldHideEngineSelector = computed(() => props.hideEngineSelector || isSparringRoute.value)
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
 
@@ -92,7 +100,7 @@ onUnmounted(() => {
           <div class="top-info-slot">
             <slot name="top-info"></slot>
           </div>
-          <div class="top-engine-slot">
+          <div v-if="!shouldHideEngineSelector" class="top-engine-slot">
             <EngineSelector />
           </div>
         </div>

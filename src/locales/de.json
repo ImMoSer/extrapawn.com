@@ -663,6 +663,7 @@
       "newGameModal": {
         "title": "Neues Sparring-Spiel",
         "chooseColor": "Deine Farbe wählen",
+        "chooseEngine": "Gegnerstärke",
         "white": "Weiß",
         "whiteSub": "Du ziehst zuerst",
         "black": "Schwarz",

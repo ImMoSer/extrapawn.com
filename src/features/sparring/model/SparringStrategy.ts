@@ -104,6 +104,18 @@ export class SparringStrategy implements IGameplayStrategy {
     }
   }
 
+  async onBotMoveExecuted(uciMove: string, fenAfter: string, fenBefore?: string) {
+    try {
+      const { useCoachStore } = await import('@/features/coach')
+      const coachStore = useCoachStore()
+      if (coachStore.isCoachEnabled) {
+        await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
+      }
+    } catch (err) {
+      logger.error('[SparringStrategy] Error executing coach analysis after bot move:', err)
+    }
+  }
+
   onUserMoveUndone() {
     logger.info('[SparringStrategy] Move undone')
   }
