@@ -43,12 +43,13 @@ export async function apiClient<T>(
     }
 
     if (response.status === 403) {
-      const errorData = await response.json()
-      throw new InsufficientPawnCoinsError(
-        errorData.message || 'Forbidden',
-        errorData.required || 0,
-        errorData.available !== undefined ? errorData.available : (errorData.limit || 0),
-      )
+      let errorData
+      try {
+        errorData = await response.json()
+      } catch {
+        errorData = { message: 'Forbidden' }
+      }
+      throw new ApiError(403, errorData.message || 'Forbidden')
     }
 
     let errorData
