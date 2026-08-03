@@ -30,24 +30,10 @@ const authStore = useAuthStore()
 
 const { data: currentPlanData } = useCurrentTrainingPlanQuery(props.isAuthenticated)
 
-import { hasFullAccess } from '@/shared/config/tier.config'
+import { useAccessControl } from '@/features/access-control'
 
-const hasFullAccessUser = computed<boolean>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) return false
-  return hasFullAccess(authStore.userProfile.subscriptionTier)
-})
-
-import { useUiStore } from '@/shared/ui/model/ui.store'
-const uiStore = useUiStore()
-
-async function showRestrictionModal(messageText?: string) {
-  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
-  if (res === 'confirm') {
-    router.push('/pricing')
-  } else if (res === 'cancel') {
-    router.push('/')
-  }
-}
+const accessControl = useAccessControl()
+const hasFullAccessUser = accessControl.hasFullAccessUser
 
 const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedDifficulty = computed({
@@ -148,10 +134,10 @@ const handleStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup'
 const showOverwriteConfirm = ref(false)
 const pendingStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup' | null>(null)
 
-const confirmStartPlan = (strategyName: 'Discovery' | 'Hardcore' | 'Warmup') => {
-  if (!hasFullAccessUser.value) {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-    return
+const confirmStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup') => {
+  if (!accessControl.hasFullAccessUser.value) {
+    const hasAccess = await accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
+    if (!hasAccess) return
   }
 
   if (isLocalPlanActive.value) {

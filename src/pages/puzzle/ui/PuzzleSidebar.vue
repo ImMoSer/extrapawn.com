@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/entities/user'
 import { useDemoplayStore } from '@/features/demoplay'
 import { PuzzleHalloHeader, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
@@ -20,7 +19,6 @@ import {
 } from 'naive-ui'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   submode: PuzzleSubmode
@@ -30,16 +28,11 @@ const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
 }>()
 
+import { useAccessControl } from '@/features/access-control'
+
 const { t, te } = useI18n()
-const authStore = useAuthStore()
-const router = useRouter()
-
-import { hasFullAccess } from '@/shared/config/tier.config'
-
-const hasFullAccessUser = computed<boolean>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) return false
-  return hasFullAccess(authStore.userProfile.subscriptionTier)
-})
+const accessControl = useAccessControl()
+const hasFullAccessUser = accessControl.hasFullAccessUser
 
 
 
@@ -160,23 +153,11 @@ const premiumPlusTierOptions = computed(() => {
     .map(opt => ({ ...opt, disabled: isDisabled }))
 })
 
-import { useUiStore } from '@/shared/ui/model/ui.store'
-const uiStore = useUiStore()
-
-async function showRestrictionModal(messageText: string) {
-  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
-  if (res === 'confirm') {
-    router.push('/pricing')
-  } else if (res === 'cancel') {
-    router.push('/')
-  }
-}
-
 function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
   if (tierType === 'basic') {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.basic'))
+    accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.basic'), false)
   } else if (tierType === 'premium' || tierType === 'premiumPlus') {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+    accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
   } else {
     throw new Error(`[PuzzleSidebar] Unsupported tier restriction type: "${tierType}". Fail-Fast!`)
   }
@@ -190,7 +171,7 @@ const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
   set: (newDiff) => {
     if (newDiff !== 'Novice' && !hasFullAccessUser.value) {
-      showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
+      accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
       return
     }
 

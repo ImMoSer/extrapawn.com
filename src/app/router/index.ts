@@ -8,7 +8,7 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-import { hasFullAccess } from '@/shared/config/tier.config'
+import { useAccessControl } from '@/features/access-control'
 
 import { AboutPage } from '@/pages/about'
 import { LegalPage } from '@/pages/legal'
@@ -206,10 +206,10 @@ router.beforeEach(async (to, from) => {
     })
   }
 
+  const accessControl = useAccessControl()
   const requiresAuth = to.meta.requiresAuth
   const requiresPaid = to.meta.requiresPaid
   const isAuthenticated = authStore.isAuthenticated
-  const userHasFullAccess = hasFullAccess(authStore.userProfile?.subscriptionTier)
 
   // Auto-redeem pending gift code after login if present
   const pendingGiftCode = localStorage.getItem('pending_gift_code')
@@ -257,12 +257,9 @@ router.beforeEach(async (to, from) => {
     return false
   }
 
-  if (requiresPaid && !userHasFullAccess) {
-    const res = await uiStore.showRestrictionModal(undefined, authStore.userProfile?.telegram)
-    if (res === 'confirm') {
-      return '/pricing'
-    }
-    return '/'
+  if (requiresPaid) {
+    const hasAccess = await accessControl.requireFullAccess(undefined, '/')
+    if (!hasAccess) return false
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {

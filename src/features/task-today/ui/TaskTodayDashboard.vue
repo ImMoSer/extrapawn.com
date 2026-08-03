@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTaskTodayStore, getSubModeScopeConfig, type SubModeType } from '../model/taskToday.store'
-import { hasFullAccess } from '@/shared/config/tier.config'
+import { useAccessControl } from '@/features/access-control'
 import {
   NText,
   NList,
@@ -9,6 +9,8 @@ import {
   NButton,
   NIcon,
   NTag,
+  NModal,
+  NCard,
   useMessage,
   useDialog
 } from 'naive-ui'
@@ -18,7 +20,6 @@ import {
 } from '@vicons/ionicons5'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/entities/user'
 import {
   useCurrentTrainingPlanQuery,
@@ -30,27 +31,11 @@ import type { DailyTrainingPlanEntity, RecommendationEntry } from '@/shared/type
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
+const accessControl = useAccessControl()
+const hasFullAccessUser = accessControl.hasFullAccessUser
 const message = useMessage()
 const dialog = useDialog()
 const queryClient = useQueryClient()
-const router = useRouter()
-
-const hasFullAccessUser = computed<boolean>(() => {
-  if (!authStore.isAuthenticated || !authStore.userProfile) return false
-  return hasFullAccess(authStore.userProfile.subscriptionTier)
-})
-
-import { useUiStore } from '@/shared/ui/model/ui.store'
-const uiStore = useUiStore()
-
-async function showRestrictionModal(messageText?: string) {
-  const res = await uiStore.showRestrictionModal(messageText, authStore.userProfile?.telegram)
-  if (res === 'confirm') {
-    router.push('/pricing')
-  } else if (res === 'cancel') {
-    router.push('/')
-  }
-}
 
 const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedDifficulty = computed({
@@ -223,9 +208,9 @@ const selectedPlanPreview = computed(() => {
 })
 
 const handleStartPlan = async () => {
-  if (!hasFullAccessUser.value) {
-    showRestrictionModal(t('puzzleCategories.tierRestriction.premium'))
-    return
+  if (!accessControl.hasFullAccessUser.value) {
+    const hasAccess = await accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
+    if (!hasAccess) return
   }
   isStartingPlan.value = true
   try {

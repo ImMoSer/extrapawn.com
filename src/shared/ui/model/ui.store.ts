@@ -64,7 +64,6 @@ export const useUiStore = defineStore('ui', () => {
 
   function showRestrictionModal(
     customMessage?: string,
-    telegramAttached?: boolean,
   ): Promise<'confirm' | 'cancel' | 'extra' | null> {
     return showConfirmation(
       t('puzzleCategories.tierRestriction.title'),
@@ -75,7 +74,7 @@ export const useUiStore = defineStore('ui', () => {
         showCancel: true,
         variant: 'primary',
         icon: 'lock',
-        telegramAttached: telegramAttached ?? false,
+        telegramAttached: false,
       },
     )
   }
