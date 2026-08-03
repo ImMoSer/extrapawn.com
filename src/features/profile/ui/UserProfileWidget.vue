@@ -25,9 +25,13 @@ const handleLogin = () => {
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
-  VIP: 'wR.svg',
+  pawn: 'wP.svg',
+  VIP: 'rubyDiamond.svg',
+  vip: 'rubyDiamond.svg',
   Queen: 'wQ.svg',
+  queen: 'wQ.svg',
   King: 'wK.svg',
+  king: 'wK.svg',
   Administrator: 'wK.svg',
 }
 
@@ -59,7 +63,7 @@ const avatarUrl = computed(() => {
                 <n-text strong class="username">{{ userProfile.username }}</n-text>
                 <n-tag
                   :bordered="false"
-                  :type="userProfile.subscriptionTier === 'administrator' ? 'error' : 'warning'"
+                  :type="['administrator', 'vip', 'VIP'].includes(userProfile.subscriptionTier) ? 'error' : 'warning'"
                   size="tiny"
                   round
                   uppercase

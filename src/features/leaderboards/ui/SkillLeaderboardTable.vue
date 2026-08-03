@@ -57,11 +57,16 @@ const skillModes = [
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
+  pawn: 'wP.svg',
   Knight: 'wN.svg',
   Bishop: 'wB.svg',
-  Rook: 'wR.svg',
+  Rook: 'rubyDiamond.svg',
+  VIP: 'rubyDiamond.svg',
+  vip: 'rubyDiamond.svg',
   Queen: 'wQ.svg',
+  queen: 'wQ.svg',
   King: 'wK.svg',
+  king: 'wK.svg',
   Administrator: 'wK.svg',
 }
 

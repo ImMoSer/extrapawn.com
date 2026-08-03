@@ -27,7 +27,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 
 const PAWN_COLOR = 'var(--text-color-3)'
-const VIP_COLOR = 'var(--neon-purple)'
+const VIP_COLOR = 'var(--neon-ruby)'
 const QUEEN_COLOR = 'var(--color-accent-error)'
 const KING_COLOR = 'var(--neon-gold)' // Gold for King
 
@@ -82,7 +82,7 @@ const subscriptionTiers = computed<SubscriptionTier[]>(() => {
       id: 'vip',
       name: t('pages.pricing.tiers.vip.name'),
       role: t('pages.pricing.tiers.vip.role'),
-      icon: '/piece/alpha/wR.svg',
+      icon: '/piece/alpha/rubyDiamond.svg',
       color: VIP_COLOR,
       price: t('pages.pricing.tiers.price.bonus'),
       isPurchasable: false,

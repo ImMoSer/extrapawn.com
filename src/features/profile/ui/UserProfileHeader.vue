@@ -19,9 +19,13 @@ const userProfile = computed(() => props.profileOverride || storeProfile.value)
 
 const tierToPieceMap: Record<string, string> = {
   Pawn: 'wP.svg',
-  VIP: 'wR.svg',
+  pawn: 'wP.svg',
+  VIP: 'rubyDiamond.svg',
+  vip: 'rubyDiamond.svg',
   Queen: 'wQ.svg',
+  queen: 'wQ.svg',
   King: 'wK.svg',
+  king: 'wK.svg',
   Administrator: 'wK.svg',
 }
 
@@ -45,6 +49,7 @@ const formatTierExpireDate = (isoDate: string | null | undefined) => {
 
 const getTierType = (tier: string = '') => {
   const t = tier.toLowerCase()
+  if (t === 'vip') return 'error'
   if (t === 'platinum' || t === 'gold') return 'warning'
   if (t === 'silver' || t === 'bronze') return 'info'
   if (t === 'administrator') return 'error'
@@ -148,7 +153,8 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
             :size="avatarSize"
             :src="avatarUrl"
             fallback-src="https://lichess1.org/assets/images/avatar_default.png"
-            class="bg-elevated"
+            class="bg-transparent"
+            color="transparent"
           />
         </div>
 

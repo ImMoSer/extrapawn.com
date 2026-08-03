@@ -64,7 +64,7 @@ const fetchLeaderboard = async () => {
 }
 
 const getTierInfo = (index: number) => {
-  if (index < 20) return { label: 'VIP', color: 'var(--neon-purple)' }
+  if (index < 20) return { label: 'VIP', color: 'var(--neon-ruby)' }
   return { label: 'Pawn', color: 'var(--text-color-3)' }
 }
 
@@ -241,8 +241,8 @@ onMounted(() => {
                   style="
                     min-width: 100px;
                     justify-content: center;
-                    background: rgba(175, 82, 222, 0.15);
-                    color: var(--neon-purple);
+                    background: rgba(230, 57, 70, 0.15);
+                    color: var(--neon-ruby);
                   "
                   >TOP 1-20</n-tag
                 >
