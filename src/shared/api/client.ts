@@ -37,9 +37,14 @@ export async function apiClient<T>(
   })
 
   if (!response.ok) {
-    if (response.status === 429) {
-      const r = response.headers.get('Retry-After')
-      throw new RateLimitError('Rate limit exceeded', r ? parseInt(r, 10) : 60)
+    if (response.status === 401) {
+      let errorData
+      try {
+        errorData = await response.json()
+      } catch {
+        errorData = { message: 'Unauthorized' }
+      }
+      throw new ApiError(401, typeof errorData === 'string' ? errorData : (errorData.message || 'Unauthorized'))
     }
 
     if (response.status === 403) {
