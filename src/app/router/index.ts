@@ -174,6 +174,11 @@ const router = createRouter({
       component: () => import('@/pages/open-flow-test/ui/OpenFlowTestPage.vue'),
     },
     {
+      path: '/giftcode/:code',
+      name: 'giftcode',
+      component: () => import('@/pages/giftcode/ui/GiftCodeRedeemPage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       redirect: '/about',
@@ -205,6 +210,34 @@ router.beforeEach(async (to, from) => {
   const requiresPaid = to.meta.requiresPaid
   const isAuthenticated = authStore.isAuthenticated
   const userHasFullAccess = hasFullAccess(authStore.userProfile?.subscriptionTier)
+
+  // Auto-redeem pending gift code after login if present
+  const pendingGiftCode = localStorage.getItem('pending_gift_code')
+  if (pendingGiftCode && isAuthenticated) {
+    localStorage.removeItem('pending_gift_code')
+    try {
+      const { apiClient } = await import('@/shared/api/client')
+      const res = await apiClient<{ success: boolean }>('/billing/redeem', {
+        method: 'POST',
+        body: JSON.stringify({ code: pendingGiftCode })
+      })
+      if (res.success) {
+        await authStore.checkSession()
+        await uiStore.showConfirmation(
+          t('puzzleCategories.tierRestriction.giftSuccess'),
+          t('puzzleCategories.tierRestriction.message'),
+          {
+            confirmText: t('shared.buttons.confirm'),
+            showCancel: false,
+            variant: 'primary',
+            icon: 'info'
+          }
+        )
+      }
+    } catch {
+      // Ignored
+    }
+  }
 
   if (requiresAuth && !isAuthenticated) {
     localStorage.setItem('redirect_after_login', to.fullPath)
