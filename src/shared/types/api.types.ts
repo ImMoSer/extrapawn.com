@@ -424,6 +424,8 @@ export interface UserSessionProfile extends LichessUserProfile {
   base_puzzle_rating: number
   subscriptionTier: SubscriptionTier
   telegram?: boolean
+  telegramId?: number | null
+  language?: string | null
   activeTier?: SubscriptionTier
   polarTier?: SubscriptionTier | null
   isPolarCustomer?: boolean

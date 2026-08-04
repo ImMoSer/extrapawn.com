@@ -405,7 +405,16 @@
       "basic": "Please log in to access this feature.",
       "premium": "Subscription required (VIP, Queen, or King) to access this functionality.",
       "premiumPlus": "Subscription required (VIP, Queen, or King) to access this functionality.",
-      "makeTaskToday": "Start Daily Task"
+      "makeTaskToday": "Start Daily Task",
+      "proactiveTitle": "Get Free 14-Day VIP!",
+      "proactiveMessage": "Connect your Telegram account to claim 14 days of free VIP subscription!"
+    },
+    "languageInit": {
+      "title": "Select Your Language",
+      "subtitle": "Choose your preferred language for the app interface and AI Coach",
+      "ru": "Русский",
+      "de": "Deutsch",
+      "en": "English"
     }
   },
   "pages": {

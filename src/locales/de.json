@@ -405,7 +405,16 @@
       "basic": "Bitte melde dich an, um auf diese Funktion zuzugreifen.",
       "premium": "Ein Abonnement (VIP, Dame oder König) ist erforderlich, um diese Funktion zu nutzen.",
       "premiumPlus": "Ein Abonnement (VIP, Dame oder König) ist erforderlich, um diese Funktion zu nutzen.",
-      "makeTaskToday": "Tagesaufgabe starten"
+      "makeTaskToday": "Tagesaufgabe starten",
+      "proactiveTitle": "14 Tage kostenloses VIP!",
+      "proactiveMessage": "Verbinde dein Telegram-Konto und erhalte 14 Tage kostenloses VIP-Abonnement!"
+    },
+    "languageInit": {
+      "title": "Wähle deine Sprache",
+      "subtitle": "Wähle deine bevorzugte Sprache für die App-Oberfläche und den KI-Trainer",
+      "ru": "Русский",
+      "de": "Deutsch",
+      "en": "English"
     }
   },
   "pages": {

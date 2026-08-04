@@ -14,6 +14,7 @@ declare module 'vue' {
     BaseSelectionLayout: typeof import('./src/shared/ui/BaseSelectionLayout.vue')['default']
     ConfirmationModal: typeof import('./src/shared/ui/ConfirmationModal.vue')['default']
     GalaxyBackground: typeof import('./src/shared/ui/visuals/GalaxyBackground.vue')['default']
+    LanguageInitModal: typeof import('./src/shared/ui/LanguageInitModal.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NButton: typeof import('naive-ui')['NButton']
     NCard: typeof import('naive-ui')['NCard']

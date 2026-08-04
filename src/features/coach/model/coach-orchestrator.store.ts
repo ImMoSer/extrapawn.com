@@ -158,32 +158,59 @@ export const useCoachOrchestratorStore = defineStore('coach-orchestrator', () =>
     } else if (coachStore.isCoachEnabled) {
       // Standard Engine Analysis (single request evaluates last move AND updates top moves)
       try {
-        await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
-        const analysis = coachStore.lastMoveAnalysis
-        
-        logger.info(
-          `[UserMoveEval] Move: ${uciMove} (${san}) | Quality: ${analysis?.quality || 'N/A'} | WinRateLoss: ${analysis?.winRateLoss ?? 'N/A'}% | BestMove: ${analysis?.bestMoveSan || 'N/A'}`
-        )
+        if (boardStore.isGameOver) {
+          logger.info(`[UserMoveEval] Move ${san} ended the game (Checkmate/Draw). Setting terminal analysis locally.`)
+          const isCheckmate = san.includes('#') || boardStore.isCheck
+          const terminalQuality = isCheckmate ? 'best' : 'good'
+          const terminalSummary = isCheckmate ? 'Schachmatt!' : 'Remis!'
 
-        if (analysis) {
-          pendingMove.value.quality = analysis.quality || null
-          pendingMove.value.winRateLoss = typeof analysis.winRateLoss === 'number' ? analysis.winRateLoss : null
-          pendingMove.value.bestMoveSan = analysis.bestMoveSan || null
-          pendingMove.value.summary = analysis.summary || null
-          pendingMove.value.nag = _qualityToNag(analysis.quality)
+          pendingMove.value.quality = terminalQuality
+          pendingMove.value.winRateLoss = 0
+          pendingMove.value.bestMoveSan = san
+          pendingMove.value.summary = terminalSummary
+          pendingMove.value.nag = _qualityToNag(terminalQuality)
 
-          // Synchronize lastMoveAnalysis & NAG badge for board & AnalysisPanel
           coachStore.lastMoveAnalysis = {
-            ...analysis,
             loading: false,
+            san,
+            quality: terminalQuality,
+            summary: terminalSummary,
             fen: fenBefore,
             square: destSquare,
           }
 
-          if (analysis.quality) {
-            boardStore.lastNag = {
+          boardStore.lastNag = {
+            square: destSquare,
+            quality: terminalQuality,
+          }
+        } else {
+          await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
+          const analysis = coachStore.lastMoveAnalysis
+
+          logger.info(
+            `[UserMoveEval] Move: ${uciMove} (${san}) | Quality: ${analysis?.quality || 'N/A'} | WinRateLoss: ${analysis?.winRateLoss ?? 'N/A'}% | BestMove: ${analysis?.bestMoveSan || 'N/A'}`
+          )
+
+          if (analysis) {
+            pendingMove.value.quality = analysis.quality || null
+            pendingMove.value.winRateLoss = typeof analysis.winRateLoss === 'number' ? analysis.winRateLoss : null
+            pendingMove.value.bestMoveSan = analysis.bestMoveSan || null
+            pendingMove.value.summary = analysis.summary || null
+            pendingMove.value.nag = _qualityToNag(analysis.quality)
+
+            // Synchronize lastMoveAnalysis & NAG badge for board & AnalysisPanel
+            coachStore.lastMoveAnalysis = {
+              ...analysis,
+              loading: false,
+              fen: fenBefore,
               square: destSquare,
-              quality: analysis.quality,
+            }
+
+            if (analysis.quality) {
+              boardStore.lastNag = {
+                square: destSquare,
+                quality: analysis.quality,
+              }
             }
           }
         }

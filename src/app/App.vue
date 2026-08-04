@@ -3,10 +3,12 @@
 import { useGameStore } from '@/entities/game'
 import { SettingsMenu } from '@/features/settings'
 import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
+import LanguageInitModal from '@/shared/ui/LanguageInitModal.vue'
 import GalaxyBackground from '@/shared/ui/visuals/GalaxyBackground.vue'
 import GlobalAssetLoader from './GlobalAssetLoader.vue'
 import { NavMenu } from '@/widgets/nav-menu'
 import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
+import TelegramPromptNotifier from './ui/TelegramPromptNotifier.vue'
 import MessageBridge from './ui/MessageBridge.vue'
 import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { MenuOutline } from '@vicons/ionicons5'
@@ -172,9 +174,11 @@ onUnmounted(() => {
             </n-drawer>
 
             <ConfirmationModal />
+            <LanguageInitModal />
             <DemoplayCompleteModal />
             <DemoplayIntroModal />
             <AppUpdateNotifier />
+            <TelegramPromptNotifier />
           </n-layout>
           <GalaxyBackground />
         </n-dialog-provider>
