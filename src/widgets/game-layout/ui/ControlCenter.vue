@@ -67,18 +67,6 @@ const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
         SF
       </button>
 
-      <button
-        @click="coachStore.toggleTab('console')"
-        title="Toggle Visualizer Debug Console (CC)"
-        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
-        :class="
-          coachStore.activeTab === 'console'
-            ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40 shadow-[0_0_10px_rgba(0,229,255,0.2)]'
-            : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
-        "
-      >
-        CC
-      </button>
     </div>
 
     <!-- Center: Controls (PGN Navigation + Board Flip) -->

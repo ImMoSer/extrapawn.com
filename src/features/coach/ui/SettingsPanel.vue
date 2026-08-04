@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useCoachStore, type CoachVisualLayers } from '../model/coach.store'
 
 const emit = defineEmits<{
-  (e: 'change', payload: { depth: number; multipv: number; version: string; source: string }): void
+  (e: 'change'): void
 }>()
+
+const coachStore = useCoachStore()
 
 const open = ref(false)
 const wrapRef = ref<HTMLElement | null>(null)
-
-const depth = ref(12)
-const multipv = ref(3)
-const version = ref<string>('lite')
-const source = ref<string>('remote')
 
 function onClickOutside(e: MouseEvent) {
   if (open.value && wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
@@ -33,9 +31,13 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
-function apply() {
+function close() {
   open.value = false
-  emit('change', { depth: depth.value, multipv: multipv.value, version: version.value, source: source.value })
+  emit('change')
+}
+
+function toggleLayer(layer: keyof CoachVisualLayers) {
+  coachStore.toggleVisualLayer(layer)
 }
 </script>
 
@@ -43,8 +45,8 @@ function apply() {
   <div ref="wrapRef" class="relative">
     <button
       @click="open = !open"
-      title="Engine settings (depth, multi-PV, version)"
-      aria-label="Open engine settings"
+      title="Coach & Engine settings"
+      aria-label="Open coach settings"
       :aria-expanded="open"
       class="icon-btn p-1.5 rounded-md border text-xs cursor-pointer flex items-center justify-center transition-colors"
       :class="open ? 'bg-border-hover text-text-primary border-neon-cyan' : 'bg-elevated text-text-secondary border-border'"
@@ -54,10 +56,10 @@ function apply() {
 
     <div
       v-if="open"
-      class="absolute right-0 bottom-[calc(100%+8px)] w-[320px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-50 text-[11px]"
+      class="absolute right-0 bottom-[calc(100%+8px)] w-[300px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-50 text-[11px]"
     >
       <div class="text-[9px] uppercase tracking-wider font-bold text-text-secondary mb-2">
-        Engine settings
+        Coach Settings
       </div>
 
       <!-- Server Mode Badge -->
@@ -66,95 +68,83 @@ function apply() {
         <span class="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20">Docker</span>
       </div>
 
-      <div>
-        <!-- Stockfish Version -->
-        <div class="mb-3">
-          <label for="setting-version" class="block text-text-primary font-semibold mb-1">
-            Stockfish Version
-          </label>
-          <select
-            id="setting-version"
-            v-model="version"
-            class="w-full bg-elevated border border-border rounded text-text-primary p-1.5 text-[11px] focus:outline-none focus:border-neon-cyan cursor-pointer"
+      <!-- Visualization Layers Config -->
+      <div class="mb-3 pt-2 border-t border-border">
+        <div class="text-[10px] uppercase font-bold text-text-primary mb-2 tracking-wide flex items-center gap-1.5">
+          <span>🎨</span>
+          <span>Board Visualization Layers</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <!-- Layer 1: Last Move Quality Badge -->
+          <div
+            @click="toggleLayer('lastMoveNag')"
+            class="p-2 rounded-md border border-border bg-elevated/40 hover:bg-elevated cursor-pointer flex items-center justify-between transition-all select-none"
           >
-            <option value="lite">Stockfish 18 Lite (~7 MB)</option>
-            <option value="full">Stockfish 18 Full (~113 MB)</option>
-          </select>
-          <div class="text-[10px] text-text-secondary mt-1 leading-tight">
-            Full version includes larger NNUE evaluation net for max strength.
+            <div class="flex flex-col">
+              <span class="font-semibold text-text-primary text-[11px]">🏷️ Last Move Quality</span>
+              <span class="text-[9px] text-text-secondary">Badge on last move destination</span>
+            </div>
+            <div
+              class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
+              :class="coachStore.visualLayers.lastMoveNag ? 'bg-neon-cyan' : 'bg-border'"
+            >
+              <div
+                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                :class="coachStore.visualLayers.lastMoveNag ? 'translate-x-4' : 'translate-x-0'"
+              />
+            </div>
           </div>
-        </div>
 
-        <!-- Depth -->
-        <div class="mb-3">
-          <div class="flex justify-between items-baseline mb-1">
-            <label for="setting-depth" class="text-text-primary font-semibold">
-              Search depth
-            </label>
-            <span class="font-mono text-neon-cyan font-bold">
-              {{ depth }}
-            </span>
+          <!-- Layer 2: Candidate Move Arrow -->
+          <div
+            @click="toggleLayer('candidateArrow')"
+            class="p-2 rounded-md border border-border bg-elevated/40 hover:bg-elevated cursor-pointer flex items-center justify-between transition-all select-none"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold text-text-primary text-[11px]">🎯 Recommended Arrow</span>
+              <span class="text-[9px] text-text-secondary">Candidate move arrow & target NAG</span>
+            </div>
+            <div
+              class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
+              :class="coachStore.visualLayers.candidateArrow ? 'bg-neon-cyan' : 'bg-border'"
+            >
+              <div
+                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                :class="coachStore.visualLayers.candidateArrow ? 'translate-x-4' : 'translate-x-0'"
+              />
+            </div>
           </div>
-          <input
-            id="setting-depth"
-            type="range"
-            min="6"
-            max="22"
-            step="1"
-            v-model.number="depth"
-            class="w-full accent-neon-cyan"
-          />
-          <div class="flex justify-between text-[9px] text-text-disabled mt-0.5">
-            <span>fast (6)</span>
-            <span>deep (22)</span>
-          </div>
-          <div class="text-[10px] text-text-secondary mt-1 leading-tight">
-            Higher depth → stronger analysis, slower per move.
-          </div>
-        </div>
 
-        <!-- MultiPV -->
-        <div class="mb-3">
-          <div class="flex justify-between items-baseline mb-1">
-            <label for="setting-multipv" class="text-text-primary font-semibold">
-              Top moves shown
-            </label>
-            <span class="font-mono text-neon-cyan font-bold">
-              {{ multipv }}
-            </span>
-          </div>
-          <input
-            id="setting-multipv"
-            type="range"
-            min="1"
-            max="10"
-            step="1"
-            v-model.number="multipv"
-            class="w-full accent-neon-cyan"
-          />
-          <div class="flex justify-between text-[9px] text-text-disabled mt-0.5">
-            <span>1</span>
-            <span>10</span>
-          </div>
-          <div class="text-[10px] text-text-secondary mt-1 leading-tight">
-            Candidate moves evaluated per position.
+          <!-- Layer 3: Tactical & Strategic Plans -->
+          <div
+            @click="toggleLayer('tacticalPlans')"
+            class="p-2 rounded-md border border-border bg-elevated/40 hover:bg-elevated cursor-pointer flex items-center justify-between transition-all select-none"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold text-text-primary text-[11px]">🧠 Tactical & Strategic Plans</span>
+              <span class="text-[9px] text-text-secondary">Arrows for attacks, key squares & plans</span>
+            </div>
+            <div
+              class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
+              :class="coachStore.visualLayers.tacticalPlans ? 'bg-neon-cyan' : 'bg-border'"
+            >
+              <div
+                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                :class="coachStore.visualLayers.tacticalPlans ? 'translate-x-4' : 'translate-x-0'"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="flex gap-1.5 justify-end">
+      <div class="flex gap-1.5 justify-end pt-2 border-t border-border">
         <button
-          @click="open = false"
-          class="px-2.5 py-1 text-[10px] font-bold bg-transparent text-text-secondary border border-border rounded-md cursor-pointer hover:bg-elevated hover:text-text-primary transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          @click="apply"
+          @click="close"
           class="px-3 py-1 text-[10px] font-bold bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 rounded-md cursor-pointer hover:bg-neon-cyan/25 transition-colors"
         >
-          Apply
+          Close
         </button>
       </div>
     </div>

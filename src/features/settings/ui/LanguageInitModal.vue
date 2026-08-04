@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/entities/user'
-import { usePreferencesStore } from '@/features/settings/model/preferences.store'
+import { usePreferencesStore } from '../model/preferences.store'
 import { changeLang } from '@/shared/config/i18n'
 import { GlobeOutline, CheckmarkCircleOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'

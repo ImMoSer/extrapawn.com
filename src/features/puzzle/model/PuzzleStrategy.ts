@@ -145,10 +145,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
       { winner: this.humanColor, reason },
       this.humanColor,
     )
-    this.nextPuzzleTimeout = window.setTimeout(() => {
-      if (this.isDestroyed) return
-      this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-    }, this.config.nextPuzzleDelayMs)
+    if (this.store.autoNextPuzzle) {
+      this.nextPuzzleTimeout = window.setTimeout(() => {
+        if (this.isDestroyed) return
+        void this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
+      }, this.config.nextPuzzleDelayMs)
+    }
   }
 
   private async triggerFailure(): Promise<void> {
@@ -343,10 +345,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
       this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)
       if (isWin) {
         soundService.playSound('game_tacktics_success')
-        this.nextPuzzleTimeout = window.setTimeout(() => {
-          if (this.isDestroyed) return
-          this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-        }, this.config.nextPuzzleDelayMs)
+        if (this.store.autoNextPuzzle) {
+          this.nextPuzzleTimeout = window.setTimeout(() => {
+            if (this.isDestroyed) return
+            void this.store.loadNewPuzzle(this.puzzle.puzzle_type)
+          }, this.config.nextPuzzleDelayMs)
+        }
       } else {
         soundService.playSound('game_tacktics_error')
         this.nextPuzzleTimeout = window.setTimeout(() => {

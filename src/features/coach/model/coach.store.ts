@@ -11,6 +11,12 @@ import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
+export interface CoachVisualLayers {
+  lastMoveNag: boolean
+  candidateArrow: boolean
+  tacticalPlans: boolean
+}
+
 export function getBrushForQuality(quality?: string | null): string {
   switch (quality) {
     case 'brilliant': return 'cyan'
@@ -33,9 +39,9 @@ export const useCoachStore = defineStore('coach', () => {
 
   // Coach Enabled State
   const isCoachEnabled = ref(true)
-  const activeTab = ref<'analysis' | 'console' | 'book' | 'wiki' | 'sf'>('analysis')
+  const activeTab = ref<'analysis' | 'book' | 'wiki' | 'sf'>('analysis')
 
-  function toggleTab(tab: 'console' | 'book' | 'wiki' | 'sf') {
+  function toggleTab(tab: 'book' | 'wiki' | 'sf') {
     activeTab.value = activeTab.value === tab ? 'analysis' : tab
   }
 
@@ -92,6 +98,16 @@ export const useCoachStore = defineStore('coach', () => {
 
   const showVisuals = ref(false)
   const autoOpenedForBlunder = ref(false)
+
+  const visualLayers = ref<CoachVisualLayers>({
+    lastMoveNag: true,
+    candidateArrow: true,
+    tacticalPlans: true,
+  })
+
+  function toggleVisualLayer(layer: keyof CoachVisualLayers) {
+    visualLayers.value[layer] = !visualLayers.value[layer]
+  }
 
   // LLM Coach State & Actions for Sparring / AI
   const isLlmThinking = ref(false)
@@ -214,32 +230,33 @@ export const useCoachStore = defineStore('coach', () => {
     if (!isCoachEnabled.value || !showVisuals.value) return []
     const shapes: DrawShape[] = []
 
-    // 1. Visual commands generated for active candidate move plan
-    if (activeVisualCommands.value) {
+    // 1. Visual commands generated for active candidate move plan (Layer 3: tacticalPlans)
+    if (visualLayers.value.tacticalPlans && activeVisualCommands.value) {
       const commandsStr = Object.values(activeVisualCommands.value).flat().join(';')
       const parsed = parseVisualCommands(commandsStr)
       shapes.push(...(parsed as DrawShape[]))
     }
 
-    // 2. Active Candidate Move arrow & NAG badge
-    const activeIdx = selectedMoveIndex.value !== null ? selectedMoveIndex.value : (topMoves.value.length > 0 ? 0 : null)
-    if (activeIdx !== null && topMoves.value[activeIdx]) {
-      const sel = topMoves.value[activeIdx]
-      const moveUci = sel.move || sel.uci
-      if (moveUci) {
-        const orig = moveUci.slice(0, 2) as Key
-        const dest = moveUci.slice(2, 4) as Key
-        const rawQuality = sel.quality || (activeIdx === selectedMoveIndex.value && explanation.value?.quality)
-        const quality = typeof rawQuality === 'string' ? rawQuality : null
+    // 2. Active Candidate Move arrow & NAG badge (Layer 2: candidateArrow)
+    if (visualLayers.value.candidateArrow) {
+      const activeIdx = selectedMoveIndex.value !== null ? selectedMoveIndex.value : (topMoves.value.length > 0 ? 0 : null)
+      if (activeIdx !== null && topMoves.value[activeIdx]) {
+        const sel = topMoves.value[activeIdx]
+        const moveUci = sel.move || sel.uci
+        if (moveUci) {
+          const orig = moveUci.slice(0, 2) as Key
+          const dest = moveUci.slice(2, 4) as Key
+          const rawQuality = sel.quality || (activeIdx === selectedMoveIndex.value && explanation.value?.quality)
+          const quality = typeof rawQuality === 'string' ? rawQuality : null
 
-        const brush = getBrushForQuality(quality)
+          const brush = getBrushForQuality(quality)
 
+          shapes.push({ orig, dest, brush })
+          shapes.push({ orig: dest, brush })
 
-        shapes.push({ orig, dest, brush })
-        shapes.push({ orig: dest, brush })
-
-        if (quality) {
-          shapes.push({ orig: dest, customNag: quality } as unknown as DrawShape)
+          if (quality) {
+            shapes.push({ orig: dest, customNag: quality } as unknown as DrawShape)
+          }
         }
       }
     }
@@ -271,19 +288,17 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true }
   )
 
-
-
-  // Sync lastMoveAnalysis quality to boardStore.lastNag for vector SVG rendering
+  // Sync lastMoveAnalysis quality to boardStore.lastNag for vector SVG rendering (Layer 1: lastMoveNag)
   watch(
-    lastMoveAnalysis,
-    (val) => {
+    [lastMoveAnalysis, () => visualLayers.value.lastMoveNag, showVisuals],
+    ([val, showNag, masterShow]) => {
       const sq = (val?.square as Key) || (boardStore.lastMove ? (boardStore.lastMove[1] as Key) : null)
-      if (val && !val.loading && val.quality && sq) {
+      if (masterShow && showNag && val && !val.loading && val.quality && sq) {
         boardStore.lastNag = {
           square: sq,
           quality: val.quality,
         }
-      } else if (!val) {
+      } else {
         boardStore.lastNag = null
       }
     },
@@ -601,6 +616,8 @@ export const useCoachStore = defineStore('coach', () => {
     selectedMoveExplanationLoading,
     tablebaseBestMove,
     showVisuals,
+    visualLayers,
+    toggleVisualLayer,
     autoOpenedForBlunder,
     enableVisualsForBlunder,
     resetVisualsAfterBlunderDecision,

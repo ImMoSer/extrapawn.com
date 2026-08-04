@@ -4,9 +4,9 @@ import { computed, onUnmounted, watch, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useCoachStore } from '@/features/coach'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
-import { GuessColorSelection, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
+import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { GameLayout } from '@/widgets/game-layout'
+import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import PuzzleSidebar from './PuzzleSidebar.vue'
 
 const props = defineProps({
@@ -31,8 +31,6 @@ function handleLoadRequested(payload: { type: string; category: string; difficul
   })
 }
 
-const showColorGuess = computed(() => puzzleStore.isWaitingForColorGuess)
-
 const activePuzzleTitle = computed(() => {
    return puzzleStore.topInfoDisplay.title
 })
@@ -41,23 +39,11 @@ const badges = computed(() => {
    return puzzleStore.topInfoDisplay.badges
 })
 
-watch(() => puzzleStore.isWaitingForColorGuess, (isWaiting) => {
-  if (isWaiting) {
-    coachStore.setCoachEnabled(false)
-  } else {
-    coachStore.setCoachEnabled(true)
-  }
-})
-
 watch(
   () => [props.submode, props.puzzleId],
   ([newSubmode, newPuzzleId]) => {
     puzzleStore.initialize(newSubmode as PuzzleSubmode, newPuzzleId as string | undefined)
-    if (puzzleStore.isWaitingForColorGuess) {
-      coachStore.setCoachEnabled(false)
-    } else {
-      coachStore.setCoachEnabled(true)
-    }
+    coachStore.setCoachEnabled(true)
   },
   { immediate: true },
 )
@@ -117,12 +103,6 @@ onUnmounted(() => {
       </div>
     </template>
 
-    <template #center-column>
-      <div v-if="showColorGuess" class="guess-color-overlay">
-        <GuessColorSelection />
-      </div>
-    </template>
-
     <template #right-panel>
       <CoachSidebarWidget />
     </template>
@@ -130,20 +110,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.guess-color-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 10, 15, 0.4);
-  backdrop-filter: blur(1px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-  border-radius: 4px;
-}
 .learning-top-panel-container {
   display: flex;
   justify-content: space-between;

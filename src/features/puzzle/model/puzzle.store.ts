@@ -6,14 +6,12 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 import {
   useGameStore,
-  useBoardStore,
   GameAudioEngine,
   type GameStatusInfo,
 } from '@/entities/game'
 import { useAnalysisEngineStore } from '@/entities/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { useCrashtestStore } from '@/features/crashtest'
 import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
@@ -25,6 +23,13 @@ const t = i18n.global.t
 
 export const VALID_SUBMODES = ['tactics', 'finish_him', 'practical_chess', 'theory_endings'] as const
 export type PuzzleSubmode = typeof VALID_SUBMODES[number]
+
+export const DEFAULT_SUBMODE_CATEGORY: Record<PuzzleSubmode, string> = {
+  tactics: 'fork',
+  finish_him: 'extraPawn',
+  theory_endings: 'pawnEnding',
+  practical_chess: 'extraPawn',
+}
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
 
@@ -52,13 +57,17 @@ export interface PuzzleParams {
   puzzleId?: string
 }
 
-function determineHumanColor(puzzle: PuzzlePuzzle): 'white' | 'black' {
+function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {
   const setup = parseFen(puzzle.initial_fen).unwrap()
-  const isBotFirst = puzzle.first_move === 'bot'
-  return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
+  const fenTurn = setup.turn === 'white' ? 'white' : 'black'
+  if (puzzle.first_move === 'bot') {
+    return fenTurn === 'white' ? 'black' : 'white'
+  }
+  return fenTurn
 }
 
-function getStrategyType(submode: PuzzleSubmode): PuzzleStrategyType {
+function getStrategyType(submode: PuzzleSubmode | null): PuzzleStrategyType {
+  if (!submode) return 'scenarioOnly'
   if (submode === 'finish_him') return 'scenarioPlus'
   if (submode === 'tactics') return 'scenarioOnly'
   if (submode === 'practical_chess' || submode === 'theory_endings') return 'playOutOnly'
@@ -67,28 +76,26 @@ function getStrategyType(submode: PuzzleSubmode): PuzzleStrategyType {
 
 export const usePuzzleStore = defineStore('puzzle', () => {
   const gameStore = useGameStore()
-  const boardStore = useBoardStore()
   const uiStore = useUiStore()
   const analysisStore = useAnalysisEngineStore()
   const router = useRouter()
-  const crashtestStore = useCrashtestStore()
 
   const activeSubmode = ref<PuzzleSubmode | null>(null)
   const activePuzzle = ref<PuzzlePuzzle | null>(null)
   const activeParams = ref<PuzzleParams>({})
-  const isDiscoveryMode = ref(false)
-  const discoveryQueue = ref<PuzzlePuzzle[]>([])
+  const autoNextPuzzle = ref<boolean>(
+    localStorage.getItem('chess_auto_next_puzzle') === 'true'
+  )
+
+  function toggleAutoNext() {
+    autoNextPuzzle.value = !autoNextPuzzle.value
+    localStorage.setItem('chess_auto_next_puzzle', String(autoNextPuzzle.value))
+  }
   
   const feedbackMessage = ref(t('features.puzzle.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
-  const isWaitingForColorGuess = ref(false)
   const isWaitingForColorSelection = ref(false)
   const currentUserColor = ref<ChessgroundColor>('white')
-
-  const correctColor = computed<'white' | 'black'>(() => {
-    if (!activePuzzle.value) return 'white'
-    return determineHumanColor(activePuzzle.value)
-  })
 
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
@@ -108,60 +115,36 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     activeSubmode.value = submode
     if (isNewRoom) {
       soundService.playSound('app_game_entry', 'puzzleStore.initSubmode (Room Entry)')
+      activeParams.value = {
+        type: submode,
+        category: DEFAULT_SUBMODE_CATEGORY[submode],
+        difficulty: activeParams.value.difficulty || 'Novice',
+      }
     }
     if (puzzleId && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleId)) {
-      isDiscoveryMode.value = false
       void loadPuzzleById(submode, puzzleId)
     } else if (!activePuzzle.value) {
-      startDiscovery(submode)
+      void loadNewPuzzle(submode)
     } else {
-      isDiscoveryMode.value = false
       activeParams.value = {
         ...activeParams.value,
         type: submode,
         category: activePuzzle.value.category,
         difficulty: activePuzzle.value.difficulty,
       }
-    }
-  }
-
-  async function guessColor(guessedColor: 'white' | 'black') {
-    if (!activePuzzle.value) {
-      throw new Error('[PuzzleStore] Guessing color with no active puzzle. Fail-Fast!')
-    }
-    if (!activeSubmode.value) {
-      throw new Error('[PuzzleStore] Guessing color with no active submode. Fail-Fast!')
-    }
-    
-    const correctColor = determineHumanColor(activePuzzle.value)
-    
-    if (guessedColor === correctColor) {
-      isWaitingForColorGuess.value = false
-      currentUserColor.value = correctColor
-      
-      // Start the game for real
+      const humanColor = determineHumanColor(activePuzzle.value)
+      currentUserColor.value = humanColor
       gameStore.startWithStrategy(
-        activePuzzle.value.initial_fen, 
-        new PuzzleStrategy(activePuzzle.value, correctColor, activeSubmode.value), 
-        correctColor, 
+        activePuzzle.value.initial_fen,
+        new PuzzleStrategy(activePuzzle.value, humanColor, activeSubmode.value),
+        humanColor,
         false
       )
       feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
-      if (activeSubmode.value !== 'tactics') {
-        soundService.playSound('game_you_move', 'puzzleStore.guessColor')
-      }
-    } else {
-      // Wrong guess - instant game over
-      isWaitingForColorGuess.value = false
-      handleGameOver(
-        activePuzzle.value, 
-        false, 
-        { winner: guessedColor === 'white' ? 'black' : 'white', reason: 'wrong_move' }, 
-        guessedColor
-      )
-      window.$message?.error('Wrong color! Game Over.')
     }
   }
+
+
 
   async function handleGameOver(
     puzzle: PuzzlePuzzle,
@@ -216,57 +199,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
   }
 
-  async function refillDiscoveryQueue(subMode: string) {
-    try {
-      const res = await apiClient<{ [key: string]: Array<{ category: string }> }>(`/training-plan/discovery/${subMode}`)
-      const categoriesList = res[`discovery_${subMode}`] || []
-      if (categoriesList.length === 0) {
-        throw new Error(`[PuzzleStore] No categories found for discovery submode: ${subMode}. Fail-Fast!`)
-      }
-
-      const shuffledCats = [...categoriesList].sort(() => Math.random() - 0.5)
-      const puzzlesPool: PuzzlePuzzle[] = []
-      const difficulty = activeParams.value.difficulty || 'Novice'
-
-      const fetchPromises = shuffledCats.map(async (catItem) => {
-        try {
-          const url = `/play-puzzle/start?puzzle_type=${subMode}&difficulty=${difficulty}&category=${catItem.category}&limit=10`
-          const puzzles = await apiClient<PuzzlePuzzle[]>(url)
-          return puzzles || []
-        } catch (err) {
-          logger.error(`[PuzzleStore] Failed to fetch puzzles for category ${catItem.category}:`, err)
-          return []
-        }
-      })
-
-      const results = await Promise.all(fetchPromises)
-      results.forEach((puzzles) => {
-        puzzlesPool.push(...puzzles)
-      })
-
-      if (puzzlesPool.length === 0) {
-        throw new Error(`[PuzzleStore] No puzzles found in discovery pool for: ${subMode}. Fail-Fast!`)
-      }
-
-      discoveryQueue.value = puzzlesPool.sort(() => Math.random() - 0.5)
-    } catch (err) {
-      logger.error('[PuzzleStore] refillDiscoveryQueue failed:', err)
-      window.$message?.error('Failed to load discovery pool')
-      isDiscoveryMode.value = false
-      throw err
-    }
-  }
-
-  async function startDiscovery(subMode: string) {
-    isDiscoveryMode.value = true
-    discoveryQueue.value = []
-    activeParams.value = {
-      ...activeParams.value,
-      category: undefined
-    }
-    await loadNewPuzzle(subMode)
-  }
-
   async function loadNewPuzzle(type: string, queryParams: Partial<PuzzleParams> = {}) {
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
@@ -306,11 +238,13 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     const baseActiveParams = { ...activeParams.value }
     delete baseActiveParams.puzzleId
 
-    let category = queryParams.category || baseActiveParams.category
+    let category = queryParams.category
     if (!category) {
-      if (type === 'tactics') category = 'fork'
-      else if (type === 'practical_chess') category = 'extraPawn'
-      else category = 'pawn'
+      if (baseActiveParams.type === type && baseActiveParams.category) {
+        category = baseActiveParams.category
+      } else {
+        category = DEFAULT_SUBMODE_CATEGORY[type as PuzzleSubmode] || 'fork'
+      }
     }
     const difficulty = queryParams.difficulty || baseActiveParams.difficulty || 'Novice'
 
@@ -321,41 +255,24 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     }
 
     try {
-      let mappedPuzzle: PuzzlePuzzle
-      if (isDiscoveryMode.value && !targetPuzzleId) {
-        if (discoveryQueue.value.length === 0) {
-          await refillDiscoveryQueue(type)
-        }
-        const puzzle = discoveryQueue.value.shift()
-        if (!puzzle) {
-          throw new Error('[PuzzleStore] No puzzle in discovery queue. Fail-Fast!')
-        }
-
-        mappedPuzzle = {
-          ...puzzle,
-          puzzle_type: type,
-          strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
-        }
+      let puzzle: PuzzlePuzzle
+      if (targetPuzzleId) {
+        puzzle = await apiClient<PuzzlePuzzle>(
+          `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`
+        )
       } else {
-        let puzzle: PuzzlePuzzle
-        if (targetPuzzleId) {
-          puzzle = await apiClient<PuzzlePuzzle>(
-            `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`
-          )
-        } else {
-          const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
-          puzzle = await apiClient<PuzzlePuzzle>(url)
-        }
+        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
+        puzzle = await apiClient<PuzzlePuzzle>(url)
+      }
 
-        if (!puzzle) {
-          throw new Error('[PuzzleStore] Puzzle data is null from API. Fail-Fast!')
-        }
+      if (!puzzle) {
+        throw new Error('[PuzzleStore] Puzzle data is null from API. Fail-Fast!')
+      }
 
-        mappedPuzzle = {
-          ...puzzle,
-          puzzle_type: type,
-          strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
-        }
+      const mappedPuzzle: PuzzlePuzzle = {
+        ...puzzle,
+        puzzle_type: type,
+        strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
       }
 
       activePuzzle.value = mappedPuzzle
@@ -373,26 +290,13 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
 
-      // ONLY for practical_chess and materialEquality we show the color guess
-      const isMaterialEqualityGuess = type === 'practical_chess' && mappedPuzzle.category === 'materialEquality'
-      const isCrashtestActive = crashtestStore.isMo3ep && crashtestStore.isCrashtestEnabled
-
-      if (isMaterialEqualityGuess && !isCrashtestActive) {
-        isWaitingForColorGuess.value = true
-        gameStore.setGamePhase('IDLE')
-        boardStore.setupPosition(mappedPuzzle.initial_fen)
-        boardStore.orientation = 'white'
-        feedbackMessage.value = 'Guess which side you are playing!'
-      } else {
-        isWaitingForColorGuess.value = false
-        gameStore.startWithStrategy(
-          mappedPuzzle.initial_fen,
-          new PuzzleStrategy(mappedPuzzle, humanColor, activeSubmode.value),
-          humanColor,
-          false
-        )
-        feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
-      }
+      gameStore.startWithStrategy(
+        mappedPuzzle.initial_fen,
+        new PuzzleStrategy(mappedPuzzle, humanColor, activeSubmode.value),
+        humanColor,
+        false
+      )
+      feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
     } catch (error) {
       logger.error('[PuzzleStore] Failed to load puzzle:', error)
       feedbackMessage.value = t('features.puzzle.feedback.loadFailed')
@@ -450,7 +354,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     feedbackMessage.value = t('features.puzzle.feedback.pressNext')
     isProcessingGameOver.value = false
     isWaitingForColorSelection.value = false
-    isWaitingForColorGuess.value = false
     gameStore.stop()
   }
 
@@ -460,7 +363,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     activePuzzle,
     feedbackMessage,
     isWaitingForColorSelection,
-    isWaitingForColorGuess,
     activeParams,
     fenFinal,
     topInfoDisplay: computed<TopInfoDisplay>(() => {
@@ -486,15 +388,12 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         stats,
       }
     }),
-    isDiscoveryMode,
-    discoveryQueue,
-    startDiscovery,
+    autoNextPuzzle,
+    toggleAutoNext,
     initialize,
     loadNewPuzzle,
     loadPuzzleById,
     loadNextPuzzle,
-    guessColor,
-    correctColor,
     handleRestart,
     handleExit,
     reset,

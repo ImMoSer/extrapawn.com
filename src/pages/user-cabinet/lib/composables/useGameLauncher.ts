@@ -32,7 +32,6 @@ export function useGameLauncher() {
         : 'tactics'
 
       try {
-        puzzleStore.isDiscoveryMode = false
         await puzzleStore.loadNewPuzzle(mode, { category: theme, difficulty: targetDiff })
         router.push({ name: routeName })
       } catch (err) {

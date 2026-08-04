@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDemoplayStore } from '@/features/demoplay'
-import { PuzzleHalloHeader, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
+import { DEFAULT_SUBMODE_CATEGORY, PuzzleHalloHeader, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
   FINISH_HIM_CATEGORIES,
@@ -8,9 +8,8 @@ import {
   THEORY_ENDING_CATEGORIES,
 } from '@/shared/types/api.types'
 import VisualRadioGroup from '@/shared/ui/VisualRadioGroup.vue'
-import { CompassOutline, SchoolOutline } from '@vicons/ionicons5'
+import { SchoolOutline } from '@vicons/ionicons5'
 import {
-  NButton,
   NIcon,
   NRadioButton,
   NRadioGroup,
@@ -165,7 +164,6 @@ function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
 
 const puzzleStore = usePuzzleStore()
 const demoplayStore = useDemoplayStore()
-const isDiscoveryModeActive = computed(() => puzzleStore.isDiscoveryMode)
 
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
@@ -178,38 +176,18 @@ const selectedDifficulty = computed({
     demoplayStore.demoplayCount = 1
     demoplayStore.hasJustReset = true
     puzzleStore.activeParams.difficulty = newDiff
-    if (isDiscoveryModeActive.value) {
-      puzzleStore.startDiscovery(props.submode)
-    } else {
-      loadPuzzle()
-    }
+    loadPuzzle()
   }
 })
 
 const activeThemeValue = computed({
-  get: () => puzzleStore.isDiscoveryMode ? '' : (puzzleStore.activeParams.category || ''),
+  get: () => puzzleStore.activeParams.category || '',
   set: (val) => {
     demoplayStore.demoplayCount = 1
     demoplayStore.hasJustReset = true
-    puzzleStore.isDiscoveryMode = false
-    puzzleStore.discoveryQueue = []
     puzzleStore.activeParams.category = val
   }
 })
-
-function toggleDiscovery() {
-  demoplayStore.demoplayCount = 1
-  demoplayStore.hasJustReset = true
-  if (isDiscoveryModeActive.value) {
-    puzzleStore.isDiscoveryMode = false
-    puzzleStore.discoveryQueue = []
-    resetThemeToDefault()
-    loadPuzzle()
-  } else {
-    puzzleStore.activeParams.category = undefined
-    puzzleStore.startDiscovery(props.submode)
-  }
-}
 
 function resetThemeToDefault() {
   // If an active puzzle matching the submode is already loaded, sync the category from it
@@ -219,16 +197,11 @@ function resetThemeToDefault() {
   }
 
   // Otherwise set default category for this submode
-  if (props.submode === 'tactics') {
-    puzzleStore.activeParams.category = 'fork'
-  } else if (props.submode === 'theory_endings') {
-    puzzleStore.activeParams.category = THEORY_ENDING_CATEGORIES[0] || 'pawnEnding'
-  } else if (props.submode === 'practical_chess') {
-    puzzleStore.activeParams.category = PRACTICAL_CHESS_CATEGORIES[0] || 'extraPawn'
-  } else if (props.submode === 'finish_him') {
-    puzzleStore.activeParams.category = FINISH_HIM_CATEGORIES[0] || 'pawnEnding'
+  const defaultCat = DEFAULT_SUBMODE_CATEGORY[props.submode]
+  if (defaultCat) {
+    puzzleStore.activeParams.category = defaultCat
   } else {
-     throw new Error(`[PuzzleSidebar] Unsupported submode reset: ${props.submode}. Fail-Fast!`)
+    throw new Error(`[PuzzleSidebar] Unsupported submode reset: ${props.submode}. Fail-Fast!`)
   }
 }
 
@@ -278,7 +251,30 @@ const isPuzzleActive = computed(() => {
         <div class="tab-content-wrapper">
           <!-- Universal Difficulty Selector -->
           <div class="form-group difficulty-section">
-            <n-text class="input-label">{{ t('features.coach.difficultyLabel') }}</n-text>
+            <div class="flex items-center justify-between mb-2 select-none">
+              <n-text class="input-label">{{ t('features.coach.difficultyLabel') }}</n-text>
+
+              <!-- Auto-Next Toggle -->
+              <div
+                @click="puzzleStore.toggleAutoNext()"
+                class="flex items-center gap-2 cursor-pointer group py-0.5 px-1 rounded hover:bg-elevated/40 transition-colors"
+                title="Автопереход к следующей задаче при решении"
+              >
+                <span class="text-xs font-bold uppercase tracking-wider text-text-secondary group-hover:text-neon-cyan transition-colors">
+                  AUTO
+                </span>
+                <div
+                  class="w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0 border border-border/40"
+                  :class="puzzleStore.autoNextPuzzle ? 'bg-neon-cyan/90 shadow-[0_0_8px_rgba(0,245,212,0.4)]' : 'bg-elevated'"
+                >
+                  <div
+                    class="w-4 h-4 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                    :class="puzzleStore.autoNextPuzzle ? 'translate-x-4' : 'translate-x-0'"
+                  />
+                </div>
+              </div>
+            </div>
+
             <n-radio-group v-model:value="selectedDifficulty" size="medium" expand class="radio-grp">
               <n-radio-button value="Novice">
                 {{ t('puzzleCategories.difficulties.level_novice') }}
@@ -290,22 +286,6 @@ const isPuzzleActive = computed(() => {
                 {{ t('puzzleCategories.difficulties.level_master') }}
               </n-radio-button>
             </n-radio-group>
-          </div>
-
-          <div class="discovery-section-wrapper">
-            <n-button
-              type="primary"
-              block
-              size="large"
-              class="discovery-btn"
-              :class="{ 'active': isDiscoveryModeActive }"
-              @click="toggleDiscovery"
-            >
-              <template #icon>
-                <n-icon><CompassOutline /></n-icon>
-              </template>
-              {{ isDiscoveryModeActive ? 'Discovery Mode: ON' : 'Start Discovery Mode' }}
-            </n-button>
           </div>
 
           <div class="form-group theme-group">
@@ -434,46 +414,6 @@ const isPuzzleActive = computed(() => {
 :deep(.n-radio-group .n-radio-button) {
   flex: 1;
   text-align: center;
-}
-
-.discovery-section-wrapper {
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.discovery-btn {
-  background: linear-gradient(135deg, #7b2cbf 0%, #3a0ca3 100%) !important;
-  color: white !important;
-  font-family: 'Outfit', sans-serif !important;
-  font-weight: 700 !important;
-  border: 1px solid rgba(157, 78, 221, 0.4) !important;
-  border-radius: 12px !important;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-  box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2) !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.discovery-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(123, 44, 191, 0.4), 0 0 10px rgba(99, 226, 183, 0.2) !important;
-  border-color: #63e2b7 !important;
-}
-
-.discovery-btn.active {
-  background: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%) !important;
-  border-color: #00f5d4 !important;
-  box-shadow: 0 0 20px rgba(0, 245, 212, 0.6) !important;
-  animation: pulseGlow 2s infinite ease-in-out;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(0, 245, 212, 0.8);
-  }
 }
 
 /* Tier Colors styling */
