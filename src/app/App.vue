@@ -17,11 +17,9 @@ import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { useCrashtestStore } from '@/features/crashtest'
-import { useDemoplayStore, DemoplayCompleteModal, DemoplayIntroModal } from '@/features/demoplay'
 
 const gameStore = useGameStore()
 const crashtestStore = useCrashtestStore()
-const demoplayStore = useDemoplayStore()
 const route = useRoute()
 const { t, locale } = useI18n()
 
@@ -56,7 +54,6 @@ onMounted(() => {
   updateLandscape() // Initial check
   window.addEventListener('beforeunload', beforeUnloadHandler)
   crashtestStore.init()
-  demoplayStore.init()
 })
 
 onUnmounted(() => {
@@ -174,8 +171,6 @@ onUnmounted(() => {
 
             <ConfirmationModal />
             <LanguageInitModal />
-            <DemoplayCompleteModal />
-            <DemoplayIntroModal />
             <AppUpdateNotifier />
             <TelegramPromptNotifier />
           </n-layout>

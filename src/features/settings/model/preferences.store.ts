@@ -36,11 +36,6 @@ export interface DelayPreferences {
   nextPuzzleDelayMs: number
   restartDelayMs: number
   crashtestDelayMs: number
-  demoThinkingBeforVisualizeMs: number
-  demoFirstVisualizeMs: number
-  demoPlayMoveMs: number
-  demopMateMultiplierMs: number
-  demoStayBeforNextMs: number
 }
 
 export interface UserPreferencesDto {
@@ -89,11 +84,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     nextPuzzleDelayMs: 2000,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
-    demoThinkingBeforVisualizeMs: 7500,
-    demoFirstVisualizeMs: 2500,
-    demoPlayMoveMs: 1250,
-    demopMateMultiplierMs: 100,
-    demoStayBeforNextMs: 3000,
   },
 }
 
@@ -117,27 +107,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const authStore = useAuthStore()
   const rawPreferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
 
-  const isDemoplayEnabled = ref(localStorage.getItem('global_demoplay') === 'true')
-
-  // Mutual exclusion: crashtest always has priority!
-  watch(isDemoplayEnabled, (val) => {
-    if (val && rawPreferences.value.gameplay.global_crashtest) {
-      isDemoplayEnabled.value = false
-    } else {
-      localStorage.setItem('global_demoplay', val ? 'true' : 'false')
-    }
-  }, { immediate: true })
-
-  watch(
-    () => rawPreferences.value.gameplay.global_crashtest,
-    (val) => {
-      if (val) {
-        isDemoplayEnabled.value = false
-      }
-    },
-    { immediate: true }
-  )
-
   const isMo3ep = computed(() => {
     const profile = authStore.userProfile
     if (!profile) return false
@@ -155,11 +124,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: 500,
             restartDelayMs: 500,
             crashtestDelayMs: 100,
-            demoThinkingBeforVisualizeMs: 7500,
-            demoFirstVisualizeMs: 2500,
-            demoPlayMoveMs: 1250,
-            demopMateMultiplierMs: 100,
-            demoStayBeforNextMs: 3000,
           },
         }
       }
@@ -173,28 +137,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: speed,
             restartDelayMs: speed,
             crashtestDelayMs: speed,
-            demoThinkingBeforVisualizeMs: rawPreferences.value.delays.demoThinkingBeforVisualizeMs,
-            demoFirstVisualizeMs: rawPreferences.value.delays.demoFirstVisualizeMs,
-            demoPlayMoveMs: rawPreferences.value.delays.demoPlayMoveMs,
-            demopMateMultiplierMs: rawPreferences.value.delays.demopMateMultiplierMs,
-            demoStayBeforNextMs: rawPreferences.value.delays.demoStayBeforNextMs,
-          },
-        }
-      }
-      if (isDemoplayEnabled.value) {
-        return {
-          ...rawPreferences.value,
-          delays: {
-            initialBotDelayMs: rawPreferences.value.delays.initialBotDelayMs,
-            botDelayMs: rawPreferences.value.delays.botDelayMs,
-            nextPuzzleDelayMs: rawPreferences.value.delays.demoStayBeforNextMs,
-            restartDelayMs: rawPreferences.value.delays.restartDelayMs,
-            crashtestDelayMs: rawPreferences.value.delays.crashtestDelayMs,
-            demoThinkingBeforVisualizeMs: rawPreferences.value.delays.demoThinkingBeforVisualizeMs,
-            demoFirstVisualizeMs: rawPreferences.value.delays.demoFirstVisualizeMs,
-            demoPlayMoveMs: rawPreferences.value.delays.demoPlayMoveMs,
-            demopMateMultiplierMs: rawPreferences.value.delays.demopMateMultiplierMs,
-            demoStayBeforNextMs: rawPreferences.value.delays.demoStayBeforNextMs,
           },
         }
       }
@@ -274,11 +216,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
           nextPuzzleDelayMs: rawBackendPrefs.delays?.nextPuzzleDelayMs ?? DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
           restartDelayMs: rawBackendPrefs.delays?.restartDelayMs ?? DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
           crashtestDelayMs: rawBackendPrefs.delays?.autoPlayDelayMs ?? DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
-          demoThinkingBeforVisualizeMs: rawBackendPrefs.delays?.demoThinkingBeforVisualizeMs ?? DEFAULT_USER_PREFERENCES.delays.demoThinkingBeforVisualizeMs,
-          demoFirstVisualizeMs: rawBackendPrefs.delays?.demoFirstVisualizeMs ?? DEFAULT_USER_PREFERENCES.delays.demoFirstVisualizeMs,
-          demoPlayMoveMs: rawBackendPrefs.delays?.demoPlayMoveMs ?? DEFAULT_USER_PREFERENCES.delays.demoPlayMoveMs,
-          demopMateMultiplierMs: rawBackendPrefs.delays?.demopMateMultiplierMs ?? DEFAULT_USER_PREFERENCES.delays.demopMateMultiplierMs,
-          demoStayBeforNextMs: rawBackendPrefs.delays?.demoStayBeforNextMs ?? DEFAULT_USER_PREFERENCES.delays.demoStayBeforNextMs,
         },
       }
 
@@ -319,11 +256,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
               nextPuzzleDelayMs: updateDto.delays.nextPuzzleDelayMs,
               restartDelayMs: updateDto.delays.restartDelayMs,
               autoPlayDelayMs: updateDto.delays.crashtestDelayMs,
-              demoThinkingBeforVisualizeMs: updateDto.delays.demoThinkingBeforVisualizeMs,
-              demoFirstVisualizeMs: updateDto.delays.demoFirstVisualizeMs,
-              demoPlayMoveMs: updateDto.delays.demoPlayMoveMs,
-              demopMateMultiplierMs: updateDto.delays.demopMateMultiplierMs,
-              demoStayBeforNextMs: updateDto.delays.demoStayBeforNextMs,
             }
           }
 
@@ -374,6 +306,5 @@ export const usePreferencesStore = defineStore('preferences', () => {
     coachTakebackEnabled,
     coachTakebackDelay,
     updateCoachTakeback,
-    isDemoplayEnabled,
   }
 })

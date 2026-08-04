@@ -2,14 +2,12 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usePuzzleStore } from '../model/puzzle.store';
-import { useDemoplayStore } from '@/features/demoplay';
  
 const props = defineProps<{
   submode: string
 }>()
  
 const puzzleStore = usePuzzleStore()
-const demoplayStore = useDemoplayStore()
 const { t } = useI18n()
  
 const puzzle = computed(() => puzzleStore.activePuzzle)
@@ -115,7 +113,7 @@ function formatSubTheme(subTheme: string): string {
 
       <!-- Top Title Tag -->
       <div class="card-header-badge" :style="{ background: puzzleMeta.gradient }">
-        {{ puzzleMeta.label }}<template v-if="demoplayStore.isDemoplayEnabled"> ({{ demoplayStore.demoplayCount }}/100)</template>
+        {{ puzzleMeta.label }}
       </div>
  
        <!-- Content Grid -->

@@ -50,11 +50,9 @@ const handleCollapseChange = (expandedNames: string[]) => {
 const draftPreferences = ref<UserPreferencesDto>(
   JSON.parse(JSON.stringify(preferencesStore.preferences))
 )
-const draftDemoplayEnabled = ref(preferencesStore.isDemoplayEnabled)
 
 const initializeDraft = () => {
   draftPreferences.value = JSON.parse(JSON.stringify(preferencesStore.preferences))
-  draftDemoplayEnabled.value = preferencesStore.isDemoplayEnabled
 }
 
 // Re-initialize draft when the drawer is opened
@@ -64,21 +62,10 @@ watch(isOpen, (newVal) => {
   }
 })
 
-// Watch draft crashtest switch to reset demoplay if crashtest is enabled in draft
-watch(
-  () => draftPreferences.value.gameplay.global_crashtest,
-  (val) => {
-    if (val) {
-      draftDemoplayEnabled.value = false
-    }
-  }
-)
-
 const handleSave = async () => {
   // Apply language change
   changeLang(draftPreferences.value.gameplay.language)
   // Save updated preferences to store & backend
-  preferencesStore.isDemoplayEnabled = draftDemoplayEnabled.value
   await preferencesStore.updatePreferences(draftPreferences.value)
   // Close the drawer
   isOpen.value = false
@@ -196,63 +183,7 @@ const handleAuthAction = () => {
                 <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
                 <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
               </div>
-            </div>
-
-            <!-- Dev Demoplay switch -->
-            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-demoplay-card" style="margin-bottom: 8px;">
-              <div class="dev-demoplay-row">
-                <span class="dev-demoplay-label">Demo Play</span>
-                <n-switch
-                  v-model:value="draftDemoplayEnabled"
-                  :disabled="draftPreferences.gameplay.global_crashtest"
-                  size="medium"
-                />
-              </div>
-            </div>
-
-            <!-- Dev Demoplay Configuration Options -->
-            <div v-if="crashtestStore.isMo3ep" class="dev-demoplay-settings-group">
-              <div class="settings-section-card dev-demoplay-subcard">
-                <div class="section-label">demoThinkingBeforVisualizeMs</div>
-                <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.demoThinkingBeforVisualizeMs" :min="1000" :max="10000" :step="500" />
-                  <span class="value-badge">{{ draftPreferences.delays.demoThinkingBeforVisualizeMs }}ms</span>
-                </div>
-              </div>
-
-              <div class="settings-section-card dev-demoplay-subcard">
-                <div class="section-label">demoFirstVisualizeMs</div>
-                <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.demoFirstVisualizeMs" :min="1000" :max="5000" :step="500" />
-                  <span class="value-badge">{{ draftPreferences.delays.demoFirstVisualizeMs }}ms</span>
-                </div>
-              </div>
-
-              <div class="settings-section-card dev-demoplay-subcard">
-                <div class="section-label">demoPlayMoveMs</div>
-                <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.demoPlayMoveMs" :min="100" :max="3000" :step="100" />
-                  <span class="value-badge">{{ draftPreferences.delays.demoPlayMoveMs }}ms</span>
-                </div>
-              </div>
-
-              <div class="settings-section-card dev-demoplay-subcard">
-                <div class="section-label">demopMateMultiplierMs</div>
-                <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.demopMateMultiplierMs" :min="10" :max="200" :step="10" />
-                  <span class="value-badge">{{ draftPreferences.delays.demopMateMultiplierMs }}ms</span>
-                </div>
-              </div>
-
-              <div class="settings-section-card dev-demoplay-subcard">
-                <div class="section-label">demoStayBeforNextMs</div>
-                <div class="slider-row">
-                  <n-slider v-model:value="draftPreferences.delays.demoStayBeforNextMs" :min="1000" :max="5000" :step="500" />
-                  <span class="value-badge">{{ draftPreferences.delays.demoStayBeforNextMs }}ms</span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </div>          </div>
 
           <!-- 5. Board & Pieces Tab at the Bottom -->
           <div ref="boardTabRef">
@@ -526,37 +457,7 @@ const handleAuthAction = () => {
   color: var(--neon-bordeaux, #d9004c);
 }
 
-/* Demoplay Row */
-.dev-demoplay-card {
-  background: rgba(0, 229, 255, 0.05);
-  border: 1px dashed rgba(0, 229, 255, 0.25);
-}
 
-.dev-demoplay-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dev-demoplay-label {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--neon-cyan, #00e5ff);
-}
-
-.dev-demoplay-settings-group {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-left: 8px;
-  border-left: 1px dashed rgba(0, 229, 255, 0.3);
-}
-
-.dev-demoplay-subcard {
-  background: rgba(0, 229, 255, 0.02) !important;
-  border: 1px solid rgba(0, 229, 255, 0.1) !important;
-}
 
 /* Drawer Footer and Auth/Save buttons */
 .drawer-footer {

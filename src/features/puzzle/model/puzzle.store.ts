@@ -17,7 +17,6 @@ import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import type { TopInfoDisplay } from '@/entities/puzzle'
 import { PuzzleStrategy } from './PuzzleStrategy'
-import { useDemoplayStore } from '@/features/demoplay'
 
 const t = i18n.global.t
 
@@ -107,9 +106,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     // Clear stale puzzle if the submode or requested puzzleId changed
     if (activePuzzle.value && (activePuzzle.value.puzzle_type !== submode || (puzzleId && activePuzzle.value.puzzle_id !== puzzleId))) {
       activePuzzle.value = null
-      const demoplayStore = useDemoplayStore()
-      demoplayStore.demoplayCount = 1
-      demoplayStore.hasJustReset = true
     }
     const isNewRoom = activeSubmode.value !== submode
     activeSubmode.value = submode
@@ -207,29 +203,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       throw new Error(`[PuzzleStore] Invalid submode requested for puzzle loading: "${type}". Fail-Fast!`)
     }
     activeSubmode.value = type as PuzzleSubmode
-
-    const demoplayStore = useDemoplayStore()
-    if (demoplayStore.isDemoplayEnabled) {
-      if (!demoplayStore.hasIntroBeenShown) {
-        demoplayStore.showIntroModal({
-          submode: type as PuzzleSubmode,
-          category: queryParams.category || activeParams.value.category || '',
-          difficulty: queryParams.difficulty || activeParams.value.difficulty || 'Novice'
-        })
-        return
-      }
-
-      if (demoplayStore.hasJustReset) {
-        demoplayStore.hasJustReset = false
-      } else {
-        if (demoplayStore.demoplayCount >= 100) {
-          demoplayStore.isDemoplayEnabled = false
-          demoplayStore.showCompleteModal()
-          return
-        }
-        demoplayStore.demoplayCount++
-      }
-    }
 
     gameStore.setGamePhase('LOADING')
     feedbackMessage.value = t('shared.app.loading')

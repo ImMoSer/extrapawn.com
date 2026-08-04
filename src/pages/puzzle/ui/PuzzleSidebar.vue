@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useDemoplayStore } from '@/features/demoplay'
 import { DEFAULT_SUBMODE_CATEGORY, PuzzleHalloHeader, usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
 import { CHESS_CATEGORY_UI } from '@/shared/config/game-themes.ui'
 import {
@@ -163,7 +162,6 @@ function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
 }
 
 const puzzleStore = usePuzzleStore()
-const demoplayStore = useDemoplayStore()
 
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
@@ -173,8 +171,6 @@ const selectedDifficulty = computed({
       return
     }
 
-    demoplayStore.demoplayCount = 1
-    demoplayStore.hasJustReset = true
     puzzleStore.activeParams.difficulty = newDiff
     loadPuzzle()
   }
@@ -183,8 +179,6 @@ const selectedDifficulty = computed({
 const activeThemeValue = computed({
   get: () => puzzleStore.activeParams.category || '',
   set: (val) => {
-    demoplayStore.demoplayCount = 1
-    demoplayStore.hasJustReset = true
     puzzleStore.activeParams.category = val
   }
 })

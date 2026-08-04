@@ -129,17 +129,14 @@ export class SparringStrategy implements IGameplayStrategy {
 
     const preferencesStore = usePreferencesStore()
     const isCrashtest = preferencesStore.preferences.gameplay.global_crashtest
-    const isDemoplay = preferencesStore.isDemoplayEnabled
     const authStore = useAuthStore()
     const profile = authStore.userProfile
     const isMo3ep = profile && (profile.id === 'mo3ep' || profile.username === 'MO3EP')
 
-    if ((isCrashtest || isDemoplay) && isMo3ep) {
-      const delay = isCrashtest
-        ? preferencesStore.preferences.delays.crashtestDelayMs
-        : preferencesStore.preferences.delays.demoStayBeforNextMs
+    if (isCrashtest && isMo3ep) {
+      const delay = preferencesStore.preferences.delays.crashtestDelayMs
 
-      logger.info(`[SparringStrategy] Auto-restart triggered (isCrashtest=${isCrashtest}, isDemoplay=${isDemoplay}). Restarting in ${delay}ms.`)
+      logger.info(`[SparringStrategy] Auto-restart triggered (isCrashtest=${isCrashtest}). Restarting in ${delay}ms.`)
 
       if (this.restartTimeout) {
         clearTimeout(this.restartTimeout)
