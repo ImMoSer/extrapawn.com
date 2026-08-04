@@ -1,10 +1,9 @@
-// src/features/analysis/model/analysis.store.ts
-import { useAnalysisEngineStore, type EvaluatedLineWithSan } from '@/entities/analysis'
+import { analysisService, type EvaluatedLineWithSan } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
-import { defineStore, storeToRefs } from 'pinia'
+import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 const ARROW_STYLES = [
@@ -18,62 +17,54 @@ const ARROW_STYLES = [
 export const useAnalysisStore = defineStore('analysis', () => {
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
-  const engineStore = useAnalysisEngineStore()
 
-  // --- FEATURE STATE ---
-  const isPanelVisible = ref(false)
+  const isAnalysisActive = ref(false)
+  const isLoading = ref(false)
+  const analysisLines = ref<EvaluatedLineWithSan[]>([])
+  const isLocalEngineAvailable = ref(false)
+  const maxThreads = ref(1)
+  const numThreads = ref(1)
+  const playerColor = ref<'white' | 'black' | null>(null)
+
+  // Options
+  const multiPv = ref(3)
+  const searchTime = ref(5) // 99 represents Infinity
+  const showArrows = ref(true)
+  const engineVersion = ref<'lite' | 'full'>('lite')
+
+  // Internal versioning to prevent race conditions
+  let analysisVersion = 0
   let lastArrowsSignature = ''
   let lastRenderedDepth = 0
   let fenDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-  // --- ENTITY STATE PROXIES ---
-  const {
-    isAnalysisActive,
-    isLoading,
-    analysisLines,
-    isLocalEngineAvailable,
-    maxThreads,
-    numThreads,
-    playerColor,
-    multiPv,
-    searchTime,
-    showArrows,
-    engineVersion,
-  } = storeToRefs(engineStore)
-
-  // --- LOGIC ---
-  watch(
-    () => gameStore.gamePhase,
-    (phase) => {
-      if (phase === 'IDLE' && (isPanelVisible.value || isAnalysisActive.value)) {
-        logger.info('[AnalysisFeature] Auto-resetting because gamePhase became IDLE')
-        resetAnalysisState()
-      }
-    },
-  )
-
+  // Watch FEN for debounced analysis restart
   watch(
     () => boardStore.fen,
     (newFen) => {
       if (isAnalysisActive.value) {
         if (fenDebounceTimer) clearTimeout(fenDebounceTimer)
         fenDebounceTimer = setTimeout(() => {
-          logger.debug(`[AnalysisFeature] FEN changed (debounced). Restarting analysis.`)
+          logger.debug(`[AnalysisStore] FEN changed (debounced). Restarting analysis.`)
           lastRenderedDepth = 0
-          engineStore.startAnalysis(newFen)
+          void startAnalysis(newFen)
         }, 250)
       }
     },
   )
 
-  watch(isPanelVisible, (isVisible) => {
-    if (!isVisible && isAnalysisActive.value) {
-      logger.info('[AnalysisFeature] Panel set to invisible. Hard-stopping engine.')
-      engineStore.stopAnalysis()
-    }
-  })
+  // Reset when gamePhase becomes IDLE
+  watch(
+    () => gameStore.gamePhase,
+    (phase) => {
+      if (phase === 'IDLE' && isAnalysisActive.value) {
+        logger.info('[AnalysisStore] Auto-resetting because gamePhase became IDLE')
+        void stopAnalysis()
+      }
+    },
+  )
 
-  // Watch lines to update board arrows (Pure Feature Logic)
+  // Watch lines to update board arrows
   watch(analysisLines, (lines) => {
     if (isAnalysisActive.value && lines.length > 0) {
       const currentDepth = lines[0]!.depth
@@ -106,43 +97,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     return false
   }
 
-  // --- ACTIONS ---
-  async function showPanel(startActive = false) {
-    isPanelVisible.value = true
-
-    // Initialize Engine
-    await engineStore.initialize()
-
-    if (startActive) {
-      await engineStore.startAnalysis(boardStore.fen)
-    }
-  }
-
-  async function hidePanel() {
-    await resetAnalysisState()
-    logger.info('[AnalysisFeature] Panel hidden.')
-  }
-
-  async function toggleAnalysis() {
-    if (!isAnalysisActive.value) {
-      lastRenderedDepth = 0
-      await engineStore.startNewGame()
-      await engineStore.startAnalysis(boardStore.fen)
-    } else {
-      await engineStore.stopAnalysis()
-      boardStore.setDrawableShapes([])
-    }
-  }
-
-  async function setThreads(count: number) {
-    await engineStore.setThreads(count)
-    if (isAnalysisActive.value) {
-      await engineStore.startAnalysis(boardStore.fen)
-    }
-  }
-
   function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
-    // Only draw as many arrows as configured by MultiPV
     const topMoves = lines.slice(0, multiPv.value)
     const signature = topMoves.map((l) => (l.pvUci && l.pvUci[0]) || '').join(',')
 
@@ -150,52 +105,190 @@ export const useAnalysisStore = defineStore('analysis', () => {
       return
     }
 
-    lastArrowsSignature = signature
-
     const shapes: DrawShape[] = []
     topMoves.forEach((line, index) => {
       if (line.pvUci && line.pvUci.length > 0) {
-        const uciMove = line.pvUci[0]
-        if (typeof uciMove === 'string' && uciMove.length >= 4) {
-          const orig = uciMove.substring(0, 2) as Key
-          const dest = uciMove.substring(2, 4) as Key
-          const style = ARROW_STYLES[index]
-          if (style) {
-            shapes.push({
-              orig,
-              dest,
-              brush: style.brush,
-              modifiers: { lineWidth: style.lineWidth },
-            })
-          }
+        const firstMove = line.pvUci[0]
+        if (firstMove && firstMove.length >= 4) {
+          const orig = firstMove.slice(0, 2) as Key
+          const dest = firstMove.slice(2, 4) as Key
+          const style = ARROW_STYLES[index] || ARROW_STYLES[ARROW_STYLES.length - 1]
+
+          shapes.push({
+            orig,
+            dest,
+            brush: style!.brush,
+            modifiers: { lineWidth: style!.lineWidth },
+          })
         }
       }
     })
+
     boardStore.setDrawableShapes(shapes)
+    lastArrowsSignature = signature
   }
 
-  async function resetAnalysisState() {
-    const wasActive = isAnalysisActive.value
-    isPanelVisible.value = false
-    lastArrowsSignature = ''
-    lastRenderedDepth = 0
+  async function initialize() {
+    await analysisService.initialize()
+    isLocalEngineAvailable.value = analysisService.isLocalEngineAvailable()
+    maxThreads.value = analysisService.getMaxThreads()
 
-    if (wasActive) {
-      await engineStore.stopAnalysis()
+    // Load threads preference
+    const savedThreads = localStorage.getItem('analysis_threads')
+    const defaultThreads = maxThreads.value > 2 ? 2 : 1
+    numThreads.value = savedThreads
+      ? Math.min(parseInt(savedThreads, 10), maxThreads.value)
+      : defaultThreads
+
+    // Load options
+    const savedMultiPv = localStorage.getItem('analysis_multi_pv')
+    multiPv.value = savedMultiPv ? parseInt(savedMultiPv, 10) : 3
+
+    const savedSearchTime = localStorage.getItem('analysis_search_time')
+    searchTime.value = savedSearchTime ? parseInt(savedSearchTime, 10) : 5
+
+    const savedShowArrows = localStorage.getItem('analysis_show_arrows')
+    showArrows.value = savedShowArrows !== 'false'
+
+    const savedVersion = localStorage.getItem('analysis_engine_version') as 'lite' | 'full' | null
+    if (savedVersion === 'full' || savedVersion === 'lite') {
+      engineVersion.value = savedVersion
+    }
+    await analysisService.setEngineVariant(engineVersion.value)
+
+    logger.info(
+      `[AnalysisStore] Initialized. EngineVersion: ${engineVersion.value}, Threads: ${numThreads.value}/${maxThreads.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
+    )
+  }
+
+  async function setThreads(count: number) {
+    const newCount = Math.max(1, Math.min(count, maxThreads.value))
+    if (numThreads.value === newCount) return
+
+    numThreads.value = newCount
+    localStorage.setItem('analysis_threads', String(newCount))
+
+    if (isAnalysisActive.value) {
+      await analysisService.stopAnalysis()
+      await analysisService.setThreads(newCount)
+    } else {
+      await analysisService.setThreads(newCount)
+    }
+  }
+
+  async function triggerRestart() {
+    if (isAnalysisActive.value) {
+      const currentFen = analysisLines.value[0]?.startingFen
+      if (currentFen) {
+        await startAnalysis(currentFen)
+      }
+    }
+  }
+
+  async function setMultiPv(value: number) {
+    const val = Math.max(1, Math.min(value, 5))
+    if (multiPv.value === val) return
+    multiPv.value = val
+    localStorage.setItem('analysis_multi_pv', String(val))
+    await triggerRestart()
+  }
+
+  async function setSearchTime(value: number) {
+    if (searchTime.value === value) return
+    searchTime.value = value
+    localStorage.setItem('analysis_search_time', String(value))
+    await triggerRestart()
+  }
+
+  function setShowArrows(value: boolean) {
+    if (showArrows.value === value) return
+    showArrows.value = value
+    localStorage.setItem('analysis_show_arrows', String(value))
+  }
+
+  async function setEngineVersion(version: 'lite' | 'full') {
+    if (engineVersion.value === version) return
+    engineVersion.value = version
+    localStorage.setItem('analysis_engine_version', version)
+    isLoading.value = true
+    await analysisService.setEngineVariant(version)
+    isLoading.value = false
+    await triggerRestart()
+  }
+
+  async function startNewGame() {
+    await analysisService.startNewGame()
+  }
+
+  async function startAnalysis(
+    fen: string,
+    onLinesUpdate?: (lines: EvaluatedLineWithSan[]) => void,
+  ) {
+    analysisVersion++
+    const currentVersion = analysisVersion
+
+    await analysisService.stopAnalysis()
+
+    if (analysisVersion !== currentVersion) return
+
+    isLoading.value = true
+    analysisLines.value = []
+
+    const options = {
+      multiPv: multiPv.value,
+      movetime: (searchTime.value === 99 || searchTime.value <= 0) ? 0 : searchTime.value * 1000,
     }
 
+    await analysisService.startAnalysis(fen, (lines) => {
+      if (!isAnalysisActive.value || analysisVersion !== currentVersion) return
+
+      isLoading.value = false
+
+      const lineMap = new Map(analysisLines.value.map((l) => [l.id, l]))
+      lines.forEach((l) => lineMap.set(l.id, l))
+      const sortedLines = Array.from(lineMap.values()).sort((a, b) => a.id - b.id)
+
+      analysisLines.value = sortedLines
+
+      if (onLinesUpdate) {
+        onLinesUpdate(sortedLines)
+      }
+    }, options)
+
+    if (analysisVersion !== currentVersion) {
+      logger.info(`[AnalysisStore] Aborted start for FEN: ${fen} due to version change.`)
+      return
+    }
+
+    isAnalysisActive.value = true
+    logger.info(`[AnalysisStore] Started for FEN: ${fen}`)
+  }
+
+  async function stopAnalysis() {
+    analysisVersion++
+    isAnalysisActive.value = false
+    isLoading.value = false
+    analysisLines.value = []
     boardStore.setDrawableShapes([])
+    await analysisService.stopAnalysis()
+    logger.info('[AnalysisStore] Stopped.')
+  }
+
+  async function toggleAnalysis() {
+    if (!isAnalysisActive.value) {
+      lastRenderedDepth = 0
+      await startNewGame()
+      await startAnalysis(boardStore.fen)
+    } else {
+      await stopAnalysis()
+    }
   }
 
   function setPlayerColor(color: 'white' | 'black' | null) {
-    engineStore.setPlayerColor(color)
+    playerColor.value = color
   }
 
   return {
-    // Feature State
-    isPanelVisible,
-
-    // Entity State (Proxied)
     isAnalysisActive,
     isLoading,
     analysisLines,
@@ -207,17 +300,16 @@ export const useAnalysisStore = defineStore('analysis', () => {
     searchTime,
     showArrows,
     engineVersion,
-
-    // Actions
-    showPanel,
-    hidePanel,
-    toggleAnalysis,
+    initialize,
     setThreads,
-    setMultiPv: engineStore.setMultiPv,
-    setSearchTime: engineStore.setSearchTime,
-    setShowArrows: engineStore.setShowArrows,
-    setEngineVersion: engineStore.setEngineVersion,
-    resetAnalysisState,
+    setMultiPv,
+    setSearchTime,
+    setShowArrows,
+    setEngineVersion,
+    startNewGame,
+    startAnalysis,
+    stopAnalysis,
+    toggleAnalysis,
     setPlayerColor,
   }
 })

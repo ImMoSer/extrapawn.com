@@ -11,21 +11,18 @@ import {
 } from '@/features/repertoire-training'
 import { useGameStore } from '@/entities/game'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
-import { useAnalysisStore } from '@/features/analysis'
 
 const { t } = useI18n()
 const trainingStore = useRepertoireTrainingStore()
 const gameStore = useGameStore()
-const analysisStore = useAnalysisStore()
 const dialog = useDialog()
 
 onMounted(() => {
   trainingStore.resetSession()
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
   gameStore.stop()
-  await analysisStore.hidePanel()
 })
 
 const isTrainingActive = computed(() => trainingStore.isTrainingActive)

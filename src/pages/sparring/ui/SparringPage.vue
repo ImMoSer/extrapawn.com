@@ -6,14 +6,12 @@ import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 import { useBoardStore } from '@/entities/game'
 import { useSparringStore, SparringControlsPanel, NewGameModal } from '@/features/sparring'
 import { useCoachStore } from '@/features/coach'
-import { useAnalysisStore } from '@/features/analysis'
 
 const route = useRoute()
 const router = useRouter()
 const boardStore = useBoardStore()
 const sparringStore = useSparringStore()
 const coachStore = useCoachStore()
-const analysisStore = useAnalysisStore()
 
 watch(() => boardStore.fen, (newFen) => {
   sparringStore.localFen = newFen
@@ -28,9 +26,8 @@ onMounted(() => {
   coachStore.setCoachEnabled(true)
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
   sparringStore.terminate()
-  await analysisStore.hidePanel()
   coachStore.setCoachEnabled(false)
 })
 </script>

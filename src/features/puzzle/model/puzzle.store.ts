@@ -9,7 +9,7 @@ import {
   GameAudioEngine,
   type GameStatusInfo,
 } from '@/entities/game'
-import { useAnalysisEngineStore } from '@/entities/analysis'
+import { useAnalysisStore } from '@/features/analysis'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
@@ -76,7 +76,7 @@ function getStrategyType(submode: PuzzleSubmode | null): PuzzleStrategyType {
 export const usePuzzleStore = defineStore('puzzle', () => {
   const gameStore = useGameStore()
   const uiStore = useUiStore()
-  const analysisStore = useAnalysisEngineStore()
+  const analysisStore = useAnalysisStore()
   const router = useRouter()
 
   const activeSubmode = ref<PuzzleSubmode | null>(null)

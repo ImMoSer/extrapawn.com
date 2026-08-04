@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useAnalysisEngineStore } from '@/entities/analysis';
-import logger from '@/shared/lib/logger';
-import { onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { useAnalysisStore } from '@/features/analysis'
+import logger from '@/shared/lib/logger'
+import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const emit = defineEmits<{
   (e: 'ready'): void
@@ -68,7 +68,7 @@ async function preloadAssets() {
     progress.value = 100
 
     // Background warming
-    useAnalysisEngineStore()
+    useAnalysisStore()
       .initialize()
       .catch((e) => logger.warn('Engine warming failed:', e))
   } catch (error) {

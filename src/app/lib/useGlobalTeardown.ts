@@ -26,8 +26,8 @@ export function useGlobalTeardown() {
     // 2. Reset Coach (Feature)
     coachStore.reset()
 
-    // 3. Reset Analysis (Feature)
-    analysisStore.resetAnalysisState()
+    // 3. Stop Analysis (Entity)
+    void analysisStore.stopAnalysis()
     
     logger.info('[GlobalTeardown] Cleanup complete.')
   }

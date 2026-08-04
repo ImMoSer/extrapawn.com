@@ -8,8 +8,6 @@ import {
 } from '@/features/task-today'
 import { GameLayout } from '@/widgets/game-layout'
 import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
-import { useAnalysisStore } from '@/features/analysis'
-import { onBeforeRouteLeave } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
 
 defineProps({
@@ -28,7 +26,6 @@ defineProps({
 })
 
 const taskTodayStore = useTaskTodayStore()
-const analysisStore = useAnalysisStore()
 
 onMounted(() => {
   // Try to load local state first, but ensure we stay on the dashboard/history by forcing isPlaying to false
@@ -40,12 +37,7 @@ onMounted(() => {
   }
 })
 
-onBeforeRouteLeave(() => {
-  analysisStore.hidePanel()
-})
-
 onUnmounted(() => {
-  analysisStore.hidePanel()
   if (taskTodayStore.isPlaying) {
     taskTodayStore.pauseTaskToday()
   }

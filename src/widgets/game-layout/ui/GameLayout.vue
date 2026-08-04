@@ -1,7 +1,7 @@
 <!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
-import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { useAnalysisStore } from '@/features/analysis'
+import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
 import { useThemeStore } from '@/features/settings'
@@ -23,8 +23,8 @@ const props = withDefaults(
 const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
-const analysisStore = useAnalysisStore()
 const coachStore = useCoachStore()
+const analysisStore = useAnalysisStore()
 const route = useRoute()
 
 const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
@@ -34,10 +34,9 @@ const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDurat
 
 const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
-// Force analysis mode if we are in study views or analysis panel is visible, to prevent race conditions or store resets
 const effectiveAnalysisMode = computed(() => {
   return (
-    analysisStore.isPanelVisible ||
+    analysisStore.isAnalysisActive ||
     (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
   )
 })
