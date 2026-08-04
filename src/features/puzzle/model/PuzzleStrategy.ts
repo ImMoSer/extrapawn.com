@@ -216,8 +216,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
       if (isCheckmate || this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')
         try {
-          const { useCoachFeedbackStore } = await import('@/features/coach')
-          const feedbackStore = useCoachFeedbackStore()
+          const { useCoachStore } = await import('@/features/coach')
+          const feedbackStore = useCoachStore()
           feedbackStore.coachMood = 'celebrating'
           feedbackStore.takebackMessage = 'Tactical Solution Completed!'
           feedbackStore.isTakebackPending = false
@@ -234,8 +234,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
         }
       } else {
         try {
-          const { useCoachFeedbackStore } = await import('@/features/coach')
-          const feedbackStore = useCoachFeedbackStore()
+          const { useCoachStore } = await import('@/features/coach')
+          const feedbackStore = useCoachStore()
           feedbackStore.coachMood = 'proud'
           feedbackStore.takebackMessage = 'Korrekt! wie gehts weiter?'
           feedbackStore.isTakebackPending = false
@@ -267,8 +267,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
         if (coachStore.isCoachEnabled) {
           try {
-            const { useCoachFeedbackStore } = await import('@/features/coach')
-            const feedbackStore = useCoachFeedbackStore()
+            const { useCoachStore } = await import('@/features/coach')
+            const feedbackStore = useCoachStore()
             feedbackStore.coachMood = 'warning'
             feedbackStore.takebackMessage = this.submode === 'tactics'
               ? 'Das ist nicht die Taktiklösung! Überleg noch mal.'

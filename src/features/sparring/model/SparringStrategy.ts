@@ -41,14 +41,14 @@ export class SparringStrategy implements IGameplayStrategy {
 
   async requestBotMove(fen: string): Promise<string | null> {
     try {
-      const { useCoachFeedbackStore } = await import('@/features/coach')
-      const feedbackStore = useCoachFeedbackStore()
+      const { useCoachStore } = await import('@/features/coach')
+      const feedbackStore = useCoachStore()
       if (feedbackStore.isTakebackPending) {
         logger.info('[SparringStrategy] requestBotMove returned null due to pending coach takeback.')
         return null
       }
     } catch (err) {
-      logger.error('[SparringStrategy] Failed to import coach feedback store:', err)
+      logger.error('[SparringStrategy] Failed to import coach store:', err)
     }
 
     const { buildLastUserMoveText, parseMoveDescription } = await import('../lib/n8nContextBuilder')

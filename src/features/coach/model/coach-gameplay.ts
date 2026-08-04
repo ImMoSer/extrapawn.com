@@ -1,5 +1,4 @@
 import { useCoachStore } from './coach.store'
-import { useCoachFeedbackStore } from './coach-feedback.store'
 import { useGameStore } from '@/entities/game'
 import { usePreferencesStore } from '@/features/settings'
 import { soundService } from '@/shared/lib/sound.service'
@@ -17,10 +16,9 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
   }
 
   // 1. Check takeback status from completed move analysis
-  const feedbackStore = useCoachFeedbackStore()
   const preferencesStore = usePreferencesStore()
 
-  if (feedbackStore.isTakebackPending) {
+  if (coachStore.isTakebackPending) {
     const gameStore = useGameStore()
     const isSparring = gameStore.currentStrategy?.strategyId === 'sparring'
     const analysis = coachStore.lastMoveAnalysis
@@ -34,9 +32,9 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
 
         if (isTheoryMove) {
           logger.info(`[CoachGameplay] Move ${analysis.san || analysis.move} is a theory book move. Bypassing blunder takeback.`)
-          feedbackStore.isTakebackPending = false
-          feedbackStore.pendingTakebackFen = null
-          feedbackStore.takebackMessage = null
+          coachStore.isTakebackPending = false
+          coachStore.pendingTakebackFen = null
+          coachStore.takebackMessage = null
           return false
         }
       } catch (err) {
@@ -46,9 +44,9 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
 
     if (!preferencesStore.coachTakebackEnabled) {
       // Clear takeback status so it doesn't block sparring bot or other strategies
-      feedbackStore.isTakebackPending = false
-      feedbackStore.pendingTakebackFen = null
-      feedbackStore.takebackMessage = null
+      coachStore.isTakebackPending = false
+      coachStore.pendingTakebackFen = null
+      coachStore.takebackMessage = null
       return false
     }
 

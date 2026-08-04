@@ -201,6 +201,15 @@ export interface CoachExplanation {
   endgame?: Record<string, unknown>
   summary_text: string
   concrete_facts?: { text: string; side?: string; importance?: number }[]
+  action?: string
+  opening_name?: string
+  opening_eco?: string
+  wikibooks_url?: string
+  game_phase?: string
+  material_imbalance?: number
+  strategic_summary?: string
+  key_imbalance?: string
+  engine_best_move?: string
 }
 
 export interface CoachOpeningMoveInfo {
