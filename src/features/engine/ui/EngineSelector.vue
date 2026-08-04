@@ -5,18 +5,18 @@ import i18n from '@/shared/config/i18n'
 import type { EngineId } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { ENGINE_NAMES } from '../config/constants'
-import { useEngineSelectionStore } from '../model/engine-selection.store'
+import { usePreferencesStore } from '@/features/settings'
+import { AVAILABLE_ENGINES, ENGINE_NAMES } from '../config/constants'
 
-const engineStore = useEngineSelectionStore()
+const preferencesStore = usePreferencesStore()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const t = i18n.global.t
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
-const availableEngines = computed(() => engineStore.availableEngines)
-const selectedEngine = computed(() => engineStore.selectedEngine)
+const availableEngines = computed(() => AVAILABLE_ENGINES)
+const selectedEngine = computed(() => preferencesStore.selectedBotEngine)
 
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
@@ -45,7 +45,7 @@ const handleEngineSelectorClick = async () => {
 }
 
 const selectEngine = (engine: EngineId) => {
-  engineStore.setEngine(engine)
+  preferencesStore.setBotEngine(engine)
   isOpen.value = false
 }
 

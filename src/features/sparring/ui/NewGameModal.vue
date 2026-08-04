@@ -9,27 +9,28 @@ import {
 } from 'naive-ui'
 import { ExitOutline, PlayCircleOutline } from '@vicons/ionicons5'
 import { useSparringStore } from '../model/sparring.store'
-import { useEngineSelectionStore, ENGINE_NAMES } from '@/features/engine'
+import { ENGINE_NAMES, AVAILABLE_ENGINES } from '@/features/engine'
+import { usePreferencesStore } from '@/features/settings'
 import type { EngineId } from '@/shared/types/api.types'
 
 const sparringStore = useSparringStore()
-const engineStore = useEngineSelectionStore()
+const preferencesStore = usePreferencesStore()
 const router = useRouter()
 
 const selectedColor = ref<'white' | 'black'>('white')
-const selectedEngine = ref<EngineId>(engineStore.selectedEngine)
+const selectedEngine = ref<EngineId>(preferencesStore.selectedBotEngine as EngineId)
 
-const availableEngines = engineStore.availableEngines
+const availableEngines = AVAILABLE_ENGINES
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 watch(() => sparringStore.isNewGameModalOpen, (isOpen) => {
   if (isOpen) {
-    selectedEngine.value = engineStore.selectedEngine
+    selectedEngine.value = preferencesStore.selectedBotEngine as EngineId
   }
 })
 
 function handleStartGame() {
-  engineStore.setEngine(selectedEngine.value)
+  preferencesStore.setBotEngine(selectedEngine.value)
   sparringStore.startNewGame(
     {
       color: selectedColor.value,

@@ -3,6 +3,7 @@ import { enginePlayService, useGameStore } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
+import type { EngineId } from '@/shared/types/api.types'
 
 export class SparringStrategy implements IGameplayStrategy {
   readonly strategyId = 'sparring'
@@ -51,14 +52,14 @@ export class SparringStrategy implements IGameplayStrategy {
     }
 
     const { buildLastUserMoveText, parseMoveDescription } = await import('../lib/n8nContextBuilder')
-    const { useEngineSelectionStore } = await import('@/features/engine')
+    const { usePreferencesStore } = await import('@/features/settings')
     const { useCoachStore } = await import('@/features/coach')
     const i18n = (await import('@/shared/config/i18n')).default
     const coachStore = useCoachStore()
-    const engineSelectionStore = useEngineSelectionStore()
+    const preferencesStore = usePreferencesStore()
     const gameStore = useGameStore()
 
-    const selectedEngineId = engineSelectionStore.selectedEngine || gameStore.botEngineId
+    const selectedEngineId = preferencesStore.selectedBotEngine || gameStore.botEngineId
     if (!selectedEngineId) {
       throw new Error('[SparringStrategy] Fail-Fast: No engine selected for bot move')
     }
@@ -86,7 +87,7 @@ export class SparringStrategy implements IGameplayStrategy {
 
     // 2. Direct Engine Move (Fail-Fast: no MozerBook fallback)
     logger.info(`[SparringStrategy] Requesting bot move from selected engine: ${selectedEngineId}`)
-    const moveUci = await enginePlayService.getBestMove(selectedEngineId, fen)
+    const moveUci = await enginePlayService.getBestMove(selectedEngineId as EngineId, fen)
     if (!moveUci) {
       throw new Error(`[SparringStrategy] Fail-Fast: Engine "${selectedEngineId}" failed to calculate a move for FEN: ${fen}`)
     }

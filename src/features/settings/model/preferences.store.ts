@@ -2,6 +2,7 @@ import { useAuthStore } from '@/entities/user'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
+import type { EngineId } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
@@ -298,6 +299,29 @@ export const usePreferencesStore = defineStore('preferences', () => {
     saveLocal()
   }
 
+  // Engine selection (bot opponent)
+  const isEngineSelectorOpen = ref(false)
+  const selectedBotEngine = computed<EngineId>(() => (preferences.value.gameplay.botEngine as EngineId) || 'maia-2200')
+  const selectedEngine = selectedBotEngine
+
+  function toggleEngineSelector() {
+    isEngineSelectorOpen.value = !isEngineSelectorOpen.value
+  }
+
+  async function setBotEngine(engineId: EngineId) {
+    await updatePreferences({ gameplay: { botEngine: engineId } })
+    isEngineSelectorOpen.value = false
+    try {
+      const { useGameStore } = await import('@/entities/game')
+      const gameStore = useGameStore()
+      gameStore.setBotEngineId(engineId)
+    } catch (e) {
+      logger.error('[PreferencesStore] Failed to notify gameStore of botEngine change', e)
+    }
+  }
+
+  const setEngine = setBotEngine
+
   return {
     preferences,
     isLoaded,
@@ -306,5 +330,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
     coachTakebackEnabled,
     coachTakebackDelay,
     updateCoachTakeback,
+    isEngineSelectorOpen,
+    selectedBotEngine,
+    selectedEngine,
+    toggleEngineSelector,
+    setBotEngine,
+    setEngine,
   }
 })
