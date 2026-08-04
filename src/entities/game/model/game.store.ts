@@ -12,7 +12,7 @@ import type { Outcome as ChessopsOutcome } from 'chessops'
 import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
 import { GameAudioEngine } from './GameAudioEngine'
 
-export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER'
+export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS'
 export type UserMoveHandler = (uciMove: string) => Promise<boolean>
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -28,10 +28,44 @@ export const useGameStore = defineStore('game', () => {
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const isFreePlay = ref(false)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
-  const userMoveHandler = ref<UserMoveHandler | null>(null)
 
-  function registerUserMoveHandler(handler: UserMoveHandler | null) {
-    userMoveHandler.value = handler
+  const userMoveHandlers = ref<UserMoveHandler[]>([])
+  const stopHandlers = ref<Array<() => void>>([])
+
+  function registerUserMoveHandler(handler: UserMoveHandler | null): () => void {
+    if (!handler) {
+      userMoveHandlers.value = []
+      return () => {}
+    }
+    if (!userMoveHandlers.value.includes(handler)) {
+      userMoveHandlers.value.push(handler)
+    }
+    return () => {
+      userMoveHandlers.value = userMoveHandlers.value.filter((h) => h !== handler)
+    }
+  }
+
+  function registerStopHandler(handler: (() => void) | null): () => void {
+    if (!handler) {
+      stopHandlers.value = []
+      return () => {}
+    }
+    if (!stopHandlers.value.includes(handler)) {
+      stopHandlers.value.push(handler)
+    }
+    return () => {
+      stopHandlers.value = stopHandlers.value.filter((h) => h !== handler)
+    }
+  }
+
+  function _executeStopHandlers() {
+    for (const handler of stopHandlers.value) {
+      try {
+        handler()
+      } catch (err) {
+        logger.error('[GameStore] Error executing stop handler:', err)
+      }
+    }
   }
 
   function getGameStatus(): GameStatusInfo {
@@ -144,8 +178,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function triggerBotMove(overrideDelay?: number) {
-    if (boardStore.isGameOver || gamePhase.value === 'GAMEOVER') {
-      logger.info('[GameStore] Skipping bot move request: position is game over.')
+    if (boardStore.isGameOver || gamePhase.value === 'GAMEOVER' || gamePhase.value === 'ANALYSIS' || gamePhase.value === 'IDLE') {
+      logger.info('[GameStore] Skipping bot move request: game is over, in analysis, or idle.')
       return
     }
 
@@ -155,7 +189,8 @@ export const useGameStore = defineStore('game', () => {
       const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
       const elapsedTime = Date.now() - startTime
 
-      const targetDelay = overrideDelay ?? currentStrategy.value.config?.botDelayMs ?? 50
+      const strategyBotDelay = currentStrategy.value.config?.botDelayMs ?? 0
+      const targetDelay = overrideDelay ?? strategyBotDelay
       const remainingDelay = Math.max(0, targetDelay - elapsedTime)
       if (remainingDelay > 0) {
         await new Promise((resolve) => setTimeout(resolve, remainingDelay))
@@ -221,43 +256,50 @@ export const useGameStore = defineStore('game', () => {
     userColor: ChessgroundColor,
     keepPgn: boolean = false,
   ) {
-    try {
-      logger.info('[GameStore] Starting game with Strategy Context.')
+    logger.info('[GameStore] Starting game with Strategy Context.')
 
-      // Cleanup old strategy and reset Orchestrator state if exists
-      currentStrategy.value?.onDestroy?.()
-      stopHandler.value?.()
+    if (!fen) {
+      throw new Error('[GameStore] FEN is required for startWithStrategy. Fail-Fast!')
+    }
 
-      const setup = parseFen(fen).unwrap()
+    if (!userColor) {
+      throw new Error(
+        '[GameStore] userColor is required for startWithStrategy. The director (feature) must explicitly define the side. Fail-Fast!',
+      )
+    }
 
-      if (!userColor) {
-        throw new Error(
-          '[GameStore] userColor is required for startWithStrategy. The director (feature) must explicitly define the side.',
-        )
-      }
+    if (!strategy) {
+      throw new Error('[GameStore] strategy is required for startWithStrategy. Fail-Fast!')
+    }
 
-      currentStrategy.value = strategy
+    // Cleanup old strategy and reset Orchestrator state if exists
+    currentStrategy.value?.onDestroy?.()
+    _executeStopHandlers()
 
-      if (!keepPgn) {
-        pgnService.reset(fen)
-        boardStore.setupPosition(fen, userColor)
-      } else {
-        boardStore.orientation = userColor
-      }
+    const setupResult = parseFen(fen)
+    if (setupResult.isErr) {
+      throw new Error(`[GameStore] Invalid FEN provided for startWithStrategy: "${fen}". Fail-Fast!`)
+    }
+    const setup = setupResult.unwrap()
 
-      userMovesCount.value = 0
-      isGameActive.value = false
-      gamePhase.value = 'PLAYING'
+    currentStrategy.value = strategy
 
-      strategy.onGameStart?.(coreApi)
+    if (!keepPgn) {
+      pgnService.reset(fen)
+      boardStore.setupPosition(fen, userColor)
+    } else {
+      boardStore.orientation = userColor
+    }
 
-      const isBotTurn = setup.turn !== userColor
-      if (isBotTurn) {
-        triggerBotMove(strategy.config?.initialBotDelayMs)
-      }
-    } catch (error) {
-      logger.error('[GameStore] Invalid FEN provided for startWithStrategy:', fen, error)
-      gamePhase.value = 'IDLE'
+    userMovesCount.value = 0
+    isGameActive.value = false
+    gamePhase.value = 'PLAYING'
+
+    strategy.onGameStart?.(coreApi)
+
+    const isBotTurn = setup.turn !== userColor
+    if (isBotTurn) {
+      triggerBotMove(strategy.config?.initialBotDelayMs)
     }
   }
 
@@ -305,7 +347,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function handleUserMove(orig: Key, dest: Key) {
-    if (gamePhase.value !== 'PLAYING' || isMoveProcessing.value) {
+    if ((gamePhase.value !== 'PLAYING' && gamePhase.value !== 'ANALYSIS') || isMoveProcessing.value) {
       if (isMoveProcessing.value) {
         logger.warn('[GameStore] Rejected handleUserMove: move transaction already in progress.')
       }
@@ -320,8 +362,10 @@ export const useGameStore = defineStore('game', () => {
         return
       }
 
-      // Pre-validate move with Strategy
-      if (!isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
+      const isAnalysis = gamePhase.value === 'ANALYSIS'
+
+      // Pre-validate move with Strategy (only during PLAYING, not in ANALYSIS)
+      if (!isAnalysis && !isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
         const isLegalForStrategy = await currentStrategy.value.validateUserMove(
           intendedUci,
           boardStore.fen,
@@ -334,8 +378,14 @@ export const useGameStore = defineStore('game', () => {
       }
 
       let isCommitted = true
-      if (userMoveHandler.value) {
-        isCommitted = await userMoveHandler.value(intendedUci)
+      if (userMoveHandlers.value.length > 0) {
+        for (const handler of userMoveHandlers.value) {
+          const res = await handler(intendedUci)
+          if (!res) {
+            isCommitted = false
+            break
+          }
+        }
       } else {
         const fenBefore = boardStore.fen
         const positionBefore = boardStore.chessPosition.clone()
@@ -352,18 +402,18 @@ export const useGameStore = defineStore('game', () => {
         }
       }
 
-      if (userMovesCount.value === 0) {
+      if (userMovesCount.value === 0 && !isAnalysis) {
         isGameActive.value = true
       }
       userMovesCount.value++
 
-      if (isFreePlay.value) {
+      if (isFreePlay.value || isAnalysis) {
         return
       }
 
       const strategyAtStart = currentStrategy.value
 
-      if (strategyAtStart && isCommitted && !userMoveHandler.value) {
+      if (strategyAtStart && isCommitted && userMoveHandlers.value.length === 0) {
         await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
       }
     } finally {
@@ -378,14 +428,14 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  function setBotEngineId(id: EngineId) {
-    botEngineId.value = id
+  function enterAnalysisMode() {
+    logger.info('[GameStore] Entering ANALYSIS / FREEPLAY mode.')
+    gamePhase.value = 'ANALYSIS'
+    isGameActive.value = false
   }
 
-  const stopHandler = ref<(() => void) | null>(null)
-
-  function registerStopHandler(handler: (() => void) | null) {
-    stopHandler.value = handler
+  function setBotEngineId(id: EngineId) {
+    botEngineId.value = id
   }
 
   function stop() {
@@ -404,14 +454,12 @@ export const useGameStore = defineStore('game', () => {
     pgnService.reset(INITIAL_FEN)
     boardStore.resetBoardState()
 
-    // 4. Trigger registered stop handler (e.g. Orchestrator reset)
-    stopHandler.value?.()
+    // 4. Trigger registered stop handlers (e.g. Orchestrator reset)
+    _executeStopHandlers()
   }
 
   async function resetGame() {
     logger.info('[GameStore] Resetting current game context.')
-    // In resetGame we might want a clean slate but staying in current mode context.
-    // But for safety, we delegate to stop() which is now our "Master Reset"
     stop()
   }
 
@@ -429,6 +477,7 @@ export const useGameStore = defineStore('game', () => {
     handleUserMove,
     undoLastUserMove,
     setGamePhase,
+    enterAnalysisMode,
     handleGameResignation,
     resetGame,
     stop,
@@ -440,3 +489,4 @@ export const useGameStore = defineStore('game', () => {
     registerStopHandler,
   }
 })
+

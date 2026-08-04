@@ -29,7 +29,6 @@ export interface NagMarker {
   quality: string
 }
 
-
 export interface PromotionState {
   orig: Key
   dest: Key
@@ -46,7 +45,7 @@ export const useBoardStore = defineStore('board', () => {
 
   const turn = computed(() => chessPosition.value.turn)
   const dests = computed<Dests>(() =>
-    chessgroundDests(toRaw(chessPosition.value) as unknown as Position),
+    chessgroundDests(toRaw(chessPosition.value) as Position),
   )
   const lastMove = ref<[Key, Key] | undefined>(undefined)
   const isCheck = computed(() => chessPosition.value.isCheck())
@@ -64,29 +63,35 @@ export const useBoardStore = defineStore('board', () => {
   })
 
   function setupPosition(newFen: string, newOrientation?: ChessgroundColor) {
-    try {
-      if (newOrientation) {
-        orientation.value = newOrientation
-      }
-      const setup = parseFen(newFen === 'start' ? INITIAL_FEN : newFen).unwrap()
-      chessPosition.value = Chess.fromSetup(setup).unwrap()
-      fen.value = makeFen(chessPosition.value.toSetup())
-      lastMove.value = undefined
-      promotionState.value = null
-      drawableShapes.value = []
-      coachShapes.value = []
-      lastNag.value = null
-      boardSyncCounter.value++
-      soundService.playSound('board_load_position')
-    } catch (e) {
-      logger.error('[BoardStore] Invalid FEN provided:', newFen, e)
+    const targetFen = newFen === 'start' ? INITIAL_FEN : newFen
+    const parsedSetup = parseFen(targetFen)
+    if (parsedSetup.isErr) {
+      throw new Error(`[BoardStore] Invalid FEN provided to setupPosition: "${newFen}". Fail-Fast!`)
     }
+    const setup = parsedSetup.unwrap()
+    const parsedChess = Chess.fromSetup(setup)
+    if (parsedChess.isErr) {
+      throw new Error(`[BoardStore] Failed to construct Chess position from FEN: "${newFen}". Fail-Fast!`)
+    }
+
+    if (newOrientation) {
+      orientation.value = newOrientation
+    }
+    chessPosition.value = parsedChess.unwrap()
+    fen.value = makeFen(chessPosition.value.toSetup())
+    lastMove.value = undefined
+    promotionState.value = null
+    drawableShapes.value = []
+    coachShapes.value = []
+    lastNag.value = null
+    boardSyncCounter.value++
+    soundService.playSound('board_load_position')
   }
 
   function syncVisualCues() {
     // Sync visual cues from PgnService
     const lastPgnMove = pgnService.getLastMove()
-    if (lastPgnMove && lastPgnMove.uci) {
+    if (lastPgnMove && lastPgnMove.uci && lastPgnMove.uci.length >= 4) {
       lastMove.value = [lastPgnMove.uci.slice(0, 2) as Key, lastPgnMove.uci.slice(2, 4) as Key]
     } else {
       lastMove.value = undefined
@@ -94,17 +99,19 @@ export const useBoardStore = defineStore('board', () => {
 
     const currentNode = pgnService.getCurrentNode()
     const meta = currentNode.metadata
-    if (meta && meta.nag && meta.nag !== 'OK') {
+    const targetSquare = currentNode.uci && currentNode.uci.length >= 4 ? (currentNode.uci.slice(2, 4) as Key) : null
+
+    if (meta && meta.nag && meta.nag !== 'OK' && targetSquare) {
       lastNag.value = {
-        square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
+        square: targetSquare,
         nag: meta.nag,
         quality: meta.quality || 'good',
       }
-    } else if (currentNode.nag) {
+    } else if (currentNode.nag && targetSquare) {
       const mapping = NAG_MAPPING[currentNode.nag]
       if (mapping) {
         lastNag.value = {
-          square: currentNode.uci ? (currentNode.uci.slice(2, 4) as Key) : ('a1' as Key),
+          square: targetSquare,
           nag: mapping.symbol,
           quality: mapping.quality,
         }
@@ -121,20 +128,21 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function loadPosition(newFen: string) {
-    try {
-      const setup = parseFen(newFen).unwrap()
-      chessPosition.value = Chess.fromSetup(setup).unwrap()
-      fen.value = makeFen(chessPosition.value.toSetup())
-
-      syncVisualCues()
-      
-      // Play load sound if we just loaded a position (not triggered by a move, though navigating might trigger it).
-      // If we want to strictly emulate old behavior, this might play on every undo/redo. 
-      // This is generally desired.
-      soundService.playSound('board_load_position')
-    } catch (e) {
-      logger.error('[BoardStore] Error in loadPosition:', newFen, e)
+    const parsedSetup = parseFen(newFen)
+    if (parsedSetup.isErr) {
+      throw new Error(`[BoardStore] Invalid FEN provided to loadPosition: "${newFen}". Fail-Fast!`)
     }
+    const setup = parsedSetup.unwrap()
+    const parsedChess = Chess.fromSetup(setup)
+    if (parsedChess.isErr) {
+      throw new Error(`[BoardStore] Failed to construct Chess position from FEN: "${newFen}". Fail-Fast!`)
+    }
+
+    chessPosition.value = parsedChess.unwrap()
+    fen.value = makeFen(chessPosition.value.toSetup())
+
+    syncVisualCues()
+    soundService.playSound('board_load_position')
   }
 
   function applyUciMove(uci: string, options?: { skipSound?: boolean }): boolean {
@@ -290,3 +298,4 @@ export const useBoardStore = defineStore('board', () => {
     syncVisualCues,
   }
 })
+
