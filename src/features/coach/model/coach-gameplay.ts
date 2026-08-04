@@ -27,8 +27,9 @@ export async function waitForCoachAndCheckTakeback(): Promise<boolean> {
 
     if (isSparring && analysis && analysis.fen && analysis.move) {
       try {
-        const { theoryRepository } = await import('@/entities/opening')
-        const stats = await theoryRepository.getMozerBookStats(analysis.fen, { skipDebounce: true })
+        const { mozerBookService } = await import('@/entities/opening')
+        const cleanFen = analysis.fen.split(' ').slice(0, 4).join(' ')
+        const stats = await mozerBookService.fetchStats(cleanFen)
         const isTheoryMove = stats?.moves?.some((m) => m.uci === analysis.move) ?? false
 
         if (isTheoryMove) {

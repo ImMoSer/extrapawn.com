@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { useBoardStore } from '@/entities/game'
-import { useMozerBookStore } from '../index'
-import { pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
+import { pgnService, pgnTreeVersion } from '@/shared/lib/pgn/PgnService'
 import { InformationCircleOutline, LeafOutline, OpenOutline } from '@vicons/ionicons5'
 import { NIcon, NText } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { WikiInfoResponse } from '@/entities/opening'
+import { mozerBookService, type MozerBookResponse, type WikiInfoResponse } from '@/entities/opening'
 import MozerBookFooter from './MozerBookFooter.vue'
 import MozerBookRow from './MozerBookRow.vue'
 import TheoryExplorerModal from './TheoryExplorerModal.vue'
@@ -19,14 +18,14 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const boardStore = useBoardStore()
-const mozerStore = useMozerBookStore()
 
-const stats = computed(() => mozerStore.currentStats)
-const loading = computed(() => mozerStore.isLoading)
+const stats = ref<MozerBookResponse | null>(null)
+const loading = ref(false)
 
-const currentFen = computed(() => mozerStore.currentFen)
-
-
+const currentFen = computed(() => {
+  void pgnTreeVersion.value
+  return pgnService.getCurrentNavigatedFen()
+})
 
 const turn = computed(() => {
   const parts = currentFen.value.split(' ')
@@ -46,13 +45,17 @@ function handleSelectMove(uci: string) {
   showTheory.value = false
 }
 
-// Watch both version and the fen property from store
+// Watch FEN and load stats directly via mozerBookService
 watch(
   [pgnTreeVersion, () => boardStore.fen],
-  () => {
+  async () => {
     if (props.isPaused) return
-    mozerStore.fetchStats()
-    showTheory.value = false // Close theory when position changes
+    loading.value = true
+    const fen = pgnService.getCurrentNavigatedFen()
+    const cleanFen = fen.split(' ').slice(0, 4).join(' ')
+    stats.value = await mozerBookService.fetchStats(cleanFen)
+    loading.value = false
+    showTheory.value = false
   },
   { immediate: true },
 )

@@ -1,4 +1,3 @@
-export * from './model/mozerBook.store'
 export * from './model/wikibooks.store'
 export { default as MozerBook } from './ui/MozerBook.vue'
 export { default as MozerBookFooter } from './ui/MozerBookFooter.vue'
