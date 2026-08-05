@@ -678,11 +678,11 @@ export const useCoachStore = defineStore('coach', () => {
 
   async function handleUserMove(uciMove: string): Promise<boolean> {
     const currentSessionId = gameStore.currentStrategy?.sessionId || null
-    if (activeSessionId.value !== currentSessionId) {
+    if (activeSessionId.value !== currentSessionId || gameStore.gamePhase === 'ANALYSIS') {
       resetSession(currentSessionId)
     }
 
-    if (moveState.value === 'USER_PENDING_EVAL' || moveState.value === 'DECISION_REQUIRED') {
+    if (gameStore.gamePhase !== 'ANALYSIS' && (moveState.value === 'USER_PENDING_EVAL' || moveState.value === 'DECISION_REQUIRED')) {
       logger.warn('[ORCHESTRATOR] Move submission rejected: previous move evaluation pending.')
       return false
     }

@@ -9,13 +9,13 @@ import {
   GameAudioEngine,
   type GameStatusInfo,
 } from '@/entities/game'
-import { useAnalysisStore } from '@/features/analysis'
+import { usePreferencesStore } from '@/features/settings'
 import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
-import type { TopInfoDisplay } from '@/entities/puzzle'
+import type { TopInfoDisplay } from './types'
 import { PuzzleStrategy } from './PuzzleStrategy'
 
 const t = i18n.global.t
@@ -76,7 +76,7 @@ function getStrategyType(submode: PuzzleSubmode | null): PuzzleStrategyType {
 export const usePuzzleStore = defineStore('puzzle', () => {
   const gameStore = useGameStore()
   const uiStore = useUiStore()
-  const analysisStore = useAnalysisStore()
+  const preferencesStore = usePreferencesStore()
   const router = useRouter()
 
   const activeSubmode = ref<PuzzleSubmode | null>(null)
@@ -85,6 +85,15 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const autoNextPuzzle = ref<boolean>(
     localStorage.getItem('chess_auto_next_puzzle') === 'true'
   )
+
+  const autoNextTimeout = ref<number | null>(null)
+
+  function clearAutoNextTimeout() {
+    if (autoNextTimeout.value) {
+      clearTimeout(autoNextTimeout.value)
+      autoNextTimeout.value = null
+    }
+  }
 
   function toggleAutoNext() {
     autoNextPuzzle.value = !autoNextPuzzle.value
@@ -99,13 +108,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
 
-  function initialize(submode: PuzzleSubmode, puzzleId?: string) {
+  function initialize(submode: PuzzleSubmode, puzzleIdFromRoute?: string) {
     if (!VALID_SUBMODES.includes(submode)) {
-      throw new Error(`[PuzzleStore] Invalid submode initialized: "${submode}". Fail-Fast!`)
-    }
-    // Clear stale puzzle if the submode or requested puzzleId changed
-    if (activePuzzle.value && (activePuzzle.value.puzzle_type !== submode || (puzzleId && activePuzzle.value.puzzle_id !== puzzleId))) {
-      activePuzzle.value = null
+      throw new Error(`[PuzzleStore] Invalid submode for initialization: "${submode}". Fail-Fast!`)
     }
     const isNewRoom = activeSubmode.value !== submode
     activeSubmode.value = submode
@@ -117,8 +122,8 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         difficulty: activeParams.value.difficulty || 'Novice',
       }
     }
-    if (puzzleId && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleId)) {
-      void loadPuzzleById(submode, puzzleId)
+    if (puzzleIdFromRoute && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleIdFromRoute)) {
+      void loadPuzzleById(submode, puzzleIdFromRoute)
     } else if (!activePuzzle.value) {
       void loadNewPuzzle(submode)
     } else {
@@ -152,20 +157,29 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     isProcessingGameOver.value = true
 
     gameStore.setGamePhase('GAMEOVER')
-    analysisStore.setPlayerColor(humanColor)
     GameAudioEngine.handleGameOutcome(outcome, humanColor)
 
     if (isWin) {
       feedbackMessage.value = t('features.puzzle.feedback.win')
+      if (autoNextPuzzle.value) {
+        const delay = preferencesStore.preferences.delays.nextPuzzleDelayMs || 1200
+        autoNextTimeout.value = window.setTimeout(() => {
+          void loadNextPuzzle(puzzle.puzzle_type, activeParams.value)
+        }, delay)
+      } else {
+        gameStore.enterAnalysisMode()
+      }
     } else {
       const reason = outcome.reason
       if (reason === 'stalemate') {
         feedbackMessage.value = t('features.gameplay.gameOver.stalemate')
-      } else if (reason === 'resign' || reason === 'wrong_move') {
-        feedbackMessage.value = t('features.puzzle.feedback.loss')
       } else {
         feedbackMessage.value = t('features.puzzle.feedback.loss')
       }
+      const delay = preferencesStore.preferences.delays.restartDelayMs || 1500
+      autoNextTimeout.value = window.setTimeout(() => {
+        localRestart()
+      }, delay)
     }
   }
 
@@ -322,6 +336,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   }
 
   function reset() {
+    clearAutoNextTimeout()
     activePuzzle.value = null
     activeSubmode.value = null
     feedbackMessage.value = t('features.puzzle.feedback.pressNext')

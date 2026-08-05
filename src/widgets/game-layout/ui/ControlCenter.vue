@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
 import { useGameStore, useBoardStore } from '@/entities/game'
 import { useCoachStore, SettingsPanel } from '@/features/coach'
 import { NIcon } from 'naive-ui'
@@ -14,12 +12,9 @@ import {
   SwapVerticalOutline,
 } from '@vicons/ionicons5'
 
-const route = useRoute()
 const gameStore = useGameStore()
 const boardStore = useBoardStore()
 const coachStore = useCoachStore()
-
-const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
 </script>
 
 <template>
@@ -27,7 +22,6 @@ const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
     <!-- Left: Coach Tab Toggles (MB - WT - SF - CC) -->
     <div class="flex items-center gap-1.5">
       <button
-        v-if="isSparringRoute"
         @click="coachStore.toggleTab('book')"
         title="MozerBook Opening Explorer (MB)"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
@@ -41,7 +35,6 @@ const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
       </button>
 
       <button
-        v-if="isSparringRoute"
         @click="coachStore.toggleTab('wiki')"
         title="WikiBooks Opening Theory (WT)"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"

@@ -26,7 +26,6 @@ export const useGameStore = defineStore('game', () => {
   const isMoveProcessing = ref(false)
   const botEngineId = ref<EngineId>('maia-2200')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
-  const isFreePlay = ref(false)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
 
   const userMoveHandlers = ref<UserMoveHandler[]>([])
@@ -365,7 +364,7 @@ export const useGameStore = defineStore('game', () => {
       const isAnalysis = gamePhase.value === 'ANALYSIS'
 
       // Pre-validate move with Strategy (only during PLAYING, not in ANALYSIS)
-      if (!isAnalysis && !isFreePlay.value && currentStrategy.value && currentStrategy.value.validateUserMove) {
+      if (!isAnalysis && currentStrategy.value && currentStrategy.value.validateUserMove) {
         const isLegalForStrategy = await currentStrategy.value.validateUserMove(
           intendedUci,
           boardStore.fen,
@@ -407,7 +406,7 @@ export const useGameStore = defineStore('game', () => {
       }
       userMovesCount.value++
 
-      if (isFreePlay.value || isAnalysis) {
+      if (isAnalysis) {
         return
       }
 
@@ -430,6 +429,10 @@ export const useGameStore = defineStore('game', () => {
 
   function enterAnalysisMode() {
     logger.info('[GameStore] Entering ANALYSIS / FREEPLAY mode.')
+    currentStrategy.value?.onDestroy?.()
+    currentStrategy.value = null
+    userMoveHandlers.value = []
+    stopHandlers.value = []
     gamePhase.value = 'ANALYSIS'
     isGameActive.value = false
   }
@@ -469,7 +472,6 @@ export const useGameStore = defineStore('game', () => {
     isMoveProcessing,
     playerColor,
     currentStrategy,
-    isFreePlay,
     startWithStrategy,
     loadPosition,
     navigatePgn,

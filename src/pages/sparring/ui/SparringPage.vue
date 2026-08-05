@@ -33,7 +33,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <GameLayout>
+  <GameLayout hide-engine-selector>
     <template #top-info>
       <SparringControlsPanel />
     </template>

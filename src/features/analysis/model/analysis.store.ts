@@ -19,12 +19,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const gameStore = useGameStore()
 
   const isAnalysisActive = ref(false)
-  const isLoading = ref(false)
   const analysisLines = ref<EvaluatedLineWithSan[]>([])
-  const isLocalEngineAvailable = ref(false)
-  const maxThreads = ref(1)
-  const numThreads = ref(1)
-  const playerColor = ref<'white' | 'black' | null>(null)
 
   // Options
   const multiPv = ref(3)
@@ -130,15 +125,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function initialize() {
     await analysisService.initialize()
-    isLocalEngineAvailable.value = analysisService.isLocalEngineAvailable()
-    maxThreads.value = analysisService.getMaxThreads()
-
-    // Load threads preference
-    const savedThreads = localStorage.getItem('analysis_threads')
-    const defaultThreads = maxThreads.value > 2 ? 2 : 1
-    numThreads.value = savedThreads
-      ? Math.min(parseInt(savedThreads, 10), maxThreads.value)
-      : defaultThreads
 
     // Load options
     const savedMultiPv = localStorage.getItem('analysis_multi_pv')
@@ -157,23 +143,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
     await analysisService.setEngineVariant(engineVersion.value)
 
     logger.info(
-      `[AnalysisStore] Initialized. EngineVersion: ${engineVersion.value}, Threads: ${numThreads.value}/${maxThreads.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
+      `[AnalysisStore] Initialized. EngineVersion: ${engineVersion.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
     )
-  }
-
-  async function setThreads(count: number) {
-    const newCount = Math.max(1, Math.min(count, maxThreads.value))
-    if (numThreads.value === newCount) return
-
-    numThreads.value = newCount
-    localStorage.setItem('analysis_threads', String(newCount))
-
-    if (isAnalysisActive.value) {
-      await analysisService.stopAnalysis()
-      await analysisService.setThreads(newCount)
-    } else {
-      await analysisService.setThreads(newCount)
-    }
   }
 
   async function triggerRestart() {
@@ -210,9 +181,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     if (engineVersion.value === version) return
     engineVersion.value = version
     localStorage.setItem('analysis_engine_version', version)
-    isLoading.value = true
     await analysisService.setEngineVariant(version)
-    isLoading.value = false
     await triggerRestart()
   }
 
@@ -231,7 +200,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     if (analysisVersion !== currentVersion) return
 
-    isLoading.value = true
     analysisLines.value = []
 
     const options = {
@@ -241,8 +209,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     await analysisService.startAnalysis(fen, (lines) => {
       if (!isAnalysisActive.value || analysisVersion !== currentVersion) return
-
-      isLoading.value = false
 
       const lineMap = new Map(analysisLines.value.map((l) => [l.id, l]))
       lines.forEach((l) => lineMap.set(l.id, l))
@@ -267,7 +233,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
   async function stopAnalysis() {
     analysisVersion++
     isAnalysisActive.value = false
-    isLoading.value = false
     analysisLines.value = []
     boardStore.setDrawableShapes([])
     await analysisService.stopAnalysis()
@@ -284,24 +249,14 @@ export const useAnalysisStore = defineStore('analysis', () => {
     }
   }
 
-  function setPlayerColor(color: 'white' | 'black' | null) {
-    playerColor.value = color
-  }
-
   return {
     isAnalysisActive,
-    isLoading,
     analysisLines,
-    isLocalEngineAvailable,
-    maxThreads,
-    numThreads,
-    playerColor,
     multiPv,
     searchTime,
     showArrows,
     engineVersion,
     initialize,
-    setThreads,
     setMultiPv,
     setSearchTime,
     setShowArrows,
@@ -310,6 +265,5 @@ export const useAnalysisStore = defineStore('analysis', () => {
     startAnalysis,
     stopAnalysis,
     toggleAnalysis,
-    setPlayerColor,
   }
 })

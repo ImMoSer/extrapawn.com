@@ -87,10 +87,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   onDestroy() {
     this.isDestroyed = true
-    if (this.nextPuzzleTimeout) {
-      clearTimeout(this.nextPuzzleTimeout)
-      this.nextPuzzleTimeout = null
-    }
   }
 
   checkWinCondition(status: GameStatusInfo): boolean {
@@ -139,18 +135,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
 
     soundService.playSound('game_tacktics_success', 'PuzzleStrategy.scenarioSuccess')
-    this.store.handleGameOver(
+    await this.store.handleGameOver(
       this.puzzle,
       true,
       { winner: this.humanColor, reason },
       this.humanColor,
     )
-    if (this.store.autoNextPuzzle) {
-      this.nextPuzzleTimeout = window.setTimeout(() => {
-        if (this.isDestroyed) return
-        void this.store.loadNewPuzzle(this.puzzle.puzzle_type, this.store.activeParams)
-      }, this.config.nextPuzzleDelayMs)
-    }
   }
 
   private async triggerFailure(): Promise<void> {
@@ -162,16 +152,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
 
     soundService.playSound('game_tacktics_error')
-    this.store.handleGameOver(
+    await this.store.handleGameOver(
       this.puzzle,
       false,
       { winner: undefined, reason: 'wrong_move' },
       this.humanColor,
     )
-    this.nextPuzzleTimeout = window.setTimeout(() => {
-      if (this.isDestroyed) return
-      this.store.localRestart()
-    }, this.config.restartDelayMs)
   }
 
   async onUserMoveExecuted(uciMove: string): Promise<void> {

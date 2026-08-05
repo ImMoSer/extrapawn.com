@@ -12,7 +12,6 @@ const { t } = useI18n()
 
 const {
   isAnalysisActive,
-  isLoading,
   analysisLines,
   multiPv,
   searchTime,
@@ -25,7 +24,7 @@ const isEngineDisabled = computed(() => false)
 // Current best score formatted
 const bestScore = computed(() => {
   if (!isAnalysisActive.value) return 'OFF'
-  if (isLoading.value || analysisLines.value.length === 0) return '...'
+  if (analysisLines.value.length === 0) return '...'
   
   const line = analysisLines.value[0]
   if (!line) return '...'
@@ -39,7 +38,7 @@ const bestScore = computed(() => {
 
 const bestScoreClass = computed(() => {
   if (!isAnalysisActive.value) return 'is-off'
-  if (isLoading.value || analysisLines.value.length === 0) return 'is-loading'
+  if (analysisLines.value.length === 0) return 'is-loading'
   
   const line = analysisLines.value[0]
   if (!line) return 'is-neutral'

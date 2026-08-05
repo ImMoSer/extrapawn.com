@@ -1,4 +1,4 @@
-// src/entities/puzzle/model/types.ts
+// src/features/puzzle/model/types.ts
 
 export interface TopInfoStat {
   icon?: string
@@ -22,10 +22,8 @@ export interface TopInfoDisplay {
   badges: TopInfoBadge[]
   stats: TopInfoStat[]
   secondaryText?: string
-  // FSD: Flags for purely visual effects driven by state
   isValueHidden?: boolean
   isPulsating?: boolean
-  // Optional legacy field for specific CSS hooks if absolutely necessary
   customType?: string
   extra?: {
     category?: string

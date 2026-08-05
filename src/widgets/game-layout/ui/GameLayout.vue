@@ -1,22 +1,23 @@
 <!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
-import { useAnalysisStore } from '@/features/analysis'
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
 import { useThemeStore } from '@/features/settings'
 import ControlCenter from './ControlCenter.vue'
 import type { Key } from '@lichess-org/chessground/types'
-import { computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
     boardLocked?: boolean
     hideEngineSelector?: boolean
+    hideEvalBar?: boolean
   }>(),
   {
+    boardLocked: false,
     hideEngineSelector: false,
+    hideEvalBar: false,
   }
 )
 
@@ -24,64 +25,15 @@ const themeStore = useThemeStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const coachStore = useCoachStore()
-const analysisStore = useAnalysisStore()
-const route = useRoute()
-
-const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
-const shouldHideEngineSelector = computed(() => props.hideEngineSelector || isSparringRoute.value)
 
 const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
-
 const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
-const effectiveAnalysisMode = computed(() => {
-  return (
-    analysisStore.isAnalysisActive ||
-    (route.path.startsWith('/study') && !route.path.startsWith('/study-speedrun'))
-  )
-})
-
-const canUserEdit = computed(() => true)
-
+const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS')
 
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   await gameStore.handleUserMove(orig, dest)
 }
-
-const handleBoardWheel = (direction: 'up' | 'down') => {
-  if (analysisStore.isAnalysisActive || effectiveAnalysisMode.value) {
-    if (direction === 'up') {
-      gameStore.navigatePgn('backward')
-    } else {
-      gameStore.navigatePgn('forward')
-    }
-  }
-}
-
-const handleKeyDown = (event: KeyboardEvent) => {
-  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
-    // Don't navigate if user is typing in an input or textarea
-    if (['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName)) {
-      return
-    }
-
-    event.preventDefault()
-
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      gameStore.navigatePgn('backward')
-    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      gameStore.navigatePgn('forward')
-    }
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-})
 </script>
 
 <template>
@@ -93,51 +45,55 @@ onUnmounted(() => {
       </aside>
 
       <!-- Center Stage: Top Info -> (EvalBar + Board) -> Controls -->
-      <div class="center-stage" ref="centerColumnRef">
+      <div class="center-stage">
         <!-- Top Sector -->
         <div class="cb-top-panel">
           <div class="top-info-slot">
             <slot name="top-info"></slot>
           </div>
-          <div v-if="!shouldHideEngineSelector" class="top-engine-slot">
-            <EngineSelector />
+          <div v-if="!props.hideEngineSelector" class="top-engine-slot">
+            <slot name="engine-selector">
+              <EngineSelector />
+            </slot>
           </div>
         </div>
 
         <!-- Middle Row: EvalBar + Board Sector -->
         <div class="board-row">
-          <div class="eval-bar-container">
-            <EvalBar
-              :eval-cp="coachStore.evalCp"
-              :mate="coachStore.evalMate"
-              :result="coachStore.gameResult"
-              :loading="coachStore.topMovesLoading"
-              :orientation="boardStore.orientation"
-            />
+          <div v-if="!props.hideEvalBar" class="eval-bar-container">
+            <slot name="eval-bar">
+              <EvalBar
+                :eval-cp="coachStore.evalCp"
+                :mate="coachStore.evalMate"
+                :result="coachStore.gameResult"
+                :loading="coachStore.topMovesLoading"
+                :orientation="boardStore.orientation"
+              />
+            </slot>
           </div>
 
           <div class="board-section">
             <div class="board-aspect-wrapper">
-              <WebChessBoard
-                :fen="boardStore.fen"
-                :orientation="boardStore.orientation"
-                :turn-color="boardStore.turn"
-                :dests="activeDests"
-                :last-move="boardStore.lastMove"
-                :check="boardStore.isCheck"
-                :promotion-state="boardStore.promotionState"
-                :drawable-shapes="boardStore.drawableShapes"
-                :is-analysis-mode="effectiveAnalysisMode"
-                :animation-enabled="isAnimationEnabled"
-                :animation-duration="themeStore.currentTheme.animationDuration"
-                :board-sync-counter="boardStore.boardSyncCounter"
-                :can-edit="canUserEdit"
-                @user-move="handleUserMove"
-
-                @complete-promotion="boardStore.completePromotion"
-                @wheel-navigate="handleBoardWheel"
-                @shapes-change="(shapes: any) => boardStore.setDrawableShapes(shapes)"
-              />
+              <slot name="board">
+                <WebChessBoard
+                  :fen="boardStore.fen"
+                  :orientation="boardStore.orientation"
+                  :turn-color="boardStore.turn"
+                  :dests="activeDests"
+                  :last-move="boardStore.lastMove"
+                  :check="boardStore.isCheck"
+                  :promotion-state="boardStore.promotionState"
+                  :drawable-shapes="boardStore.drawableShapes"
+                  :is-analysis-mode="isAnalysisMode"
+                  :animation-enabled="isAnimationEnabled"
+                  :animation-duration="themeStore.currentTheme.animationDuration"
+                  :board-sync-counter="boardStore.boardSyncCounter"
+                  :can-edit="true"
+                  @user-move="handleUserMove"
+                  @complete-promotion="boardStore.completePromotion"
+                  @shapes-change="(shapes: any) => boardStore.setDrawableShapes(shapes)"
+                />
+              </slot>
 
               <!-- Center slot for overlays or additional content -->
               <div class="center-column-overlay">
