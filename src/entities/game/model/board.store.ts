@@ -161,6 +161,7 @@ export const useBoardStore = defineStore('board', () => {
     chessPosition.value.play(move)
     chessPosition.value = chessPosition.value.clone()
     fen.value = makeFen(chessPosition.value.toSetup())
+    coachShapes.value = []
 
     if (isNormal(move)) {
       lastMove.value = [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key]

@@ -6,21 +6,9 @@ import { useCoachStore } from '@/features/coach'
 import { useAuthStore } from '@/entities/user'
 import { SparringStrategy } from './SparringStrategy'
 import { soundService } from '@/shared/lib/sound.service'
-import i18n from '@/shared/config/i18n'
 import type { SparringGameStatus } from './types'
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-
-function getInitialUserWhiteGreeting(): string {
-  const lang = String(i18n.global.locale.value || 'de')
-  if (lang === 'ru') {
-    return 'Привет! Я готов к спаррингу. Твой ход — сделай первый ход на доске!'
-  }
-  if (lang === 'de') {
-    return 'Hallo! Ich bin bereit für das Sparring. Du bist am Zug — mache deinen ersten Zug!'
-  }
-  return "Hello! I'm ready for sparring. You play White — make your first move!"
-}
 
 export const useSparringStore = defineStore('sparring', () => {
   const gameStore = useGameStore()
@@ -38,12 +26,7 @@ export const useSparringStore = defineStore('sparring', () => {
   const userId = computed(() => authStore.effectiveLichessUsername || 'mo3ep')
 
   function generateGameId(): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
+    return `sp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
   }
 
   function openNewGameModal() {
@@ -68,17 +51,6 @@ export const useSparringStore = defineStore('sparring', () => {
 
     boardStore.orientation = params.color
     coachStore.setCoachEnabled(true)
-    coachStore.resetLlmState()
-
-    if (params.color === 'white') {
-      coachStore.setLlmThinking(false)
-      coachStore.setLlmResponse({
-        message: getInitialUserWhiteGreeting(),
-        mood: 'neutral',
-      })
-    } else {
-      coachStore.setLlmThinking(true)
-    }
 
     gameStore.startWithStrategy(
       params.fen,

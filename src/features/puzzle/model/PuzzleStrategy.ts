@@ -79,11 +79,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     return useBoardStore()
   }
 
-  onGameStart() {
-    if (this.boardStore.turn === this.humanColor) {
-      useCoachStore().analyzeCurrentPosition()
-    }
-  }
+  onGameStart() {}
 
   onDestroy() {
     this.isDestroyed = true
@@ -175,17 +171,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
         return
       }
 
-      if (coachStore.isCoachEnabled) {
-        try {
-          const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
-          const wasTakeback = await waitForCoachAndCheckTakeback()
-          if (wasTakeback) {
-            return
-          }
-        } catch (err) {
-          logger.error('[PuzzleStrategy] Error waiting for coach analysis in playout:', err)
-        }
-      }
       return
     }
 
@@ -205,8 +190,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
           const { useCoachStore } = await import('@/features/coach')
           const feedbackStore = useCoachStore()
           feedbackStore.coachMood = 'celebrating'
-          feedbackStore.takebackMessage = 'Tactical Solution Completed!'
-          feedbackStore.isTakebackPending = false
         } catch (err) {
           logger.error('[PuzzleStrategy] Error showing tactical completion feedback:', err)
         }
@@ -223,26 +206,11 @@ export class PuzzleStrategy implements IGameplayStrategy {
           const { useCoachStore } = await import('@/features/coach')
           const feedbackStore = useCoachStore()
           feedbackStore.coachMood = 'proud'
-          feedbackStore.takebackMessage = 'Korrekt! wie gehts weiter?'
-          feedbackStore.isTakebackPending = false
         } catch (err) {
           logger.error('[PuzzleStrategy] Error showing scenario correct feedback:', err)
         }
       }
     } else {
-      // Deviation from the scenario
-      if (coachStore.isCoachEnabled) {
-        try {
-          const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
-          const wasTakeback = await waitForCoachAndCheckTakeback()
-          if (wasTakeback) {
-            return
-          }
-        } catch (err) {
-          logger.error('[PuzzleStrategy] Error checking deviation move quality:', err)
-        }
-      }
-
       if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
@@ -256,10 +224,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
             const { useCoachStore } = await import('@/features/coach')
             const feedbackStore = useCoachStore()
             feedbackStore.coachMood = 'warning'
-            feedbackStore.takebackMessage = this.submode === 'tactics'
-              ? 'Das ist nicht die Taktiklösung! Überleg noch mal.'
-              : 'Das ist nicht der korrekte Endspiel-Zug! Überleg noch mal.'
-            feedbackStore.isTakebackPending = true
 
             soundService.playSound('game_training_error')
             await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -287,13 +251,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
   }
 
-  async onBotMoveExecuted(uciMove?: string, fenAfter?: string, fenBefore?: string): Promise<void> {
-    if (useCoachStore().isCoachEnabled && uciMove && fenAfter && fenBefore) {
-      await useCoachStore().runAnalysis(fenAfter, true, uciMove, fenBefore)
-    } else {
-      await useCoachStore().analyzeCurrentPosition()
-    }
-
+  async onBotMoveExecuted(): Promise<void> {
     if (this.scenarioIndex >= this.scenarioMoves.length) {
       if (this.puzzle.strategy === 'scenarioOnly' || this.submode === 'tactics') {
         await this.triggerSuccess('scenario_complete')

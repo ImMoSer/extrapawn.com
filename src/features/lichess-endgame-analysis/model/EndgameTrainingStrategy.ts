@@ -84,17 +84,7 @@ export class EndgameTrainingStrategy implements IGameplayStrategy {
     return false
   }
 
-  async onUserMoveExecuted(): Promise<void> {
-    try {
-      const { useCoachStore, waitForCoachAndCheckTakeback } = await import('@/features/coach')
-      const coachStore = useCoachStore()
-      if (coachStore.isCoachEnabled) {
-        await waitForCoachAndCheckTakeback()
-      }
-    } catch (err) {
-      console.error('[EndgameTrainingStrategy] Error waiting for coach analysis in playout:', err)
-    }
-  }
+  async onUserMoveExecuted(): Promise<void> {}
 
   async onBotMoveExecuted(): Promise<void> {}
 

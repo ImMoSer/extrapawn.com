@@ -40,49 +40,13 @@ export class SparringStrategy implements IGameplayStrategy {
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
-    try {
-      const { useCoachStore } = await import('@/features/coach')
-      const feedbackStore = useCoachStore()
-      if (feedbackStore.isTakebackPending) {
-        logger.info('[SparringStrategy] requestBotMove returned null due to pending coach takeback.')
-        return null
-      }
-    } catch (err) {
-      logger.error('[SparringStrategy] Failed to import coach store:', err)
-    }
-
-    const { buildLastUserMoveText, parseMoveDescription } = await import('../lib/n8nContextBuilder')
     const { usePreferencesStore } = await import('@/features/settings')
-    const { useCoachStore } = await import('@/features/coach')
-    const i18n = (await import('@/shared/config/i18n')).default
-    const coachStore = useCoachStore()
     const preferencesStore = usePreferencesStore()
     const gameStore = useGameStore()
 
     const selectedEngineId = preferencesStore.selectedBotEngine || gameStore.botEngineId
     if (!selectedEngineId) {
       throw new Error('[SparringStrategy] Fail-Fast: No engine selected for bot move')
-    }
-
-    const lastUserMoveText = buildLastUserMoveText()
-
-    // Helper to set local turn 1 greeting if bot plays White first move
-    const applyTurn1BotGreeting = (moveUci: string) => {
-      if (!lastUserMoveText) {
-        const { san } = parseMoveDescription(fen, moveUci)
-        const lang = String(i18n.global.locale.value || 'de')
-        let greeting = `Hello! Let's have a great game. Playing ${san} — your move!`
-        if (lang === 'ru') {
-          greeting = `Привет! Сыграем отличную партию. Хожу ${san} — твой ход!`
-        } else if (lang === 'de') {
-          greeting = `Hallo! Auf ein gutes Spiel. Ich spiele ${san} — du bist am Zug!`
-        }
-        coachStore.setLlmThinking(false)
-        coachStore.setLlmResponse({
-          message: greeting,
-          mood: 'neutral',
-        })
-      }
     }
 
     // 2. Direct Engine Move (Fail-Fast: no MozerBook fallback)
@@ -92,30 +56,12 @@ export class SparringStrategy implements IGameplayStrategy {
       throw new Error(`[SparringStrategy] Fail-Fast: Engine "${selectedEngineId}" failed to calculate a move for FEN: ${fen}`)
     }
 
-    applyTurn1BotGreeting(moveUci)
     return moveUci
   }
 
-  async onUserMoveExecuted() {
-    try {
-      const { waitForCoachAndCheckTakeback } = await import('@/features/coach')
-      await waitForCoachAndCheckTakeback()
-    } catch (err) {
-      logger.error('[SparringStrategy] Error waiting for coach analysis:', err)
-    }
-  }
+  async onUserMoveExecuted() {}
 
-  async onBotMoveExecuted(uciMove: string, fenAfter: string, fenBefore?: string) {
-    try {
-      const { useCoachStore } = await import('@/features/coach')
-      const coachStore = useCoachStore()
-      if (coachStore.isCoachEnabled) {
-        await coachStore.runAnalysis(fenAfter, true, uciMove, fenBefore)
-      }
-    } catch (err) {
-      logger.error('[SparringStrategy] Error executing coach analysis after bot move:', err)
-    }
-  }
+  async onBotMoveExecuted() {}
 
   onUserMoveUndone() {
     logger.info('[SparringStrategy] Move undone')

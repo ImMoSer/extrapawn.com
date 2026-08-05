@@ -17,9 +17,4 @@ export {
 export {
   useCoachStore,
   type CoachMood,
-  type MoveState,
-  type PendingMoveInfo,
-  type BotMoveHandler,
 } from './model/coach.store'
-
-export { waitForCoachAndCheckTakeback } from './model/coach-gameplay'

@@ -122,6 +122,7 @@ export interface CoachTopMove {
   whiteP?: number | null
   drawP?: number | null
   blackP?: number | null
+  visual_commands?: CoachVisualCommands | Record<string, unknown> | string | null
 }
 
 
@@ -138,10 +139,18 @@ export interface CoachVisualCommands {
   [key: string]: unknown
 }
 
+export interface CoachPositionStatus {
+  side_to_move: string
+  phase: string
+  material_delta: number
+}
+
 export interface CoachExplanation {
   fen: string
   side_to_move: 'white' | 'black'
-  eval_cp: number
+  position_status?: CoachPositionStatus
+  last_move_analysis?: CoachLastMoveAnalysis | null
+  eval_cp?: number
   eval_pawns: number
   verdict?: string
   static_eval_cp?: number

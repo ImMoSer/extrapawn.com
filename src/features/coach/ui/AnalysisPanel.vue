@@ -9,33 +9,23 @@ import SettingsPanel from './SettingsPanel.vue'
 const coachStore = useCoachStore()
 
 const props = defineProps<{
-  boardHeight: number
-  engineLoading: boolean
-  showLoadingBanner: boolean
-  stockfishReady: boolean
-  wasmReady: boolean
-  historyIndex: number
-  moveHistory: Array<{ fen: string; san: string | null }>
-  sideToMove: 'w' | 'b'
-  phase: string
-  materialDelta: number
-  openingName: string | null
-  lastMoveAnalysis: CoachLastMoveAnalysis | null
-  lastMoveConsequence: string | null
-  posExplanation: CoachExplanation | null
-  topMoves: CoachTopMove[]
-  topMovesLoading: boolean
-  selectedMoveIndex: number | null
-  explanation: CoachLastMoveAnalysis | null
-  explanationLoading: boolean
+  boardHeight?: number
+  sideToMove?: 'w' | 'b'
+  phase?: string
+  materialDelta?: number
+  openingName?: string | null
+  lastMoveAnalysis?: CoachLastMoveAnalysis | null
+  lastMoveConsequence?: string | null
+  posExplanation?: CoachExplanation | null
+  topMoves?: CoachTopMove[]
+  topMovesLoading?: boolean
+  selectedMoveIndex?: number | null
 }>()
 
 const emit = defineEmits<{
   (e: 'settings-change'): void
-  (e: 'select-history-move', payload: { fen: string; index: number }): void
   (e: 'select-move', index: number): void
 }>()
-
 
 const QUALITY_BG: Record<string, string> = {
   brilliant: 'var(--color-neon-cyan)',
@@ -63,8 +53,6 @@ const QUALITY_LABEL: Record<string, string> = {
   missed_mate: 'Missed mate',
 }
 
-
-
 function getQualityColor(q: string) {
   return QUALITY_BG[q] || 'var(--color-text-secondary)'
 }
@@ -75,7 +63,7 @@ function getQualityLabel(q: string) {
 
 function getMoveQuality(move: CoachTopMove, idx: number) {
   if (move?.quality) return move.quality
-  if (props.selectedMoveIndex === idx && props.explanation?.quality) return props.explanation.quality
+  if (move?.explanation?.quality) return move.explanation.quality
   const firstMove = props.posExplanation?.principal_plan?.moves?.[0] as { quality?: string } | undefined
   if (idx === 0 && firstMove?.quality) {
     return firstMove.quality
@@ -207,25 +195,6 @@ function getPlanBrief(move: CoachTopMove): string | null {
     class="analysis-panel thin-scroll w-full h-full flex-1 flex flex-col border border-border rounded-md overflow-hidden text-text-primary bg-surface"
     :style="boardHeight ? { minHeight: `${boardHeight}px` } : {}"
   >
-
-    <!-- Engine Loading Banner -->
-    <div
-      v-if="engineLoading && showLoadingBanner"
-      class="p-2 border-b border-border bg-neon-cyan/10 text-[11px] text-neon-cyan leading-tight flex items-center gap-2"
-    >
-      <span class="inline-block w-2.5 h-2.5 rounded-full border-2 border-cyan-deep border-t-transparent animate-spin shrink-0" />
-      <span>
-        {{
-          !stockfishReady && !wasmReady
-            ? 'Loading engine and analyzer…'
-            : !stockfishReady
-            ? 'Loading Stockfish…'
-            : 'Loading analyzer…'
-        }}
-        First visit downloads ~3 MB; cached afterwards.
-      </span>
-    </div>
-
     <!-- Coach Header: Title & Coach Controls (Eye & Settings) -->
     <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-elevated/40 shrink-0">
       <div class="flex items-center gap-2">
@@ -253,7 +222,6 @@ function getPlanBrief(move: CoachTopMove): string | null {
 
     <!-- Compact status line -->
     <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
-
       <span
         class="w-2 h-2 rounded-full border shrink-0"
         :class="sideToMove === 'w' ? 'bg-text-primary border-text-primary' : 'bg-surface border-border-hover'"
@@ -262,15 +230,14 @@ function getPlanBrief(move: CoachTopMove): string | null {
         {{ sideToMove === 'w' ? 'White' : 'Black' }} to move
       </span>
       <span class="text-text-disabled">·</span>
-      <span class="capitalize">{{ phase }}</span>
-      <template v-if="Math.abs(materialDelta) >= 0.1">
+      <span class="capitalize">{{ phase || 'Middlegame' }}</span>
+      <template v-if="materialDelta && Math.abs(materialDelta) >= 0.1">
         <span class="text-text-disabled">·</span>
         <span class="font-mono text-success">
           {{ materialDelta > 0 ? 'White' : 'Black' }} +{{ Math.abs(materialDelta).toFixed(1) }}
         </span>
       </template>
     </div>
-
 
     <!-- Last move card -->
     <div v-if="lastMoveAnalysis" class="p-3 border-b border-border">
@@ -330,12 +297,12 @@ function getPlanBrief(move: CoachTopMove): string | null {
         <span v-if="topMovesLoading" class="text-neon-cyan font-normal">Analyzing…</span>
       </div>
 
-      <div v-if="topMoves.length === 0 && !topMovesLoading" class="text-xs text-text-secondary italic py-2">
+      <div v-if="(!topMoves || topMoves.length === 0) && !topMovesLoading" class="text-xs text-text-secondary italic py-2">
         No candidate moves available.
       </div>
 
       <div
-        v-for="(move, idx) in topMoves"
+        v-for="(move, idx) in (topMoves || [])"
         :key="`${move.move || move.uci}-${idx}`"
         class="top-move-row p-2.5 rounded-md mb-2 border border-border bg-surface hover:border-border-hover transition-colors cursor-pointer"
         :class="selectedMoveIndex === idx ? 'border-neon-cyan/50 bg-elevated' : ''"
@@ -450,16 +417,13 @@ function getPlanBrief(move: CoachTopMove): string | null {
         <!-- 3. Details & Plan Block -->
         <div class="mt-1 flex flex-col gap-1 text-[11px]">
           <!-- Detailed explanation for selected move -->
-          <template v-if="selectedMoveIndex === idx">
-            <div v-if="explanationLoading" class="text-text-secondary py-0.5">Analyzing move details…</div>
-            <template v-else-if="explanation">
-              <div v-if="explanation.summary" class="text-text-primary text-[12px] font-medium leading-snug">
-                {{ explanation.summary }}
-              </div>
-              <div v-if="explanation.details" class="text-text-secondary leading-relaxed">
-                {{ explanation.details }}
-              </div>
-            </template>
+          <template v-if="selectedMoveIndex === idx && move.explanation">
+            <div v-if="move.explanation.summary" class="text-text-primary text-[12px] font-medium leading-snug">
+              {{ move.explanation.summary }}
+            </div>
+            <div v-if="move.explanation.details" class="text-text-secondary leading-relaxed">
+              {{ move.explanation.details }}
+            </div>
           </template>
 
           <!-- Plan Brief -->
