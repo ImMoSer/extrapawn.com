@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/entities/user'
+import { applyThemeStyle } from '../config/theme.config'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
@@ -293,6 +294,17 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   )
 
+  // Watch theme preferences and automatically update dynamic board/piece styles
+  watch(
+    () => [preferences.value.theme.board, preferences.value.theme.pieces],
+    ([board, pieces]) => {
+      if (board && pieces) {
+        applyThemeStyle(board as string, pieces as string)
+      }
+    },
+    { immediate: true }
+  )
+
   function updateCoachTakeback(enabled: boolean, delay: number) {
     coachTakebackEnabled.value = enabled
     coachTakebackDelay.value = delay
@@ -302,7 +314,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
   // Engine selection (bot opponent)
   const isEngineSelectorOpen = ref(false)
   const selectedBotEngine = computed<EngineId>(() => (preferences.value.gameplay.botEngine as EngineId) || 'maia-2200')
-  const selectedEngine = selectedBotEngine
 
   function toggleEngineSelector() {
     isEngineSelectorOpen.value = !isEngineSelectorOpen.value
@@ -320,8 +331,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   }
 
-  const setEngine = setBotEngine
-
   return {
     preferences,
     isLoaded,
@@ -332,9 +341,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     updateCoachTakeback,
     isEngineSelectorOpen,
     selectedBotEngine,
-    selectedEngine,
     toggleEngineSelector,
     setBotEngine,
-    setEngine,
   }
 })

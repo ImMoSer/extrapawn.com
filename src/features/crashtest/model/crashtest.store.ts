@@ -15,11 +15,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   const gameStore = useGameStore()
 
   // 1. Check if the user is mo3ep / MO3EP
-  const isMo3ep = computed(() => {
-    const profile = authStore.userProfile
-    if (!profile) return false
-    return profile.id === 'mo3ep' || profile.username === 'MO3EP'
-  })
+  const isMo3ep = computed(() => authStore.isMo3ep)
 
   const preferencesStore = usePreferencesStore()
 

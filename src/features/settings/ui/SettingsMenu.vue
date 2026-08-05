@@ -22,13 +22,10 @@ import {
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { useThemeStore } from '../index'
+import { AVAILABLE_BOARDS, AVAILABLE_PIECE_SETS } from '../config/theme.config'
 import { usePreferencesStore, type UserPreferencesDto } from '../model/preferences.store'
-import { useCrashtestStore } from '@/features/crashtest'
 
-const themeStore = useThemeStore()
 const authStore = useAuthStore()
-const crashtestStore = useCrashtestStore()
 const preferencesStore = usePreferencesStore()
 
 const { isAuthenticated } = storeToRefs(authStore)
@@ -169,7 +166,7 @@ const handleAuthAction = () => {
             </div>
 
             <!-- Dev Crashtest Move Delay -->
-            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
+            <div v-if="authStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
               <div class="section-label" style="color: var(--neon-bordeaux, #d9004c); font-weight: bold;">Crashtest Speed (Overrides All)</div>
               <div class="slider-row">
                 <n-slider v-model:value="draftPreferences.delays.crashtestDelayMs" :min="0" :max="1000" :step="50" />
@@ -178,7 +175,7 @@ const handleAuthAction = () => {
             </div>
 
             <!-- Dev Crashtest switch -->
-            <div v-if="crashtestStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
+            <div v-if="authStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
               <div class="dev-crashtest-row">
                 <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
                 <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
@@ -200,7 +197,7 @@ const handleAuthAction = () => {
                   <div class="section-label">{{ t('features.settings.board') }}</div>
                   <div class="board-selector-grid">
                     <div
-                      v-for="board in themeStore.availableBoards"
+                      v-for="board in AVAILABLE_BOARDS"
                       :key="board.name"
                       class="selector-item board-item"
                       :class="{ selected: board.name === draftPreferences.theme.board }"
@@ -215,7 +212,7 @@ const handleAuthAction = () => {
                   <div class="section-label">{{ t('features.settings.pieces') }}</div>
                   <div class="piece-selector-grid">
                     <div
-                      v-for="pieceSet in themeStore.availablePieceSets"
+                      v-for="pieceSet in AVAILABLE_PIECE_SETS"
                       :key="pieceSet.name"
                       class="selector-item piece-item"
                       :class="{ selected: pieceSet.name === draftPreferences.theme.pieces }"

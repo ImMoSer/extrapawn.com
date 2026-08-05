@@ -3,10 +3,12 @@
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
-import { useThemeStore } from '@/features/settings'
+import { usePreferencesStore } from '@/features/settings'
 import ControlCenter from './ControlCenter.vue'
+import { useCrashtestStore } from '@/features/crashtest'
+import { usePuzzleStore } from '@/features/puzzle'
 import type { Key } from '@lichess-org/chessground/types'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -21,12 +23,27 @@ const props = withDefaults(
   }
 )
 
-const themeStore = useThemeStore()
+const preferencesStore = usePreferencesStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
 const coachStore = useCoachStore()
+const crashtestStore = useCrashtestStore()
 
-const isAnimationEnabled = computed(() => themeStore.currentTheme.animationDuration > 0)
+onMounted(() => {
+  crashtestStore.init()
+})
+
+onUnmounted(() => {
+  gameStore.stop()
+  try {
+    const puzzleStore = usePuzzleStore()
+    puzzleStore.reset()
+  } catch {
+    // Ignore
+  }
+})
+
+const isAnimationEnabled = computed(() => preferencesStore.preferences.theme.animationDuration > 0)
 const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
 const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS')
@@ -86,7 +103,7 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
                   :drawable-shapes="boardStore.drawableShapes"
                   :is-analysis-mode="isAnalysisMode"
                   :animation-enabled="isAnimationEnabled"
-                  :animation-duration="themeStore.currentTheme.animationDuration"
+                  :animation-duration="preferencesStore.preferences.theme.animationDuration"
                   :board-sync-counter="boardStore.boardSyncCounter"
                   :can-edit="true"
                   @user-move="handleUserMove"

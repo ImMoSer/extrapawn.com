@@ -4,7 +4,6 @@ import { useGameStore } from '@/entities/game'
 import { SettingsMenu, LanguageInitModal } from '@/features/settings'
 import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
 import GalaxyBackground from '@/shared/ui/visuals/GalaxyBackground.vue'
-import GlobalAssetLoader from './GlobalAssetLoader.vue'
 import { NavMenu } from '@/widgets/nav-menu'
 import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
 import TelegramPromptNotifier from './ui/TelegramPromptNotifier.vue'
@@ -16,10 +15,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
-import { useCrashtestStore } from '@/features/crashtest'
 
-const gameStore = useGameStore()
-const crashtestStore = useCrashtestStore()
 const route = useRoute()
 const { t, locale } = useI18n()
 
@@ -40,6 +36,7 @@ const openDrawer = () => {
 
 // Обработчик для перезагрузки/закрытия страницы
 const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
+  const gameStore = useGameStore()
   if (gameStore.isGameActive) {
     event.preventDefault()
     event.returnValue = t('features.gameplay.confirmExit.browserMessage')
@@ -53,7 +50,6 @@ onMounted(() => {
   mediaQuery.addEventListener('change', updateLandscape)
   updateLandscape() // Initial check
   window.addEventListener('beforeunload', beforeUnloadHandler)
-  crashtestStore.init()
 })
 
 onUnmounted(() => {
@@ -63,122 +59,120 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <GlobalAssetLoader>
-    <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
-      <n-message-provider :duration="6000">
-        <MessageBridge />
-        <n-dialog-provider>
-          <n-layout has-sider position="absolute" class="root-layout">
-            <!-- Desktop Sidebar (Landscape) -->
-            <n-layout-sider
-              v-if="isLandscape"
-              bordered
-              collapse-mode="width"
-              :collapsed-width="64"
-              :width="260"
-              :collapsed="isSidebarCollapsed"
-              show-trigger
-              class="app-sider"
-              @collapse="isSidebarCollapsed = true"
-              @expand="isSidebarCollapsed = false"
-            >
-              <!-- Top Action Bar (Settings) -->
-              <div class="sider-top-bar">
-                <SettingsMenu />
-              </div>
+  <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
+    <n-message-provider :duration="6000">
+      <MessageBridge />
+      <n-dialog-provider>
+        <n-layout has-sider position="absolute" class="root-layout">
+          <!-- Desktop Sidebar (Landscape) -->
+          <n-layout-sider
+            v-if="isLandscape"
+            bordered
+            collapse-mode="width"
+            :collapsed-width="64"
+            :width="260"
+            :collapsed="isSidebarCollapsed"
+            show-trigger
+            class="app-sider"
+            @collapse="isSidebarCollapsed = true"
+            @expand="isSidebarCollapsed = false"
+          >
+            <!-- Top Action Bar (Settings) -->
+            <div class="sider-top-bar">
+              <SettingsMenu />
+            </div>
 
-              <div class="sider-header">
-                <RouterLink to="/" class="logo-link">
+            <div class="sider-header">
+              <RouterLink to="/" class="logo-link">
+                <img
+                  v-if="isSidebarCollapsed"
+                  src="/webp/extra_pawn_black.webp"
+                  alt="Logo"
+                  class="logo-collapsed"
+                />
+                <div v-else class="brand-wrapper-sidebar">
                   <img
-                    v-if="isSidebarCollapsed"
                     src="/webp/extra_pawn_black.webp"
-                    alt="Logo"
-                    class="logo-collapsed"
+                    alt="EXTRAPAWN"
+                    class="sidebar-logo-icon"
                   />
-                  <div v-else class="brand-wrapper-sidebar">
-                    <img
-                      src="/webp/extra_pawn_black.webp"
-                      alt="EXTRAPAWN"
-                      class="sidebar-logo-icon"
-                    />
-                    <span class="brand-text sidebar-brand-name">EXTRAPAWN</span>
-                  </div>
-                </RouterLink>
-              </div>
+                  <span class="brand-text sidebar-brand-name">EXTRAPAWN</span>
+                </div>
+              </RouterLink>
+            </div>
 
-              <NavMenu :collapsed="isSidebarCollapsed" />
-            </n-layout-sider>
+            <NavMenu :collapsed="isSidebarCollapsed" />
+          </n-layout-sider>
 
-            <n-layout class="main-layout-container">
-              <!-- Mobile Header (Portrait) -->
-              <n-layout-header v-if="!isLandscape" bordered class="mobile-header">
-                <n-button quaternary circle @click="openDrawer">
-                  <template #icon>
-                    <n-icon>
-                      <MenuOutline />
-                    </n-icon>
-                  </template>
-                </n-button>
-
-                <RouterLink v-if="route.path !== '/'" to="/" class="mobile-logo">
-                  <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="mobile-logo-icon" />
-                  <span class="brand-text mobile-brand-name">EXTRAPAWN</span>
-                </RouterLink>
-
-                <SettingsMenu />
-              </n-layout-header>
-
-              <!-- Page Content -->
-              <n-layout-content :content-style="{ height: '100%' }" class="page-content">
-                <RouterView />
-              </n-layout-content>
-            </n-layout>
-
-            <!-- Mobile Menu Drawer (Swipe-out) -->
-            <n-drawer
-              v-model:show="isDrawerOpen"
-              placement="left"
-              :width="280"
-              class="app-drawer"
-              style="
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border-right: 1px solid var(--glass-border);
-              "
-            >
-              <n-drawer-content closable class="mobile-drawer-content">
-                <template #header>
-                  <RouterLink
-                    to="/"
-                    class="logo-link"
-                    style="text-decoration: none"
-                    @click="isDrawerOpen = false"
-                  >
-                    <n-space align="center" :wrap="false">
-                      <img src="/webp/extra_pawn_black.webp" alt="Logo" class="sidebar-logo-icon" />
-                      <n-text
-                        strong
-                        class="brand-text sidebar-brand-name"
-                        style="font-size: 1.2rem !important"
-                        >EXTRAPAWN</n-text
-                      >
-                    </n-space>
-                  </RouterLink>
+          <n-layout class="main-layout-container">
+            <!-- Mobile Header (Portrait) -->
+            <n-layout-header v-if="!isLandscape" bordered class="mobile-header">
+              <n-button quaternary circle @click="openDrawer">
+                <template #icon>
+                  <n-icon>
+                    <MenuOutline />
+                  </n-icon>
                 </template>
-                <NavMenu @select="isDrawerOpen = false" />
-              </n-drawer-content>
-            </n-drawer>
+              </n-button>
 
-            <ConfirmationModal />
-            <LanguageInitModal />
-            <AppUpdateNotifier />
-            <TelegramPromptNotifier />
+              <RouterLink v-if="route.path !== '/'" to="/" class="mobile-logo">
+                <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="mobile-logo-icon" />
+                <span class="brand-text mobile-brand-name">EXTRAPAWN</span>
+              </RouterLink>
+
+              <SettingsMenu />
+            </n-layout-header>
+
+            <!-- Page Content -->
+            <n-layout-content :content-style="{ height: '100%' }" class="page-content">
+              <RouterView />
+            </n-layout-content>
           </n-layout>
-          <GalaxyBackground />
-        </n-dialog-provider>
-      </n-message-provider>
-    </n-config-provider>
-  </GlobalAssetLoader>
+
+          <!-- Mobile Menu Drawer (Swipe-out) -->
+          <n-drawer
+            v-model:show="isDrawerOpen"
+            placement="left"
+            :width="280"
+            class="app-drawer"
+            style="
+              backdrop-filter: blur(16px);
+              -webkit-backdrop-filter: blur(16px);
+              border-right: 1px solid var(--glass-border);
+            "
+          >
+            <n-drawer-content closable class="mobile-drawer-content">
+              <template #header>
+                <RouterLink
+                  to="/"
+                  class="logo-link"
+                  style="text-decoration: none"
+                  @click="isDrawerOpen = false"
+                >
+                  <n-space align="center" :wrap="false">
+                    <img src="/webp/extra_pawn_black.webp" alt="Logo" class="sidebar-logo-icon" />
+                    <n-text
+                      strong
+                      class="brand-text sidebar-brand-name"
+                      style="font-size: 1.2rem !important"
+                      >EXTRAPAWN</n-text
+                    >
+                  </n-space>
+                </RouterLink>
+              </template>
+              <NavMenu @select="isDrawerOpen = false" />
+            </n-drawer-content>
+          </n-drawer>
+
+          <ConfirmationModal />
+          <LanguageInitModal />
+          <AppUpdateNotifier />
+          <TelegramPromptNotifier />
+        </n-layout>
+        <GalaxyBackground />
+      </n-dialog-provider>
+    </n-message-provider>
+  </n-config-provider>
 </template>
 
 <style>

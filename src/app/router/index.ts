@@ -1,6 +1,5 @@
 // src/router/index.ts
 import { useGameStore } from '@/entities/game'
-import { useGlobalTeardown } from '@/app/lib/useGlobalTeardown'
 import { usePuzzleStore } from '@/features/puzzle'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
@@ -187,8 +186,6 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from) => {
-  const gameStore = useGameStore()
-  const uiStore = useUiStore()
   const authStore = useAuthStore()
   const t = i18n.global.t
 
@@ -216,6 +213,7 @@ router.beforeEach(async (to, from) => {
   if (pendingGiftCode && isAuthenticated) {
     localStorage.removeItem('pending_gift_code')
     try {
+      const uiStore = useUiStore()
       const { apiClient } = await import('@/shared/api/client')
       const res = await apiClient<{ success: boolean }>('/billing/redeem', {
         method: 'POST',
@@ -241,6 +239,7 @@ router.beforeEach(async (to, from) => {
 
   if (requiresAuth && !isAuthenticated) {
     localStorage.setItem('redirect_after_login', to.fullPath)
+    const uiStore = useUiStore()
 
     const userConfirmedLogin = await uiStore.showConfirmation(
       t('shared.auth.requiredForAction'),
@@ -263,6 +262,8 @@ router.beforeEach(async (to, from) => {
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {
+    const gameStore = useGameStore()
+    const uiStore = useUiStore()
     if (gameStore.isGameActive) {
       const userConfirmed = await uiStore.showConfirmation(
         t('features.gameplay.confirmExit.title'),
@@ -270,15 +271,13 @@ router.beforeEach(async (to, from) => {
       )
 
       if (userConfirmed === 'confirm') {
-        const { triggerTeardown } = useGlobalTeardown()
-        triggerTeardown()
+        gameStore.stop()
         return
       } else {
         return false
       }
     } else {
-      const { triggerTeardown } = useGlobalTeardown()
-      triggerTeardown()
+      gameStore.stop()
       return
     }
   } else {

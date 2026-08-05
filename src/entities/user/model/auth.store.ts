@@ -24,6 +24,11 @@ export const useAuthStore = defineStore('auth', () => {
   const effectiveLichessUsername = computed(() => {
     return targetLichessUsername.value || userProfile.value?.id || ''
   })
+  const isMo3ep = computed(() => {
+    const profile = userProfile.value
+    if (!profile) return false
+    return profile.id === 'mo3ep' || profile.username === 'MO3EP'
+  })
 
   // --- ACTIONS ---
 
@@ -79,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoginModalVisible,
     targetLichessUsername,
     effectiveLichessUsername,
+    isMo3ep,
     // Getters
     getUserProfile,
     getIsAuthenticated,

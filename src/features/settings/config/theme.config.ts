@@ -1,10 +1,3 @@
-// src/stores/theme.store.ts
-import { ref, computed, watch } from 'vue'
-import { defineStore } from 'pinia'
-import logger from '@/shared/lib/logger'
-import { usePreferencesStore } from './preferences.store'
-
-// --- Типы и интерфейсы ---
 export interface BoardTheme {
   name: string
   imageFile: string
@@ -23,9 +16,7 @@ export interface AppTheme {
   boardSize: number
 }
 
-const DYNAMIC_STYLE_ELEMENT_ID = 'dynamic-chessboard-styles'
-
-const AVAILABLE_BOARDS: BoardTheme[] = [
+export const AVAILABLE_BOARDS: BoardTheme[] = [
   { name: 'blue-marble', imageFile: 'blue-marble.jpg', thumbnailFile: 'blue-marble.thumbnail.jpg' },
   { name: 'blue', imageFile: 'blue.png', thumbnailFile: 'blue.thumbnail.png' },
   { name: 'blue2', imageFile: 'blue2.jpg', thumbnailFile: 'blue2.thumbnail.jpg' },
@@ -59,7 +50,7 @@ const AVAILABLE_BOARDS: BoardTheme[] = [
   { name: 'wood4', imageFile: 'wood4.jpg', thumbnailFile: 'wood4.thumbnail.jpg' },
 ]
 
-const AVAILABLE_PIECE_SETS: PieceSet[] = [
+export const AVAILABLE_PIECE_SETS: PieceSet[] = [
   { name: 'alpha', previewPieceFile: '/piece/alpha/wN.svg' },
   { name: 'caliente', previewPieceFile: '/piece/caliente/wN.svg' },
   { name: 'california', previewPieceFile: '/piece/california/wN.svg' },
@@ -87,6 +78,7 @@ const AVAILABLE_PIECE_SETS: PieceSet[] = [
   { name: 'xkcd', previewPieceFile: '/piece/xkcd/wN.svg' },
 ]
 
+const DYNAMIC_STYLE_ELEMENT_ID = 'dynamic-chessboard-styles'
 const PIECE_ROLES = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
 const PIECE_COLORS = ['white', 'black']
 const PIECE_FILES: { [key: string]: { w: string; b: string } } = {
@@ -98,99 +90,32 @@ const PIECE_FILES: { [key: string]: { w: string; b: string } } = {
   king: { w: 'wK.svg', b: 'bK.svg' },
 }
 
-export const useThemeStore = defineStore('theme', () => {
-  const preferencesStore = usePreferencesStore()
-  const availableBoards = ref<BoardTheme[]>(AVAILABLE_BOARDS)
-  const availablePieceSets = ref<PieceSet[]>(AVAILABLE_PIECE_SETS)
+export function applyThemeStyle(boardName: string, pieceSetName: string) {
+  const board = AVAILABLE_BOARDS.find((b) => b.name === boardName) || AVAILABLE_BOARDS[0]
+  const pieceSet = AVAILABLE_PIECE_SETS.find((p) => p.name === pieceSetName) || AVAILABLE_PIECE_SETS[0]
 
-  const currentTheme = computed<AppTheme>(() => ({
-    board: preferencesStore.preferences.theme.board,
-    pieces: preferencesStore.preferences.theme.pieces,
-    animationDuration: preferencesStore.preferences.theme.animationDuration,
-    boardSize: 600, // kept for backward compatibility
-  }))
+  const boardPath = `/board/jpg_png/${board.imageFile}`
 
-  function applyTheme() {
-    const board = AVAILABLE_BOARDS.find((b) => b.name === currentTheme.value.board)
-    const pieceSet = AVAILABLE_PIECE_SETS.find((p) => p.name === currentTheme.value.pieces)
+  let css = `cg-board { background-image: url('${boardPath}'); }`
 
-    if (!board || !pieceSet) {
-      logger.error('[ThemeStore] Cannot apply theme, board or piece set not found.', currentTheme.value)
-      return
-    }
-
-    const boardPath = `/board/jpg_png/${board.imageFile}`
-
-    let css = `cg-board { background-image: url('${boardPath}'); }`
-
-    PIECE_ROLES.forEach((role) => {
-      PIECE_COLORS.forEach((color) => {
-        const roleFiles = PIECE_FILES[role]
-        if (roleFiles) {
-          const pieceFile = roleFiles[color === 'white' ? 'w' : 'b']
-          const piecePath = `/piece/${pieceSet.name}/${pieceFile}`
-          css += ` piece.${role}.${color} { background-image: url('${piecePath}'); }`
-        }
-      })
+  PIECE_ROLES.forEach((role) => {
+    PIECE_COLORS.forEach((color) => {
+      const roleFiles = PIECE_FILES[role]
+      if (roleFiles) {
+        const pieceFile = roleFiles[color === 'white' ? 'w' : 'b']
+        const piecePath = `/piece/${pieceSet.name}/${pieceFile}`
+        css += ` piece.${role}.${color} { background-image: url('${piecePath}'); }`
+      }
     })
+  })
 
-    let styleEl = document.getElementById(DYNAMIC_STYLE_ELEMENT_ID) as HTMLStyleElement | null
-    if (!styleEl) {
-      styleEl = document.createElement('style')
-      styleEl.id = DYNAMIC_STYLE_ELEMENT_ID
-      document.head.appendChild(styleEl)
-    }
-    if (styleEl) {
-      styleEl.textContent = css
-    }
-    logger.info('[ThemeStore] Dynamic styles applied.')
+  let styleEl = document.getElementById(DYNAMIC_STYLE_ELEMENT_ID) as HTMLStyleElement | null
+  if (!styleEl) {
+    styleEl = document.createElement('style')
+    styleEl.id = DYNAMIC_STYLE_ELEMENT_ID
+    document.head.appendChild(styleEl)
   }
-
-  function setBoard(boardName: string) {
-    if (currentTheme.value.board !== boardName) {
-      preferencesStore.updatePreferences({ theme: { board: boardName } })
-      applyTheme()
-    }
+  if (styleEl) {
+    styleEl.textContent = css
   }
-
-  function setPieceSet(pieceSetName: string) {
-    if (currentTheme.value.pieces !== pieceSetName) {
-      preferencesStore.updatePreferences({ theme: { pieces: pieceSetName } })
-      applyTheme()
-    }
-  }
-
-  function setAnimationDuration(duration: number) {
-    const newDuration = Math.max(0, Math.min(500, duration))
-    if (currentTheme.value.animationDuration !== newDuration) {
-      preferencesStore.updatePreferences({ theme: { animationDuration: newDuration } })
-    }
-  }
-
-  function setBoardSize(size: number) {
-    // Keep as no-op since boardSize is no longer saved/used
-    logger.debug(`[ThemeStore] setBoardSize ignored: ${size}px`)
-  }
-
-  // React to store change dynamically
-  watch(
-    () => preferencesStore.preferences.theme,
-    () => {
-      applyTheme()
-    },
-    { deep: true }
-  )
-
-  applyTheme()
-
-  return {
-    currentTheme,
-    availableBoards,
-    availablePieceSets,
-    setBoard,
-    setPieceSet,
-    applyTheme,
-    setAnimationDuration,
-    setBoardSize,
-  }
-})
+}
