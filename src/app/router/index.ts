@@ -144,7 +144,7 @@ const router = createRouter({
     {
       path: '/bonus',
       name: 'bonus',
-      component: () => import('@/pages/bonus/ui/BonusView.vue'),
+      component: () => import('@/pages/bonus').then((m) => m.BonusPage),
     },
     {
       path: '/learning-coach',
@@ -153,7 +153,7 @@ const router = createRouter({
     {
       path: '/task-today/:planId?/:puzzleType?/:puzzleId?',
       name: 'task-today',
-      component: () => import('@/pages/task-today/ui/TaskTodayPage.vue'),
+      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
       meta: { isGame: true, requiresAuth: true, game: 'task-today' },
       props: (route) => ({
         planId: route.params.planId,
