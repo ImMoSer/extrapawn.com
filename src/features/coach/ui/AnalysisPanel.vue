@@ -1,29 +1,12 @@
 <script setup lang="ts">
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
-import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { NIcon } from 'naive-ui'
+import { EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
 import { useCoachStore } from '../model/coach.store'
-import PgnMoveHistory from './PgnMoveHistory.vue'
 import QualityIcon from './QualityIcon.vue'
+import SettingsPanel from './SettingsPanel.vue'
 
 const coachStore = useCoachStore()
-const activeTab = computed({
-  get: () => coachStore.activeTab,
-  set: (val) => { coachStore.activeTab = val }
-})
-
-const route = useRoute()
-const isSparringRoute = computed(() => route.path.startsWith('/sparring'))
-
-watch(
-  () => route.path,
-  (newPath) => {
-    if (!newPath.startsWith('/sparring') && (activeTab.value === 'book' || activeTab.value === 'wiki')) {
-      activeTab.value = 'analysis'
-    }
-  },
-)
-
 
 const props = defineProps<{
   boardHeight: number
@@ -52,6 +35,7 @@ const emit = defineEmits<{
   (e: 'select-history-move', payload: { fen: string; index: number }): void
   (e: 'select-move', index: number): void
 }>()
+
 
 const QUALITY_BG: Record<string, string> = {
   brilliant: 'var(--color-neon-cyan)',
@@ -242,29 +226,33 @@ function getPlanBrief(move: CoachTopMove): string | null {
       </span>
     </div>
 
-    <!-- Tab Views: Book, Wiki, SF, or Analysis -->
-    <template v-if="activeTab === 'book' && isSparringRoute">
-      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
-        <slot name="book" />
+    <!-- Coach Header: Title & Coach Controls (Eye & Settings) -->
+    <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-elevated/40 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-text-primary">Coach Analysis</span>
       </div>
-    </template>
-
-    <template v-else-if="activeTab === 'wiki' && isSparringRoute">
-      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2">
-        <slot name="wiki" />
+      <div class="flex items-center gap-1.5">
+        <button
+          @click="coachStore.toggleVisuals()"
+          :title="coachStore.showVisuals ? 'Brett-Visualisierungen ausblenden' : 'Brett-Visualisierungen anzeigen'"
+          class="p-1 rounded border text-xs cursor-pointer flex items-center justify-center transition-colors"
+          :class="
+            coachStore.showVisuals
+              ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,229,255,0.3)]'
+              : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
+          "
+        >
+          <NIcon size="14">
+            <EyeOutline v-if="coachStore.showVisuals" />
+            <EyeOffOutline v-else />
+          </NIcon>
+        </button>
+        <SettingsPanel @change="coachStore.handleSettingsChange()" />
       </div>
-    </template>
+    </div>
 
-    <template v-else-if="activeTab === 'sf'">
-      <div class="flex-1 w-full overflow-hidden flex flex-col min-h-0 p-2 gap-2">
-        <slot name="sf" />
-        <PgnMoveHistory class="flex-1 min-h-0" />
-      </div>
-    </template>
-
-    <template v-else>
-      <!-- Compact status line -->
-      <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
+    <!-- Compact status line -->
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
 
       <span
         class="w-2 h-2 rounded-full border shrink-0"
@@ -540,8 +528,5 @@ function getPlanBrief(move: CoachTopMove): string | null {
         </div>
       </div>
     </div>
-
-
-    </template>
   </div>
 </template>

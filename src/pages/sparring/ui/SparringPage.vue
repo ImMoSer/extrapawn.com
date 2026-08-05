@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
+import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
 import { useBoardStore } from '@/entities/game'
 import { useSparringStore, SparringControlsPanel, NewGameModal } from '@/features/sparring'
 import { useCoachStore } from '@/features/coach'
@@ -44,7 +43,7 @@ onUnmounted(() => {
     </template>
 
     <template #right-panel>
-      <CoachSidebarWidget />
+      <RightSidebarSlot />
     </template>
   </GameLayout>
 </template>

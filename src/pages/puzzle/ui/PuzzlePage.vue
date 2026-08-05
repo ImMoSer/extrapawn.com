@@ -5,8 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { useCoachStore } from '@/features/coach'
 import { usePuzzleStore, type PuzzleSubmode } from '@/features/puzzle'
-import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
+import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
 import PuzzleSidebar from './PuzzleSidebar.vue'
 
 const props = defineProps({
@@ -104,7 +103,7 @@ onUnmounted(() => {
     </template>
 
     <template #right-panel>
-      <CoachSidebarWidget />
+      <RightSidebarSlot />
     </template>
   </GameLayout>
 </template>

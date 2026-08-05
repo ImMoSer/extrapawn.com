@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
+import { NPopover, NIcon } from 'naive-ui'
+import { SettingsOutline } from '@vicons/ionicons5'
 import { useCoachStore, type CoachVisualLayers } from '../model/coach.store'
 
 const emit = defineEmits<{
@@ -7,32 +9,10 @@ const emit = defineEmits<{
 }>()
 
 const coachStore = useCoachStore()
-
-const open = ref(false)
-const wrapRef = ref<HTMLElement | null>(null)
-
-function onClickOutside(e: MouseEvent) {
-  if (open.value && wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
-    open.value = false
-  }
-}
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') open.value = false
-}
-
-onMounted(() => {
-  document.addEventListener('mousedown', onClickOutside)
-  document.addEventListener('keydown', onKeydown)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', onClickOutside)
-  document.removeEventListener('keydown', onKeydown)
-})
+const showPopover = ref(false)
 
 function close() {
-  open.value = false
+  showPopover.value = false
   emit('change')
 }
 
@@ -42,21 +22,28 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
 </script>
 
 <template>
-  <div ref="wrapRef" class="relative">
-    <button
-      @click="open = !open"
-      title="Coach & Engine settings"
-      aria-label="Open coach settings"
-      :aria-expanded="open"
-      class="icon-btn p-1.5 rounded-md border text-xs cursor-pointer flex items-center justify-center transition-colors"
-      :class="open ? 'bg-border-hover text-text-primary border-neon-cyan' : 'bg-elevated text-text-secondary border-border'"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-    </button>
+  <n-popover
+    v-model:show="showPopover"
+    trigger="click"
+    placement="bottom-end"
+    raw
+    :show-arrow="false"
+  >
+    <template #trigger>
+      <button
+        title="Coach & Engine settings"
+        aria-label="Open coach settings"
+        class="icon-btn p-1.5 rounded-md border text-xs cursor-pointer flex items-center justify-center transition-colors"
+        :class="showPopover ? 'bg-border-hover text-text-primary border-neon-cyan' : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'"
+      >
+        <NIcon size="14">
+          <SettingsOutline />
+        </NIcon>
+      </button>
+    </template>
 
     <div
-      v-if="open"
-      class="absolute right-0 bottom-[calc(100%+8px)] w-[300px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-50 text-[11px]"
+      class="w-[300px] p-3.5 bg-surface border border-border-hover rounded-lg shadow-2xl z-[9999] text-[11px] text-text-primary"
     >
       <div class="text-[9px] uppercase tracking-wider font-bold text-text-secondary mb-2">
         Coach Settings
@@ -148,5 +135,5 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
         </button>
       </div>
     </div>
-  </div>
+  </n-popover>
 </template>

@@ -6,8 +6,7 @@ import {
   TaskSidebar, 
   TaskPlayTopInfo, 
 } from '@/features/task-today'
-import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
+import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
 import { onMounted, onUnmounted } from 'vue'
 
 defineProps({
@@ -58,7 +57,7 @@ onUnmounted(() => {
       <!-- Game board is handled by GameLayout -->
     </template>
     <template #right-panel>
-      <CoachSidebarWidget />
+      <RightSidebarSlot />
     </template>
   </GameLayout>
 </template>

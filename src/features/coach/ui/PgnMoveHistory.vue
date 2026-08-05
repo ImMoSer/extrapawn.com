@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore, PgnTree } from '@/entities/game'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
-import { useSparringStore } from '@/features/sparring'
 import { NText, NIcon } from 'naive-ui'
 import { 
   ArrowUpOutline, 
@@ -20,10 +19,9 @@ const props = withDefaults(
 )
 
 const gameStore = useGameStore()
-const sparringStore = useSparringStore()
 const scrollContainer = ref<HTMLElement | null>(null)
 
-const isReadOnly = computed(() => props.readOnly ?? sparringStore.gameStatus === 'playing')
+const isReadOnly = computed(() => props.readOnly ?? gameStore.gamePhase === 'PLAYING')
 
 watch(
   pgnTreeVersion,

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { AnalysisPanel, useCoachStore } from '@/features/coach'
-import { MozerBook, WikiBooksPanel } from '@/features/mozer-book'
-import { EngineEvaluationHeader } from '@/features/analysis'
 import { NButton } from 'naive-ui'
 
 withDefaults(
@@ -27,7 +25,7 @@ onUnmounted(() => {
 
 <template>
   <div class="coach-widget-container flex flex-col h-full w-full flex-1">
-    <div v-if="coachStore.isDecisionRequired" class="decision-banner p-3 bg-warning/15 border-b-2 border-warning rounded-md mb-2 flex flex-col gap-2 shadow-md">
+    <div v-if="coachStore.isDecisionRequired" class="decision-banner p-3 bg-warning/15 border-b-2 border-warning rounded-md mb-2 flex flex-col gap-2 shadow-md shrink-0">
       <div class="decision-title font-bold text-warning text-sm flex items-center gap-2">
         ⚠️ {{ coachStore.pendingMove?.quality?.toUpperCase() || 'PATZER DETEKTIRT' }}!
       </div>
@@ -43,8 +41,8 @@ onUnmounted(() => {
         </NButton>
       </div>
     </div>
-    <div class="sidebar-inner flex-1 min-h-0 w-full flex flex-col">
 
+    <div class="sidebar-inner flex-1 min-h-0 w-full flex flex-col">
       <AnalysisPanel
         :boardHeight="boardHeight"
         :engineLoading="!coachStore.stockfishReady || !coachStore.wasmReady"
@@ -68,17 +66,7 @@ onUnmounted(() => {
         @settings-change="coachStore.handleSettingsChange"
         @select-history-move="coachStore.selectHistoryMove"
         @select-move="coachStore.selectMove"
-      >
-        <template #book>
-          <MozerBook />
-        </template>
-        <template #wiki>
-          <WikiBooksPanel />
-        </template>
-        <template #sf>
-          <EngineEvaluationHeader />
-        </template>
-      </AnalysisPanel>
+      />
     </div>
   </div>
 </template>

@@ -3,14 +3,13 @@ import { onMounted, onUnmounted, computed } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useDialog, NText } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { GameLayout } from '@/widgets/game-layout'
+import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
 import {
   StudyImportCard,
   TrainingStatsPanel,
   useRepertoireTrainingStore
 } from '@/features/repertoire-training'
 import { useGameStore } from '@/entities/game'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
 
 const { t } = useI18n()
 const trainingStore = useRepertoireTrainingStore()
@@ -86,7 +85,7 @@ onBeforeRouteLeave((to, from, next) => {
     </template>
 
     <template #right-panel>
-      <CoachSidebarWidget />
+      <RightSidebarSlot />
     </template>
   </GameLayout>
 </template>

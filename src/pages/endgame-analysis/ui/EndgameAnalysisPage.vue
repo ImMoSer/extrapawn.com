@@ -11,8 +11,7 @@ import {
 } from '@/features/lichess-endgame-analysis'
 import { useLichessGamesDbStore } from '@/features/lichess-games-db'
 import { useAuthStore } from '@/entities/user'
-import { GameLayout } from '@/widgets/game-layout'
-import { CoachSidebarWidget } from '@/widgets/coach-sidebar'
+import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
 import { useCoachStore } from '@/features/coach'
 
 const { t } = useI18n()
@@ -127,7 +126,7 @@ const handleAnalyzeLocal = async () => {
         <!-- Board is handled by GameLayout -->
       </template>
       <template #right-panel>
-        <CoachSidebarWidget />
+        <RightSidebarSlot />
       </template>
     </GameLayout>
   </div>

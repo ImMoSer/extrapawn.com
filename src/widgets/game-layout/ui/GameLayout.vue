@@ -5,6 +5,7 @@ import { EvalBar, useCoachStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
 import { usePreferencesStore } from '@/features/settings'
 import ControlCenter from './ControlCenter.vue'
+import RightSidebarSlot from './RightSidebarSlot.vue'
 import { useCrashtestStore } from '@/features/crashtest'
 import { usePuzzleStore } from '@/features/puzzle'
 import type { Key } from '@lichess-org/chessground/types'
@@ -129,7 +130,9 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
       </div>
 
       <aside class="right-panel">
-        <slot name="right-panel"></slot>
+        <slot name="right-panel">
+          <RightSidebarSlot />
+        </slot>
       </aside>
     </div>
   </div>
