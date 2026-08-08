@@ -92,24 +92,28 @@ export interface CoachTopMove {
   tts?: string
   score?: number
   eval_cp?: number
-  eval_pawns: number
-  mate: number | null
-  isMate: boolean
-  mateIn: number | null
-  motifs: string[]
-  targetsKing: boolean
-  headline: string | null
-  tagline: string | null
-  plan_theme: string | null
-  plan_brief: string | null
+  eval_pawns?: number
+  mate?: number | null
+  isMate?: boolean
+  is_mate?: boolean
+  mateIn?: number | null
+  mate_in?: number | null
+  motifs?: string[]
+  targetsKing?: boolean
+  targets_king?: boolean
+  headline?: string | null
+  tagline?: string | null
+  plan_theme?: string | null
+  plan_brief?: string | null
   plan_pv?: string[]
   rawPv?: string[]
   pv?: string[]
   theoreticalContinuations?: Array<Record<string, unknown>>
 
   pvLine?: { san: string; tts?: string; tagline?: string }[]
-  character: string
-  character_reason: string
+  pv_line?: Array<Record<string, unknown>> | { san: string; tts?: string; tagline?: string }[]
+  character?: string
+  character_reason?: string
   explanation?: {
     quality: string
     summary: string
@@ -204,7 +208,7 @@ export interface CoachExplanation {
     zwischenzug?: Record<string, unknown>
   }
   engine_top_moves?: CoachTopMove[]
-  engine_candidates?: CoachTopMove[] | Record<string, unknown>[]
+  engine_candidates?: CoachTopMove[]
   visual_commands: CoachVisualCommands
   tactics?: Record<string, unknown>
   endgame?: Record<string, unknown>
@@ -234,11 +238,13 @@ export interface CoachOpeningMoveInfo {
 export interface CoachLastMoveAnalysis {
   loading?: boolean
   san: string
+  move_san?: string
   tts?: string
   fen?: string // The FEN BEFORE the move was played
   quality?: string
   summary?: string
-  details?: string
+  details?: string | string[]
+  consequence?: string
   motifs?: string[]
   bestMove?: string
   bestMoveSan?: string

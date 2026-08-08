@@ -1,5 +1,5 @@
 import type { IGameplayStrategy } from '@/entities/game'
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { useStudyStore } from '@/entities/study'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
@@ -21,6 +21,7 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
   private userColor: 'white' | 'black'
   private startFen: string
   private onNotification?: (msg: string) => void
+  private nextVariantTimeout: number | null = null
 
   constructor(
     userColor: 'white' | 'black',
@@ -137,14 +138,17 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
       this.onNotification(i18n.global.t('features.study.replyTraining.variationFinished'))
     }
 
-    setTimeout(async () => {
+    if (this.nextVariantTimeout) {
+      clearTimeout(this.nextVariantTimeout)
+    }
+
+    this.nextVariantTimeout = window.setTimeout(() => {
       if (!this.trainingStore.isTrainingActive) return
 
       this.trainingStore.resetVariant()
       pgnService.navigateToStart()
       
-      const gameStoreModule = await import('@/entities/game')
-      const gameStore = gameStoreModule.useGameStore()
+      const gameStore = useGameStore()
       gameStore.loadPosition(this.startFen)
 
       // Play system response if first move is bot's turn
@@ -157,6 +161,10 @@ export class RepertoireTrainingStrategy implements IGameplayStrategy {
   }
 
   onDestroy() {
+    if (this.nextVariantTimeout) {
+      clearTimeout(this.nextVariantTimeout)
+      this.nextVariantTimeout = null
+    }
     this.trainingStore.isTrainingActive = false
     this.trainingStore.trainingChapterId = null
     this.trainingStore.resetVariant()

@@ -21,7 +21,6 @@ export const useSparringStore = defineStore('sparring', () => {
   const startPosition = ref<string>(DEFAULT_FEN)
   const gameStatus = ref<SparringGameStatus>('setup')
   const isNewGameModalOpen = ref<boolean>(false)
-  const localFen = ref<string>(DEFAULT_FEN)
 
   const userId = computed(() => authStore.effectiveLichessUsername || 'mo3ep')
 
@@ -45,7 +44,6 @@ export const useSparringStore = defineStore('sparring', () => {
     gameId.value = newId
     userColor.value = params.color
     startPosition.value = params.fen
-    localFen.value = params.fen
     gameStatus.value = 'playing'
     isNewGameModalOpen.value = false
 
@@ -103,7 +101,6 @@ export const useSparringStore = defineStore('sparring', () => {
     startPosition,
     gameStatus,
     isNewGameModalOpen,
-    localFen,
     userId,
     openNewGameModal,
     closeNewGameModal,

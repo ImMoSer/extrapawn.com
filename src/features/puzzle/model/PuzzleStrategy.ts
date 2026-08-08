@@ -10,6 +10,9 @@ import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound.service'
 import { usePuzzleStore, type PuzzlePuzzle } from './puzzle.store'
 import { usePreferencesStore } from '@/features/settings'
+import i18n from '@/shared/config/i18n'
+
+const t = i18n.global.t
 
 export interface PuzzleStrategyCallbacks {
   onSuccess?: (timeMs?: number) => void | Promise<void>
@@ -199,15 +202,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
           soundService.playSound('game_play_out_start')
-          window.$message?.success('Tacktics completed! Playout starts.')
+          this.store.feedbackMessage = t('features.puzzle.feedback.playoutStart')
         }
       } else {
-        try {
-          const { useCoachStore } = await import('@/features/coach')
-          const feedbackStore = useCoachStore()
-          feedbackStore.coachMood = 'proud'
-        } catch (err) {
-          logger.error('[PuzzleStrategy] Error showing scenario correct feedback:', err)
+        const coachStore = useCoachStore()
+        if (coachStore.isCoachEnabled) {
+          coachStore.coachMood = 'proud'
         }
       }
     } else {
@@ -215,24 +215,16 @@ export class PuzzleStrategy implements IGameplayStrategy {
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
         soundService.playSound('game_play_out_start')
-        window.$message?.warning('Deviation! Continuing against the engine.')
+        this.store.feedbackMessage = t('features.puzzle.feedback.playoutDeviation')
       } else {
         logger.info(`[PuzzleStrategy] Takeback because expected move was: ${expectedMove}`)
 
+        const coachStore = useCoachStore()
         if (coachStore.isCoachEnabled) {
-          try {
-            const { useCoachStore } = await import('@/features/coach')
-            const feedbackStore = useCoachStore()
-            feedbackStore.coachMood = 'warning'
-
-            soundService.playSound('game_training_error')
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            this.gameStore.undoLastUserMove()
-            return
-          } catch (err) {
-            logger.error('[PuzzleStrategy] Error setting coach feedback for wrong scenario move:', err)
-          }
+          coachStore.coachMood = 'warning'
+          soundService.playSound('game_training_error')
+          this.gameStore.undoLastUserMove()
+          return
         }
 
         await this.triggerFailure()

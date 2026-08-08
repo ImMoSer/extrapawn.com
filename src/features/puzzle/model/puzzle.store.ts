@@ -82,9 +82,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   const activeSubmode = ref<PuzzleSubmode | null>(null)
   const activePuzzle = ref<PuzzlePuzzle | null>(null)
   const activeParams = ref<PuzzleParams>({})
-  const autoNextPuzzle = ref<boolean>(
-    localStorage.getItem('chess_auto_next_puzzle') === 'true'
-  )
+  const autoNextPuzzle = computed({
+    get: () => preferencesStore.preferences.puzzle.autoNext,
+    set: (val: boolean) => preferencesStore.updatePreferences({ puzzle: { autoNext: val } }),
+  })
 
   const autoNextTimeout = ref<number | null>(null)
 
@@ -97,7 +98,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
   function toggleAutoNext() {
     autoNextPuzzle.value = !autoNextPuzzle.value
-    localStorage.setItem('chess_auto_next_puzzle', String(autoNextPuzzle.value))
   }
   
   const feedbackMessage = ref(t('features.puzzle.feedback.pressNext'))
@@ -162,6 +162,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     if (isWin) {
       feedbackMessage.value = t('features.puzzle.feedback.win')
       if (autoNextPuzzle.value) {
+        clearAutoNextTimeout()
         const delay = preferencesStore.preferences.delays.nextPuzzleDelayMs || 1200
         autoNextTimeout.value = window.setTimeout(() => {
           void loadNextPuzzle(puzzle.puzzle_type, activeParams.value)
@@ -176,6 +177,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       } else {
         feedbackMessage.value = t('features.puzzle.feedback.loss')
       }
+      clearAutoNextTimeout()
       const delay = preferencesStore.preferences.delays.restartDelayMs || 1500
       autoNextTimeout.value = window.setTimeout(() => {
         localRestart()

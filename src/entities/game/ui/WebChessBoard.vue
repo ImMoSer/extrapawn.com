@@ -250,7 +250,6 @@ onUnmounted(() => {
 watch(
   [
     () => props.fen,
-    () => props.boardSyncCounter,
     () => props.orientation,
     () => props.turnColor,
     () => props.dests,
@@ -264,7 +263,6 @@ watch(
   ],
   ([
     fen,
-    ,
     orientation,
     turnColor,
     dests,

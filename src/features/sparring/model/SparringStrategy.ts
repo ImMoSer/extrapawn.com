@@ -1,6 +1,5 @@
 import type { IGameplayStrategy } from '@/entities/game'
 import { enginePlayService, useGameStore } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { usePreferencesStore } from '@/features/settings'
 import type { EngineId } from '@/shared/types/api.types'
@@ -40,7 +39,6 @@ export class SparringStrategy implements IGameplayStrategy {
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
-    const { usePreferencesStore } = await import('@/features/settings')
     const preferencesStore = usePreferencesStore()
     const gameStore = useGameStore()
 
@@ -49,7 +47,7 @@ export class SparringStrategy implements IGameplayStrategy {
       throw new Error('[SparringStrategy] Fail-Fast: No engine selected for bot move')
     }
 
-    // 2. Direct Engine Move (Fail-Fast: no MozerBook fallback)
+    // Direct Engine Move
     logger.info(`[SparringStrategy] Requesting bot move from selected engine: ${selectedEngineId}`)
     const moveUci = await enginePlayService.getBestMove(selectedEngineId as EngineId, fen)
     if (!moveUci) {
@@ -76,11 +74,8 @@ export class SparringStrategy implements IGameplayStrategy {
 
     const preferencesStore = usePreferencesStore()
     const isCrashtest = preferencesStore.preferences.gameplay.global_crashtest
-    const authStore = useAuthStore()
-    const profile = authStore.userProfile
-    const isMo3ep = profile && (profile.id === 'mo3ep' || profile.username === 'MO3EP')
 
-    if (isCrashtest && isMo3ep) {
+    if (isCrashtest) {
       const delay = preferencesStore.preferences.delays.crashtestDelayMs
 
       logger.info(`[SparringStrategy] Auto-restart triggered (isCrashtest=${isCrashtest}). Restarting in ${delay}ms.`)

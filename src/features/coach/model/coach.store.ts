@@ -72,42 +72,43 @@ export const useCoachStore = defineStore('coach', () => {
 
   // Derived Getters from posExplanation
   const topMoves = computed<CoachTopMove[]>(() => {
-    const candidates = (posExplanation.value?.engine_candidates || posExplanation.value?.engine_top_moves || []) as Record<string, unknown>[]
+    const candidates = posExplanation.value?.engine_candidates || posExplanation.value?.engine_top_moves || []
     return candidates.map((c, index) => ({
-      rank: (c.rank as number) || index + 1,
-      san: (c.san as string) || '',
-      uci: (c.uci as string) || '',
-      move: (c.uci as string) || '',
-      quality: (c.quality as string) || undefined,
+      rank: c.rank || index + 1,
+      san: c.san || '',
+      uci: c.uci || '',
+      move: c.uci || '',
+      quality: c.quality,
       eval_pawns: typeof c.eval_pawns === 'number' ? c.eval_pawns : 0,
-      isMate: !!c.is_mate,
-      mateIn: (c.mate_in as number | null) ?? null,
-      mate: (c.mate_in as number | null) ?? null,
-      motifs: Array.isArray(c.motifs) ? (c.motifs as string[]) : [],
-      targetsKing: !!c.targets_king,
-      headline: (c.headline as string | null) || null,
-      tagline: (c.tagline as string | null) || null,
-      plan_theme: (c.plan_theme as string | null) || null,
-      plan_brief: (c.plan_brief as string | null) || null,
-      character: String(c.character || 'Solid'),
-      character_reason: String(c.character_reason || ''),
-      wdl: (c.wdl as CoachTopMove['wdl']) || undefined,
-      pvLine: Array.isArray(c.pv_line) ? c.pv_line : [],
-      explanation: (c.explanation as CoachTopMove['explanation']) || undefined,
+      isMate: !!(c.isMate ?? c.is_mate),
+      mateIn: c.mateIn ?? c.mate_in ?? null,
+      mate: c.mateIn ?? c.mate_in ?? null,
+      motifs: Array.isArray(c.motifs) ? c.motifs : [],
+      targetsKing: !!(c.targetsKing ?? c.targets_king),
+      headline: c.headline || null,
+      tagline: c.tagline || null,
+      plan_theme: c.plan_theme || null,
+      plan_brief: c.plan_brief || null,
+      character: c.character || 'Solid',
+      character_reason: c.character_reason || '',
+      wdl: c.wdl,
+      pvLine: (Array.isArray(c.pv_line) ? c.pv_line : c.pvLine || []) as CoachTopMove['pvLine'],
+      explanation: c.explanation,
       visual_commands: c.visual_commands || null,
-    })) as CoachTopMove[]
+    }))
   })
 
   const lastMoveAnalysis = computed<CoachLastMoveAnalysis | null>(() => {
-    if (!posExplanation.value?.last_move_analysis) return null
-    const lma = posExplanation.value.last_move_analysis
-    const moveSan = (lma.san || lma.move_san || '') as string
+    const lma = posExplanation.value?.last_move_analysis
+    if (!lma) return null
+    const moveSan = lma.san || lma.move_san || ''
+    const detailsStr = Array.isArray(lma.details) ? lma.details.join(' ') : lma.details || undefined
     return {
       ...lma,
       loading: isAnalyzing.value,
       san: moveSan,
-      details: Array.isArray(lma.details) ? lma.details.join(' ') : (lma.details as string) || undefined,
-    } as CoachLastMoveAnalysis
+      details: detailsStr,
+    }
   })
 
   const sideToMove = computed<'w' | 'b'>(() => {
@@ -133,21 +134,21 @@ export const useCoachStore = defineStore('coach', () => {
   const lastMoveConsequence = computed<string | null>(() => {
     const exp = posExplanation.value
     if (!exp) return null
-    const lma = exp.last_move_analysis as Record<string, unknown> | undefined
-    return (lma?.consequence as string) || exp.strategic_summary || exp.key_imbalance || null
+    const lma = exp.last_move_analysis
+    return lma?.consequence || exp.strategic_summary || exp.key_imbalance || null
   })
 
   // EvalBar integration getters
   const evalCp = computed<number | null>(() => {
     const top = topMoves.value[0]
     if (!top || top.isMate) return null
-    return Math.round(top.eval_pawns * 100)
+    return Math.round((top.eval_pawns ?? 0) * 100)
   })
 
   const evalMate = computed<number | null>(() => {
     const top = topMoves.value[0]
     if (!top || !top.isMate) return null
-    return top.mateIn
+    return top.mateIn ?? null
   })
 
   const gameResult = computed<string | null>(() => null)

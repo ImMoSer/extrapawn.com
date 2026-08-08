@@ -1,6 +1,5 @@
 // src/entities/game/model/board.store.ts
 import logger from '@/shared/lib/logger'
-import { pgnService, NAG_MAPPING } from '@/shared/lib/pgn/PgnService'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Color as ChessgroundColor, Dests, Key } from '@lichess-org/chessground/types'
 import { Chess } from 'chessops/chess'
@@ -40,6 +39,7 @@ const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 export const useBoardStore = defineStore('board', () => {
   const fen = ref<string>(INITIAL_FEN)
+  /** @deprecated Board state is reactively tracked natively via Vue 3. Deprecated legacy property. */
   const boardSyncCounter = ref(0)
   const chessPosition = shallowRef(Chess.fromSetup(parseFen(fen.value).unwrap()).unwrap())
 
@@ -84,47 +84,20 @@ export const useBoardStore = defineStore('board', () => {
     drawableShapes.value = []
     coachShapes.value = []
     lastNag.value = null
-    boardSyncCounter.value++
     soundService.playSound('board_load_position')
   }
 
-  function syncVisualCues() {
-    // Sync visual cues from PgnService
-    const lastPgnMove = pgnService.getLastMove()
-    if (lastPgnMove && lastPgnMove.uci && lastPgnMove.uci.length >= 4) {
-      lastMove.value = [lastPgnMove.uci.slice(0, 2) as Key, lastPgnMove.uci.slice(2, 4) as Key]
-    } else {
-      lastMove.value = undefined
+  function syncVisualCues(cues?: {
+    lastMove?: [Key, Key]
+    lastNag?: NagMarker | null
+    shapes?: DrawShape[]
+  }) {
+    if (cues) {
+      if (cues.lastMove !== undefined) lastMove.value = cues.lastMove
+      if (cues.lastNag !== undefined) lastNag.value = cues.lastNag
+      if (cues.shapes !== undefined) drawableShapes.value = cues.shapes
     }
-
-    const currentNode = pgnService.getCurrentNode()
-    const meta = currentNode.metadata
-    const targetSquare = currentNode.uci && currentNode.uci.length >= 4 ? (currentNode.uci.slice(2, 4) as Key) : null
-
-    if (meta && meta.nag && meta.nag !== 'OK' && targetSquare) {
-      lastNag.value = {
-        square: targetSquare,
-        nag: meta.nag,
-        quality: meta.quality || 'good',
-      }
-    } else if (currentNode.nag && targetSquare) {
-      const mapping = NAG_MAPPING[currentNode.nag]
-      if (mapping) {
-        lastNag.value = {
-          square: targetSquare,
-          nag: mapping.symbol,
-          quality: mapping.quality,
-        }
-      } else {
-        lastNag.value = null
-      }
-    } else {
-      lastNag.value = null
-    }
-
-    drawableShapes.value = (currentNode.shapes as DrawShape[]) || []
     coachShapes.value = []
-    boardSyncCounter.value++
   }
 
   function loadPosition(newFen: string) {
@@ -167,7 +140,6 @@ export const useBoardStore = defineStore('board', () => {
       lastMove.value = [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key]
     }
     lastMoveTimestamp.value = Date.now()
-    boardSyncCounter.value++
 
     if (!options?.skipSound) {
       if (isCastle) {
@@ -258,9 +230,9 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function resetBoardState() {
+    cancelPromotion()
     setupPosition(INITIAL_FEN)
     orientation.value = 'white'
-    promotionState.value = null
     drawableShapes.value = []
     coachShapes.value = []
     lastNag.value = null

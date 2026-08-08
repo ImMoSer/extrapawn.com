@@ -7,7 +7,6 @@ import { usePreferencesStore } from '@/features/settings'
 import ControlCenter from './ControlCenter.vue'
 import RightSidebarSlot from './RightSidebarSlot.vue'
 import { useCrashtestStore } from '@/features/crashtest'
-import { usePuzzleStore } from '@/features/puzzle'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 
@@ -36,12 +35,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   gameStore.stop()
-  try {
-    const puzzleStore = usePuzzleStore()
-    puzzleStore.reset()
-  } catch {
-    // Ignore
-  }
 })
 
 const isAnimationEnabled = computed(() => preferencesStore.preferences.theme.animationDuration > 0)

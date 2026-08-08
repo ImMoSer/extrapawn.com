@@ -4,7 +4,7 @@ import { Chess } from 'chessops/chess'
 import { scalachessCharPair } from 'chessops/compat'
 import { makeFen, parseFen } from 'chessops/fen'
 import { parseUci } from 'chessops/util'
-import { readonly, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
 import logger from '@/shared/lib/logger'
 
 export interface DrawShape {
@@ -83,17 +83,16 @@ export interface PgnStringOptions {
 
 const ROOT_NODE_ID = '__ROOT__'
 
-const treeVersion = ref(0)
-
-class PgnServiceController {
+export class PgnTreeController {
+  public readonly version = ref(0)
   private rootNode!: PgnNode
   private currentNode!: PgnNode
   private currentPath!: string
   private gameResult: string = '*'
 
-  constructor() {
-    logger.info('[PgnService] Initialized with tree structure.')
-    this.reset('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+  constructor(initialFen: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+    logger.info('[PgnTreeController] Initialized with tree structure.')
+    this.reset(initialFen)
   }
 
   public reset(fen: string): void {
@@ -119,7 +118,7 @@ class PgnServiceController {
     this.currentNode = this.rootNode
     this.currentPath = ''
     this.gameResult = '*'
-    treeVersion.value++
+    this.version.value++
     logger.info(
       `[PgnService] Reset with FEN: ${normalizedFen}. Current node is root. Path: "${this.currentPath}"`,
     )
@@ -130,14 +129,11 @@ class PgnServiceController {
     this.currentNode = root
     this.currentPath = ''
 
-    // reset game result or store it in PgnNode if needed?
-    // For now assume logic handles result separately or it's not part of the tree node properly.
-
     if (currentPath) {
       this.navigateToPath(currentPath)
     }
 
-    treeVersion.value++
+    this.version.value++
     logger.info(`[PgnService] Root swapped.`)
   }
 
@@ -164,7 +160,7 @@ class PgnServiceController {
       // logger.debug(`[PgnService] Node with ID ${nodeId} (UCI: ${data.uci}) already exists as a child. Navigating to it.`)
       this.currentNode = existingChild
       this.currentPath = this.buildPath(this.currentNode)
-      treeVersion.value++
+      this.version.value++
       return this.currentNode
     }
 
@@ -184,7 +180,7 @@ class PgnServiceController {
     parentNode.children.push(newNode)
     this.currentNode = newNode
     this.currentPath = this.buildPath(this.currentNode)
-    treeVersion.value++
+    this.version.value++
 
     // logger.debug(`[PgnService] Node added: Ply ${newNode.ply}, SAN ${newNode.san}, ID ${newNode.id}. Path: "${this.currentPath}"`)
     return newNode
@@ -201,7 +197,7 @@ class PgnServiceController {
       }
       this.currentNode = parentNode
       this.currentPath = this.buildPath(parentNode)
-      treeVersion.value++
+      this.version.value++
     }
     return newNode
   }
@@ -223,7 +219,7 @@ class PgnServiceController {
   public navigateToNode(node: PgnNode): boolean {
     this.currentNode = node
     this.currentPath = this.buildPath(this.currentNode)
-    treeVersion.value++
+    this.version.value++
     // logger.debug(`[PgnService] Navigated directly to node: Ply ${node.ply}, SAN ${node.san}. Path: "${this.currentPath}"`)
     return true
   }
@@ -435,7 +431,7 @@ class PgnServiceController {
       const undoneNode = this.currentNode
       this.currentNode = parentNode
       this.currentPath = this.buildPath(this.currentNode)
-      treeVersion.value++
+      this.version.value++
       logger.info(
         `[PgnService] Undid move. Current node is now ply ${this.currentNode.ply}, SAN (of parent's move): ${this.currentNode.san}. Path: "${this.currentPath}"`,
       )
@@ -470,7 +466,7 @@ class PgnServiceController {
     if (targetNode && currentPathSegment.length === 0) {
       this.currentNode = targetNode
       this.currentPath = path
-      treeVersion.value++
+      this.version.value++
       // logger.debug( `[PgnService] Navigated to path: "${path}", Ply: ${this.currentNode.ply}`      )
       return true
     }
@@ -506,7 +502,7 @@ class PgnServiceController {
     if (targetNode && targetNode.ply === ply) {
       this.currentNode = targetNode
       this.currentPath = constructedPath
-      treeVersion.value++
+      this.version.value++
       // logger.debug(`[PgnService] Navigated to ply: ${this.currentNode.ply} on main line. Path: "${this.currentPath}"`)
       return true
     }
@@ -522,7 +518,7 @@ class PgnServiceController {
     if (parentNode) {
       this.currentNode = parentNode
       this.currentPath = this.buildPath(this.currentNode)
-      treeVersion.value++
+      this.version.value++
       // logger.debug(`[PgnService] Navigated backward to ply: ${this.currentNode.ply}. Path: "${this.currentPath}"`)
       return true
     }
@@ -535,7 +531,7 @@ class PgnServiceController {
       if (childNode) {
         this.currentNode = childNode
         this.currentPath += childNode.id
-        treeVersion.value++
+        this.version.value++
         // logger.debug(`[PgnService] Navigated forward to ply: ${this.currentNode.ply} (Variation ${variationIndex}). Path: "${this.currentPath}"`)
         return true
       }
@@ -546,7 +542,7 @@ class PgnServiceController {
   public navigateToStart(): void {
     this.currentNode = this.rootNode
     this.currentPath = ''
-    treeVersion.value++
+    this.version.value++
     // logger.debug(`[PgnService] Navigated to start (ply 0). Path: "${this.currentPath}"`)
   }
 
@@ -559,7 +555,7 @@ class PgnServiceController {
     }
     this.currentNode = target
     this.currentPath = path
-    treeVersion.value++
+    this.version.value++
   }
 
   public promoteToVariantMainline(node: PgnNode): void {
@@ -571,7 +567,7 @@ class PgnServiceController {
       // Move to index 0
       parent.children.splice(index, 1)
       parent.children.unshift(node)
-      treeVersion.value++
+      this.version.value++
       logger.info(
         `[PgnService] Promoted node ${node.san} (ply ${node.ply}) to its variant mainline.`,
       )
@@ -593,7 +589,7 @@ class PgnServiceController {
     }
 
     if (changed) {
-      treeVersion.value++
+      this.version.value++
       logger.info(`[PgnService] Promoted node ${node.san} (ply ${node.ply}) to absolute mainline.`)
     }
   }
@@ -621,7 +617,7 @@ class PgnServiceController {
         this.navigateToNode(parent)
       }
 
-      treeVersion.value++
+      this.version.value++
       logger.info(`[PgnService] Deleted node ${node.san} (ply ${node.ply}) and its subtree.`)
     }
   }
@@ -647,7 +643,7 @@ class PgnServiceController {
         node.metadata = { ...node.metadata, ...data.metadata }
       }
     }
-    treeVersion.value++
+    this.version.value++
   }
 
   public updateCommentShapes(node: PgnNode, shapes: DrawShape[]): void {
@@ -655,7 +651,7 @@ class PgnServiceController {
     const cleanComment = this.getCleanComment(node.comment || '')
     const tags = this.formatShapesToTags(shapes)
     node.comment = tags ? (cleanComment ? `${cleanComment} ${tags}` : tags) : cleanComment
-    treeVersion.value++
+    this.version.value++
   }
 
   public getCleanComment(comment: string): string {
@@ -688,7 +684,7 @@ class PgnServiceController {
 
   public toggleNodeCollapse(node: PgnNode): void {
     node.isCollapsed = !node.isCollapsed
-    treeVersion.value++
+    this.version.value++
   }
 
   public setCollapseRecursive(node: PgnNode, state: boolean): void {
@@ -699,7 +695,7 @@ class PgnServiceController {
       n.children.forEach(traverse)
     }
     traverse(node)
-    treeVersion.value++
+    this.version.value++
   }
 
   public setCollapseGlobal(state: boolean): void {
@@ -710,7 +706,7 @@ class PgnServiceController {
       n.children.forEach(traverse)
     }
     traverse(this.rootNode)
-    treeVersion.value++
+    this.version.value++
   }
 
   public addVariation(
@@ -744,7 +740,7 @@ class PgnServiceController {
       }
       current = next
     }
-    treeVersion.value++
+    this.version.value++
   }
 
   public getGameResult(): string {
@@ -789,7 +785,7 @@ class PgnServiceController {
 
     merge(target, source)
     if (changed) {
-      treeVersion.value++
+      this.version.value++
       logger.info(`[PgnService] Subtree merged into ply ${target.ply}`)
     }
   }
@@ -832,6 +828,6 @@ class PgnServiceController {
   }
 }
 
-export const pgnService = new PgnServiceController()
+export const pgnService = new PgnTreeController()
 
-export const pgnTreeVersion = readonly(treeVersion)
+export const pgnTreeVersion = computed(() => pgnService.version.value)

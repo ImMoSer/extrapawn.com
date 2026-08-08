@@ -2,19 +2,13 @@
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
-import { useBoardStore } from '@/entities/game'
 import { useSparringStore, SparringControlsPanel, NewGameModal } from '@/features/sparring'
 import { useCoachStore } from '@/features/coach'
 
 const route = useRoute()
 const router = useRouter()
-const boardStore = useBoardStore()
 const sparringStore = useSparringStore()
 const coachStore = useCoachStore()
-
-watch(() => boardStore.fen, (newFen) => {
-  sparringStore.localFen = newFen
-})
 
 watch(() => route.params.gameId, (newGameId) => {
   sparringStore.initializeFromRoute(newGameId as string | undefined, router)

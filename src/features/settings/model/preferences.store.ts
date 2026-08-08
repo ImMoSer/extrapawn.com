@@ -40,12 +40,25 @@ export interface DelayPreferences {
   crashtestDelayMs: number
 }
 
+export interface PuzzlePreferences {
+  autoNext: boolean
+}
+
+export interface AnalysisPreferences {
+  multiPv: number
+  searchTime: number
+  showArrows: boolean
+  engineVersion: 'lite' | 'full'
+}
+
 export interface UserPreferencesDto {
   theme: ThemePreferences
   engine: EnginePreferences
   audio: AudioPreferences
   gameplay: GameplayPreferences
   delays: DelayPreferences
+  puzzle: PuzzlePreferences
+  analysis: AnalysisPreferences
 }
 
 export interface BackendUserPreferencesDto {
@@ -54,6 +67,8 @@ export interface BackendUserPreferencesDto {
   audio: AudioPreferences
   gameplay: Omit<GameplayPreferences, 'global_crashtest'> & { global_autoplay?: boolean }
   delays: Omit<DelayPreferences, 'crashtestDelayMs'> & { autoPlayDelayMs?: number }
+  puzzle?: PuzzlePreferences
+  analysis?: AnalysisPreferences
 }
 
 export type DeepPartial<T> = {
@@ -86,6 +101,15 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     nextPuzzleDelayMs: 2000,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
+  },
+  puzzle: {
+    autoNext: false,
+  },
+  analysis: {
+    multiPv: 3,
+    searchTime: 5,
+    showArrows: true,
+    engineVersion: 'lite',
   },
 }
 
@@ -218,6 +242,15 @@ export const usePreferencesStore = defineStore('preferences', () => {
           nextPuzzleDelayMs: rawBackendPrefs.delays?.nextPuzzleDelayMs ?? DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
           restartDelayMs: rawBackendPrefs.delays?.restartDelayMs ?? DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
           crashtestDelayMs: rawBackendPrefs.delays?.autoPlayDelayMs ?? DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
+        },
+        puzzle: {
+          autoNext: rawBackendPrefs.puzzle?.autoNext ?? DEFAULT_USER_PREFERENCES.puzzle.autoNext,
+        },
+        analysis: {
+          multiPv: rawBackendPrefs.analysis?.multiPv ?? DEFAULT_USER_PREFERENCES.analysis.multiPv,
+          searchTime: rawBackendPrefs.analysis?.searchTime ?? DEFAULT_USER_PREFERENCES.analysis.searchTime,
+          showArrows: rawBackendPrefs.analysis?.showArrows ?? DEFAULT_USER_PREFERENCES.analysis.showArrows,
+          engineVersion: rawBackendPrefs.analysis?.engineVersion ?? DEFAULT_USER_PREFERENCES.analysis.engineVersion,
         },
       }
 

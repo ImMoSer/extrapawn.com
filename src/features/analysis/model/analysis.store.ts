@@ -1,5 +1,6 @@
 import { analysisService, type EvaluatedLineWithSan } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { usePreferencesStore } from '@/features/settings'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
@@ -17,6 +18,7 @@ const ARROW_STYLES = [
 export const useAnalysisStore = defineStore('analysis', () => {
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
+  const preferencesStore = usePreferencesStore()
 
   const isAnalysisActive = ref(false)
   const analysisLines = ref<EvaluatedLineWithSan[]>([])
@@ -126,20 +128,13 @@ export const useAnalysisStore = defineStore('analysis', () => {
   async function initialize() {
     await analysisService.initialize()
 
-    // Load options
-    const savedMultiPv = localStorage.getItem('analysis_multi_pv')
-    multiPv.value = savedMultiPv ? parseInt(savedMultiPv, 10) : 3
+    // Load options from preferencesStore
+    const prefs = preferencesStore.preferences.analysis
+    multiPv.value = prefs.multiPv
+    searchTime.value = prefs.searchTime
+    showArrows.value = prefs.showArrows
+    engineVersion.value = prefs.engineVersion
 
-    const savedSearchTime = localStorage.getItem('analysis_search_time')
-    searchTime.value = savedSearchTime ? parseInt(savedSearchTime, 10) : 5
-
-    const savedShowArrows = localStorage.getItem('analysis_show_arrows')
-    showArrows.value = savedShowArrows !== 'false'
-
-    const savedVersion = localStorage.getItem('analysis_engine_version') as 'lite' | 'full' | null
-    if (savedVersion === 'full' || savedVersion === 'lite') {
-      engineVersion.value = savedVersion
-    }
     await analysisService.setEngineVariant(engineVersion.value)
 
     logger.info(
@@ -160,27 +155,27 @@ export const useAnalysisStore = defineStore('analysis', () => {
     const val = Math.max(1, Math.min(value, 5))
     if (multiPv.value === val) return
     multiPv.value = val
-    localStorage.setItem('analysis_multi_pv', String(val))
+    await preferencesStore.updatePreferences({ analysis: { multiPv: val } })
     await triggerRestart()
   }
 
   async function setSearchTime(value: number) {
     if (searchTime.value === value) return
     searchTime.value = value
-    localStorage.setItem('analysis_search_time', String(value))
+    await preferencesStore.updatePreferences({ analysis: { searchTime: value } })
     await triggerRestart()
   }
 
   function setShowArrows(value: boolean) {
     if (showArrows.value === value) return
     showArrows.value = value
-    localStorage.setItem('analysis_show_arrows', String(value))
+    preferencesStore.updatePreferences({ analysis: { showArrows: value } })
   }
 
   async function setEngineVersion(version: 'lite' | 'full') {
     if (engineVersion.value === version) return
     engineVersion.value = version
-    localStorage.setItem('analysis_engine_version', version)
+    await preferencesStore.updatePreferences({ analysis: { engineVersion: version } })
     await analysisService.setEngineVariant(version)
     await triggerRestart()
   }

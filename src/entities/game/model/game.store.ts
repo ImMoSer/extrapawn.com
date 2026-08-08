@@ -8,7 +8,7 @@ import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { pgnService, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { pgnService, NAG_MAPPING, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import type { Outcome as ChessopsOutcome } from 'chessops'
 
 import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
@@ -17,6 +17,10 @@ import { GameAudioEngine } from './GameAudioEngine'
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS'
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+function normalizeFenForRepetition(fen: string): string {
+  return fen.trim().split(/\s+/).slice(0, 4).join(' ')
+}
 
 export const useGameStore = defineStore('game', () => {
   const boardStore = useBoardStore()
@@ -29,29 +33,63 @@ export const useGameStore = defineStore('game', () => {
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
 
-  const stopHandlers = ref<Array<() => void>>([])
+  const stopHandlers = new Set<() => void>()
 
   function registerStopHandler(handler: (() => void) | null): () => void {
     if (!handler) {
-      stopHandlers.value = []
+      stopHandlers.clear()
       return () => {}
     }
-    if (!stopHandlers.value.includes(handler)) {
-      stopHandlers.value.push(handler)
-    }
+    stopHandlers.add(handler)
     return () => {
-      stopHandlers.value = stopHandlers.value.filter((h) => h !== handler)
+      stopHandlers.delete(handler)
     }
   }
 
   function _executeStopHandlers() {
-    for (const handler of stopHandlers.value) {
+    for (const handler of stopHandlers) {
       try {
         handler()
       } catch (err) {
         logger.error('[GameStore] Error executing stop handler:', err)
       }
     }
+    stopHandlers.clear()
+  }
+
+  function syncPgnVisualCuesToBoard() {
+    const lastPgnMove = pgnService.getLastMove()
+    const lastMove = lastPgnMove && lastPgnMove.uci && lastPgnMove.uci.length >= 4
+      ? ([lastPgnMove.uci.slice(0, 2) as Key, lastPgnMove.uci.slice(2, 4) as Key] as [Key, Key])
+      : undefined
+
+    const currentNode = pgnService.getCurrentNode()
+    const meta = currentNode.metadata
+    const targetSquare = currentNode.uci && currentNode.uci.length >= 4 ? (currentNode.uci.slice(2, 4) as Key) : null
+
+    let lastNag = null
+    if (meta && meta.nag && meta.nag !== 'OK' && targetSquare) {
+      lastNag = {
+        square: targetSquare,
+        nag: meta.nag,
+        quality: meta.quality || 'good',
+      }
+    } else if (currentNode.nag && targetSquare) {
+      const mapping = NAG_MAPPING[currentNode.nag]
+      if (mapping) {
+        lastNag = {
+          square: targetSquare,
+          nag: mapping.symbol,
+          quality: mapping.quality,
+        }
+      }
+    }
+
+    boardStore.syncVisualCues({
+      lastMove,
+      lastNag,
+      shapes: (currentNode.shapes as any[]) || [],
+    })
   }
 
   function getGameStatus(): GameStatusInfo {
@@ -74,9 +112,9 @@ export const useGameStore = defineStore('game', () => {
 
     if (!isGameOver) {
       const fenHistory = pgnService.getFenHistoryForRepetition()
-      const currentRepetitionFen = boardStore.fen.split(' ').slice(0, 4).join(' ')
+      const currentRepetitionFen = normalizeFenForRepetition(boardStore.fen)
       const repetitionCount = fenHistory.filter(
-        (historicFen) => historicFen.split(' ').slice(0, 4).join(' ') === currentRepetitionFen,
+        (historicFen) => normalizeFenForRepetition(historicFen) === currentRepetitionFen,
       ).length
       if (repetitionCount >= 3) {
         isGameOver = true
@@ -192,8 +230,8 @@ export const useGameStore = defineStore('game', () => {
       }
 
       // Race condition protection
-      if (boardStore.fen !== fenAtRequest) {
-        logger.warn('[GameStore] Bot move discarded due to position change (race condition protected).')
+      if (boardStore.fen !== fenAtRequest || gamePhase.value !== 'PLAYING') {
+        logger.warn('[GameStore] Bot move discarded due to position or phase change (race condition protected).')
         return
       }
 
@@ -208,7 +246,7 @@ export const useGameStore = defineStore('game', () => {
           
           const fenAfter = boardStore.fen
           pgnService.addNode({ san, uci, fenBefore, fenAfter })
-          boardStore.syncVisualCues()
+          syncPgnVisualCuesToBoard()
           
           if (san.includes('+')) {
             GameAudioEngine.handleGameOutcome({ winner: undefined, reason: 'check' }, null)
@@ -292,6 +330,7 @@ export const useGameStore = defineStore('game', () => {
   function loadPosition(fen: string) {
     logger.info(`[GameStore] Loading position: ${fen}`)
     boardStore.loadPosition(fen)
+    syncPgnVisualCuesToBoard()
     _checkAndHandleGameOver()
   }
 
@@ -374,7 +413,7 @@ export const useGameStore = defineStore('game', () => {
       if (chessopsMove) {
         const fenAfter = boardStore.fen
         pgnService.addNode({ san, uci: intendedUci, fenBefore, fenAfter })
-        boardStore.syncVisualCues()
+        syncPgnVisualCuesToBoard()
       }
 
       if (userMovesCount.value === 0 && !isAnalysis) {
@@ -413,7 +452,7 @@ export const useGameStore = defineStore('game', () => {
     logger.info('[GameStore] Entering ANALYSIS / FREEPLAY mode.')
     currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
-    stopHandlers.value = []
+    stopHandlers.clear()
     gamePhase.value = 'ANALYSIS'
     isGameActive.value = false
   }
