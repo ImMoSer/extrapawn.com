@@ -103,14 +103,13 @@ class WikiBooksApiService {
     // 1. Check Cache
     try {
       const cached = await globalCacheRepository.getWikiContent(slug)
-      if (
-        cached &&
-        Date.now() - cached.timestamp < this.CACHE_TTL &&
-        cached.content &&
-        cached.content.trim() !== ''
-      ) {
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        if (!cached.content || cached.content.trim() === '') {
+          // Negative cache hit: entry does not exist on Wikibooks
+          return null
+        }
         return {
-          pageid: 0, // Not stored in SQLite, but we don't really use it
+          pageid: 0,
           ns: 0,
           title: slug,
           extract: cached.content,
@@ -141,12 +140,32 @@ class WikiBooksApiService {
       const data: WikiApiResponse = await response.json()
       const pages = data.query.pages
 
-      if (!pages || (Array.isArray(pages) && pages.length === 0)) return null
+      if (!pages || (Array.isArray(pages) && pages.length === 0)) {
+        await globalCacheRepository.saveWikiContent({
+          slug,
+          content: '',
+          timestamp: Date.now(),
+        })
+        return null
+      }
 
       const pageData = Array.isArray(pages) ? pages[0] : Object.values(pages)[0]
-      if (!pageData) return null
+      if (!pageData || ('missing' in pageData && pageData.missing)) {
+        await globalCacheRepository.saveWikiContent({
+          slug,
+          content: '',
+          timestamp: Date.now(),
+        })
+        return null
+      }
 
-      if ('missing' in pageData && pageData.missing) {
+      const extractContent = (pageData.extract as string) || ''
+      if (!extractContent || extractContent.trim() === '') {
+        await globalCacheRepository.saveWikiContent({
+          slug,
+          content: '',
+          timestamp: Date.now(),
+        })
         return null
       }
 
@@ -154,16 +173,11 @@ class WikiBooksApiService {
         pageid: pageData.pageid as number,
         ns: pageData.ns as number,
         title: pageData.title as string,
-        extract: pageData.extract as string,
+        extract: extractContent,
         timestamp: Date.now(),
       }
 
-      // Treat empty content as null to trigger fallback/retry
-      if (!result.extract || result.extract.trim() === '') {
-        return null
-      }
-
-      // 3. Update Cache
+      // 3. Update Cache with positive hit
       await globalCacheRepository.saveWikiContent({
         slug,
         content: result.extract,
@@ -178,23 +192,11 @@ class WikiBooksApiService {
   }
 
   /**
-   * Recursive fetch with parent fallback
+   * Directly fetches theory for the current moves without falling back to parent moves.
    */
   public async fetchWithFallback(moves: string[]): Promise<WikiPageExtract | null> {
-    const currentMoves = [...moves]
-    while (true) {
-      const slug = WikiUrlBuilder.buildSlug(currentMoves)
-      try {
-        const data = await this.fetchTheory(slug)
-        if (data) return data
-      } catch {
-        // Fallback to parent
-      }
-
-      if (currentMoves.length === 0) break
-      currentMoves.pop()
-    }
-    return null
+    const slug = WikiUrlBuilder.buildSlug(moves)
+    return this.fetchTheory(slug)
   }
 }
 

@@ -33,6 +33,7 @@ const sidebarStore = useSidebarStore()
       </button>
 
       <button
+        v-if="sidebarStore.isWikiAllowed"
         @click="sidebarStore.setMode('wiki')"
         title="WikiBooks Opening Theory (WIKI)"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
