@@ -230,8 +230,8 @@ function handleExit() {
 
 .engine-options-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .engine-card {

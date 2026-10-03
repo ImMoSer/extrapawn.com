@@ -15,8 +15,8 @@
     },
     "finishHim": {
       "title": "Finish Him — Die Kunst der Realisierung",
-      "description": "Verwerte deinen Gewinnvorteil gegen menschenähnliche KI-Resistenz. Lerne, deine Gegner eiskalt zu besiegen.",
-      "keywords": "Vorteilsverwertung, Maia Chess, Endspieltechnik"
+      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Capablanca, Botvinnik, Alekhine). Lerne, Vorteile sicher nach Hause zu bringen.",
+      "keywords": "Vorteilsverwertung, Schach-Training, Endspieltechnik"
     },
     "theoryEndings": {
       "title": "Theoretische Endspiele",
@@ -201,7 +201,7 @@
     "modules": {
       "puzzlePlay": {
         "title": "PUZZLE PLAY — Taktik & Endspiele",
-        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen die menschenähnliche Engine Maia (2200) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
+        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen spezialisierte neuronale Netze (Capablanca, Botvinnik, Alekhine) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
       },
       "taskToday": {
         "title": "TASK TODAY — Personalisierter Daily-Trainer",
@@ -227,7 +227,7 @@
       "boardRendering": "Datenvisualisierung: ",
       "boardRenderingStack": "Apache ECharts für komplexe Analysen",
       "chessEngine": "Analyse-Cluster: ",
-      "chessEngineStack": "Stockfish 18, LCZero (Maia), n8n Workflow-Kern",
+      "chessEngineStack": "Stockfish 18, LCZero (Neural Network Hub), n8n Workflow-Kern",
       "api": "Protokolle: ",
       "apiStack": "Lichess REST API & OAuth2"
     },
@@ -245,13 +245,13 @@
         "licenseText": "Vollständiger GPLv3-Text: ",
         "gratitude": "Tiefste Dankbarkeit an das Stockfish-Team für das Definieren des Standards der Schachbewertung."
       },
-      "maia": {
-        "title": "Maia Chess",
-        "text": "Realistisches Sparring wird durch **Maia Chess** Gewichte ermöglicht. Diese neuronalen Netze sind auf Millionen von Partien trainiert, um Züge vorherzusagen, die sich menschlich anfühlen. Besonderen Dank an das CSSLab.",
+      "neuralNetworks": {
+        "title": "Neuronales Sparring-Hub",
+        "text": "Realistisches Sparring wird durch spezialisierte neuronale Netze ermöglicht: **Botvinnik** (tiefes Positionsspiel), **Capablanca** (spezialisiertes Endspielnetz) und **Alekhine** (scharfe Kombinationstaktik). Der Inferenz-Prozess läuft über LCZero mit strikten Parametern: 1 Node (Nodes=1), deterministischer Auswahl (Temperature=0.0) und reiner Netzauswertung ohne Syzygy-Tablebases.",
         "links": {
-          "website": "Maia Webseite",
-          "github": "Maia GitHub",
-          "lichessBot": "Gegen Maia spielen"
+          "website": "LCZero Hub",
+          "github": "LCZero Repo",
+          "lichessBot": "Gegen Bot spielen"
         }
       },
       "lcZero": {

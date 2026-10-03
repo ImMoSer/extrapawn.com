@@ -15,8 +15,8 @@
     },
     "finishHim": {
       "title": "Finish Him — Master Realization",
-      "description": "Convert your winning advantage against human-like AI resistance. Learn to finish off your opponents.",
-      "keywords": "chess realization, maia chess, endgame conversion"
+      "description": "Convert your winning advantage against human-like neural network models (Capablanca, Botvinnik, Alekhine). Learn to finish off your opponents.",
+      "keywords": "chess realization, neural network sparring, endgame conversion"
     },
     "theoryEndings": {
       "title": "Theoretical Endings",
@@ -201,7 +201,7 @@
     "modules": {
       "puzzlePlay": {
         "title": "PUZZLE PLAY — Tactics & Endgames",
-        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against the human-like Maia (2200 Elo) engine across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
+        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against dedicated neural network sparring models (Capablanca, Botvinnik, Alekhine) across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
       },
       "taskToday": {
         "title": "TASK TODAY — Personalized Daily Trainer",
@@ -227,7 +227,7 @@
       "boardRendering": "Data Visualization: ",
       "boardRenderingStack": "Apache ECharts for complex analytics",
       "chessEngine": "Analysis Cluster: ",
-      "chessEngineStack": "Stockfish 18, LCZero (Maia), n8n workflow core",
+      "chessEngineStack": "Stockfish 18, LCZero (Neural Network Hub), n8n workflow core",
       "api": "Protocols: ",
       "apiStack": "Lichess REST API & OAuth2"
     },
@@ -245,13 +245,13 @@
         "licenseText": "View full GPLv3 text: ",
         "gratitude": "Deepest gratitude to the Stockfish team for defining the standard of chess evaluation."
       },
-      "maia": {
-        "title": "Maia Chess",
-        "text": "Realistic sparring is provided by **Maia Chess** weights. These neural networks are trained on millions of games to predict moves that feel human, not mechanical. Special thanks to the CSSLab for these incredible weights.",
+      "neuralNetworks": {
+        "title": "Neural Network Sparring Hub",
+        "text": "Realistic sparring is powered by dedicated neural network weights: **Botvinnik** (deep positional masterclass), **Capablanca** (specialized endgame network), and **Alekhine** (sharp tactical attacking style). Inference runs on LCZero with strict policy parameters: 1 node (Nodes=1), deterministic selection (Temperature=0.0), and pure neural evaluation with tablebases disabled.",
         "links": {
-          "website": "Maia Website",
-          "github": "Maia GitHub",
-          "lichessBot": "Spar Against Maia"
+          "website": "LCZero Hub",
+          "github": "LCZero GitHub",
+          "lichessBot": "Spar Against Bot"
         }
       },
       "lcZero": {

@@ -509,7 +509,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
   ) {
     try {
-      gameStore.setBotEngineId('maia-2200')
+      gameStore.setBotEngineId('botvinnik')
       isPlaying.value = false
       isFinished.value = false
 
@@ -589,7 +589,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     const { difficulty, strategyName, selections } = customConfig
 
     try {
-      gameStore.setBotEngineId('maia-2200')
+      gameStore.setBotEngineId('botvinnik')
       isPlaying.value = false
       isFinished.value = false
 
@@ -666,7 +666,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   async function startTaskToday(autoPlay = true) {
     try {
-      gameStore.setBotEngineId('maia-2200')
+      gameStore.setBotEngineId('botvinnik')
 
       if (loadState()) {
         console.log('[TaskTodayStore] Resumed existing state for today.')
@@ -763,7 +763,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         activePlanId.value = String(planData.id).slice(0, 12)
       }
 
-      gameStore.setBotEngineId('maia-2200')
+      gameStore.setBotEngineId('botvinnik')
       isPlaying.value = false
       isFinished.value = false
 

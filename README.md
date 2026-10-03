@@ -37,7 +37,7 @@ Textbook theoretical endgame scenarios. Practice position-specific win and defen
 </p>
 
 #### FinishHim
-A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against the human-like **Maia 2200** engine. Refine your conversion technique against a opponent that defends with natural human errors rather than mechanical perfection.
+A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Capablanca, Botvinnik, Alekhine**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
 
 <p align="center">
   <img src="public/screenshots/12_finish-him.png" width="900" alt="FinishHim Mode">
@@ -117,10 +117,22 @@ Access extensive articles, concepts, and opening theory directly matching the ac
 ## 🤖 Engine & Intelligence Architecture
 
 Our backend distributed cluster manages multiple specialized engine components:
-*   **Stockfish 18**: Absolute truth engine, calculating mathematically optimal moves.
-*   **Maia Chess (1900-2200+)**: Neural networks mimicking human play, perfect for training against realistic mistakes and natural defensive styles.
-*   **LCZero**: Deep-learning network providing strategic positional analysis.
-*   **MozerBook Database**: Statistics-based opening theory engine.
+*   **Stockfish 18**: Absolute truth engine, calculating mathematically optimal moves and positional evaluations.
+*   **Neural Network Sparring Hub (LCZero v0.32.1)**: Dedicated pure-policy neural network models running with 1-node search, deterministic argmax selection (Temperature = 0.0), and pure neural evaluation (Syzygy disabled) for human-like sparring and technique perfection.
+*   **MozerBook Database**: Statistics-based opening theory engine compiled from Lichess 2000+ Elo games.
+
+### Available Neural Networks:
+
+| Имя в UI | ID движка | Файл весов | Особенности / Назначение |
+| :--- | :--- | :--- | :--- |
+| **Botvinnik** | `botvinnik` | `t1-256x10-distilled-swa-2432500.pb.gz` | Глубокий фундаментальный позиционный стиль М. Ботвинника |
+| **Capablanca** | `capablanca` | `MediumEnder.pb.gz` | Специализированная эндшпильная сеть в честь Х. Р. Капабланки |
+| **Alekhine** | `alekhine` | `Bad_Gyal_128x10.pb.gz` | Острая комбинационная тактическая игра А. Алехина |
+
+#### Inference Parameters:
+* **Nodes = 1**: Direct single-node policy evaluation without search tree overhead.
+* **Temperature = 0.0**: Deterministic top-1 policy move selection without random sampling.
+* **SyzygyPath = <empty>**: Endgame tablebases disabled during sparring to evaluate strictly through the neural network.
 
 ---
 
@@ -138,7 +150,7 @@ Our backend distributed cluster manages multiple specialized engine components:
 
 *   **Coach Sidebar Foundation**: Special thanks to [Chess Analysis Studio](https://github.com/dev-arcturus/positional_chess) by [dev-arcturus](https://github.com/dev-arcturus). We used this browser-based analysis tool as the foundation for our Coach Sidebar, expanding it with advanced graphical indicators and full backend server-side engine capabilities.
 *   **Platform & Database**: Huge thanks to [Lichess.org](https://lichess.org) for their open database, APIs, and puzzle datasets.
-*   **Engines**: The open-source Stockfish community, LCZero team, and Maia Chess research group.
+*   **Engines**: The open-source Stockfish community, LCZero team, and the open-weights neural network research community.
 
 ---
 _License: GNU General Public License v3.0 | Built for those who seek chess mastery._

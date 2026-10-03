@@ -176,16 +176,16 @@ const techStackItems = [
             </n-card>
           </n-gi>
 
-          <!-- Maia -->
+          <!-- Neural Networks -->
           <n-gi>
             <n-card size="small" class="license-card">
               <template #header>
-                <n-text strong>{{ t('about.licenseAndAcknowledgements.maia.title') }}</n-text>
+                <n-text strong>{{ t('about.licenseAndAcknowledgements.neuralNetworks.title') }}</n-text>
               </template>
               <n-text depth="3">
                 <span
                   v-html="
-                    t('about.licenseAndAcknowledgements.maia.text').replace(
+                    t('about.licenseAndAcknowledgements.neuralNetworks.text').replace(
                       /\*\*(.*?)\*\*/g,
                       '<strong>$1</strong>',
                     )

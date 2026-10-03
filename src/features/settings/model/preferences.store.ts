@@ -3,6 +3,7 @@ import { applyThemeStyle } from '../config/theme.config'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound.service'
+import { AVAILABLE_ENGINES } from '@/features/engine/config/constants'
 import type { EngineId } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
@@ -92,7 +93,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   },
   gameplay: {
     language: 'en',
-    botEngine: 'maia-2200',
+    botEngine: 'botvinnik',
     global_crashtest: false,
   },
   delays: {
@@ -346,7 +347,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   // Engine selection (bot opponent)
   const isEngineSelectorOpen = ref(false)
-  const selectedBotEngine = computed<EngineId>(() => (preferences.value.gameplay.botEngine as EngineId) || 'maia-2200')
+  const selectedBotEngine = computed<EngineId>(() => {
+    const current = preferences.value.gameplay.botEngine as EngineId
+    return (current && AVAILABLE_ENGINES.includes(current)) ? current : 'botvinnik'
+  })
 
   function toggleEngineSelector() {
     isEngineSelectorOpen.value = !isEngineSelectorOpen.value
