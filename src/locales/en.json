@@ -15,7 +15,7 @@
     },
     "finishHim": {
       "title": "Finish Him — Master Realization",
-      "description": "Convert your winning advantage against human-like neural network models (Capablanca, Botvinnik, Alekhine). Learn to finish off your opponents.",
+      "description": "Convert your winning advantage against human-like neural network models (Maia, Bad Gyal, T1000). Learn to finish off your opponents.",
       "keywords": "chess realization, neural network sparring, endgame conversion"
     },
     "theoryEndings": {
@@ -201,7 +201,7 @@
     "modules": {
       "puzzlePlay": {
         "title": "PUZZLE PLAY — Tactics & Endgames",
-        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against dedicated neural network sparring models (Capablanca, Botvinnik, Alekhine) across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
+        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against dedicated neural network sparring models (Maia, Bad Gyal, T1000) across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
       },
       "taskToday": {
         "title": "TASK TODAY — Personalized Daily Trainer",
@@ -247,7 +247,7 @@
       },
       "neuralNetworks": {
         "title": "Neural Network Sparring Hub",
-        "text": "Realistic sparring is powered by dedicated neural network weights: **Botvinnik** (deep positional masterclass), **Capablanca** (specialized endgame network), and **Alekhine** (sharp tactical attacking style). Inference runs on LCZero with strict policy parameters: 1 node (Nodes=1), deterministic selection (Temperature=0.0), and pure neural evaluation with tablebases disabled.",
+        "text": "Realistic sparring is powered by dedicated neural network models: the human-like **Maia** series (1500, 1700, 1900, 2200 Elo), the sharp tactical **Bad Gyal** network by Dietrich Kappe (10 nodes), and the grandmaster positional **T1000** (T1-256x10). Inference runs on LCZero with optimized policy parameters to ensure stubborn resistance without artificial resignation.",
         "links": {
           "website": "LCZero Hub",
           "github": "LCZero GitHub",

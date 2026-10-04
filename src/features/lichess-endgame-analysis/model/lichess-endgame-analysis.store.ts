@@ -113,7 +113,7 @@ export const useLichessEndgameAnalysisStore = defineStore('lichessEndgameAnalysi
     const boardStore = useBoardStore()
     const userColor = determinePlayerColor(puzzle)
 
-    gameStore.setBotEngineId('capablanca')
+    gameStore.setBotEngineId('maia-1500')
     gameStore.setGamePhase('LOADING')
 
     const initialFen = puzzle.puzzle_type === 'opp_blunders'

@@ -2,9 +2,12 @@
 
 // --- Engine and Gameplay Types ---
 export type EngineId =
-  | 'botvinnik'
-  | 'capablanca'
-  | 'alekhine'
+  | 'maia-1500'
+  | 'maia-1700'
+  | 'maia-1900'
+  | 'maia-2200'
+  | 'badgyal'
+  | 't1000'
 
 export type Color = 'white' | 'black'
 

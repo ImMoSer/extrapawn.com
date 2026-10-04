@@ -93,7 +93,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   },
   gameplay: {
     language: 'en',
-    botEngine: 'botvinnik',
+    botEngine: 'maia-1500',
     global_crashtest: false,
   },
   delays: {
@@ -349,7 +349,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const isEngineSelectorOpen = ref(false)
   const selectedBotEngine = computed<EngineId>(() => {
     const current = preferences.value.gameplay.botEngine as EngineId
-    return (current && AVAILABLE_ENGINES.includes(current)) ? current : 'botvinnik'
+    return (current && AVAILABLE_ENGINES.includes(current)) ? current : 'maia-1500'
   })
 
   function toggleEngineSelector() {

@@ -29,7 +29,7 @@ export const useGameStore = defineStore('game', () => {
   const userMovesCount = ref(0)
   const isGameActive = ref(false)
   const isMoveProcessing = ref(false)
-  const botEngineId = ref<EngineId>('botvinnik')
+  const botEngineId = ref<EngineId>('maia-1500')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
 

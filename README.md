@@ -37,7 +37,7 @@ Textbook theoretical endgame scenarios. Practice position-specific win and defen
 </p>
 
 #### FinishHim
-A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Capablanca, Botvinnik, Alekhine**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
+A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Maia 1500–2200, Bad Gyal, T1000**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
 
 <p align="center">
   <img src="public/screenshots/12_finish-him.png" width="900" alt="FinishHim Mode">
@@ -123,16 +123,19 @@ Our backend distributed cluster manages multiple specialized engine components:
 
 ### Available Neural Networks:
 
-| Имя в UI | ID движка | Файл весов | Особенности / Назначение |
-| :--- | :--- | :--- | :--- |
-| **Botvinnik** | `botvinnik` | `t1-256x10-distilled-swa-2432500.pb.gz` | Глубокий фундаментальный позиционный стиль М. Ботвинника |
-| **Capablanca** | `capablanca` | `MediumEnder.pb.gz` | Специализированная эндшпильная сеть в честь Х. Р. Капабланки |
-| **Alekhine** | `alekhine` | `Bad_Gyal_128x10.pb.gz` | Острая комбинационная тактическая игра А. Алехина |
+| Имя в UI | ID движка | Файл весов | Nodes | Особенности / Назначение |
+| :--- | :--- | :--- | :--- | :--- |
+| **Maia 1500** | `maia-1500` | `maia-1500.pb.gz` | 1 | Человечный стиль игрока ~1500 Elo (дефолтная сеть для спарринга) |
+| **Maia 1700** | `maia-1700` | `maia-1700.pb.gz` | 1 | Человечный стиль игрока ~1700 Elo (уверенная клубная игра) |
+| **Maia 1900** | `maia-1900` | `maia-1900.pb.gz` | 1 | Человечный стиль кандидата в мастера ~1900 Elo |
+| **Maia 2200** | `maia-2200` | `maia-2200.pb.gz` | 1 | Человечный стиль мастера ~2200 Elo с реалистичным сопротивлением |
+| **Bad Gyal** | `badgyal` | `Bad_Gyal_128x10.pb.gz` | 10 | Бескомпромиссная агрессивная тактическая сеть Дитриха Каппе (Dietrich Kappe) |
+| **T1000** | `t1000` | `t1-256x10-distilled-swa-2432500.pb.gz` | 1 | Мощная позиционная дистиллированная нейросеть (Zero Search Policy) |
 
 #### Inference Parameters:
-* **Nodes = 1**: Direct single-node policy evaluation without search tree overhead.
-* **Temperature = 0.0**: Deterministic top-1 policy move selection without random sampling.
-* **SyzygyPath = <empty>**: Endgame tablebases disabled during sparring to evaluate strictly through the neural network.
+* **Nodes = 1 (10 для Bad Gyal)**: Мгновенная оценка политики с минимальным деревом поиска для естественного человеческого сопротивления.
+* **Temperature = 0.0**: Детерминированный выбор хода (топ-1 ход политики без случайного шума).
+* **SyzygyPath = <empty>**: Эндшпильные таблицы отключены для оценки позиции исключительно нейросетью.
 
 ---
 

@@ -15,7 +15,7 @@
     },
     "finishHim": {
       "title": "Finish Him — Die Kunst der Realisierung",
-      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Capablanca, Botvinnik, Alekhine). Lerne, Vorteile sicher nach Hause zu bringen.",
+      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Maia, Bad Gyal, T1000). Lerne, Vorteile sicher nach Hause zu bringen.",
       "keywords": "Vorteilsverwertung, Schach-Training, Endspieltechnik"
     },
     "theoryEndings": {
@@ -201,7 +201,7 @@
     "modules": {
       "puzzlePlay": {
         "title": "PUZZLE PLAY — Taktik & Endspiele",
-        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen spezialisierte neuronale Netze (Capablanca, Botvinnik, Alekhine) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
+        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen spezialisierte neuronale Netze (Maia, Bad Gyal, T1000) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
       },
       "taskToday": {
         "title": "TASK TODAY — Personalisierter Daily-Trainer",
@@ -247,7 +247,7 @@
       },
       "neuralNetworks": {
         "title": "Neuronales Sparring-Hub",
-        "text": "Realistisches Sparring wird durch spezialisierte neuronale Netze ermöglicht: **Botvinnik** (tiefes Positionsspiel), **Capablanca** (spezialisiertes Endspielnetz) und **Alekhine** (scharfe Kombinationstaktik). Der Inferenz-Prozess läuft über LCZero mit strikten Parametern: 1 Node (Nodes=1), deterministischer Auswahl (Temperature=0.0) und reiner Netzauswertung ohne Syzygy-Tablebases.",
+        "text": "Realistisches Sparring wird durch spezialisierte neuronale Netze ermöglicht: die menschenähnliche **Maia**-Serie (1500, 1700, 1900, 2200 Elo), das scharfe taktische **Bad Gyal**-Netz von Dietrich Kappe (10 Nodes) und das fundamentale Großmeister-Netz **T1000** (T1-256x10). Der Inferenz-Prozess läuft über LCZero mit optimierten Policy-Parametern für zähen Widerstand ohne vorzeitige Materialaufgabe.",
         "links": {
           "website": "LCZero Hub",
           "github": "LCZero Repo",
