@@ -15,7 +15,7 @@ import {
 } from 'naive-ui'
 import { useTaskTodayStore } from '@/features/task-today'
 import { useCurrentTrainingPlanQuery } from '@/shared/api/queries/userCabinet.queries'
-import type { RecommendationEntry, SubscriptionTier } from '@/shared/types/api.types'
+import type { RecommendationEntry } from '@/shared/types/api.types'
 import { useAuthStore } from '@/entities/user'
 
 const props = defineProps<{
@@ -29,11 +29,6 @@ const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
 
 const { data: currentPlanData } = useCurrentTrainingPlanQuery(props.isAuthenticated)
-
-import { useAccessControl } from '@/features/access-control'
-
-const accessControl = useAccessControl()
-const hasFullAccessUser = accessControl.hasFullAccessUser
 
 const _selectedDifficulty = ref<'Novice' | 'Pro' | 'Master'>('Novice')
 const selectedDifficulty = computed({
@@ -135,11 +130,6 @@ const showOverwriteConfirm = ref(false)
 const pendingStrategy = ref<'Discovery' | 'Hardcore' | 'Warmup' | null>(null)
 
 const confirmStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup') => {
-  if (!accessControl.hasFullAccessUser.value) {
-    const hasAccess = await accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
-    if (!hasAccess) return
-  }
-
   if (isLocalPlanActive.value) {
     pendingStrategy.value = strategyName
     showOverwriteConfirm.value = true

@@ -338,7 +338,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
         <n-empty :description="t('pages.userCabinet.stats.noData')">
           <template #extra>
             <n-button type="primary" size="small" @click="router.push('/task-today')">
-              {{ t('puzzleCategories.tierRestriction.makeTaskToday') }}
+              {{ t('pages.userCabinet.stats.makeTaskToday') }}
             </n-button>
           </template>
         </n-empty>
@@ -361,7 +361,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
             <n-empty :description="t('pages.userCabinet.stats.noData')">
               <template #extra>
                 <n-button type="primary" size="small" @click="router.push('/task-today')">
-                  {{ t('puzzleCategories.tierRestriction.makeTaskToday') }}
+                  {{ t('pages.userCabinet.stats.makeTaskToday') }}
                 </n-button>
               </template>
             </n-empty>

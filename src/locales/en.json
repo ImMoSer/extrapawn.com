@@ -391,24 +391,6 @@
       "whiteEndgame": "Vs White",
       "blackEndgame": "Vs Black"
     },
-    "tierRestriction": {
-      "title": "Subscription Required",
-      "cancelBtn": "Cancel",
-      "upgradeBtn": "Buy Subscription",
-      "message": "Subscription required (VIP, Queen, or King) to access this functionality.",
-      "getGiftCode": "Get Free VIP (Telegram)",
-      "enterGiftCode": "Enter Gift Code",
-      "activateBtn": "Activate",
-      "giftPlaceholder": "Enter 8-character code...",
-      "giftSuccess": "7-day VIP gift subscription activated!",
-      "giftInvalid": "Invalid or already used gift code.",
-      "basic": "Please log in to access this feature.",
-      "premium": "Subscription required (VIP, Queen, or King) to access this functionality.",
-      "premiumPlus": "Subscription required (VIP, Queen, or King) to access this functionality.",
-      "makeTaskToday": "Start Daily Task",
-      "proactiveTitle": "Get Free 14-Day VIP!",
-      "proactiveMessage": "Connect your Telegram account to claim 14 days of free VIP subscription!"
-    },
     "languageInit": {
       "title": "Select Your Language",
       "subtitle": "Choose your preferred language for the app interface and AI Coach",
@@ -438,34 +420,7 @@
       "title": "User Cabinet",
       "loginPrompt": "Log in to view your statistics and activity.",
       "info": {
-        "lichessId": "Lichess ID",
-        "subscriptionTier": "Subscription",
-        "tierExpires": " (until {date})",
-        "tierPermanent": " (permanent)"
-      },
-      "subscription": {
-        "title": "Manage Subscription",
-        "description": "Manage your billing details, download invoices, or cancel your subscription.",
-        "openPortal": "Open Customer Portal",
-        "reactivate": "Reactivate",
-        "reactivateTooltip": "Please reactivate your subscription in the customer portal to make upgrades.",
-        "error": "Failed to open customer portal."
-      },
-      "polar": {
-        "successTitle": "Payment Successful! 🎉",
-        "successMessage": "Thank you for subscribing. Your account has been upgraded.",
-        "ok": "Start Training"
-      },
-      "gift": {
-        "title": "Redeem Gift Code",
-        "description": "Enter your 8-digit code to activate your club subscription.",
-        "placeholder": "Code",
-        "activate": "Activate",
-        "successTitle": "Congratulations! 🎉",
-        "successMessage": "You have successfully activated the {tier} club tier. It will remain active until {date}. We wish you great success in your training!",
-        "ok": "OK",
-        "invalid": "Invalid or already used code.",
-        "error": "Error during redemption."
+        "lichessId": "Lichess ID"
       },
       "detailedAnalytics": {
         "title": "Detailed Analytics",
@@ -487,6 +442,7 @@
         "noData": "No data for the selected period.",
         "success": "Success",
         "title": "",
+        "makeTaskToday": "Start Daily Task",
         "modes": {
           "all": "Mode",
           "finishHim": "Finish Him",
@@ -520,70 +476,22 @@
       }
     },
     "pricing": {
-      "title": "Subscriptions and Prices",
-      "repertoireGenerator": "Repertoire Generator",
-      "checkoutError": "Payment checkout failed. Please try again.",
-      "tiers": {
-        "title": "Subscription Tiers",
-        "pawn": {
-          "name": "Pawn",
-          "role": "Free for everyone to get to know the app.",
-          "price": "Free forever"
-        },
-        "vip": {
-          "name": "VIP",
-          "role": "Exclusive bonus for Top 20 club performers."
-        },
-        "queen": {
-          "name": "Queen",
-          "role": "The \"Standard\" for ambitious club players.",
-          "price": "9.99 € / Month"
-        },
-        "king": {
-          "name": "King",
-          "role": "The \"Full-Power\" package for pros & analysts.",
-          "price": "19.99 € / Month"
-        },
-        "price": {
-          "soon": "Price will be announced",
-          "bonus": "Club Bonus"
-        }
+      "title": "100% Free & Open Access",
+      "subtitle": "ExtraPawn is completely free for every chess player. No paywalls, no tiers, no recurring subscriptions.",
+      "freeBadge": "FREE FOR ALL",
+      "unlockedTitle": "Everything is Unlocked",
+      "unlockedDesc": "Enjoy complete access to all tactical motifs, endgame theory, neural network conversions, and personalized training plans without limitations.",
+      "freeFeatures": {
+        "unlimitedPuzzles": "Unlimited puzzle training",
+        "allDifficulties": "All difficulties & themes unlocked",
+        "dailyPlan": "Personalized daily training plan",
+        "deepAnalysis": "Deep Stockfish engine analysis",
+        "personalStats": "Comprehensive stats & motif radar",
+        "noSubscription": "100% free — no subscriptions"
       },
-      "bonusInfo": {
-        "title": "🎉 xtrapawn Bonus Program",
-        "howItWorks": "📅 How does it work?",
-        "p1": "Our bonus program rewards the Top 20 active members of the xtrapawn club on Lichess.",
-        "p2": "Bonuses are assigned automatically. The calculation is done daily at 05:29 AM (UTC+1) based on performance over the last 30 days.",
-        "p3": "Players in the Top 20 club leaderboard receive the VIP status.",
-        "p5": "Status is updated daily and remains valid until the next calculation.",
-        "homepageLink": "Club Homepage",
-        "alertText": "Prefer to earn instead of buy? Check out our",
-        "alertButton": "Bonus Program",
-        "teamLink": "Join our Lichess team",
-        "vip": "VIP Status: Top 20 Club Leaderboard",
-        "p6": "Status calculations are based on activity over the last 30 days.",
-        "p7": "Bonus program structure subject to change.",
-        "p8": "Good luck with your training!",
-        "moreInfo": "More info here"
-      },
-      "upgrade": {
-        "title": "Subscription Upgrade",
-        "intro": "Fantastic! You want to upgrade to {targetTier}.",
-        "details": "Your current subscription {currentTier} will be upgraded to {targetTier} immediately!",
-        "bullet1": "The billing date for the next invoice remains unchanged.",
-        "bullet2": "The new subscription starts immediately.",
-        "bullet3": "The price difference will be calculated automatically and charged to your saved payment method right away.",
-        "warning": "Please ensure that the payment via your saved payment method is not blocked, otherwise the upgrade will be reversed.",
-        "agbLabel": "I agree to the ",
-        "agbLinkText": "Terms of Service",
-        "agbSuffix": " and confirm the immediate start of the contract execution.",
-        "button": "Upgrade now (paid)",
-        "successTitle": "Upgrade Successful!",
-        "successMessage": "Your account has just been upgraded to {targetTier}. You now have full access to all new features!",
-        "toCabinet": "Go to User Cabinet",
-        "error": "Upgrade error. Please try again later.",
-        "successToast": "Upgrade successful! You now have immediate access."
-      }
+      "supportTitle": "Support the Project",
+      "supportDesc": "ExtraPawn is developed independently with passion for the chess community. If you enjoy training here and want to show appreciation or support hosting costs, you are welcome to buy me a coffee! More voluntary donation options will be available soon.",
+      "clubBtn": "Club Top 20"
     },
     "bonus": {
       "mostValuablePlayersTitle": "Club Top 20 & Bonus Status",

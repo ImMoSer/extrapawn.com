@@ -164,7 +164,6 @@ export interface FinishHimLeaderboardEntry {
   best_time: number
   days_old: number
   puzzle_id: string
-  subscriptionTier?: string
 }
 
 export interface FinishHimPuzzle {
@@ -259,7 +258,6 @@ export interface GamePuzzle {
 export interface PlanStreakLeaderboardEntry {
   id: string
   username: string
-  tier: string
   training_status?: string
   current_streak?: number
   completed_count?: number
@@ -277,7 +275,6 @@ export interface PlanStreakLeaderboardResponse {
 export interface UnifiedLeaderboardEntry {
   id: string
   username: string
-  tier: string
   game_mode?: string
   sub_mode?: string
   maxRating: number
@@ -301,7 +298,6 @@ export type UnifiedLeaderboardResponse = Record<string, UnifiedLeaderboardEntry[
 export interface SidebarLeaderboardEntry {
   id: string
   username: string
-  tier: string
   solved: number
   failed: number
   maxRating: number
@@ -330,7 +326,6 @@ export interface LeaderboardEntry {
   username: string
   training_status: 'N' | 'P' | 'M'
   current_streak: number
-  tier: string // subscriptionTier
   score: Record<string, number>
   solved: Record<string, number>
   failed: Record<string, number>
@@ -351,7 +346,6 @@ export interface SolveStreakLeaderboardEntry {
   lichess_id: string
   username: string
   current_streak: number
-  subscriptionTier: string
   total_solved: number
   total_score?: number
   solved_by_mode: Record<string, number>
@@ -360,19 +354,7 @@ export interface SolveStreakLeaderboardEntry {
 export interface UserMeta {
   id: string
   username: string
-  tier: string
 }
-
-export type SubscriptionTier =
-  | 'Pawn'
-  | 'pawn'
-  | 'VIP'
-  | 'vip'
-  | 'Queen'
-  | 'queen'
-  | 'King'
-  | 'king'
-  | 'administrator'
 
 interface LichessUserProfile {
   id: string
@@ -423,16 +405,10 @@ export interface GameResultResponse {
 
 export interface UserSessionProfile extends LichessUserProfile {
   base_puzzle_rating: number
-  subscriptionTier: SubscriptionTier
   telegram?: boolean
   telegramId?: number | null
   language?: string | null
-  activeTier?: SubscriptionTier
-  polarTier?: SubscriptionTier | null
-  isPolarCustomer?: boolean
-  polarStatus?: string | null
   validatedAt?: number
-  TierExpire?: string | null
   endgame_skill: number
   today_activity?: TodayActivity
   finishHimRating?: { rating: number }

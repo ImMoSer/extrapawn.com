@@ -54,20 +54,20 @@ const freeFeatures = [
         <!-- Header -->
         <div class="header-section text-center">
           <n-h1 class="page-title">
-            <span class="gradient-text">100% Free & Open Access</span>
+            <span class="gradient-text">{{ t('pages.pricing.title') }}</span>
           </n-h1>
           <n-text depth="2" class="subtitle">
-            {{ t('pages.pricing.subtitle') || 'ExtraPawn is completely free for every chess player. No paywalls, no tiers, no recurring subscriptions.' }}
+            {{ t('pages.pricing.subtitle') }}
           </n-text>
         </div>
 
         <!-- Free Features Card -->
         <n-card class="glass-card main-card" :bordered="false">
           <div class="card-inner">
-            <div class="badge-free">FREE FOR ALL</div>
-            <n-h2 class="card-title">Everything is Unlocked</n-h2>
+            <div class="badge-free">{{ t('pages.pricing.freeBadge') }}</div>
+            <n-h2 class="card-title">{{ t('pages.pricing.unlockedTitle') }}</n-h2>
             <p class="card-desc">
-              Enjoy complete access to all tactical motifs, endgame theory, neural network conversions, and personalized training plans without limitations.
+              {{ t('pages.pricing.unlockedDesc') }}
             </p>
 
             <n-grid :cols="isMobile ? 1 : 2" :x-gap="16" :y-gap="14" class="features-grid">
@@ -92,10 +92,10 @@ const freeFeatures = [
               </n-icon>
             </div>
             
-            <n-h2 class="support-title">Support the Project</n-h2>
+            <n-h2 class="support-title">{{ t('pages.pricing.supportTitle') }}</n-h2>
             
             <n-text depth="2" style="max-width: 580px; font-size: 1.05rem; line-height: 1.6;">
-              ExtraPawn is developed independently with passion for the chess community. If you enjoy training here and want to show appreciation or support hosting costs, you are welcome to buy me a coffee! More voluntary donation options will be available soon.
+              {{ t('pages.pricing.supportDesc') }}
             </n-text>
 
             <div class="support-actions">
@@ -125,7 +125,7 @@ const freeFeatures = [
                   <template #icon>
                     <n-icon><TrophyOutline /></n-icon>
                   </template>
-                  Club Top 20
+                  {{ t('pages.pricing.clubBtn') }}
                 </n-button>
               </router-link>
             </div>

@@ -17,44 +17,9 @@ const { userProfile: storeProfile } = storeToRefs(authStore)
 
 const userProfile = computed(() => props.profileOverride || storeProfile.value)
 
-const tierToPieceMap: Record<string, string> = {
-  Pawn: 'wP.svg',
-  pawn: 'wP.svg',
-  VIP: 'rubyDiamond.svg',
-  vip: 'rubyDiamond.svg',
-  Queen: 'wQ.svg',
-  queen: 'wQ.svg',
-  King: 'wK.svg',
-  king: 'wK.svg',
-  Administrator: 'wK.svg',
-}
-
-defineEmits<{
-  (e: 'reactivate'): void
-}>()
-
 const avatarUrl = computed(() => {
-  const tier = userProfile.value?.subscriptionTier
-  if (tier && tierToPieceMap[tier]) {
-    return `/piece/alpha/${tierToPieceMap[tier]}`
-  }
   return 'https://lichess1.org/assets/images/avatar_default.png'
 })
-
-const formatTierExpireDate = (isoDate: string | null | undefined) => {
-  if (!isoDate) return t('pages.userCabinet.info.tierPermanent')
-  const date = new Date(isoDate)
-  return t('pages.userCabinet.info.tierExpires', { date: date.toLocaleDateString() })
-}
-
-const getTierType = (tier: string = '') => {
-  const t = tier.toLowerCase()
-  if (t === 'vip') return 'error'
-  if (t === 'platinum' || t === 'gold') return 'warning'
-  if (t === 'silver' || t === 'bronze') return 'info'
-  if (t === 'administrator') return 'error'
-  return 'default'
-}
 
 // Game modes best ratings logic
 const gameModeScores = computed(() => {
@@ -151,12 +116,7 @@ const avatarSize = computed(() => (isMobile.value ? 75 : 150))
         </div>
 
         <div class="flex flex-col justify-center h-full min-h-[170px] max-md:min-h-0">
-          <n-h1 class="!m-0 !mb-2 font-display text-neon-cyan text-3xl max-md:text-xl font-bold tracking-wide">{{ userProfile?.username }}</n-h1>
-          <n-space size="small" align="center" wrap class="mb-3">
-            <n-tag :type="getTierType(userProfile?.subscriptionTier)" round size="small">
-              {{ userProfile?.subscriptionTier }}
-            </n-tag>
-          </n-space>
+          <n-h1 class="!m-0 font-display text-neon-cyan text-3xl max-md:text-xl font-bold tracking-wide">{{ userProfile?.username }}</n-h1>
         </div>
       </div>
 

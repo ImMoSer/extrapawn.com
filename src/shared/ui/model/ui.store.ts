@@ -62,23 +62,6 @@ export const useUiStore = defineStore('ui', () => {
     })
   }
 
-  function showRestrictionModal(
-    customMessage?: string,
-  ): Promise<'confirm' | 'cancel' | 'extra' | null> {
-    return showConfirmation(
-      t('puzzleCategories.tierRestriction.title'),
-      customMessage || t('puzzleCategories.tierRestriction.message'),
-      {
-        confirmText: t('puzzleCategories.tierRestriction.upgradeBtn'),
-        cancelText: t('puzzleCategories.tierRestriction.cancelBtn'),
-        showCancel: true,
-        variant: 'primary',
-        icon: 'lock',
-        telegramAttached: false,
-      },
-    )
-  }
-
   function handleConfirm() {
     if (resolvePromise) {
       resolvePromise('confirm')
@@ -138,7 +121,6 @@ export const useUiStore = defineStore('ui', () => {
     modalIcon,
     modalTelegramAttached,
     showConfirmation,
-    showRestrictionModal,
     handleConfirm,
     handleCancel,
     handleExtra,

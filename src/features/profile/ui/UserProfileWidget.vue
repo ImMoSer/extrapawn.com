@@ -8,7 +8,6 @@ import {
   NCard,
   NIcon,
   NSpace,
-  NTag,
   NText,
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
@@ -23,23 +22,7 @@ const handleLogin = () => {
   authStore.login()
 }
 
-const tierToPieceMap: Record<string, string> = {
-  Pawn: 'wP.svg',
-  pawn: 'wP.svg',
-  VIP: 'rubyDiamond.svg',
-  vip: 'rubyDiamond.svg',
-  Queen: 'wQ.svg',
-  queen: 'wQ.svg',
-  King: 'wK.svg',
-  king: 'wK.svg',
-  Administrator: 'wK.svg',
-}
-
 const avatarUrl = computed(() => {
-  const tier = userProfile.value?.subscriptionTier
-  if (tier && tierToPieceMap[tier]) {
-    return `/piece/alpha/${tierToPieceMap[tier]}`
-  }
   return 'https://lichess1.org/assets/images/avatar_default.png'
 })
 </script>
@@ -49,7 +32,7 @@ const avatarUrl = computed(() => {
     <div v-if="isAuthenticated && userProfile" class="stats-view">
       <n-card :bordered="false" size="small" class="profile-card">
         <n-space vertical :size="16">
-          <!-- Header: Avatar, Name & Subscription Tier -->
+          <!-- Header: Avatar & Name -->
           <n-space align="center" justify="space-between" :size="12" style="width: 100%">
             <n-space align="center" :size="12">
               <n-avatar
@@ -59,18 +42,7 @@ const avatarUrl = computed(() => {
                 fallback-src="https://lichess1.org/assets/images/avatar_default.png"
                 class="piece-avatar"
               />
-              <n-space vertical :size="0">
-                <n-text strong class="username">{{ userProfile?.username }}</n-text>
-                <n-tag
-                  :bordered="false"
-                  :type="userProfile?.subscriptionTier && ['administrator', 'vip', 'VIP'].includes(userProfile.subscriptionTier) ? 'error' : 'warning'"
-                  size="tiny"
-                  round
-                  uppercase
-                >
-                  {{ userProfile?.subscriptionTier }}
-                </n-tag>
-              </n-space>
+              <n-text strong class="username">{{ userProfile?.username }}</n-text>
             </n-space>
           </n-space>
         </n-space>

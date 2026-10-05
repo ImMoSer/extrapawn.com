@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useTaskTodayStore, getSubModeScopeConfig, type SubModeType } from '../model/taskToday.store'
-import { useAccessControl } from '@/features/access-control'
 import {
   NText,
   NList,
@@ -31,8 +30,6 @@ import type { DailyTrainingPlanEntity, RecommendationEntry } from '@/shared/type
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
 const authStore = useAuthStore()
-const accessControl = useAccessControl()
-const hasFullAccessUser = accessControl.hasFullAccessUser
 const message = useMessage()
 const dialog = useDialog()
 const queryClient = useQueryClient()
@@ -208,10 +205,6 @@ const selectedPlanPreview = computed(() => {
 })
 
 const handleStartPlan = async () => {
-  if (!accessControl.hasFullAccessUser.value) {
-    const hasAccess = await accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
-    if (!hasAccess) return
-  }
   isStartingPlan.value = true
   try {
     const rawRecommendations = currentPlanData.value?.recommendations
@@ -307,9 +300,7 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               class="diff-btn"
               :class="{ 
                 active: selectedDifficulty === diff,
-                'disabled-diff': !hasFullAccessUser
               }"
-              :disabled="isDiffDisabled()"
               @click="selectedDifficulty = diff"
             >
               <span class="diff-name">
@@ -329,7 +320,6 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               :class="{ 
                 active: selectedStrategy === strat,
                 [strat.toLowerCase()]: true,
-                'disabled-strat': !hasFullAccessUser
               }"
               @click="selectedStrategy = strat"
             >

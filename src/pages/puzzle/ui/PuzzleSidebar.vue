@@ -26,11 +26,7 @@ const emit = defineEmits<{
   (e: 'loadRequested', payload: { type: string; category: string; difficulty: string; source: string }): void
 }>()
 
-import { useAccessControl } from '@/features/access-control'
-
 const { t, te } = useI18n()
-const accessControl = useAccessControl()
-const hasFullAccessUser = accessControl.hasFullAccessUser
 
 
 
@@ -137,40 +133,23 @@ const basicTierOptions = computed(() => {
 
 const premiumTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumTacticKeys : premiumEndgameKeys
-  const isDisabled = !hasFullAccessUser.value
   return themeOptions.value
     .filter(opt => keys.includes(opt.value))
-    .map(opt => ({ ...opt, disabled: isDisabled }))
+    .map(opt => ({ ...opt, disabled: false }))
 })
 
 const premiumPlusTierOptions = computed(() => {
   const keys = props.submode === 'tactics' ? premiumPlusTacticKeys : premiumPlusEndgameKeys
-  const isDisabled = !hasFullAccessUser.value
   return themeOptions.value
     .filter(opt => keys.includes(opt.value))
-    .map(opt => ({ ...opt, disabled: isDisabled }))
+    .map(opt => ({ ...opt, disabled: false }))
 })
-
-function handleDisabledClick(tierType: 'basic' | 'premium' | 'premiumPlus') {
-  if (tierType === 'basic') {
-    accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.basic'), false)
-  } else if (tierType === 'premium' || tierType === 'premiumPlus') {
-    accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
-  } else {
-    throw new Error(`[PuzzleSidebar] Unsupported tier restriction type: "${tierType}". Fail-Fast!`)
-  }
-}
 
 const puzzleStore = usePuzzleStore()
 
 const selectedDifficulty = computed({
   get: () => (puzzleStore.activeParams.difficulty as 'Novice' | 'Pro' | 'Master') || 'Novice',
   set: (newDiff) => {
-    if (newDiff !== 'Novice' && !hasFullAccessUser.value) {
-      accessControl.requireFullAccess(t('puzzleCategories.tierRestriction.premium'), false)
-      return
-    }
-
     puzzleStore.activeParams.difficulty = newDiff
     loadPuzzle()
   }
@@ -273,10 +252,10 @@ const isPuzzleActive = computed(() => {
               <n-radio-button value="Novice">
                 {{ t('puzzleCategories.difficulties.level_novice') }}
               </n-radio-button>
-              <n-radio-button value="Pro" :class="{ 'disabled-diff': !hasFullAccessUser }">
+              <n-radio-button value="Pro">
                 {{ t('puzzleCategories.difficulties.level_pro') }}
               </n-radio-button>
-              <n-radio-button value="Master" :class="{ 'disabled-diff': !hasFullAccessUser }">
+              <n-radio-button value="Master">
                 {{ t('puzzleCategories.difficulties.level_master') }}
               </n-radio-button>
             </n-radio-group>
@@ -293,7 +272,6 @@ const isPuzzleActive = computed(() => {
                 :min-width="115"
                 class="tier-basic"
                 @update:value="loadPuzzle"
-                @click-disabled="handleDisabledClick('basic')"
               />
               <div class="group-divider"></div>
               <VisualRadioGroup
@@ -302,7 +280,6 @@ const isPuzzleActive = computed(() => {
                 :min-width="115"
                 class="tier-premium"
                 @update:value="loadPuzzle"
-                @click-disabled="handleDisabledClick('premium')"
               />
               <div class="group-divider"></div>
               <VisualRadioGroup
@@ -311,7 +288,6 @@ const isPuzzleActive = computed(() => {
                 :min-width="115"
                 class="tier-premium-plus"
                 @update:value="loadPuzzle"
-                @click-disabled="handleDisabledClick('premiumPlus')"
               />
             </div>
           </div>
