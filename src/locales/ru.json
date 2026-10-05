@@ -411,9 +411,10 @@
       },
       "loginPrompt": "Или войдите, чтобы использовать все функции:",
       "submodes": {
-        "finish_him": "Реализация",
-        "practical_chess": "Практические",
-        "theory_endings": "Теоретические"
+        "tactics": "ТАКТИКА",
+        "finish_him": "ДОБИВАНИЕ",
+        "practical_chess": "ПРАКТИКА",
+        "theory_endings": "ТЕОРИЯ"
       }
     },
     "userCabinet": {
@@ -445,10 +446,10 @@
         "makeTaskToday": "Начать сегодняшнюю задачу",
         "modes": {
           "all": "Режим",
-          "finishHim": "Реализация",
-          "theory": "Теория",
-          "practical": "Практика",
-          "tactics": "Тактика"
+          "tactics": "ТАКТИКА",
+          "finishHim": "ДОБИВАНИЕ",
+          "practical": "ПРАКТИКА",
+          "theory": "ТЕОРИЯ"
         }
       },
       "plan": {
@@ -506,8 +507,8 @@
     },
     "puzzle": {
       "selection": {
-        "practicalTitle": "Практика",
-        "theoryTitle": "Эндшпили"
+        "practicalTitle": "ПРАКТИКА",
+        "theoryTitle": "ТЕОРИЯ"
       },
       "youMove": {
         "title": "Оценка позиции",
@@ -697,7 +698,7 @@
         "overallSkill": "Общий Skill",
         "skillStreak": "+100 каждый день",
         "topToday": "Лучшие сегодня",
-        "finishHimLeaderboard": "Реализация"
+        "finishHimLeaderboard": "ДОБИВАНИЕ"
       },
       "sidebar": {
         "title": "Топ-10 (30 дней)",
@@ -740,6 +741,12 @@
     },
     "taskToday": {
       "title": "Дневное задание",
+      "modes": {
+        "tactics": "ТАКТИКА",
+        "finish_him": "ДОБИВАНИЕ",
+        "practical_chess": "ПРАКТИКА",
+        "theory_endings": "ТЕОРИЯ"
+      },
       "helpDone": "Готово и попробовать снова",
       "setupTitle": "Подготовка задания",
       "readyToStart": "Вы готовы начать задание? Таймер запустится немедленно.",
@@ -812,10 +819,10 @@
           "rating": "Рейтинг"
         },
         "modes": {
-          "tactics": "TACTICS",
-          "finish_him": "FINISH HIM",
-          "practical_chess": "PRACTICAL CHESS",
-          "theory_endings": "THEORY ENDINGS"
+          "tactics": "ТАКТИКА",
+          "finish_him": "ДОБИВАНИЕ",
+          "practical_chess": "ПРАКТИКА",
+          "theory_endings": "ТЕОРИЯ"
         }
       }
     },
@@ -940,10 +947,10 @@
   "shared": {
     "nav": {
       "home": "Главная",
-      "tactics": "Тактика",
-      "finishHim": "Реализация",
-      "practicalChess": "Практика",
-      "theoryEndgames": "Теория",
+      "tactics": "ТАКТИКА",
+      "finishHim": "ДОБИВАНИЕ",
+      "practicalChess": "ПРАКТИКА",
+      "theoryEndgames": "ТЕОРИЯ",
       "taskToday": "Норматив",
       "sparring": "Спарринг",
       "leaderboards": "Таблицы",
@@ -992,10 +999,10 @@
       }
     },
     "gameModes": {
-      "finishHim": "Реализация",
-      "theoryEndgames": "Эндшпиль",
-      "practicalChess": "Практика",
-      "tactics": "Тактика",
+      "tactics": "ТАКТИКА",
+      "finishHim": "ДОБИВАНИЕ",
+      "practicalChess": "ПРАКТИКА",
+      "theoryEndgames": "ТЕОРИЯ",
       "repertoire": "Репертуар"
     }
   }

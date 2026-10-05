@@ -34,28 +34,28 @@ const puzzleMeta = computed(() => {
   switch (type) {
     case 'finish_him':
       return {
-        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'Finish Him',
+        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'FINISHING',
         gradient: 'linear-gradient(135deg, #f43f5e 0%, #be123c 100%)',
         glowColor: 'rgba(244, 63, 94, 0.4)',
         borderColor: 'rgba(244, 63, 94, 0.25)'
       }
     case 'theory_endings':
       return {
-        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'Theory Endings',
+        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'THEORY',
         gradient: 'linear-gradient(135deg, #a855f7 0%, #6b21a8 100%)',
         glowColor: 'rgba(168, 85, 247, 0.4)',
         borderColor: 'rgba(168, 85, 247, 0.25)'
       }
     case 'practical_chess':
       return {
-        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'Practical Chess',
+        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'PRACTICE',
         gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
         glowColor: 'rgba(59, 130, 246, 0.4)',
         borderColor: 'rgba(59, 130, 246, 0.25)'
       }
     case 'tactics':
       return {
-        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'Tactics',
+        label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'TACTICS',
         gradient: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
         glowColor: 'rgba(245, 158, 11, 0.4)',
         borderColor: 'rgba(245, 158, 11, 0.25)'

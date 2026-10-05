@@ -411,9 +411,10 @@
       },
       "loginPrompt": "Oder melde dich an, um alle Funktionen zu nutzen:",
       "submodes": {
-        "finish_him": "Einmündung ins Endspiel",
-        "practical_chess": "Praktisches Schach",
-        "theory_endings": "Theoretische Endspiele"
+        "tactics": "TAKTIK",
+        "finish_him": "FINISHING",
+        "practical_chess": "PRAXIS",
+        "theory_endings": "THEORIE"
       }
     },
     "userCabinet": {
@@ -445,10 +446,10 @@
         "makeTaskToday": "Tagesaufgabe starten",
         "modes": {
           "all": "Modus",
-          "finishHim": "Finish Him",
-          "theory": "Theorie",
-          "practical": "Praxis",
-          "tactics": "Taktik"
+          "tactics": "TAKTIK",
+          "finishHim": "FINISHING",
+          "practical": "PRAXIS",
+          "theory": "THEORIE"
         }
       },
       "plan": {
@@ -506,8 +507,8 @@
     },
     "puzzle": {
       "selection": {
-        "practicalTitle": "Praktisches Schach",
-        "theoryTitle": "Endspiele"
+        "practicalTitle": "PRAXIS",
+        "theoryTitle": "THEORIE"
       },
       "youMove": {
         "title": "Wer Steht besser?",
@@ -697,7 +698,7 @@
         "overallSkill": "Gesamt-Skill",
         "skillStreak": "+100 jeden Tag",
         "topToday": "Top heute",
-        "finishHimLeaderboard": "Finish Him"
+        "finishHimLeaderboard": "FINISHING"
       },
       "sidebar": {
         "title": "Top 10 (30 Tage)",
@@ -740,6 +741,12 @@
     },
     "taskToday": {
       "title": "Tagesaufgabe",
+      "modes": {
+        "tactics": "TAKTIK",
+        "finish_him": "FINISHING",
+        "practical_chess": "PRAXIS",
+        "theory_endings": "THEORIE"
+      },
       "helpDone": "Fertig & Nochmals versuchen",
       "setupTitle": "Aufgabeneinrichtung",
       "readyToStart": "Bist du bereit, die Aufgabe zu starten? Der Timer beginnt sofort.",
@@ -812,10 +819,10 @@
           "rating": "Rating"
         },
         "modes": {
-          "tactics": "TACTICS",
-          "finish_him": "FINISH HIM",
-          "practical_chess": "PRACTICAL CHESS",
-          "theory_endings": "THEORY ENDINGS"
+          "tactics": "TAKTIK",
+          "finish_him": "FINISHING",
+          "practical_chess": "PRAXIS",
+          "theory_endings": "THEORIE"
         }
       }
     },
@@ -940,10 +947,10 @@
   "shared": {
     "nav": {
       "home": "Startseite",
-      "tactics": "Taktik",
-      "finishHim": "Finish Him",
-      "practicalChess": "Praktisches Schach",
-      "theoryEndgames": "Theoretische Endspiele",
+      "tactics": "TAKTIK",
+      "finishHim": "FINISHING",
+      "practicalChess": "PRAXIS",
+      "theoryEndgames": "THEORIE",
       "taskToday": "Tages Norm",
       "sparring": "Sparring",
       "leaderboards": "Bestenliste",
@@ -992,10 +999,10 @@
       }
     },
     "gameModes": {
-      "finishHim": "Finish Him",
-      "theoryEndgames": "Theoretische",
-      "practicalChess": "Practische",
-      "tactics": "Taktik",
+      "tactics": "TAKTIK",
+      "finishHim": "FINISHING",
+      "practicalChess": "PRAXIS",
+      "theoryEndgames": "THEORIE",
       "repertoire": "Repertoire"
     }
   }

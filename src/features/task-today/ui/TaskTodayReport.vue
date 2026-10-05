@@ -76,13 +76,13 @@ function formatDurationShort(ms: number): string {
 function getSubModeLabel(subMode: string): string {
   switch (subMode) {
     case 'tactics':
-      return t('features.taskToday.completed.modes.tactics', 'TACTICS')
+      return t('features.taskToday.modes.tactics', 'TACTICS')
     case 'finish_him':
-      return t('features.taskToday.completed.modes.finish_him', 'FINISH HIM')
+      return t('features.taskToday.modes.finish_him', 'FINISHING')
     case 'practical_chess':
-      return t('features.taskToday.completed.modes.practical_chess', 'PRACTICAL CHESS')
+      return t('features.taskToday.modes.practical_chess', 'PRACTICE')
     case 'theory_endings':
-      return t('features.taskToday.completed.modes.theory_endings', 'THEORY ENDINGS')
+      return t('features.taskToday.modes.theory_endings', 'THEORY')
     default:
       return subMode.replace('_', ' ').toUpperCase()
   }

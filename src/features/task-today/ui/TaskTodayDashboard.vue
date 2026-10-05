@@ -51,13 +51,19 @@ const selectedStrategy = computed({
 })
 
 const PLAN_TYPE_TABS = [
-  { key: 'taskToday', label: 'ALL IN' },
-  { key: 'tactics', label: 'TACTICS' },
-  { key: 'finish_him', label: 'FINISH HIM' },
-  { key: 'practical_chess', label: 'PRACTICAL' }
+  { key: 'tactics' },
+  { key: 'finish_him' },
+  { key: 'practical_chess' },
+  { key: 'theory_endings' }
 ] as const
 
-const selectedPlanType = ref<'taskToday' | 'tactics' | 'finish_him' | 'practical_chess'>('taskToday')
+const selectedPlanType = ref<'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings'>('tactics')
+
+function getPlanTypeLabel(planType?: string): string {
+  if (!planType) return ''
+  if (planType === 'taskToday') return 'ALL IN'
+  return t(`features.taskToday.modes.${planType}`, planType.toUpperCase())
+}
 
 
 const isStartingPlan = ref(false)
@@ -131,9 +137,9 @@ const recommendedStrategies = computed(() => {
   const recommendations = currentPlanData.value?.recommendations
   if (!recommendations) {
     return {
-      Discovery: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>,
-      Hardcore: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>,
-      Warmup: { tactics: [], finish_him: [], practical_chess: [] } as Record<string, string[]>
+      Discovery: { tactics: [], finish_him: [], practical_chess: [], theory_endings: [] } as Record<string, string[]>,
+      Hardcore: { tactics: [], finish_him: [], practical_chess: [], theory_endings: [] } as Record<string, string[]>,
+      Warmup: { tactics: [], finish_him: [], practical_chess: [], theory_endings: [] } as Record<string, string[]>
     }
   }
 
@@ -141,7 +147,8 @@ const recommendedStrategies = computed(() => {
     const result: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      practical_chess: []
+      practical_chess: [],
+      theory_endings: []
     }
     list.forEach(item => {
       const mode = item.sub_mode as keyof typeof result
@@ -168,9 +175,7 @@ const selectedPlanPreview = computed(() => {
 
   let totalTasks = 0
 
-  const subModesToPreview: SubModeType[] = pType === 'taskToday'
-    ? ['tactics', 'finish_him', 'practical_chess']
-    : [pType as SubModeType]
+  const subModesToPreview: SubModeType[] = [pType as SubModeType]
 
   const groups = subModesToPreview.map((subMode) => {
     const subConfig = getSubModeScopeConfig(diff, subMode, pType)
@@ -178,11 +183,7 @@ const selectedPlanPreview = computed(() => {
     const totalForGroup = cats.length * subConfig.puzzlesPerCategory
     totalTasks += totalForGroup
 
-    const readableName = {
-      tactics: 'Tactics',
-      finish_him: 'Finish Him',
-      practical_chess: 'Practical Chess'
-    }[subMode]
+    const readableName = getPlanTypeLabel(subMode)
 
     return {
       name: readableName,
@@ -216,7 +217,8 @@ const handleStartPlan = async () => {
     const formattedRecs: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      practical_chess: []
+      practical_chess: [],
+      theory_endings: []
     }
     strategyList.forEach(item => {
       const mode = item.sub_mode as keyof typeof formattedRecs
@@ -277,15 +279,15 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
               :key="tab.key"
               class="mode-tab-btn flex-1 py-2.5 px-2 rounded-lg font-display text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer"
               :class="{
-                'bg-neon-cyan text-void shadow-[0_0_12px_rgba(0,229,255,0.4)]': selectedPlanType === tab.key && tab.key === 'taskToday',
                 'bg-neon-cyan/90 text-void shadow-[0_0_12px_rgba(0,229,255,0.4)]': selectedPlanType === tab.key && tab.key === 'tactics',
                 'bg-neon-purple text-white shadow-[0_0_12px_rgba(176,0,255,0.4)]': selectedPlanType === tab.key && tab.key === 'finish_him',
                 'bg-success text-void shadow-[0_0_12px_rgba(0,255,85,0.4)]': selectedPlanType === tab.key && tab.key === 'practical_chess',
+                'bg-amber-400 text-void shadow-[0_0_12px_rgba(251,191,36,0.4)]': selectedPlanType === tab.key && tab.key === 'theory_endings',
                 'text-text-secondary hover:text-text-primary hover:bg-surface/50': selectedPlanType !== tab.key
               }"
               @click="selectedPlanType = tab.key"
             >
-              {{ tab.label }}
+              {{ getPlanTypeLabel(tab.key) }}
             </button>
           </div>
 
@@ -395,8 +397,8 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
                   <span class="history-date">{{ plan.date }}</span>
                   <div class="history-tags">
                     <NTag size="small" :type="plan.difficulty === 'Master' ? 'error' : plan.difficulty === 'Pro' ? 'warning' : 'info'">{{ plan.difficulty }}</NTag>
-                    <NTag size="small" :type="plan.plan_type === 'tactics' ? 'info' : plan.plan_type === 'finish_him' ? 'warning' : plan.plan_type === 'practical_chess' ? 'success' : 'default'" secondary style="margin-left: 4px;">
-                      {{ plan.plan_type === 'tactics' ? 'TACTICS' : plan.plan_type === 'finish_him' ? 'FINISH HIM' : plan.plan_type === 'practical_chess' ? 'PRACTICAL' : 'ALL IN' }}
+                    <NTag size="small" :type="plan.plan_type === 'tactics' ? 'info' : plan.plan_type === 'finish_him' ? 'warning' : plan.plan_type === 'practical_chess' ? 'success' : plan.plan_type === 'theory_endings' ? 'error' : 'default'" secondary style="margin-left: 4px;">
+                      {{ getPlanTypeLabel(plan.plan_type) }}
                     </NTag>
                     <span class="history-strat">{{ plan.strategy }}</span>
                   </div>
@@ -434,11 +436,11 @@ const handleReplay = async (plan: DailyTrainingPlanEntity) => {
             <NTag size="medium" type="success" class="pulse-tag font-condensed font-bold">ACTIVE</NTag>
             <NTag
               size="medium"
-              :type="currentPlanData?.plan_type === 'tactics' ? 'info' : currentPlanData?.plan_type === 'finish_him' ? 'warning' : currentPlanData?.plan_type === 'practical_chess' ? 'success' : 'default'"
+              :type="currentPlanData?.plan_type === 'tactics' ? 'info' : currentPlanData?.plan_type === 'finish_him' ? 'warning' : currentPlanData?.plan_type === 'practical_chess' ? 'success' : currentPlanData?.plan_type === 'theory_endings' ? 'error' : 'default'"
               secondary
               class="font-display font-bold"
             >
-              {{ currentPlanData?.plan_type === 'tactics' ? 'TACTICS' : currentPlanData?.plan_type === 'finish_him' ? 'FINISH HIM' : currentPlanData?.plan_type === 'practical_chess' ? 'PRACTICAL' : 'ALL IN' }}
+              {{ getPlanTypeLabel(currentPlanData?.plan_type) }}
             </NTag>
           </div>
 

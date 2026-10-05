@@ -70,12 +70,13 @@ export interface SubModeConfig {
   puzzlesPerCategory: number
 }
 
-export type SubModeType = 'tactics' | 'finish_him' | 'practical_chess'
+export type SubModeType = 'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings'
 
 const PRO_SCOPE_CONFIG: Record<SubModeType, SubModeConfig> = {
   tactics: { categories: 4, puzzlesPerCategory: 25 },
   finish_him: { categories: 2, puzzlesPerCategory: 5 },
-  practical_chess: { categories: 2, puzzlesPerCategory: 5 }
+  practical_chess: { categories: 2, puzzlesPerCategory: 5 },
+  theory_endings: { categories: 5, puzzlesPerCategory: 5 }
 }
 
 export const TRAINING_PLAN_CONFIGS: Record<'Novice' | 'Pro' | 'Master', Record<SubModeType, SubModeConfig>> = {
@@ -92,7 +93,7 @@ export interface ModeScopeConfig {
 export function getSubModeScopeConfig(
   difficulty: 'Novice' | 'Pro' | 'Master',
   subMode: SubModeType,
-  planType: string = 'taskToday'
+  planType: string = 'tactics'
 ): ModeScopeConfig {
   if (planType !== 'taskToday') {
     if (subMode === 'tactics') {
@@ -102,6 +103,9 @@ export function getSubModeScopeConfig(
       return { categories: 5, puzzlesPerCategory: 5 }
     }
     if (subMode === 'practical_chess') {
+      return { categories: 5, puzzlesPerCategory: 5 }
+    }
+    if (subMode === 'theory_endings') {
       return { categories: 5, puzzlesPerCategory: 5 }
     }
   }
@@ -506,7 +510,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     strategyName: 'Discovery' | 'Hardcore' | 'Warmup',
     difficulty: 'Novice' | 'Pro' | 'Master',
     recommendations: Record<string, string[]>,
-    planType: 'taskToday' | 'tactics' | 'finish_him' | 'practical_chess' | string = 'taskToday'
+    planType: 'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings' | string = 'tactics'
   ) {
     try {
       gameStore.setBotEngineId('maia-1500')

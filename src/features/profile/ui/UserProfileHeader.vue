@@ -49,13 +49,6 @@ const gameModeScores = computed(() => {
 
   return [
     {
-      key: 'finish_him',
-      label: t('pages.userCabinet.stats.modes.finishHim'),
-      icon: '🎯',
-      color: 'var(--color-accent-success)',
-      rating: ratings['finish_him'],
-    },
-    {
       key: 'tactics',
       label: t('pages.userCabinet.stats.modes.tactics'),
       icon: '🧩',
@@ -63,18 +56,25 @@ const gameModeScores = computed(() => {
       rating: ratings['tactics'],
     },
     {
-      key: 'theory_endings',
-      label: t('pages.puzzle.selection.theoryTitle'),
-      icon: '🎓',
-      color: 'var(--color-accent-error)',
-      rating: ratings['theory_endings'],
+      key: 'finish_him',
+      label: t('pages.userCabinet.stats.modes.finishHim'),
+      icon: '🎯',
+      color: 'var(--color-accent-success)',
+      rating: ratings['finish_him'],
     },
     {
       key: 'practical_chess',
-      label: t('pages.puzzle.selection.practicalTitle'),
+      label: t('pages.userCabinet.stats.modes.practical'),
       icon: '♙',
       color: 'var(--color-accent-warning)',
       rating: ratings['practical_chess'],
+    },
+    {
+      key: 'theory_endings',
+      label: t('pages.userCabinet.stats.modes.theory'),
+      icon: '🎓',
+      color: 'var(--color-accent-error)',
+      rating: ratings['theory_endings'],
     },
   ]
 })

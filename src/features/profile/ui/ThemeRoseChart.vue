@@ -329,6 +329,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
         <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
         <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
         <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
+        <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
       </n-tabs>
     </div>
 
@@ -353,6 +354,7 @@ const handleTabChange = (type: PlayPuzzleType) => {
             <n-tab name="tactics">{{ t('pages.userCabinet.stats.modes.tactics') }}</n-tab>
             <n-tab name="finish_him">{{ t('pages.userCabinet.stats.modes.finishHim') }}</n-tab>
             <n-tab name="practical_chess">{{ t('pages.userCabinet.stats.modes.practical') }}</n-tab>
+            <n-tab name="theory_endings">{{ t('pages.userCabinet.stats.modes.theory') }}</n-tab>
           </n-tabs>
         </div>
         <div class="w-full h-[60vh]">

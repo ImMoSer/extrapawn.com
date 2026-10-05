@@ -411,9 +411,10 @@
       },
       "loginPrompt": "Or log in to access all features:",
       "submodes": {
-        "finish_him": "Finish Him",
-        "practical_chess": "Practical Chess",
-        "theory_endings": "Theory Endings"
+        "tactics": "TACTICS",
+        "finish_him": "FINISHING",
+        "practical_chess": "PRACTICE",
+        "theory_endings": "THEORY"
       }
     },
     "userCabinet": {
@@ -445,10 +446,10 @@
         "makeTaskToday": "Start Daily Task",
         "modes": {
           "all": "Mode",
-          "finishHim": "Finish Him",
-          "theory": "Theory",
-          "practical": "Practical",
-          "tactics": "Tactics"
+          "tactics": "TACTICS",
+          "finishHim": "FINISHING",
+          "practical": "PRACTICE",
+          "theory": "THEORY"
         }
       },
       "plan": {
@@ -506,8 +507,8 @@
     },
     "puzzle": {
       "selection": {
-        "practicalTitle": "Practical Chess",
-        "theoryTitle": "Endgames"
+        "practicalTitle": "PRACTICE",
+        "theoryTitle": "THEORY"
       },
       "youMove": {
         "title": "CHOOSE!",
@@ -697,7 +698,7 @@
         "overallSkill": "Overall Skill",
         "skillStreak": "+100 everyday",
         "topToday": "Top Today",
-        "finishHimLeaderboard": "Finish Him"
+        "finishHimLeaderboard": "FINISHING"
       },
       "sidebar": {
         "title": "Top 10 (30 Days)",
@@ -740,6 +741,12 @@
     },
     "taskToday": {
       "title": "Task Today",
+      "modes": {
+        "tactics": "TACTICS",
+        "finish_him": "FINISHING",
+        "practical_chess": "PRACTICE",
+        "theory_endings": "THEORY"
+      },
       "helpDone": "Done & Try Again",
       "setupTitle": "Task Setup",
       "readyToStart": "Are you ready to start the task? The timer will start immediately.",
@@ -813,9 +820,9 @@
         },
         "modes": {
           "tactics": "TACTICS",
-          "finish_him": "FINISH HIM",
-          "practical_chess": "PRACTICAL CHESS",
-          "theory_endings": "THEORY ENDINGS"
+          "finish_him": "FINISHING",
+          "practical_chess": "PRACTICE",
+          "theory_endings": "THEORY"
         }
       }
     },
@@ -940,10 +947,10 @@
   "shared": {
     "nav": {
       "home": "Home",
-      "tactics": "Tactics",
-      "finishHim": "Finish Him",
-      "practicalChess": "Practical Chess",
-      "theoryEndgames": "Theory Endings",
+      "tactics": "TACTICS",
+      "finishHim": "FINISHING",
+      "practicalChess": "PRACTICE",
+      "theoryEndgames": "THEORY",
       "taskToday": "Task Today",
       "sparring": "Sparring",
       "leaderboards": "LeaderBoards",
@@ -992,10 +999,10 @@
       }
     },
     "gameModes": {
-      "finishHim": "Finish Him",
-      "theoryEndgames": "Endgames",
-      "practicalChess": "Practical",
-      "tactics": "Tactics",
+      "tactics": "TACTICS",
+      "finishHim": "FINISHING",
+      "practicalChess": "PRACTICE",
+      "theoryEndgames": "THEORY",
       "repertoire": "Repertoire"
     }
   }

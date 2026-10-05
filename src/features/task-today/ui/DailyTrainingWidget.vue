@@ -61,7 +61,8 @@ const recommendedStrategies = computed(() => {
     const result: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      practical_chess: []
+      practical_chess: [],
+      theory_endings: []
     }
     list.forEach(item => {
       const mode = item.sub_mode as keyof typeof result
@@ -78,6 +79,8 @@ const recommendedStrategies = computed(() => {
     Warmup: formatStrategy(recommendations.warmup || [])
   }
 })
+
+const strategySubModes = ['tactics', 'finish_him', 'practical_chess', 'theory_endings'] as const
 
 const isStartingPlan = ref(false)
 
@@ -98,7 +101,8 @@ const handleStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup'
     const formattedRecs: Record<string, string[]> = {
       tactics: [],
       finish_him: [],
-      practical_chess: []
+      practical_chess: [],
+      theory_endings: []
     }
     strategyList.forEach(item => {
       const mode = item.sub_mode as keyof typeof formattedRecs
@@ -110,7 +114,8 @@ const handleStartPlan = async (strategyName: 'Discovery' | 'Hardcore' | 'Warmup'
     const success = await taskTodayStore.generateAndStartPlan(
       strategyName,
       selectedDifficulty.value,
-      formattedRecs
+      formattedRecs,
+      'tactics'
     )
     if (success) {
       message.success(t('pages.userCabinet.plan.startSuccess', 'Täglicher Trainingsplan gestartet! Leite weiter...'))
@@ -217,8 +222,8 @@ const proceedWithOverwrite = () => {
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.discoveryDesc', 'Lerne neue Themen kennen und fülle Wissenslücken.') }}</p>
           </div>
           <div class="strategy-body">
-            <div v-for="subMode in ['tactics', 'finish_him', 'practical_chess']" :key="subMode" class="strategy-submode">
-              <span class="submode-label">{{ subMode.replace('_', ' ').toUpperCase() }}</span>
+            <div v-for="subMode in strategySubModes" :key="subMode" class="strategy-submode">
+              <span class="submode-label">{{ t('features.taskToday.modes.' + subMode, subMode.replace('_', ' ').toUpperCase()) }}</span>
               <div class="categories-list">
                 <span v-for="cat in recommendedStrategies.Discovery[subMode]" :key="cat" class="category-tag">
                   {{ cat }}
@@ -240,8 +245,8 @@ const proceedWithOverwrite = () => {
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.hardcoreDesc', 'Attackiere gezielt deine größten Schwächen.') }}</p>
           </div>
           <div class="strategy-body">
-            <div v-for="subMode in ['tactics', 'finish_him', 'practical_chess']" :key="subMode" class="strategy-submode">
-              <span class="submode-label">{{ subMode.replace('_', ' ').toUpperCase() }}</span>
+            <div v-for="subMode in strategySubModes" :key="subMode" class="strategy-submode">
+              <span class="submode-label">{{ t('features.taskToday.modes.' + subMode, subMode.replace('_', ' ').toUpperCase()) }}</span>
               <div class="categories-list">
                 <span v-for="cat in recommendedStrategies.Hardcore[subMode]" :key="cat" class="category-tag">
                   {{ cat }}
@@ -263,8 +268,8 @@ const proceedWithOverwrite = () => {
             <p class="strategy-desc">{{ t('pages.userCabinet.plan.warmupDesc', 'Festige dein Wissen mit deinen stärksten Themen.') }}</p>
           </div>
           <div class="strategy-body">
-            <div v-for="subMode in ['tactics', 'finish_him', 'practical_chess']" :key="subMode" class="strategy-submode">
-              <span class="submode-label">{{ subMode.replace('_', ' ').toUpperCase() }}</span>
+            <div v-for="subMode in strategySubModes" :key="subMode" class="strategy-submode">
+              <span class="submode-label">{{ t('features.taskToday.modes.' + subMode, subMode.replace('_', ' ').toUpperCase()) }}</span>
               <div class="categories-list">
                 <span v-for="cat in recommendedStrategies.Warmup[subMode]" :key="cat" class="category-tag">
                   {{ cat }}

@@ -132,7 +132,7 @@ const getPuzzleStatus = (puzzleId: string) => {
         >
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span class="font-display font-bold text-[11px] uppercase tracking-wider shrink-0">
-              {{ task.sub_mode.replace('_', ' ') }}
+              {{ t(`features.taskToday.modes.${task.sub_mode}`, task.sub_mode.replace('_', ' ').toUpperCase()) }}
             </span>
             <span class="text-[10px] text-slate-400 truncate flex-1">
               ({{ task.themes.map((t: { name: string }) => t.name).join(', ') }})
