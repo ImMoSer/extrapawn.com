@@ -1,67 +1,33 @@
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/entities/user'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { hasFullAccess, isPawn, getTierRank } from '@/shared/config/tier.config'
 
 export function useAccessControl() {
   const authStore = useAuthStore()
   const uiStore = useUiStore()
-  const router = useRouter()
 
   const isAuthenticated = computed(() => authStore.isAuthenticated)
   const userProfile = computed(() => authStore.userProfile)
-  const tier = computed(() => userProfile.value?.subscriptionTier)
+  const tier = computed(() => userProfile.value?.subscriptionTier || 'Free')
 
-  const hasFullAccessUser = computed<boolean>(() => {
-    if (!isAuthenticated.value || !userProfile.value) return false
-    return hasFullAccess(tier.value)
-  })
+  const hasFullAccessUser = computed<boolean>(() => true)
+  const userTierRank = computed<number>(() => 99)
+  const isUserPawn = computed<boolean>(() => false)
 
-  const userTierRank = computed<number>(() => {
-    return getTierRank(tier.value)
-  })
-
-  const isUserPawn = computed<boolean>(() => {
-    return isPawn(tier.value)
-  })
-
-  const canAccessCabinet = (): boolean => hasFullAccessUser.value
-  const canAccessRepertoire = (): boolean => hasFullAccessUser.value
-  const canStartPlan = (): boolean => hasFullAccessUser.value
-
-  const canPlayTheme = (themeTier?: 'basic' | 'premium' | 'premiumPlus'): boolean => {
-    if (!themeTier || themeTier === 'basic') return true
-    return hasFullAccessUser.value
-  }
-
-  const canUseDifficulty = (difficulty: string): boolean => {
-    if (difficulty === 'Novice') return true
-    return hasFullAccessUser.value
-  }
+  const canAccessCabinet = (): boolean => true
+  const canAccessRepertoire = (): boolean => true
+  const canStartPlan = (): boolean => true
+  const canPlayTheme = (_themeTier?: 'basic' | 'premium' | 'premiumPlus'): boolean => true
+  const canUseDifficulty = (_difficulty: string): boolean => true
 
   /**
-   * Primary Guard: Checks full access, triggers Paywall restriction modal if unauthorized,
-   * handles user decision (upgrade -> /pricing, cancel -> cancelRedirectPath if set).
-   * Returns boolean (true if access granted, false if restricted).
+   * Primary Guard: Since ExtraPawn is 100% free, always returns true.
    */
   async function requireFullAccess(
-    customMessage?: string,
-    cancelRedirectPath: string | false = '/'
+    _customMessage?: string,
+    _cancelRedirectPath: string | false = '/'
   ): Promise<boolean> {
-    if (hasFullAccessUser.value) return true
-
-    const res = await uiStore.showRestrictionModal(customMessage)
-    if (res === 'confirm') {
-      if (router) {
-        await router.push('/pricing')
-      }
-    } else if (res === 'cancel' && cancelRedirectPath !== false) {
-      if (router) {
-        await router.push(cancelRedirectPath)
-      }
-    }
-    return false
+    return true
   }
 
   /**

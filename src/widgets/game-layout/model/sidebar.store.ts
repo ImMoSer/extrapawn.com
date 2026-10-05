@@ -1,22 +1,12 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref } from 'vue'
 
-export type SidebarMode = 'explorer' | 'wiki' | 'coach'
+export type SidebarMode = 'explorer' | 'coach'
 
 export const useSidebarStore = defineStore('sidebar', () => {
   const activeMode = ref<SidebarMode>('coach')
-  const route = useRoute()
-
-  const isWikiAllowed = computed(() => {
-    return route?.path?.startsWith('/repertoire-training') ?? false
-  })
 
   function setMode(mode: SidebarMode) {
-    if (mode === 'wiki' && !isWikiAllowed.value) {
-      activeMode.value = 'coach'
-      return
-    }
     activeMode.value = mode
   }
 
@@ -25,18 +15,8 @@ export const useSidebarStore = defineStore('sidebar', () => {
     setMode(targetMode)
   }
 
-  watch(
-    () => route?.path,
-    () => {
-      if (activeMode.value === 'wiki' && !isWikiAllowed.value) {
-        activeMode.value = 'coach'
-      }
-    },
-  )
-
   return {
     activeMode,
-    isWikiAllowed,
     setMode,
     toggleMode,
   }

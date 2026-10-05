@@ -131,15 +131,7 @@ onUnmounted(() => {
 
 const avatarSize = computed(() => (isMobile.value ? 75 : 150))
 
-const polarStatusType = computed(() => {
-  const status = userProfile.value?.polarStatus
-  if (status === 'active') return 'success'
-  if (status === 'canceled') return 'warning'
-  if (status === 'past_due' || status === 'unpaid' || status === 'revoked') return 'error'
-  return 'default'
-})
 
-const showReactivateButton = computed(() => userProfile.value?.polarStatus === 'canceled')
 </script>
 
 <template>
@@ -164,22 +156,6 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
             <n-tag :type="getTierType(userProfile?.subscriptionTier)" round size="small">
               {{ userProfile?.subscriptionTier }}
             </n-tag>
-            <n-tag v-if="userProfile?.polarStatus" :type="polarStatusType" size="small" round ghost>
-              {{ userProfile?.polarStatus }}
-            </n-tag>
-            <n-text depth="3" class="text-xs text-text-secondary">
-              {{ formatTierExpireDate(userProfile?.TierExpire) }}
-            </n-text>
-            <n-button
-              v-if="showReactivateButton"
-              size="tiny"
-              type="warning"
-              secondary
-              round
-              @click="$emit('reactivate')"
-            >
-              {{ t('pages.userCabinet.subscription.reactivate') }}
-            </n-button>
           </n-space>
         </div>
       </div>

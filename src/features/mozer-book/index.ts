@@ -1,7 +1,0 @@
-export * from './model/wikibooks.store'
-export { default as MozerBook } from './ui/MozerBook.vue'
-export { default as MozerBookFooter } from './ui/MozerBookFooter.vue'
-export { default as MozerBookRow } from './ui/MozerBookRow.vue'
-export { default as TheoryExplorerModal } from './ui/TheoryExplorerModal.vue'
-export { default as WikiBooksPanel } from './ui/WikiBooksPanel.vue'
-export { default as WinrateBar } from './ui/WinrateBar.vue'

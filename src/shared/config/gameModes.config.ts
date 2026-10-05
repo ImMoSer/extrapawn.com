@@ -4,10 +4,8 @@ import {
   GridOutline,
   ExtensionPuzzleOutline,
   FlashOutline,
-  HardwareChipOutline,
   PersonOutline,
   TrophyOutline,
-  SchoolOutline,
 } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
@@ -25,10 +23,8 @@ export type GameModeKey =
   | 'practical_chess'
   | 'tactics'
   | 'task_today'
-  | 'sparring'
-  | 'repertoire_training'
   | 'user_cabinet'
-  | 'records'
+  | 'club_player'
 
 export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
   theory_endings: {
@@ -66,20 +62,6 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     labelKey: 'shared.nav.taskToday',
     color: 'var(--neon-cyan)',
   },
-  sparring: {
-    key: 'sparring',
-    path: '/sparring',
-    icon: HardwareChipOutline,
-    labelKey: 'shared.nav.sparring',
-    color: 'var(--neon-lime)',
-  },
-  repertoire_training: {
-    key: 'repertoire_training',
-    path: '/repertoire-training',
-    icon: SchoolOutline,
-    labelKey: 'shared.nav.repertoire',
-    color: 'var(--neon-green)',
-  },
   user_cabinet: {
     key: 'user_cabinet',
     path: '/user-cabinet',
@@ -87,11 +69,11 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     labelKey: 'shared.nav.userCabinet',
     color: 'var(--neon-orange)',
   },
-  records: {
-    key: 'records',
-    path: '/records',
+  club_player: {
+    key: 'club_player',
+    path: '/club-player',
     icon: TrophyOutline,
-    labelKey: 'shared.nav.leaderboards',
+    labelKey: 'Club Top 20',
     color: 'var(--neon-bordeaux)',
   },
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { MozerBook } from '@/features/mozer-book'
 import { EngineEvaluationHeader } from '@/features/analysis'
 import { PgnMoveHistory } from '@/features/coach'
 </script>
@@ -11,13 +10,8 @@ import { PgnMoveHistory } from '@/features/coach'
       <EngineEvaluationHeader />
     </div>
 
-    <!-- 2. MozerBook Opening Explorer -->
-    <div class="flex-1 min-h-[200px] overflow-hidden flex flex-col">
-      <MozerBook />
-    </div>
-
-    <!-- 3. PGN Move History -->
-    <div class="flex-1 min-h-[160px] overflow-hidden flex flex-col">
+    <!-- 2. PGN Move History (Partieverlauf) -->
+    <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
       <PgnMoveHistory class="h-full" />
     </div>
   </div>

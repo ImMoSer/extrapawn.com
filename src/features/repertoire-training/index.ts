@@ -1,5 +1,0 @@
-export { srsService } from './lib/SrsService'
-export { useRepertoireTrainingStore } from './model/repertoire-training.store'
-export { RepertoireTrainingStrategy } from './model/RepertoireTrainingStrategy'
-export { default as TrainingStatsPanel } from './ui/TrainingStatsPanel.vue'
-export { default as StudyImportCard } from './ui/StudyImportCard.vue'

@@ -7,18 +7,15 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-import { useAccessControl } from '@/features/access-control'
 
 import { AboutPage } from '@/pages/about'
 import { LegalPage } from '@/pages/legal'
 import { PricingPage } from '@/pages/pricing'
-import { RecordsPagePage as RecordsPage } from '@/pages/records-page'
 import { WelcomePage } from '@/pages/welcome'
-import { SparringPage } from '@/pages/sparring'
+import { ClubPlayerPage } from '@/pages/club-player'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 
 import { UserCabinetPage } from '@/pages/user-cabinet'
-import { RepertoireTrainingPage } from '@/pages/repertoire-training'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -73,27 +70,6 @@ const router = createRouter({
         if (to.params.type === 'finish_him') return '/finish-him'
         if (to.params.type === 'practical_chess') return '/practical-chess'
         return '/theory-endings'
-      }
-    },
-    {
-      path: '/sparring/:gameId?',
-      name: 'sparring',
-      component: SparringPage,
-      meta: { isGame: true, requiresAuth: true, game: 'sparring' },
-    },
-    {
-      path: '/repertoire-training',
-      name: 'repertoire-training',
-      component: RepertoireTrainingPage,
-      meta: {
-        isGame: true,
-        requiresAuth: true,
-        requiresPaid: true,
-        game: 'repertoire-training',
-        seo: {
-          titleKey: 'seo.repertoireTraining.title',
-          descriptionKey: 'seo.repertoireTraining.description',
-        },
       },
     },
     {
@@ -102,7 +78,6 @@ const router = createRouter({
       component: UserCabinetPage,
       meta: {
         requiresAuth: true,
-        requiresPaid: true,
         seo: {
           titleKey: 'seo.userCabinet.title',
           descriptionKey: 'seo.userCabinet.description',
@@ -126,11 +101,6 @@ const router = createRouter({
       component: LegalPage,
     },
     {
-      path: '/records/:id?',
-      name: 'records',
-      component: RecordsPage,
-    },
-    {
       path: '/pricing',
       name: 'pricing',
       component: PricingPage,
@@ -142,9 +112,13 @@ const router = createRouter({
       },
     },
     {
+      path: '/club-player',
+      name: 'club-player',
+      component: ClubPlayerPage,
+    },
+    {
       path: '/bonus',
-      name: 'bonus',
-      component: () => import('@/pages/bonus').then((m) => m.BonusPage),
+      redirect: '/club-player',
     },
     {
       path: '/learning-coach',
@@ -160,22 +134,6 @@ const router = createRouter({
         puzzleType: route.params.puzzleType,
         puzzleId: route.params.puzzleId,
       }),
-    },
-    {
-      path: '/endgame-analysis',
-      name: 'endgame-analysis',
-      component: () => import('@/pages/endgame-analysis/ui/EndgameAnalysisPage.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/open-flow-test',
-      name: 'open-flow-test',
-      component: () => import('@/pages/open-flow-test/ui/OpenFlowTestPage.vue'),
-    },
-    {
-      path: '/giftcode/:code',
-      name: 'giftcode',
-      component: () => import('@/pages/giftcode/ui/GiftCodeRedeemPage.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
@@ -203,39 +161,8 @@ router.beforeEach(async (to, from) => {
     })
   }
 
-  const accessControl = useAccessControl()
   const requiresAuth = to.meta.requiresAuth
-  const requiresPaid = to.meta.requiresPaid
   const isAuthenticated = authStore.isAuthenticated
-
-  // Auto-redeem pending gift code after login if present
-  const pendingGiftCode = localStorage.getItem('pending_gift_code')
-  if (pendingGiftCode && isAuthenticated) {
-    localStorage.removeItem('pending_gift_code')
-    try {
-      const uiStore = useUiStore()
-      const { apiClient } = await import('@/shared/api/client')
-      const res = await apiClient<{ success: boolean }>('/billing/redeem', {
-        method: 'POST',
-        body: JSON.stringify({ code: pendingGiftCode })
-      })
-      if (res.success) {
-        await authStore.checkSession()
-        await uiStore.showConfirmation(
-          t('puzzleCategories.tierRestriction.giftSuccess'),
-          t('puzzleCategories.tierRestriction.message'),
-          {
-            confirmText: t('shared.buttons.confirm'),
-            showCancel: false,
-            variant: 'primary',
-            icon: 'info'
-          }
-        )
-      }
-    } catch {
-      // Ignored
-    }
-  }
 
   if (requiresAuth && !isAuthenticated) {
     localStorage.setItem('redirect_after_login', to.fullPath)
@@ -254,11 +181,6 @@ router.beforeEach(async (to, from) => {
       authStore.login()
     }
     return false
-  }
-
-  if (requiresPaid) {
-    const hasAccess = await accessControl.requireFullAccess(undefined, '/')
-    if (!hasAccess) return false
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {

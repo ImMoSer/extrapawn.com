@@ -36,7 +36,6 @@ interface ClubPlayer {
 const leaderboard = ref<ClubPlayer[]>([])
 const loading = ref(false)
 
-// Mobile responsiveness - aligned with reference (600px)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
 const isMobile = computed(() => windowWidth.value < 600)
 
@@ -46,6 +45,7 @@ onMounted(() => {
       windowWidth.value = window.innerWidth
     })
   }
+  fetchLeaderboard()
 })
 
 const fetchLeaderboard = async () => {
@@ -55,7 +55,7 @@ const fetchLeaderboard = async () => {
       'https://club.extrapawn.com/api/stats/xtrapawn/players?period=last_30_days',
     )
     const data = await response.json()
-    leaderboard.value = (data || []).slice(0, 20) // Top 20
+    leaderboard.value = (data || []).slice(0, 20)
   } catch (error) {
     console.error('Failed to fetch leaderboard:', error)
   } finally {
@@ -63,15 +63,9 @@ const fetchLeaderboard = async () => {
   }
 }
 
-const getTierInfo = (index: number) => {
-  if (index < 20) return { label: 'VIP', color: 'var(--neon-ruby)' }
-  return { label: 'Pawn', color: 'var(--text-color-3)' }
-}
-
 const renderUsername = (row: ClubPlayer) => {
   const elements = []
 
-  // Title
   if (row.title) {
     elements.push(
       h(
@@ -86,7 +80,6 @@ const renderUsername = (row: ClubPlayer) => {
     )
   }
 
-  // Username Link
   elements.push(
     h(
       'a',
@@ -99,7 +92,6 @@ const renderUsername = (row: ClubPlayer) => {
     ),
   )
 
-  // Flair
   if (row.flair) {
     elements.push(
       h('img', {
@@ -124,14 +116,14 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
     {
       title: '#',
       key: 'rank',
-      width: isMobile.value ? 25 : 50,
+      width: isMobile.value ? 30 : 55,
       render: (_: ClubPlayer, index: number) =>
         h('span', { style: { color: 'var(--text-color-3)', fontWeight: 'bold' } }, index + 1),
     },
     {
       title: t('pages.bonus.table.player'),
       key: 'username',
-      minWidth: isMobile.value ? 100 : 150,
+      minWidth: isMobile.value ? 120 : 160,
       render: (row: ClubPlayer) => renderUsername(row),
     },
     {
@@ -141,26 +133,6 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       width: numericWidth,
       render: (row: ClubPlayer) =>
         h('span', { style: { fontWeight: '900', color: 'var(--neon-purple)' } }, row.vector),
-    },
-    {
-      title: 'Bonus',
-      key: 'bonus',
-      align: 'center' as const,
-      width: isMobile.value ? 70 : 100,
-      render: (_: ClubPlayer, index: number) => {
-        const tier = getTierInfo(index)
-        if (tier.label === 'Pawn')
-          return h('span', { style: { color: 'var(--text-color-3)' } }, '-')
-        return h(
-          NTag,
-          {
-            size: 'small',
-            ghost: true,
-            color: { textColor: tier.color, borderColor: tier.color },
-          },
-          { default: () => tier.label },
-        )
-      },
     },
     {
       title: t('pages.bonus.table.performance'),
@@ -190,7 +162,6 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
   ]
 
   if (isMobile.value) {
-    // Hidden on mobile to save space, keeping only essential
     return allCols.filter(
       (col) => !['performance', 'win_rate', 'max_streak', 'total_games_played'].includes(col.key),
     ) as DataTableColumns<ClubPlayer>
@@ -198,70 +169,44 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
 
   return allCols as DataTableColumns<ClubPlayer>
 })
-
-onMounted(() => {
-  fetchLeaderboard()
-})
 </script>
 
 <template>
-  <n-layout class="bonus-page-layout">
+  <n-layout class="club-player-page-layout">
     <n-layout-content
-      class="bonus-content"
+      class="club-player-content"
       :content-style="
         isMobile ? 'padding: 10px;' : 'padding: 20px; max-width: 1200px; margin: 0 auto;'
       "
     >
       <n-space vertical :size="isMobile ? 'medium' : 'large'">
         <n-h1 align-text class="page-title">
-          <n-text style="color: var(--neon-cyan)">{{
-            t('pages.pricing.bonusInfo.title')
-          }}</n-text>
+          <n-text style="color: var(--neon-cyan)">ExtraPawn Club Top 20</n-text>
         </n-h1>
 
-        <n-card class="info-card" :content-style="isMobile ? { padding: '12px' } : {}">
+        <n-card class="info-card" :content-style="isMobile ? { padding: '14px' } : { padding: '20px' }">
           <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
-            {{ t('pages.pricing.bonusInfo.howItWorks') }}
+            {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 Leaderboard' }}
           </n-h2>
+          <n-text depth="2" :style="{ fontSize: isMobile ? '0.9rem' : '1rem', display: 'block', marginBottom: '12px' }">
+            {{ t('pages.pricing.bonusInfo.p1') }}
+          </n-text>
 
-          <n-space vertical size="medium">
-            <n-text depth="1" strong :style="{ fontSize: isMobile ? '0.95rem' : '1.1rem' }">
-              {{ t('pages.pricing.bonusInfo.p1') }}
-            </n-text>
-            <n-text depth="2" :style="{ fontSize: isMobile ? '0.85rem' : '1rem' }">
-              {{ t('pages.pricing.bonusInfo.p2') }}
-            </n-text>
-
-            <n-space vertical :size="isMobile ? 'small' : 'medium'" style="margin-top: 8px">
-              <div class="condition-item">
-                <n-tag
-                  :bordered="false"
-                  size="small"
-                  strong
-                  style="
-                    min-width: 100px;
-                    justify-content: center;
-                    background: rgba(230, 57, 70, 0.15);
-                    color: var(--neon-ruby);
-                  "
-                  >TOP 1-20</n-tag
-                >
-                <n-text>{{ t('pages.pricing.bonusInfo.p3') }}</n-text>
-              </div>
-            </n-space>
-
-            <n-text
-              depth="3"
-              style="font-style: italic; font-size: 0.85rem; margin-top: 8px; display: block"
-            >
-              {{ t('pages.pricing.bonusInfo.p5') }}
-            </n-text>
-          </n-space>
+          <n-button
+            tag="a"
+            href="https://club.extrapawn.com/xtrapawn/home"
+            target="_blank"
+            type="primary"
+            ghost
+            :size="isMobile ? 'medium' : 'large'"
+            style="margin-top: 8px"
+          >
+            {{ t('pages.pricing.bonusInfo.homepageLink') || 'ExtraPawn Club Home' }}
+            <template #icon>
+              <n-icon><ArrowForwardOutline /></n-icon>
+            </template>
+          </n-button>
         </n-card>
-
-        <n-h2 prefix="bar" align-text type="success" class="table-headline">
-          {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 & Bonus Status' }}
-        </n-h2>
 
         <div class="table-wrapper">
           <n-data-table
@@ -271,25 +216,8 @@ onMounted(() => {
             :bordered="false"
             :single-line="false"
             size="small"
-            class="bonus-table"
+            class="club-table"
           />
-        </div>
-
-        <div class="footer-actions">
-          <n-button
-            tag="a"
-            href="https://club.extrapawn.com/xtrapawn/home"
-            target="_blank"
-            type="primary"
-            ghost
-            :size="isMobile ? 'medium' : 'large'"
-            block
-          >
-            {{ t('pages.pricing.bonusInfo.homepageLink') }}
-            <template #icon v-if="!isMobile">
-              <n-icon><ArrowForwardOutline /></n-icon>
-            </template>
-          </n-button>
         </div>
       </n-space>
     </n-layout-content>
@@ -297,8 +225,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.bonus-page-layout,
-.bonus-content {
+.club-player-page-layout,
+.club-player-content {
   background-color: transparent !important;
 }
 
@@ -317,19 +245,6 @@ onMounted(() => {
   border-radius: var(--panel-border-radius);
 }
 
-.condition-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-}
-.table-headline {
-  margin-bottom: 12px !important;
-  font-size: 1.4rem;
-}
-
 .table-wrapper {
   background-color: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -338,44 +253,18 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.bonus-table :deep(.n-data-table-th) {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  text-transform: uppercase;
-  font-size: 0.8em;
-  letter-spacing: 1px;
+:deep(.club-table .n-data-table-th) {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  font-weight: 700;
+  color: var(--text-color-2);
 }
 
-.bonus-table :deep(.n-data-table-td) {
+:deep(.club-table .n-data-table-td) {
   background-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-.footer-actions {
-  margin: auto;
-  text-align: center;
-  padding: 5px; /* Prevent button overflow */
-  max-width: 300px;
-}
-
-@media (max-width: 600px) {
-  .page-title {
-    font-size: 1.5rem;
-    margin-bottom: 16px !important;
-  }
-
-  .table-headline {
-    font-size: 1.2rem;
-    text-align: center;
-  }
-
-  /* Matching reference styles */
-  :deep(.n-data-table-td),
-  :deep(.n-data-table-th) {
-    padding: 2px 2px !important;
-    font-size: 0.72rem;
-  }
-
-  .bonus-table :deep(.n-data-table-th) {
-    font-size: 0.7rem;
-  }
+:deep(.club-table .n-data-table-tr:hover .n-data-table-td) {
+  background-color: rgba(255, 255, 255, 0.04) !important;
 }
 </style>

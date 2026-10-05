@@ -17,11 +17,11 @@ const sidebarStore = useSidebarStore()
 
 <template>
   <div class="h-12 w-full px-4 bg-surface/80 backdrop-blur-md border border-border rounded-xl shadow-flat flex items-center justify-between gap-3 select-none">
-    <!-- Left: Sidebar Mode Toggles (EXP - WIKI - COACH) -->
+    <!-- Left: Sidebar Mode Toggles (EXP - COACH) -->
     <div class="flex items-center gap-1.5">
       <button
         @click="sidebarStore.setMode('explorer')"
-        title="Opening Explorer & Engine Lines (EXP)"
+        title="Engine Lines & PGN (EXP)"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
         :class="
           sidebarStore.activeMode === 'explorer'
@@ -30,20 +30,6 @@ const sidebarStore = useSidebarStore()
         "
       >
         EXP
-      </button>
-
-      <button
-        v-if="sidebarStore.isWikiAllowed"
-        @click="sidebarStore.setMode('wiki')"
-        title="WikiBooks Opening Theory (WIKI)"
-        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
-        :class="
-          sidebarStore.activeMode === 'wiki'
-            ? 'bg-warning/15 text-warning border-warning/40 shadow-[0_0_10px_rgba(255,230,0,0.2)]'
-            : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
-        "
-      >
-        WIKI
       </button>
 
       <button

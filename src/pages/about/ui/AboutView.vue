@@ -9,7 +9,6 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '2.0.0'
 const modules = [
   'puzzlePlay',
   'taskToday',
-  'sparring',
   'userCabinet',
 ] as const
 
@@ -23,11 +22,6 @@ const moduleVisuals: Record<typeof modules[number], { icon: string; color: strin
     icon: '📅',
     color: 'var(--color-success)',
     glow: 'rgba(0, 255, 85, 0.15)',
-  },
-  sparring: {
-    icon: '⚔️',
-    color: 'var(--color-warning)',
-    glow: 'rgba(255, 85, 0, 0.15)',
   },
   userCabinet: {
     icon: '🧬',
