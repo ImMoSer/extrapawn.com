@@ -7,7 +7,7 @@ import {
 } from '@/entities/game'
 import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
-import { soundService } from '@/shared/lib/sound.service'
+import { soundService } from '@/shared/lib/sound'
 import { usePuzzleStore, type PuzzlePuzzle } from './puzzle.store'
 import { usePreferencesStore } from '@/features/settings'
 import i18n from '@/shared/config/i18n'
@@ -133,7 +133,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       return
     }
 
-    soundService.playSound('game_tacktics_success', 'PuzzleStrategy.scenarioSuccess')
+    soundService.play('tactics_success', 'PuzzleStrategy.scenarioSuccess')
     await this.store.handleGameOver(
       this.puzzle,
       true,
@@ -150,7 +150,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       return
     }
 
-    soundService.playSound('game_tacktics_error')
+    soundService.play('tactics_error')
     await this.store.handleGameOver(
       this.puzzle,
       false,
@@ -200,7 +200,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
           await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
-          soundService.playSound('game_play_out_start')
           this.store.feedbackMessage = t('features.puzzle.feedback.playoutStart')
         }
       } else {
@@ -213,7 +212,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
       if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
-        soundService.playSound('game_play_out_start')
         this.store.feedbackMessage = t('features.puzzle.feedback.playoutDeviation')
       } else {
         logger.info(`[PuzzleStrategy] Takeback because expected move was: ${expectedMove}`)
@@ -221,7 +219,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         const coachStore = useCoachStore()
         if (coachStore.isCoachEnabled) {
           coachStore.coachMood = 'warning'
-          soundService.playSound('game_training_error')
+          soundService.play('chpock')
           this.gameStore.undoLastUserMove()
           return
         }
@@ -279,7 +277,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     if (status.outcome) {
       this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)
       if (isWin) {
-        soundService.playSound('game_tacktics_success')
+        soundService.play('tactics_success')
         if (this.store.autoNextPuzzle) {
           this.nextPuzzleTimeout = window.setTimeout(() => {
             if (this.isDestroyed) return
@@ -287,7 +285,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
           }, this.config.nextPuzzleDelayMs)
         }
       } else {
-        soundService.playSound('game_tacktics_error')
+        soundService.play('tactics_error')
         this.nextPuzzleTimeout = window.setTimeout(() => {
           if (this.isDestroyed) return
           this.store.localRestart()

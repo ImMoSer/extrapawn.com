@@ -2,7 +2,7 @@ import { useAuthStore } from '@/entities/user'
 import { applyThemeStyle } from '../config/theme.config'
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
-import { registerVolumeProvider } from '@/shared/lib/sound.service'
+import { registerVolumeProvider } from '@/shared/lib/sound'
 import { AVAILABLE_ENGINES } from '@/features/engine/config/constants'
 import type { EngineId } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
@@ -23,7 +23,6 @@ export interface EnginePreferences {
 }
 
 export interface AudioPreferences {
-  voiceVolume: number
   boardVolume: number
 }
 
@@ -88,7 +87,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     multipv: 5,
   },
   audio: {
-    voiceVolume: 1.0,
     boardVolume: 1.0,
   },
   gameplay: {
@@ -180,11 +178,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const coachTakebackEnabled = ref(true)
   const coachTakebackDelay = ref(1000)
 
-  // Register shared providers to comply with Feature-Sliced Design
+  // Register shared provider to comply with Feature-Sliced Design
   registerVolumeProvider({
-    getVoiceVolume: () => preferences.value.audio.voiceVolume,
+    getVolume: () => preferences.value.audio.boardVolume,
     getBoardVolume: () => preferences.value.audio.boardVolume,
-    setVoiceVolume: (vol) => updatePreferences({ audio: { voiceVolume: vol } }),
+    setVolume: (vol) => updatePreferences({ audio: { boardVolume: vol } }),
     setBoardVolume: (vol) => updatePreferences({ audio: { boardVolume: vol } }),
   })
 

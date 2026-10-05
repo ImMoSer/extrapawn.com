@@ -10,7 +10,6 @@ import {
   type GameStatusInfo,
 } from '@/entities/game'
 import { usePreferencesStore } from '@/features/settings'
-import { soundService } from '@/shared/lib/sound.service'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
@@ -115,7 +114,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     const isNewRoom = activeSubmode.value !== submode
     activeSubmode.value = submode
     if (isNewRoom) {
-      soundService.playSound('app_game_entry', 'puzzleStore.initSubmode (Room Entry)')
       activeParams.value = {
         type: submode,
         category: DEFAULT_SUBMODE_CATEGORY[submode],

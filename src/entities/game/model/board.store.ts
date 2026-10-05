@@ -14,8 +14,7 @@ import { isNormal } from 'chessops'
 import { makeUci, parseSquare, parseUci as parseUciMove } from 'chessops/util'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, toRaw } from 'vue'
-import { boardSoundService } from '@/shared/lib/sound'
-import { soundService } from '@/shared/lib/sound.service'
+import { soundService } from '@/shared/lib/sound'
 
 export interface GameEndOutcome {
   winner: ChessopsColor | undefined
@@ -84,7 +83,7 @@ export const useBoardStore = defineStore('board', () => {
     drawableShapes.value = []
     coachShapes.value = []
     lastNag.value = null
-    soundService.playSound('board_load_position')
+    soundService.play('load_position')
   }
 
   function syncVisualCues(cues?: {
@@ -115,7 +114,7 @@ export const useBoardStore = defineStore('board', () => {
     fen.value = makeFen(chessPosition.value.toSetup())
 
     syncVisualCues()
-    soundService.playSound('board_load_position')
+    soundService.play('load_position')
   }
 
   function applyUciMove(uci: string, options?: { skipSound?: boolean }): boolean {
@@ -143,17 +142,17 @@ export const useBoardStore = defineStore('board', () => {
 
     if (!options?.skipSound) {
       if (isCastle) {
-        boardSoundService.play('castle', 'boardStore.applyUciMove')
+        soundService.play('castle', 'boardStore.applyUciMove')
       } else if (isCapture) {
-        boardSoundService.play('capture', 'boardStore.applyUciMove')
+        soundService.play('capture', 'boardStore.applyUciMove')
       } else if (isPromotion) {
-        boardSoundService.play('promote', 'boardStore.applyUciMove')
+        soundService.play('promote', 'boardStore.applyUciMove')
       } else {
-        boardSoundService.play('move', 'boardStore.applyUciMove')
+        soundService.play('move', 'boardStore.applyUciMove')
       }
 
       if (chessPosition.value.isCheck()) {
-        boardSoundService.play('check', 'boardStore.applyUciMove')
+        soundService.play('check', 'boardStore.applyUciMove')
       }
     }
 

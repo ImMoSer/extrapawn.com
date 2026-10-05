@@ -59,9 +59,6 @@ const PLAN_TYPE_TABS = [
 
 const selectedPlanType = ref<'taskToday' | 'tactics' | 'finish_him' | 'practical_chess'>('taskToday')
 
-const isDiffDisabled = () => {
-  return false
-}
 
 const isStartingPlan = ref(false)
 

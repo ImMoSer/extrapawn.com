@@ -1,7 +1,7 @@
 // vitest.config.ts
 import { fileURLToPath } from 'node:url'
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
-import viteConfigFn from './vite.config'
+import viteConfigFn from './vite.config.ts'
 
 export default defineConfig((configEnv) => {
   const baseConfig = typeof viteConfigFn === 'function' 

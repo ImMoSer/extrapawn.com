@@ -1,2 +1,2 @@
-export * from './boardSound.service'
-export * from './coachSpeak.service'
+export * from './sound.types'
+export * from './sound.service'

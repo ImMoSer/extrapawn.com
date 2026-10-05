@@ -123,16 +123,7 @@ const handleAuthAction = () => {
               <span>{{ t('features.settings.sounds.title') }}</span>
             </div>
             
-            <div style="margin-bottom: 10px;">
-              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.sounds.voice') }}</div>
-              <div class="slider-row">
-                <n-slider v-model:value="draftPreferences.audio.voiceVolume" :min="0" :max="1" :step="0.1" />
-                <span class="value-badge">{{ Math.round(draftPreferences.audio.voiceVolume * 100) }}%</span>
-              </div>
-            </div>
-
             <div>
-              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.sounds.board') }}</div>
               <div class="slider-row">
                 <n-slider v-model:value="draftPreferences.audio.boardVolume" :min="0" :max="1" :step="0.1" />
                 <span class="value-badge">{{ Math.round(draftPreferences.audio.boardVolume * 100) }}%</span>
