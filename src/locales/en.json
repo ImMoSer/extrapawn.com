@@ -227,7 +227,7 @@
       "boardRendering": "Data Visualization: ",
       "boardRenderingStack": "Apache ECharts for complex analytics",
       "chessEngine": "Analysis Cluster: ",
-      "chessEngineStack": "Stockfish 18, LCZero (Neural Network Hub), n8n workflow core",
+      "chessEngineStack": "Stockfish 19, LCZero (Neural Network Hub), n8n workflow core",
       "api": "Protocols: ",
       "apiStack": "Lichess REST API & OAuth2"
     },
@@ -236,7 +236,7 @@
       "title": "Licensing & Acknowledgements",
       "gplIntro": "This project is licensed under the GNU General Public License v3.0, promoting transparency and community growth.",
       "stockfish": {
-        "title": "Stockfish 18",
+        "title": "Stockfish 19",
         "text1": "Analysis and truth-seeking are powered by ",
         "text2": ", the world's strongest open-source chess engine.",
         "gplNoteTitle": "GPLv3 Commitment: ",

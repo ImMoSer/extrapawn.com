@@ -11,8 +11,8 @@ export interface EngineController {
 export function loadLocalEngine(variant: EngineVariant = 'lite'): Promise<EngineController | null> {
   const workerPath =
     variant === 'full'
-      ? '/stockfish/stockfish-18-single.js'
-      : '/stockfish/stockfish-18-lite-single.js'
+      ? '/stockfish/stockfish-19-single.js'
+      : '/stockfish/stockfish-19-lite-single.js'
   logger.info(`[EngineLoader] Initializing Single-Thread Web Worker from ${workerPath}`)
 
   return new Promise((resolve, reject) => {

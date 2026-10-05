@@ -4,17 +4,11 @@ import { Chess } from 'chessops/chess'
 import { scalachessCharPair } from 'chessops/compat'
 import { makeFen, parseFen } from 'chessops/fen'
 import { parseUci } from 'chessops/util'
-import { computed, readonly, ref } from 'vue'
+import { computed, ref } from 'vue'
 import logger from '@/shared/lib/logger'
 
-export interface DrawShape {
-  orig: string
-  dest?: string
-  brush?: string
-  modifiers?: {
-    lineWidth?: number
-  }
-}
+import type { DrawShape } from '@lichess-org/chessground/draw'
+export type { DrawShape }
 
 const BRUSH_TO_LICHESS: Record<string, string> = {
   green: 'G',

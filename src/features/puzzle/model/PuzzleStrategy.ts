@@ -163,7 +163,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
 
-    const coachStore = useCoachStore()
     const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
     // 1. In Playout Mode, check for checkmate victory or blunder takebacks

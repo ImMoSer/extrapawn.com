@@ -159,16 +159,16 @@ const showReactivateButton = computed(() => userProfile.value?.polarStatus === '
         </div>
 
         <div class="flex flex-col justify-center h-full min-h-[170px] max-md:min-h-0">
-          <n-h1 class="!m-0 !mb-2 font-display text-neon-cyan text-3xl max-md:text-xl font-bold tracking-wide">{{ userProfile.username }}</n-h1>
+          <n-h1 class="!m-0 !mb-2 font-display text-neon-cyan text-3xl max-md:text-xl font-bold tracking-wide">{{ userProfile?.username }}</n-h1>
           <n-space size="small" align="center" wrap class="mb-3">
-            <n-tag :type="getTierType(userProfile.subscriptionTier)" round size="small">
-              {{ userProfile.subscriptionTier }}
+            <n-tag :type="getTierType(userProfile?.subscriptionTier)" round size="small">
+              {{ userProfile?.subscriptionTier }}
             </n-tag>
-            <n-tag v-if="userProfile.polarStatus" :type="polarStatusType" size="small" round ghost>
-              {{ userProfile.polarStatus }}
+            <n-tag v-if="userProfile?.polarStatus" :type="polarStatusType" size="small" round ghost>
+              {{ userProfile?.polarStatus }}
             </n-tag>
             <n-text depth="3" class="text-xs text-text-secondary">
-              {{ formatTierExpireDate(userProfile.TierExpire) }}
+              {{ formatTierExpireDate(userProfile?.TierExpire) }}
             </n-text>
             <n-button
               v-if="showReactivateButton"

@@ -4,6 +4,7 @@ import { parseSan } from 'chessops/san'
 import { makeUci, parseUci } from 'chessops/util'
 import type { Move } from 'chessops/types'
 import { scalachessCharPair } from 'chessops/compat'
+import type { Key } from '@lichess-org/chessground/types'
 import { type PgnNode, type DrawShape } from './PgnService'
 
 export interface ImportResult {
@@ -151,11 +152,11 @@ export class PgnParserService {
         if (!brush) continue
 
         if (type === 'cal' && trimmed.length >= 5) {
-          const orig = trimmed.substring(1, 3)
-          const dest = trimmed.substring(3, 5)
+          const orig = trimmed.substring(1, 3) as Key
+          const dest = trimmed.substring(3, 5) as Key
           shapes.push({ orig, dest, brush })
         } else if (type === 'csl') {
-          const orig = trimmed.substring(1, 3)
+          const orig = trimmed.substring(1, 3) as Key
           shapes.push({ orig, brush })
         }
       }

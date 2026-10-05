@@ -72,8 +72,8 @@ const handleShowArrowsChange = (value: boolean) => {
 }
 
 const engineVersionOptions = [
-  { label: 'Stockfish 18 Lite (~7 MB)', value: 'lite' },
-  { label: 'Stockfish 18 Full (~113 MB)', value: 'full' },
+  { label: 'Stockfish 19 Lite (~2 MB)', value: 'lite' },
+  { label: 'Stockfish 19 Full (~95 MB)', value: 'full' },
 ]
 
 const handleEngineVersionChange = (value: 'lite' | 'full') => {
@@ -115,7 +115,7 @@ const formatSearchTimeTooltip = (value: number) => {
             size="medium"
             class="neon-switch"
           />
-          <span class="engine-label">Stockfish 18 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}</span>
+          <span class="engine-label">Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}</span>
         </div>
         <div v-if="isAnalysisActive" class="engine-depth-badge">
           <n-text depth="3">d: {{ engineDepth }}</n-text>

@@ -88,7 +88,7 @@ export const useGameStore = defineStore('game', () => {
     boardStore.syncVisualCues({
       lastMove,
       lastNag,
-      shapes: (currentNode.shapes as any[]) || [],
+      shapes: currentNode.shapes || [],
     })
   }
 

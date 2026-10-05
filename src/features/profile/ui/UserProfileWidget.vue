@@ -60,15 +60,15 @@ const avatarUrl = computed(() => {
                 class="piece-avatar"
               />
               <n-space vertical :size="0">
-                <n-text strong class="username">{{ userProfile.username }}</n-text>
+                <n-text strong class="username">{{ userProfile?.username }}</n-text>
                 <n-tag
                   :bordered="false"
-                  :type="['administrator', 'vip', 'VIP'].includes(userProfile.subscriptionTier) ? 'error' : 'warning'"
+                  :type="userProfile?.subscriptionTier && ['administrator', 'vip', 'VIP'].includes(userProfile.subscriptionTier) ? 'error' : 'warning'"
                   size="tiny"
                   round
                   uppercase
                 >
-                  {{ userProfile.subscriptionTier }}
+                  {{ userProfile?.subscriptionTier }}
                 </n-tag>
               </n-space>
             </n-space>
