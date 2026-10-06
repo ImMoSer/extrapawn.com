@@ -5,7 +5,6 @@ import {
   type GameStatusInfo,
   type IGameplayStrategy,
 } from '@/entities/game'
-import { useCoachStore } from '@/features/coach'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
 import { usePuzzleStore, type PuzzlePuzzle } from './puzzle.store'
@@ -57,6 +56,10 @@ export class PuzzleStrategy implements IGameplayStrategy {
       ? `task_today_${this.callbacks.planId}`
       : (this.puzzle.puzzle_type || 'puzzle')
     return `${prefix}_${this.puzzle.puzzle_id}`
+  }
+
+  get isPlayout(): boolean {
+    return this.isPlayoutMode
   }
 
   get config() {
@@ -188,24 +191,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
       if (isCheckmate || this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')
-        try {
-          const { useCoachStore } = await import('@/features/coach')
-          const feedbackStore = useCoachStore()
-          feedbackStore.coachMood = 'celebrating'
-        } catch (err) {
-          logger.error('[PuzzleStrategy] Error showing tactical completion feedback:', err)
-        }
 
         if (isCheckmate || this.puzzle.strategy === 'scenarioOnly') {
           await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
           this.store.feedbackMessage = t('features.puzzle.feedback.playoutStart')
-        }
-      } else {
-        const coachStore = useCoachStore()
-        if (coachStore.isCoachEnabled) {
-          coachStore.coachMood = 'proud'
         }
       }
     } else {
@@ -214,16 +205,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         this.scenarioIndex = this.scenarioMoves.length
         this.store.feedbackMessage = t('features.puzzle.feedback.playoutDeviation')
       } else {
-        logger.info(`[PuzzleStrategy] Takeback because expected move was: ${expectedMove}`)
-
-        const coachStore = useCoachStore()
-        if (coachStore.isCoachEnabled) {
-          coachStore.coachMood = 'warning'
-          soundService.play('chpock')
-          this.gameStore.undoLastUserMove()
-          return
-        }
-
+        logger.info(`[PuzzleStrategy] Scenario deviation on expected move: ${expectedMove}. Triggering failure.`)
         await this.triggerFailure()
         return
       }

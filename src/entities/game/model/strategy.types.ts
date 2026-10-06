@@ -14,9 +14,20 @@ export interface IGameCoreApi {
   // Сюда в будущем можем добавлять методы ядра, к которым нужен доступ из Стратегии
 }
 
+export type MoveInspectionDecision = 'proceed' | 'takeback'
+
+export interface IUserMoveInspector {
+  inspectUserMove: (uciMove: string, fen: string) => Promise<MoveInspectionDecision>
+}
+
 export interface IGameplayStrategy {
   readonly strategyId?: 'sparring' | 'puzzle' | 'endgame'
   readonly sessionId?: string
+  /**
+   * Указывает, находится ли партия в режиме свободной игры против движка (Playout Mode),
+   * где активен контроль качества ходов (Takeback на Blunder/Mistake).
+   */
+  readonly isPlayout?: boolean
   config?: {
     botDelayMs?: number
     initialBotDelayMs?: number

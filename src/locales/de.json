@@ -684,6 +684,41 @@
       },
       "tabs": {
         "tactic": "Taktik"
+      },
+      "settings": {
+        "buttonTitle": "Coach- & Engine-Einstellungen",
+        "buttonAriaLabel": "Coach-Einstellungen öffnen",
+        "title": "Coach-Einstellungen",
+        "serverEngineActive": "Server-Engine-Modus aktiv",
+        "assistantSection": "Coach-Assistent & Zugrücknahme",
+        "coachSpyTitle": "Coach Spy",
+        "coachSpyDesc": "Brett beobachten & Züge bewerten",
+        "autoTakebackTitle": "Auto-Takeback",
+        "autoTakebackDesc": "Automatisches Zurücknehmen bei Patzern / Fehlern",
+        "manualTakebackDesc": "Vor dem Zurücknehmen um Bestätigung bitten",
+        "takebackDelayTitle": "Takeback-Verzögerung",
+        "visualLayersSection": "Visualisierungs-Ebenen des Bretts",
+        "lastMoveQualityTitle": "Qualität des letzten Zuges",
+        "lastMoveQualityDesc": "Badge auf dem Zielfeld des letzten Zuges",
+        "recommendedArrowTitle": "Empfohlener Pfeil",
+        "recommendedArrowDesc": "Kandidatenzug-Pfeil & Ziel-NAG",
+        "tacticalPlansTitle": "Taktische & strategische Pläne",
+        "tacticalPlansDesc": "Pfeile für Angriffe, Schlüsselfelder & Pläne"
+      },
+      "panel": {
+        "title": "Coach-Analyse",
+        "pauseSpyTooltip": "Coach Spy pausieren",
+        "activateSpyTooltip": "Coach Spy aktivieren",
+        "spyPausedTitle": "Coach Spy ist pausiert",
+        "spyPausedDesc": "Live-Positionsbewertung und Patzer-Erkennung sind derzeit inaktiv.",
+        "enableSpy": "Coach Spy aktivieren"
+      },
+      "confirmation": {
+        "blunderDetected": "Grober Patzer erkannt",
+        "mistakeDetected": "Fehler erkannt",
+        "description": "Die Engine sieht eine taktische Drohung oder Bestrafung auf dem Brett. Möchten Sie diesen Zug zurücknehmen?",
+        "takeBack": "Zurücknehmen",
+        "playOn": "Weiterspielen"
       }
     },
     "leaderboards": {
@@ -983,7 +1018,8 @@
       "start": "Start",
       "continue": "Fortsetzen",
       "reset": "Zurücksetzen",
-      "delete": "Löschen"
+      "delete": "Löschen",
+      "close": "Schließen"
     },
     "board": {
       "copied": "Kopiert!"

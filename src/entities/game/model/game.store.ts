@@ -11,7 +11,7 @@ import { ref, computed } from 'vue'
 import { pgnService, NAG_MAPPING, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import type { Outcome as ChessopsOutcome } from 'chessops'
 
-import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
+import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo, IUserMoveInspector } from './strategy.types'
 import { GameAudioEngine } from './GameAudioEngine'
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS'
@@ -31,7 +31,18 @@ export const useGameStore = defineStore('game', () => {
   const isMoveProcessing = ref(false)
   const botEngineId = ref<EngineId>('maia-1500')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
+  const moveInspector = ref<IUserMoveInspector | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
+
+  function registerMoveInspector(inspector: IUserMoveInspector) {
+    moveInspector.value = inspector
+  }
+
+  function unregisterMoveInspector(inspector?: IUserMoveInspector) {
+    if (!inspector || moveInspector.value === inspector) {
+      moveInspector.value = null
+    }
+  }
 
   const stopHandlers = new Set<() => void>()
 
@@ -431,7 +442,19 @@ export const useGameStore = defineStore('game', () => {
         await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
       }
 
-      const isGameOver = _checkAndHandleGameOver()
+      let isGameOver = _checkAndHandleGameOver()
+
+      // Playout Mode Coach Inspection (only when game is active, in playout mode, and inspector is registered)
+      const isPlayout = strategyAtStart?.isPlayout ?? false
+      if (!isGameOver && isPlayout && moveInspector.value && gamePhase.value === 'PLAYING') {
+        const decision = await moveInspector.value.inspectUserMove(intendedUci, boardStore.fen)
+        if (decision === 'takeback') {
+          undoLastUserMove()
+          return
+        }
+      }
+
+      isGameOver = _checkAndHandleGameOver()
 
       if (!isGameOver && gamePhase.value === 'PLAYING' && boardStore.turn !== playerColor.value) {
         await triggerBotMove()
@@ -508,6 +531,9 @@ export const useGameStore = defineStore('game', () => {
     setBotEngineId,
     triggerBotMove,
     registerStopHandler,
+    registerMoveInspector,
+    unregisterMoveInspector,
+    getGameStatus,
   }
 })
 

@@ -684,6 +684,41 @@
       },
       "tabs": {
         "tactic": "Tactics"
+      },
+      "settings": {
+        "buttonTitle": "Coach & Engine settings",
+        "buttonAriaLabel": "Open coach settings",
+        "title": "Coach Settings",
+        "serverEngineActive": "Server Engine Mode Active",
+        "assistantSection": "Coach Assistant & Takeback",
+        "coachSpyTitle": "Coach Spy",
+        "coachSpyDesc": "Watch board & evaluate moves",
+        "autoTakebackTitle": "Auto-Takeback",
+        "autoTakebackDesc": "Auto-undo on blunder / mistake",
+        "manualTakebackDesc": "Ask for confirmation before undo",
+        "takebackDelayTitle": "Takeback Delay",
+        "visualLayersSection": "Board Visualization Layers",
+        "lastMoveQualityTitle": "Last Move Quality",
+        "lastMoveQualityDesc": "Badge on last move destination",
+        "recommendedArrowTitle": "Recommended Arrow",
+        "recommendedArrowDesc": "Candidate move arrow & target NAG",
+        "tacticalPlansTitle": "Tactical & Strategic Plans",
+        "tacticalPlansDesc": "Arrows for attacks, key squares & plans"
+      },
+      "panel": {
+        "title": "Coach Analysis",
+        "pauseSpyTooltip": "Pause Coach Spy",
+        "activateSpyTooltip": "Activate Coach Spy",
+        "spyPausedTitle": "Coach Spy is Paused",
+        "spyPausedDesc": "Live position evaluation and blunder detection are currently inactive.",
+        "enableSpy": "Enable Coach Spy"
+      },
+      "confirmation": {
+        "blunderDetected": "Blunder Detected",
+        "mistakeDetected": "Mistake Detected",
+        "description": "The engine sees a tactical threat or punishment on the board. Do you want to take back this move?",
+        "takeBack": "Take Back",
+        "playOn": "Play On"
       }
     },
     "leaderboards": {
@@ -983,7 +1018,8 @@
       "start": "Start",
       "continue": "Continue",
       "reset": "Reset",
-      "delete": "Delete"
+      "delete": "Delete",
+      "close": "Close"
     },
     "board": {
       "copied": "Copied!"

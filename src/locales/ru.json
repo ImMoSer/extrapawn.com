@@ -684,6 +684,41 @@
       },
       "tabs": {
         "tactic": "Тактика"
+      },
+      "settings": {
+        "buttonTitle": "Настройки тренера и движка",
+        "buttonAriaLabel": "Открыть настройки тренера",
+        "title": "Настройки тренера",
+        "serverEngineActive": "Активен режим серверного движка",
+        "assistantSection": "Ассистент тренера и откат ходов",
+        "coachSpyTitle": "Coach Spy",
+        "coachSpyDesc": "Следить за доской и оценивать ходы",
+        "autoTakebackTitle": "Авто-откат ходов",
+        "autoTakebackDesc": "Авто-возврат при грубых ошибках и зевках",
+        "manualTakebackDesc": "Запрашивать подтверждение перед возвратом хода",
+        "takebackDelayTitle": "Задержка отката",
+        "visualLayersSection": "Слои визуализации доски",
+        "lastMoveQualityTitle": "Качество последнего хода",
+        "lastMoveQualityDesc": "Бейдж на поле назначения последнего хода",
+        "recommendedArrowTitle": "Рекомендованная стрелка",
+        "recommendedArrowDesc": "Стрелка лучшего хода и целевой NAG",
+        "tacticalPlansTitle": "Тактические и стратегические планы",
+        "tacticalPlansDesc": "Стрелки атак, ключевых полей и планов"
+      },
+      "panel": {
+        "title": "Анализ тренера",
+        "pauseSpyTooltip": "Приостановить Coach Spy",
+        "activateSpyTooltip": "Включить Coach Spy",
+        "spyPausedTitle": "Coach Spy на паузе",
+        "spyPausedDesc": "Оценка позиции в реальном времени и отслеживание зевков сейчас отключены.",
+        "enableSpy": "Включить Coach Spy"
+      },
+      "confirmation": {
+        "blunderDetected": "Обнаружен зевок",
+        "mistakeDetected": "Обнаружена ошибка",
+        "description": "Движок видит тактическую угрозу или опровержение на доске. Хотите взять ход назад?",
+        "takeBack": "Вернуть ход",
+        "playOn": "Продолжить"
       }
     },
     "leaderboards": {
@@ -983,7 +1018,8 @@
       "start": "Начать",
       "continue": "Продолжить",
       "reset": "Сбросить",
-      "delete": "Удалить"
+      "delete": "Удалить",
+      "close": "Закрыть"
     },
     "board": {
       "copied": "Скопировано!"

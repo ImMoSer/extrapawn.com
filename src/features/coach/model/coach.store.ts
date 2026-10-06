@@ -3,10 +3,11 @@ import { ref, computed, watch } from 'vue'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 
-import { useBoardStore } from '@/entities/game'
+import { useBoardStore, useGameStore, type IUserMoveInspector, type MoveInspectionDecision } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { parseVisualCommands } from '@/shared/lib/engine/coach/visualizer'
 import logger from '@/shared/lib/logger'
+import { soundService } from '@/shared/lib/sound'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
@@ -18,8 +19,25 @@ export interface CoachVisualLayers {
 
 export type CoachMood = 'neutral' | 'proud' | 'shocked' | 'thoughtful' | 'warning' | 'relieved' | 'celebrating'
 
+export interface CoachPendingDecision {
+  moveUci: string
+  quality: 'mistake' | 'blunder'
+  resolve: (decision: MoveInspectionDecision) => void
+}
+
+export interface CoachSettingsDto {
+  coachSpy: boolean
+  autoTakeback: boolean
+  autoTakebackDelay: number
+  showVisuals: boolean
+  visualLayers: CoachVisualLayers
+}
+
+const COACH_SETTINGS_STORAGE_KEY = 'extrapawn_coach_settings'
+
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
+  const gameStore = useGameStore()
   const authStore = useAuthStore()
 
   // 1. Core State
@@ -29,10 +47,21 @@ export const useCoachStore = defineStore('coach', () => {
   const posExplanation = ref<CoachExplanation | null>(null)
   const coachMood = ref<CoachMood>('neutral')
 
-  // Cache FEN & UCI
+  // 2. Settings (Coach Spy, Auto Takeback & Delay)
+  const coachSpy = ref(true)
+  const autoTakeback = ref(true)
+  const autoTakebackDelay = ref(1000)
+
+  // 3. Interactive Decision State (when autoTakeback is false)
+  const pendingDecision = ref<CoachPendingDecision | null>(null)
+  let takebackTimer: number | null = null
+
+  // Cache FEN & UCI & in-flight analysis deduplication
   const lastFetchedFen = ref('')
   const lastFetchedUci = ref<string | null>(null)
   const latestAnalysisToken = ref(0)
+  let inFlightAnalysisPromise: Promise<CoachExplanation | null> | null = null
+  let inFlightAnalysisKey: string | null = null
 
   // Visuals State
   const showVisuals = ref(true)
@@ -42,19 +71,168 @@ export const useCoachStore = defineStore('coach', () => {
     tacticalPlans: true,
   })
 
+  // Load persisted settings
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(COACH_SETTINGS_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<CoachSettingsDto>
+        if (typeof parsed.coachSpy === 'boolean') coachSpy.value = parsed.coachSpy
+        if (typeof parsed.autoTakeback === 'boolean') autoTakeback.value = parsed.autoTakeback
+        if (typeof parsed.autoTakebackDelay === 'number') {
+          autoTakebackDelay.value = Math.min(3000, Math.max(100, Math.round(parsed.autoTakebackDelay)))
+        }
+        if (typeof parsed.showVisuals === 'boolean') showVisuals.value = parsed.showVisuals
+        if (parsed.visualLayers) {
+          visualLayers.value = { ...visualLayers.value, ...parsed.visualLayers }
+        }
+      }
+    } catch (err) {
+      logger.error('[CoachStore] Failed to load coach settings:', err)
+    }
+  }
+
+  function saveSettings() {
+    try {
+      const data: CoachSettingsDto = {
+        coachSpy: coachSpy.value,
+        autoTakeback: autoTakeback.value,
+        autoTakebackDelay: autoTakebackDelay.value,
+        showVisuals: showVisuals.value,
+        visualLayers: visualLayers.value,
+      }
+      localStorage.setItem(COACH_SETTINGS_STORAGE_KEY, JSON.stringify(data))
+    } catch (err) {
+      logger.error('[CoachStore] Failed to save coach settings:', err)
+    }
+  }
+
+  loadSettings()
+
+  function toggleCoachSpy() {
+    coachSpy.value = !coachSpy.value
+    saveSettings()
+    if (!coachSpy.value) {
+      boardStore.setCoachShapes([])
+      posExplanation.value = null
+      cancelPendingDecision()
+    } else if (boardStore.fen) {
+      runAnalysis(boardStore.fen, true)
+    }
+  }
+
+  function toggleAutoTakeback() {
+    autoTakeback.value = !autoTakeback.value
+    saveSettings()
+  }
+
+  function setAutoTakebackDelay(delay: number) {
+    autoTakebackDelay.value = Math.min(3000, Math.max(100, Math.round(delay)))
+    saveSettings()
+  }
+
+  function cancelPendingDecision() {
+    if (takebackTimer !== null) {
+      clearTimeout(takebackTimer)
+      takebackTimer = null
+    }
+    if (pendingDecision.value) {
+      const cb = pendingDecision.value.resolve
+      pendingDecision.value = null
+      cb('proceed')
+    }
+  }
+
+  function confirmTakeback() {
+    if (pendingDecision.value) {
+      const cb = pendingDecision.value.resolve
+      pendingDecision.value = null
+      soundService.play('chpock')
+      cb('takeback')
+    }
+  }
+
+  function confirmPlayOn() {
+    if (pendingDecision.value) {
+      const cb = pendingDecision.value.resolve
+      pendingDecision.value = null
+      cb('proceed')
+    }
+  }
+
+  // 4. Move Inspector implementation for GameStore
+  async function inspectUserMove(uci: string, fen: string): Promise<MoveInspectionDecision> {
+    if (!isCoachEnabled.value || !coachSpy.value) {
+      return 'proceed'
+    }
+
+    cancelPendingDecision()
+
+    const explanation = await runAnalysis(fen, false, uci)
+    if (!explanation) {
+      return 'proceed'
+    }
+
+    const quality = explanation.last_move_analysis?.quality
+    const isMistakeOrBlunder = quality === 'mistake' || quality === 'blunder'
+
+    if (!isMistakeOrBlunder) {
+      return 'proceed'
+    }
+
+    logger.info(`[CoachStore] Move ${uci} flagged as ${quality}. Takeback initiated.`)
+    soundService.play('tactics_error')
+
+    if (autoTakeback.value) {
+      return new Promise<MoveInspectionDecision>((resolve) => {
+        takebackTimer = window.setTimeout(() => {
+          takebackTimer = null
+          soundService.play('chpock')
+          resolve('takeback')
+        }, autoTakebackDelay.value)
+      })
+    } else {
+      return new Promise<MoveInspectionDecision>((resolve) => {
+        pendingDecision.value = {
+          moveUci: uci,
+          quality: quality as 'mistake' | 'blunder',
+          resolve: (decision) => {
+            pendingDecision.value = null
+            resolve(decision)
+          },
+        }
+      })
+    }
+  }
+
+  const coachInspector: IUserMoveInspector = {
+    inspectUserMove,
+  }
+
   function setCoachEnabled(enabled: boolean) {
     isCoachEnabled.value = enabled
     if (!enabled) {
       boardStore.setCoachShapes([])
+      cancelPendingDecision()
+      gameStore.unregisterMoveInspector(coachInspector)
+    } else {
+      gameStore.registerMoveInspector(coachInspector)
     }
+  }
+
+  // Register move inspector if coach is enabled
+  if (isCoachEnabled.value) {
+    gameStore.registerMoveInspector(coachInspector)
   }
 
   function toggleVisualLayer(layer: keyof CoachVisualLayers) {
     visualLayers.value[layer] = !visualLayers.value[layer]
+    saveSettings()
   }
 
   function toggleVisuals() {
     showVisuals.value = !showVisuals.value
+    saveSettings()
     if (!showVisuals.value) {
       boardStore.setCoachShapes([])
     } else if (posExplanation.value?.action) {
@@ -140,12 +318,14 @@ export const useCoachStore = defineStore('coach', () => {
 
   // EvalBar integration getters
   const evalCp = computed<number | null>(() => {
+    if (!coachSpy.value) return null
     const top = topMoves.value[0]
     if (!top || top.isMate) return null
     return Math.round((top.eval_pawns ?? 0) * 100)
   })
 
   const evalMate = computed<number | null>(() => {
+    if (!coachSpy.value) return null
     const top = topMoves.value[0]
     if (!top || !top.isMate) return null
     return top.mateIn ?? null
@@ -173,7 +353,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 1. Last Move NAG Shape (Layer: lastMoveNag)
   const lastMoveNagShape = computed<DrawShape | null>(() => {
-    if (!showVisuals.value || !visualLayers.value.lastMoveNag) return null
+    if (!coachSpy.value || !visualLayers.value.lastMoveNag) return null
     const lma = posExplanation.value?.last_move_analysis
     const uci = lma?.move_uci || (lma as Record<string, unknown> | undefined)?.uci
     const quality = lma?.quality
@@ -189,7 +369,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 2. Candidate Move NAG Shape (Layer: candidateArrow)
   const candidateNagShape = computed<DrawShape | null>(() => {
-    if (!showVisuals.value || !visualLayers.value.candidateArrow) return null
+    if (!coachSpy.value || !visualLayers.value.candidateArrow) return null
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
     const moveUci = selectedMove?.uci || selectedMove?.move
@@ -206,7 +386,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 3. Candidate Arrow Shape (draws selected or best candidate move arrow)
   const candidateArrowShape = computed<DrawShape | null>(() => {
-    if (!showVisuals.value || !visualLayers.value.candidateArrow) return null
+    if (!coachSpy.value || !visualLayers.value.candidateArrow) return null
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
     const moveUci = selectedMove?.uci || selectedMove?.move
@@ -227,7 +407,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 4. Tactical Plans Shapes from visual_commands
   const tacticalShapes = computed<DrawShape[]>(() => {
-    if (!showVisuals.value || !visualLayers.value.tacticalPlans) return []
+    if (!coachSpy.value || !visualLayers.value.tacticalPlans) return []
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
 
@@ -245,6 +425,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const drawableShapes = computed<DrawShape[]>(() => {
+    if (!coachSpy.value) return []
     const shapes: DrawShape[] = []
     if (lastMoveNagShape.value) {
       shapes.push(lastMoveNagShape.value)
@@ -271,12 +452,28 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true },
   )
 
-  // Reactive Board FEN Listener: Coach automatically analyzes any position on the board
+  // Reactive Board FEN Listener: Coach automatically analyzes board when coachSpy is enabled
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (isCoachEnabled.value && newFen) {
+      if (isCoachEnabled.value && coachSpy.value && newFen) {
         runAnalysis(newFen)
+      }
+    },
+  )
+
+  // Watch for game phase changes (reset/cancel on gameOver or idle, celebrate on win)
+  watch(
+    () => gameStore.gamePhase,
+    (phase) => {
+      if (phase === 'GAMEOVER') {
+        cancelPendingDecision()
+        const status = gameStore.getGameStatus()
+        if (status.outcome?.winner === gameStore.playerColor) {
+          coachMood.value = 'celebrating'
+        }
+      } else if (phase === 'IDLE') {
+        cancelPendingDecision()
       }
     },
   )
@@ -287,8 +484,8 @@ export const useCoachStore = defineStore('coach', () => {
     force = false,
     overrideLastMoveUci?: string | null,
     _overrideFenBefore?: string | null,
-  ) {
-    if (!currentFen || !isCoachEnabled.value) return
+  ): Promise<CoachExplanation | null> {
+    if (!currentFen || !isCoachEnabled.value || !coachSpy.value) return null
 
     if (_overrideFenBefore) {
       logger.info(`[CoachStore] Analysis called with overrideFenBefore: ${_overrideFenBefore}`)
@@ -298,8 +495,14 @@ export const useCoachStore = defineStore('coach', () => {
     const lastMoveUci = moves.length > 0 ? moves[moves.length - 1] : null
 
     const payloadKeyUci = lastMoveUci || 'null'
-    if (!force && currentFen === lastFetchedFen.value && payloadKeyUci === lastFetchedUci.value) {
-      return
+    const requestKey = `${currentFen}_${payloadKeyUci}`
+
+    if (!force && inFlightAnalysisKey === requestKey && inFlightAnalysisPromise) {
+      return inFlightAnalysisPromise
+    }
+
+    if (!force && currentFen === lastFetchedFen.value && payloadKeyUci === lastFetchedUci.value && posExplanation.value) {
+      return posExplanation.value
     }
 
     lastFetchedFen.value = currentFen
@@ -310,68 +513,77 @@ export const useCoachStore = defineStore('coach', () => {
     posExplanation.value = null
     boardStore.setCoachShapes([])
 
-    try {
-      const userId = authStore.effectiveLichessUsername || authStore.userProfile?.username || authStore.userProfile?.id || 'default_user'
+    inFlightAnalysisKey = requestKey
+    inFlightAnalysisPromise = (async () => {
+      try {
+        const userId = authStore.effectiveLichessUsername || authStore.userProfile?.username || authStore.userProfile?.id || 'default_user'
 
-      const payload = {
-        user_id: userId,
-        start_fen: startFen,
-        moves,
-      }
-
-      const response = await fetch('/api/coach-engine/uci_fen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Server engine HTTP error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (analysisToken !== latestAnalysisToken.value) return
-
-      posExplanation.value = data
-      selectedMoveIndex.value = 0
-
-      // Update Coach Mood
-      const quality = data.last_move_analysis?.quality
-      if (quality) {
-        switch (quality) {
-          case 'brilliant':
-          case 'great':
-            coachMood.value = 'proud'
-            break
-          case 'best':
-          case 'excellent':
-            coachMood.value = 'relieved'
-            break
-          case 'inaccuracy':
-          case 'missed_mate':
-            coachMood.value = 'thoughtful'
-            break
-          case 'mistake':
-            coachMood.value = 'warning'
-            break
-          case 'blunder':
-            coachMood.value = 'shocked'
-            break
-          default:
-            coachMood.value = 'neutral'
+        const payload = {
+          user_id: userId,
+          start_fen: startFen,
+          moves,
         }
-      } else {
-        coachMood.value = 'neutral'
-      }
 
-      logger.info(`[CoachStore] Analysis loaded for FEN: ${currentFen}`)
-    } catch (err) {
-      logger.warn('[CoachStore] Server-driven analysis request failed:', err)
-    } finally {
-      if (analysisToken === latestAnalysisToken.value) {
-        isAnalyzing.value = false
+        const response = await fetch('/api/coach-engine/uci_fen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          throw new Error(`Server engine HTTP error: ${response.status}`)
+        }
+
+        const data: CoachExplanation = await response.json()
+        if (analysisToken !== latestAnalysisToken.value) return null
+
+        posExplanation.value = data
+        selectedMoveIndex.value = 0
+
+        // Update Coach Mood
+        const quality = data.last_move_analysis?.quality
+        if (quality) {
+          switch (quality) {
+            case 'brilliant':
+            case 'great':
+              coachMood.value = 'proud'
+              break
+            case 'best':
+            case 'excellent':
+              coachMood.value = 'relieved'
+              break
+            case 'inaccuracy':
+            case 'missed_mate':
+              coachMood.value = 'thoughtful'
+              break
+            case 'mistake':
+              coachMood.value = 'warning'
+              break
+            case 'blunder':
+              coachMood.value = 'shocked'
+              break
+            default:
+              coachMood.value = 'neutral'
+          }
+        } else {
+          coachMood.value = 'neutral'
+        }
+
+        logger.info(`[CoachStore] Analysis loaded for FEN: ${currentFen}`)
+        return data
+      } catch (err) {
+        logger.warn('[CoachStore] Server-driven analysis request failed:', err)
+        return null
+      } finally {
+        if (analysisToken === latestAnalysisToken.value) {
+          isAnalyzing.value = false
+        }
+        inFlightAnalysisPromise = null
+        inFlightAnalysisKey = null
       }
-    }
+    })()
+
+    return inFlightAnalysisPromise
   }
 
   async function analyzeCurrentPosition(targetFen?: string) {
@@ -392,6 +604,17 @@ export const useCoachStore = defineStore('coach', () => {
   return {
     isCoachEnabled,
     setCoachEnabled,
+    coachSpy,
+    toggleCoachSpy,
+    autoTakeback,
+    toggleAutoTakeback,
+    autoTakebackDelay,
+    setAutoTakebackDelay,
+    pendingDecision,
+    confirmTakeback,
+    confirmPlayOn,
+    cancelPendingDecision,
+    inspectUserMove,
     posExplanation,
     isAnalyzing,
     selectedMoveIndex,

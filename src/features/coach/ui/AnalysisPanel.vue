@@ -2,10 +2,12 @@
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { NIcon } from 'naive-ui'
 import { EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { useCoachStore } from '../model/coach.store'
 import QualityIcon from './QualityIcon.vue'
 import SettingsPanel from './SettingsPanel.vue'
 
+const { t } = useI18n()
 const coachStore = useCoachStore()
 
 const props = defineProps<{
@@ -198,27 +200,29 @@ function getPlanBrief(move: CoachTopMove): string | null {
     <!-- Coach Header: Title & Coach Controls (Eye & Settings) -->
     <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-elevated/40 shrink-0">
       <div class="flex items-center gap-2">
-        <span class="text-xs font-bold uppercase tracking-wider text-text-primary">Coach Analysis</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-text-primary">{{ t('features.coach.panel.title') }}</span>
       </div>
       <div class="flex items-center gap-1.5">
         <button
-          @click="coachStore.toggleVisuals()"
-          :title="coachStore.showVisuals ? 'Brett-Visualisierungen ausblenden' : 'Brett-Visualisierungen anzeigen'"
+          @click="coachStore.toggleCoachSpy()"
+          :title="coachStore.coachSpy ? t('features.coach.panel.pauseSpyTooltip') : t('features.coach.panel.activateSpyTooltip')"
           class="p-1 rounded border text-xs cursor-pointer flex items-center justify-center transition-colors"
           :class="
-            coachStore.showVisuals
+            coachStore.coachSpy
               ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,229,255,0.3)]'
               : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
           "
         >
           <NIcon size="14">
-            <EyeOutline v-if="coachStore.showVisuals" />
+            <EyeOutline v-if="coachStore.coachSpy" />
             <EyeOffOutline v-else />
           </NIcon>
         </button>
         <SettingsPanel @change="coachStore.handleSettingsChange()" />
       </div>
     </div>
+
+    <template v-if="coachStore.coachSpy">
 
     <!-- Compact status line -->
     <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
@@ -237,6 +241,47 @@ function getPlanBrief(move: CoachTopMove): string | null {
           {{ materialDelta > 0 ? 'White' : 'Black' }} +{{ Math.abs(materialDelta).toFixed(1) }}
         </span>
       </template>
+    </div>
+
+    <!-- Interactive Takeback Confirmation Alert (when autoTakeback is false) -->
+    <div
+      v-if="coachStore.pendingDecision"
+      class="m-2.5 p-3 rounded-lg border flex flex-col gap-2 shadow-lg transition-all"
+      :class="coachStore.pendingDecision.quality === 'blunder'
+        ? 'bg-danger/10 border-danger/40 text-danger'
+        : 'bg-orange/10 border-orange/40 text-orange'"
+    >
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+          <span>{{ coachStore.pendingDecision.quality === 'blunder' ? ('💥 ' + t('features.coach.confirmation.blunderDetected')) : ('⚠️ ' + t('features.coach.confirmation.mistakeDetected')) }}</span>
+        </div>
+        <span
+          class="text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider"
+          :class="coachStore.pendingDecision.quality === 'blunder' ? 'bg-danger/20 text-danger' : 'bg-orange/20 text-orange'"
+        >
+          {{ coachStore.pendingDecision.quality }}
+        </span>
+      </div>
+
+      <p class="text-[11px] text-text-primary leading-snug">
+        {{ t('features.coach.confirmation.description') }}
+      </p>
+
+      <div class="flex items-center gap-2 pt-0.5">
+        <button
+          @click="coachStore.confirmTakeback()"
+          class="flex-1 py-1.5 px-3 rounded text-[11px] font-bold bg-danger/20 hover:bg-danger/30 text-danger border border-danger/50 cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+        >
+          <span>↩️</span>
+          <span>{{ t('features.coach.confirmation.takeBack') }}</span>
+        </button>
+        <button
+          @click="coachStore.confirmPlayOn()"
+          class="py-1.5 px-3 rounded text-[11px] font-medium bg-elevated hover:bg-border-hover text-text-secondary hover:text-text-primary border border-border cursor-pointer transition-all flex items-center justify-center active:scale-95"
+        >
+          {{ t('features.coach.confirmation.playOn') }}
+        </button>
+      </div>
     </div>
 
     <!-- Last move card -->
@@ -491,6 +536,36 @@ function getPlanBrief(move: CoachTopMove): string | null {
           </template>
         </div>
       </div>
+    </div>
+    </template>
+
+    <!-- Empty / Paused Coach State when Coach Spy is inactive -->
+    <div
+      v-else
+      class="flex-1 flex flex-col items-center justify-center p-6 text-center text-text-secondary gap-3 select-none"
+    >
+      <div
+        class="w-12 h-12 rounded-full bg-elevated border border-border flex items-center justify-center text-text-disabled shadow-inner"
+      >
+        <NIcon size="24">
+          <EyeOffOutline />
+        </NIcon>
+      </div>
+      <div class="flex flex-col gap-1 max-w-[240px]">
+        <span class="text-xs font-bold text-text-primary">{{ t('features.coach.panel.spyPausedTitle') }}</span>
+        <span class="text-[11px] leading-relaxed text-text-secondary">
+          {{ t('features.coach.panel.spyPausedDesc') }}
+        </span>
+      </div>
+      <button
+        @click="coachStore.toggleCoachSpy()"
+        class="mt-1 px-3 py-1.5 rounded-md text-[11px] font-bold bg-neon-cyan/15 hover:bg-neon-cyan/25 text-neon-cyan border border-neon-cyan/40 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+      >
+        <NIcon size="14">
+          <EyeOutline />
+        </NIcon>
+        <span>{{ t('features.coach.panel.enableSpy') }}</span>
+      </button>
     </div>
   </div>
 </template>
