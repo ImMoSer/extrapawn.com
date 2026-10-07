@@ -362,6 +362,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
+    gameStore.setGamePhase('GAMEOVER')
     cancelPendingTransition()
     const currentToken = activeSessionToken.value
     const preferencesStore = usePreferencesStore()
@@ -417,6 +418,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.rating ? Number(puzzle.rating) : undefined
       )
     }
+
+    gameStore.setGamePhase('GAMEOVER')
 
     const allDone = trainingPlan.value?.tasks.every((t: TrainingTask) => (tasksPuzzles.value[t.sub_mode]?.length || 0) === 0)
     if (allDone) {

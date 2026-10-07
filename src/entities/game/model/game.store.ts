@@ -222,6 +222,10 @@ export const useGameStore = defineStore('game', () => {
       const fenAtRequest = boardStore.fen
       const startTime = Date.now()
       const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
+      if (!uci) {
+        logger.info('[GameStore] No bot move requested by strategy.')
+        return
+      }
       const elapsedTime = Date.now() - startTime
 
       const strategyBotDelay = currentStrategy.value.config?.botDelayMs ?? 0

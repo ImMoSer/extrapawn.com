@@ -10,6 +10,7 @@ import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
+import { usePreferencesStore } from '@/features/settings'
 
 export interface CoachVisualLayers {
   lastMoveNag: boolean
@@ -48,7 +49,9 @@ export const useCoachStore = defineStore('coach', () => {
   const coachMood = ref<CoachMood>('neutral')
 
   // 2. Settings (Coach Spy, Auto Takeback & Delay)
+  const preferencesStore = usePreferencesStore()
   const coachSpy = ref(true)
+  const isCoachSpyActive = computed(() => coachSpy.value || preferencesStore.preferences.gameplay.global_crashtest)
   const autoTakeback = ref(true)
   const autoTakebackDelay = ref(1000)
 
@@ -162,7 +165,11 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 4. Move Inspector implementation for GameStore
   async function inspectUserMove(uci: string, fen: string): Promise<MoveInspectionDecision> {
-    if (!isCoachEnabled.value || !coachSpy.value) {
+    if (
+      !isCoachEnabled.value ||
+      !coachSpy.value ||
+      preferencesStore.preferences.gameplay.global_crashtest
+    ) {
       return 'proceed'
     }
 
@@ -318,14 +325,14 @@ export const useCoachStore = defineStore('coach', () => {
 
   // EvalBar integration getters
   const evalCp = computed<number | null>(() => {
-    if (!coachSpy.value) return null
+    if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || top.isMate) return null
     return Math.round((top.eval_pawns ?? 0) * 100)
   })
 
   const evalMate = computed<number | null>(() => {
-    if (!coachSpy.value) return null
+    if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || !top.isMate) return null
     return top.mateIn ?? null
@@ -353,7 +360,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 1. Last Move NAG Shape (Layer: lastMoveNag)
   const lastMoveNagShape = computed<DrawShape | null>(() => {
-    if (!coachSpy.value || !visualLayers.value.lastMoveNag) return null
+    if (!isCoachSpyActive.value || !visualLayers.value.lastMoveNag) return null
     const lma = posExplanation.value?.last_move_analysis
     const uci = lma?.move_uci || (lma as Record<string, unknown> | undefined)?.uci
     const quality = lma?.quality
@@ -369,7 +376,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 2. Candidate Move NAG Shape (Layer: candidateArrow)
   const candidateNagShape = computed<DrawShape | null>(() => {
-    if (!coachSpy.value || !visualLayers.value.candidateArrow) return null
+    if (!isCoachSpyActive.value || !visualLayers.value.candidateArrow) return null
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
     const moveUci = selectedMove?.uci || selectedMove?.move
@@ -386,7 +393,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 3. Candidate Arrow Shape (draws selected or best candidate move arrow)
   const candidateArrowShape = computed<DrawShape | null>(() => {
-    if (!coachSpy.value || !visualLayers.value.candidateArrow) return null
+    if (!isCoachSpyActive.value || !visualLayers.value.candidateArrow) return null
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
     const moveUci = selectedMove?.uci || selectedMove?.move
@@ -407,7 +414,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 4. Tactical Plans Shapes from visual_commands
   const tacticalShapes = computed<DrawShape[]>(() => {
-    if (!coachSpy.value || !visualLayers.value.tacticalPlans) return []
+    if (!isCoachSpyActive.value || !visualLayers.value.tacticalPlans) return []
     const idx = selectedMoveIndex.value ?? 0
     const selectedMove = topMoves.value[idx] || topMoves.value[0]
 
@@ -425,7 +432,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const drawableShapes = computed<DrawShape[]>(() => {
-    if (!coachSpy.value) return []
+    if (!isCoachSpyActive.value) return []
     const shapes: DrawShape[] = []
     if (lastMoveNagShape.value) {
       shapes.push(lastMoveNagShape.value)
@@ -456,7 +463,7 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (isCoachEnabled.value && coachSpy.value && newFen) {
+      if (isCoachEnabled.value && isCoachSpyActive.value && newFen) {
         runAnalysis(newFen)
       }
     },
@@ -485,7 +492,7 @@ export const useCoachStore = defineStore('coach', () => {
     overrideLastMoveUci?: string | null,
     _overrideFenBefore?: string | null,
   ): Promise<CoachExplanation | null> {
-    if (!currentFen || !isCoachEnabled.value || !coachSpy.value) return null
+    if (!currentFen || !isCoachEnabled.value || !isCoachSpyActive.value) return null
 
     if (_overrideFenBefore) {
       logger.info(`[CoachStore] Analysis called with overrideFenBefore: ${_overrideFenBefore}`)

@@ -131,6 +131,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private async triggerSuccess(reason: string = 'scenario_complete'): Promise<void> {
     if (this.isDestroyed) return
 
+    this.gameStore.setGamePhase('GAMEOVER')
+
     if (this.callbacks?.onSuccess) {
       await this.callbacks.onSuccess()
       return
@@ -147,6 +149,8 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   private async triggerFailure(): Promise<void> {
     if (this.isDestroyed) return
+
+    this.gameStore.setGamePhase('GAMEOVER')
 
     if (this.callbacks?.onFailure) {
       await this.callbacks.onFailure()
