@@ -377,6 +377,13 @@
       "backRankMate": "Back-Rank Mate",
       "interference": "Interference",
       "xRayAttack": "X-Ray Attack",
+      "doubleCheck": "Double Check",
+      "mate": "Checkmate",
+      "mateIn1": "Mate in 1",
+      "mateIn2": "Mate in 2",
+      "mateIn3": "Mate in 3",
+      "goldenTactics": "Golden Collection",
+      "goldenTacticsDesc": "Curated masterclass tactics without theme hints",
       "auto": "Automatic"
     },
     "difficulties": {

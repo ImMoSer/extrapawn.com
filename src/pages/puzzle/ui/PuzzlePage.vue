@@ -23,10 +23,11 @@ const { t } = useI18n()
 const puzzleStore = usePuzzleStore()
 const coachStore = useCoachStore()
 
-function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string }) {
+function handleLoadRequested(payload: { type: string; category: string; difficulty: string; source: string; golden_tactics?: boolean }) {
   puzzleStore.loadNextPuzzle(payload.type, {
     category: payload.category,
-    difficulty: payload.difficulty
+    difficulty: payload.difficulty,
+    golden_tactics: payload.golden_tactics,
   })
 }
 

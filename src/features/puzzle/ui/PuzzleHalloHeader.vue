@@ -53,13 +53,23 @@ const puzzleMeta = computed(() => {
         glowColor: 'rgba(59, 130, 246, 0.4)',
         borderColor: 'rgba(59, 130, 246, 0.25)'
       }
-    case 'tactics':
+    case 'tactics': {
+      const isGold = !!puzzle.value?.is_golden || !!puzzleStore.activeParams.golden_tactics
+      if (isGold) {
+        return {
+          label: `🏆 ${t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase()}`,
+          gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
+          glowColor: 'rgba(251, 191, 36, 0.5)',
+          borderColor: 'rgba(251, 191, 36, 0.45)'
+        }
+      }
       return {
         label: submodeTranslationKey.value ? t(submodeTranslationKey.value) : 'TACTICS',
         gradient: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
         glowColor: 'rgba(245, 158, 11, 0.4)',
         borderColor: 'rgba(245, 158, 11, 0.25)'
       }
+    }
     default:
       return {
         label: type.toUpperCase(),
@@ -73,10 +83,16 @@ const puzzleMeta = computed(() => {
 // Extract motifs/categories
 const categoriesList = computed(() => {
   if (!puzzle.value || puzzle.value.puzzle_type !== props.submode) return []
+  if (Array.isArray(puzzle.value.motifs_pg) && puzzle.value.motifs_pg.length > 0) {
+    return puzzle.value.motifs_pg
+  }
   if (puzzle.value.category_comby && puzzle.value.category_comby.length > 0) {
     return puzzle.value.category_comby
   }
-  return [puzzle.value.category]
+  if (puzzle.value.category && puzzle.value.category !== 'golden_tactics') {
+    return [puzzle.value.category]
+  }
+  return []
 })
 
 // Translate theme/motif name

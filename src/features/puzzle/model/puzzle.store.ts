@@ -36,6 +36,7 @@ export interface PuzzlePuzzle {
   puzzle_type: string
   category: string
   category_comby?: string[]
+  motifs_pg?: string[]
   sub_category?: string
   difficulty: string
   rating?: number | string
@@ -44,6 +45,7 @@ export interface PuzzlePuzzle {
   initial_fen: string
   tactical_solution?: string
   puzzle_fen?: string
+  is_golden?: boolean
   // UI Specific overrides
   userSelectedColor?: boolean
 }
@@ -53,6 +55,7 @@ export interface PuzzleParams {
   category?: string
   difficulty?: string
   puzzleId?: string
+  golden_tactics?: boolean
 }
 
 function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {
@@ -225,8 +228,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     const baseActiveParams = { ...activeParams.value }
     delete baseActiveParams.puzzleId
 
+    const isGolden = type === 'tactics' && (queryParams.golden_tactics ?? baseActiveParams.golden_tactics ?? false)
+
     let category = queryParams.category
-    if (!category) {
+    if (!isGolden && !category) {
       if (baseActiveParams.type === type && baseActiveParams.category) {
         category = baseActiveParams.category
       } else {
@@ -237,8 +242,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
     activeParams.value = {
       type,
-      category,
+      category: isGolden ? '' : category,
       difficulty,
+      golden_tactics: isGolden,
     }
 
     try {
@@ -247,6 +253,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         puzzle = await apiClient<PuzzlePuzzle>(
           `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`
         )
+      } else if (isGolden) {
+        const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&golden_tactics`
+        puzzle = await apiClient<PuzzlePuzzle>(url)
       } else {
         const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&category=${category}`
         puzzle = await apiClient<PuzzlePuzzle>(url)
@@ -256,10 +265,16 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         throw new Error('[PuzzleStore] Puzzle data is null from API. Fail-Fast!')
       }
 
+      const isPuzzleGolden = puzzle.is_golden ?? isGolden ?? false
       const mappedPuzzle: PuzzlePuzzle = {
         ...puzzle,
         puzzle_type: type,
-        strategy: puzzle.strategy || getStrategyType(activeSubmode.value)
+        strategy: puzzle.strategy || getStrategyType(activeSubmode.value),
+        is_golden: isPuzzleGolden,
+      }
+
+      if (isPuzzleGolden) {
+        activeParams.value.golden_tactics = true
       }
 
       activePuzzle.value = mappedPuzzle
@@ -357,9 +372,12 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       const puzzle = activePuzzle.value
       if (!puzzle) return { title: '', badges: [], stats: [] }
 
+      const isGolden = activeSubmode.value === 'tactics' && (puzzle.is_golden || activeParams.value.golden_tactics)
       const namespace = activeSubmode.value === 'tactics' ? 'tactics' : 'themes'
-      const title = (puzzle.category ? t(`puzzleCategories.${namespace}.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
-      const badges = [{ text: puzzle.puzzle_type.toUpperCase() }]
+      const title = isGolden
+        ? t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase()
+        : (puzzle.category ? t(`puzzleCategories.${namespace}.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
+      const badges = [{ text: isGolden ? t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase() : puzzle.puzzle_type.toUpperCase() }]
       if (puzzle.difficulty) {
          badges.push({ text: t(`puzzleCategories.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() })
       }
