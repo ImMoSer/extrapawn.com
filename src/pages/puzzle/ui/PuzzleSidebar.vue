@@ -72,11 +72,6 @@ const TACTICS_ICON_UI: Record<string, string> = {
   backRankMate: '🪜',
   interference: '🚧',
   xRayAttack: '🩻',
-  doubleCheck: '🎯',
-  mate: '👑',
-  mateIn1: '1️⃣',
-  mateIn2: '2️⃣',
-  mateIn3: '3️⃣',
 }
 
 const formatThemeName = (theme: string): string => {

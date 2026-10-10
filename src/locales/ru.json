@@ -377,11 +377,6 @@
       "backRankMate": "Последняя горизонталь",
       "interference": "Перекрытие",
       "xRayAttack": "Рентген",
-      "doubleCheck": "Двойной шах",
-      "mate": "Мат",
-      "mateIn1": "Мат в 1 ход",
-      "mateIn2": "Мат в 2 хода",
-      "mateIn3": "Мат в 3 хода",
       "goldenTactics": "Золотая коллекция",
       "goldenTacticsDesc": "Избранные шедевры тактики без подсказок по темам",
       "auto": "Автовыбор"

@@ -377,11 +377,6 @@
       "backRankMate": "Grundreihenmatt",
       "interference": "Unterbrechung",
       "xRayAttack": "Röntgenangriff",
-      "doubleCheck": "Doppelschach",
-      "mate": "Schachmatt",
-      "mateIn1": "Matt in 1 Zug",
-      "mateIn2": "Matt in 2 Zügen",
-      "mateIn3": "Matt in 3 Zügen",
       "goldenTactics": "Goldene Kollektion",
       "goldenTacticsDesc": "Ausgewählte Taktik-Meisterwerke ohne Themenhinweise",
       "auto": "Auto-Auswahl"

@@ -80,9 +80,14 @@ const puzzleMeta = computed(() => {
   }
 })
 
+const isGoldenMode = computed(() => {
+  return props.submode === 'tactics' && (!!puzzle.value?.is_golden || !!puzzleStore.activeParams.golden_tactics || puzzle.value?.category === 'golden_tactics')
+})
+
 // Extract motifs/categories
 const categoriesList = computed(() => {
   if (!puzzle.value || puzzle.value.puzzle_type !== props.submode) return []
+  if (isGoldenMode.value) return []
   if (Array.isArray(puzzle.value.motifs_pg) && puzzle.value.motifs_pg.length > 0) {
     return puzzle.value.motifs_pg
   }
@@ -143,14 +148,21 @@ function formatSubTheme(subTheme: string): string {
            </span>
  
            <!-- Subcategory / Style -->
-           <span v-if="puzzle.sub_category" class="style-badge">
+           <span v-if="puzzle.sub_category && !isGoldenMode" class="style-badge">
              <span class="pawn-icon">♟️</span>
              {{ formatSubTheme(puzzle.sub_category) }}
            </span>
          </div>
- 
+
+         <!-- Golden Collection Banner (No theme hints) -->
+         <div v-if="isGoldenMode" class="golden-banner-section">
+           <span class="golden-tagline-text">
+             ✨ {{ t('puzzleCategories.tactics.goldenTacticsDesc', 'Избранные шедевры тактики без подсказок по темам') }}
+           </span>
+         </div>
+
          <!-- Tactical Motifs / Themes List -->
-         <div v-if="categoriesList.length > 0" class="motifs-section">
+         <div v-else-if="categoriesList.length > 0" class="motifs-section">
            <div class="motifs-label">{{ t('features.puzzle.header.motifs', 'Tactical Motifs') }}</div>
            <div class="chips-container">
              <span
@@ -335,5 +347,26 @@ function formatSubTheme(subTheme: string): string {
   letter-spacing: 0.75px;
   color: var(--color-text-primary);
   text-transform: uppercase;
+}
+
+/* Golden Collection Banner */
+.golden-banner-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.golden-tagline-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fbbf24;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
 }
 </style>
