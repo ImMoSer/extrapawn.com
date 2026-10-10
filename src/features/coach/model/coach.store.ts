@@ -166,6 +166,7 @@ export const useCoachStore = defineStore('coach', () => {
   // 4. Move Inspector implementation for GameStore
   async function inspectUserMove(uci: string, fen: string): Promise<MoveInspectionDecision> {
     if (
+      gameStore.gamePhase === 'FAIRPLAY' ||
       !isCoachEnabled.value ||
       !coachSpy.value ||
       preferencesStore.preferences.gameplay.global_crashtest
@@ -325,6 +326,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // EvalBar integration getters
   const evalCp = computed<number | null>(() => {
+    if (gameStore.gamePhase === 'FAIRPLAY') return 0
     if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || top.isMate) return null
@@ -332,6 +334,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const evalMate = computed<number | null>(() => {
+    if (gameStore.gamePhase === 'FAIRPLAY') return null
     if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || !top.isMate) return null
@@ -432,6 +435,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const drawableShapes = computed<DrawShape[]>(() => {
+    if (gameStore.gamePhase === 'FAIRPLAY') return []
     if (!isCoachSpyActive.value) return []
     const shapes: DrawShape[] = []
     if (lastMoveNagShape.value) {
@@ -463,17 +467,27 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => boardStore.fen,
     (newFen) => {
+      if (gameStore.gamePhase === 'FAIRPLAY') return
       if (isCoachEnabled.value && isCoachSpyActive.value && newFen) {
         runAnalysis(newFen)
       }
     },
   )
 
-  // Watch for game phase changes (reset/cancel on gameOver or idle, celebrate on win)
+  // Watch for game phase changes (reset/cancel on gameOver or idle, celebrate on win, analyze on PLAYING/ANALYSIS)
   watch(
     () => gameStore.gamePhase,
     (phase) => {
-      if (phase === 'GAMEOVER') {
+      if (phase === 'FAIRPLAY') {
+        cancelPendingDecision()
+        boardStore.setCoachShapes([])
+        posExplanation.value = null
+        isAnalyzing.value = false
+      } else if (phase === 'PLAYING' || phase === 'ANALYSIS') {
+        if (boardStore.fen) {
+          runAnalysis(boardStore.fen, true)
+        }
+      } else if (phase === 'GAMEOVER') {
         cancelPendingDecision()
         const status = gameStore.getGameStatus()
         if (status.outcome?.winner === gameStore.playerColor) {
@@ -492,6 +506,11 @@ export const useCoachStore = defineStore('coach', () => {
     overrideLastMoveUci?: string | null,
     _overrideFenBefore?: string | null,
   ): Promise<CoachExplanation | null> {
+    if (gameStore.gamePhase === 'FAIRPLAY') {
+      isAnalyzing.value = false
+      posExplanation.value = null
+      return null
+    }
     if (!currentFen || !isCoachEnabled.value || !isCoachSpyActive.value) return null
 
     if (_overrideFenBefore) {

@@ -1,7 +1,8 @@
 import {
   useGameStore,
   useBoardStore,
-  GameAudioEngine
+  GameAudioEngine,
+  type GamePhase,
 } from '@/entities/game'
 import { computed, ref, watch } from 'vue'
 import { soundService } from '@/shared/lib/sound.service'
@@ -9,6 +10,9 @@ import { defineStore } from 'pinia'
 import { apiClient } from '@/shared/api/client'
 import { useRouter } from 'vue-router'
 import { parseFen } from 'chessops/fen'
+import { parseUci } from 'chessops/util'
+import { makeSan } from 'chessops/san'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { PuzzleStrategy } from '@/features/puzzle'
 import { usePreferencesStore } from '@/features/settings'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
@@ -115,6 +119,7 @@ export function getSubModeScopeConfig(
 
 export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
+  const boardStore = useBoardStore()
   const router = useRouter()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
@@ -133,6 +138,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const isPlaying = ref(false)
   const isFinished = ref(false)
   const isReplay = ref(false)
+  const isAnalysisMode = ref(false)
+  const currentAnalysisPuzzle = ref<WorkoutPuzzle | null>(null)
+  const currentAnalysisPuzzleId = computed(() => currentAnalysisPuzzle.value?.puzzle_id || null)
   const completedReport = ref<CompletedPlanReport | null>(null)
 
   // Timer State
@@ -293,6 +301,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
     const userColor = determineHumanColor(puzzle)
     const planId = activePlanId.value || 'current'
+    const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
+    const initialPhase: GamePhase = attempts >= 3 ? 'PLAYING' : 'FAIRPLAY'
 
     gameStore.setGamePhase('LOADING')
 
@@ -312,6 +322,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         }
       ),
       userColor,
+      false,
+      initialPhase,
     )
 
     if (router.currentRoute.value.name === 'task-today') {
@@ -928,6 +940,61 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     }
   }
 
+  function enterAnalysisMode(targetPuzzle?: WorkoutPuzzle) {
+    cancelPendingTransition()
+    isAnalysisMode.value = true
+    isPlaying.value = false
+    stopTimer()
+    gameStore.enterAnalysisMode()
+
+    const subMode = activeTask.value?.sub_mode || ''
+    const allPuzzles = [
+      ...(tasksPuzzles.value[subMode] || []),
+      ...(solvedPuzzlesPerTask.value[subMode] || []),
+    ]
+    const puzzleToLoad = targetPuzzle || allPuzzles[0] || null
+    if (puzzleToLoad) {
+      selectPuzzleForAnalysis(puzzleToLoad)
+    }
+  }
+
+  function exitAnalysisMode() {
+    isAnalysisMode.value = false
+    currentAnalysisPuzzle.value = null
+  }
+
+  function selectPuzzleForAnalysis(puzzle: WorkoutPuzzle) {
+    currentAnalysisPuzzle.value = puzzle
+    const userColor = determineHumanColor(puzzle)
+    const initialFen = puzzle.initial_fen
+
+    gameStore.enterAnalysisMode()
+    boardStore.setupPosition(initialFen, userColor)
+    pgnService.reset(initialFen)
+
+    if (puzzle.tactical_solution) {
+      const moves = puzzle.tactical_solution.trim().split(/\s+/)
+      for (const uci of moves) {
+        if (!uci) continue
+        const posBefore = boardStore.chessPosition.clone()
+        const parsed = parseUci(uci)
+        if (parsed) {
+          const san = makeSan(posBefore, parsed)
+          const fenBefore = boardStore.fen
+          const ok = boardStore.applyUciMove(uci, { skipSound: true })
+          if (ok) {
+            const fenAfter = boardStore.fen
+            pgnService.addNode({ san, uci, fenBefore, fenAfter })
+          }
+        }
+      }
+      pgnService.navigateToStart()
+      boardStore.loadPosition(pgnService.getCurrentNavigatedFen())
+    }
+
+    gameStore.syncPgnVisualCuesToBoard()
+  }
+
   return {
     trainingPlan,
     currentTaskIndex,
@@ -940,6 +1007,9 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     isPlaying,
     isFinished,
     isReplay,
+    isAnalysisMode,
+    currentAnalysisPuzzle,
+    currentAnalysisPuzzleId,
     completedResults,
     puzzleAttempts,
     formatMs,
@@ -957,5 +1027,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     playCurrentPuzzle,
     clearSavedState,
     completedReport,
+    enterAnalysisMode,
+    exitAnalysisMode,
+    selectPuzzleForAnalysis,
   }
 })

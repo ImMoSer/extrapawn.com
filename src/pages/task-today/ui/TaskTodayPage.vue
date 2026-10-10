@@ -44,8 +44,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <TaskTodayDashboard v-if="!taskTodayStore.isPlaying && !taskTodayStore.isFinished" />
-  <TaskTodayReport v-else-if="taskTodayStore.isFinished" />
+  <TaskTodayDashboard v-if="!taskTodayStore.isPlaying && !taskTodayStore.isFinished && !taskTodayStore.isAnalysisMode" />
+  <TaskTodayReport v-else-if="taskTodayStore.isFinished && !taskTodayStore.isAnalysisMode" />
   <GameLayout v-else>
     <template #left-panel>
       <TaskSidebar />

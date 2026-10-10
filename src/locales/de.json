@@ -718,7 +718,9 @@
         "activateSpyTooltip": "Coach Spy aktivieren",
         "spyPausedTitle": "Coach Spy ist pausiert",
         "spyPausedDesc": "Live-Positionsbewertung und Patzer-Erkennung sind derzeit inaktiv.",
-        "enableSpy": "Coach Spy aktivieren"
+        "enableSpy": "Coach Spy aktivieren",
+        "fairPlayTitle": "Fairplay-Modus",
+        "fairPlayDesc": "Der Coach ist während des Aufgabenplans deaktiviert. Sie haben 3 Versuche, die Aufgabe selbstständig zu lösen, bevor der Coach hilft."
       },
       "confirmation": {
         "blunderDetected": "Grober Patzer erkannt",
@@ -836,6 +838,8 @@
         "puzzles": "Puzzles",
         "breakdownTitle": "Dein Report",
         "puzzlesCountShort": "Aufgaben",
+        "analyze": "Analyse",
+        "backToReport": "Zurück zum Bericht",
         "backToStart": "Zurück zur Startseite",
         "startAnother": "Anderen Plan starten",
         "duration": {

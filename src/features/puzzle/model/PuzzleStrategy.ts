@@ -254,29 +254,16 @@ export class PuzzleStrategy implements IGameplayStrategy {
   onGameOver(status: GameStatusInfo): void {
     if (this.isDestroyed) return
 
-    if (this.callbacks) {
-      this.callbacks.onGameOver?.(status)
+    if (this.callbacks?.onGameOver) {
+      this.callbacks.onGameOver(status)
       return
     }
 
     const isWin = this.checkWinCondition(status)
-    if (status.outcome) {
-      this.store.handleGameOver(this.puzzle, isWin, status.outcome, this.humanColor)
-      if (isWin) {
-        soundService.play('tactics_success')
-        if (this.store.autoNextPuzzle) {
-          this.nextPuzzleTimeout = window.setTimeout(() => {
-            if (this.isDestroyed) return
-            void this.store.loadNewPuzzle(this.puzzle.puzzle_type)
-          }, this.config.nextPuzzleDelayMs)
-        }
-      } else {
-        soundService.play('tactics_error')
-        this.nextPuzzleTimeout = window.setTimeout(() => {
-          if (this.isDestroyed) return
-          this.store.localRestart()
-        }, this.config.restartDelayMs)
-      }
+    if (isWin) {
+      void this.triggerSuccess(status.outcome?.reason || 'checkmate')
+    } else {
+      void this.triggerFailure()
     }
   }
 }

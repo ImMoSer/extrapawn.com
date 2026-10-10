@@ -718,7 +718,9 @@
         "activateSpyTooltip": "Включить Coach Spy",
         "spyPausedTitle": "Coach Spy на паузе",
         "spyPausedDesc": "Оценка позиции в реальном времени и отслеживание зевков сейчас отключены.",
-        "enableSpy": "Включить Coach Spy"
+        "enableSpy": "Включить Coach Spy",
+        "fairPlayTitle": "Режим честной игры",
+        "fairPlayDesc": "Коуч отключен во время выполнения плана задач. Вам дается 3 попытки решить задачу самостоятельно, прежде чем коуч начнет помогать."
       },
       "confirmation": {
         "blunderDetected": "Обнаружен зевок",
@@ -836,6 +838,8 @@
         "puzzles": "задач",
         "breakdownTitle": "Ваш отчет",
         "puzzlesCountShort": "задач",
+        "analyze": "Анализ",
+        "backToReport": "Назад к отчету",
         "backToStart": "Вернуться на главную",
         "startAnother": "Начать другую тренировку",
         "duration": {

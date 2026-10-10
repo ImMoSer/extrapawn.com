@@ -4,9 +4,11 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NSelect } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
+import { useGameStore } from '@/entities/game'
 import { useAnalysisStore } from '../model/analysis.store'
 import EngineLines from './EngineLines.vue'
 
+const gameStore = useGameStore()
 const analysisStore = useAnalysisStore()
 const { t } = useI18n()
 
@@ -19,7 +21,7 @@ const {
   engineVersion,
 } = storeToRefs(analysisStore)
 
-const isEngineDisabled = computed(() => false)
+const isEngineDisabled = computed(() => gameStore.gamePhase === 'FAIRPLAY')
 
 // Current best score formatted
 const bestScore = computed(() => {
@@ -111,6 +113,7 @@ const formatSearchTimeTooltip = (value: number) => {
         <div class="engine-toggle-block">
           <n-switch 
             :value="isAnalysisActive" 
+            :disabled="isEngineDisabled"
             @update:value="handleToggle" 
             size="medium"
             class="neon-switch"

@@ -50,13 +50,16 @@ export const useAnalysisStore = defineStore('analysis', () => {
     },
   )
 
-  // Reset when gamePhase becomes IDLE
+  // Reset when gamePhase becomes IDLE or FAIRPLAY
   watch(
     () => gameStore.gamePhase,
     (phase) => {
-      if (phase === 'IDLE' && isAnalysisActive.value) {
-        logger.info('[AnalysisStore] Auto-resetting because gamePhase became IDLE')
+      if ((phase === 'IDLE' || phase === 'FAIRPLAY') && isAnalysisActive.value) {
+        logger.info(`[AnalysisStore] Auto-resetting because gamePhase became ${phase}`)
         void stopAnalysis()
+      }
+      if (phase === 'FAIRPLAY') {
+        boardStore.setDrawableShapes([])
       }
     },
   )
@@ -95,6 +98,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
+    if (gameStore.gamePhase === 'FAIRPLAY') {
+      boardStore.setDrawableShapes([])
+      return
+    }
+
     const topMoves = lines.slice(0, multiPv.value)
     const signature = topMoves.map((l) => (l.pvUci && l.pvUci[0]) || '').join(',')
 
@@ -188,6 +196,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
     fen: string,
     onLinesUpdate?: (lines: EvaluatedLineWithSan[]) => void,
   ) {
+    if (gameStore.gamePhase === 'FAIRPLAY') {
+      logger.warn('[AnalysisStore] startAnalysis blocked: cannot analyze during FAIRPLAY phase')
+      return
+    }
+
     analysisVersion++
     const currentVersion = analysisVersion
 
@@ -235,6 +248,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   async function toggleAnalysis() {
+    if (gameStore.gamePhase === 'FAIRPLAY') {
+      logger.warn('[AnalysisStore] toggleAnalysis blocked in FAIRPLAY phase')
+      return
+    }
+
     if (!isAnalysisActive.value) {
       lastRenderedDepth = 0
       await startNewGame()

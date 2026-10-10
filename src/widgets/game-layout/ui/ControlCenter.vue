@@ -20,6 +20,7 @@ const sidebarStore = useSidebarStore()
     <!-- Left: Sidebar Mode Toggles (EXP - COACH) -->
     <div class="flex items-center gap-1.5">
       <button
+        v-if="gameStore.gamePhase !== 'FAIRPLAY'"
         @click="sidebarStore.setMode('explorer')"
         title="Engine Lines & PGN (EXP)"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"

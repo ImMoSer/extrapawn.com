@@ -718,7 +718,9 @@
         "activateSpyTooltip": "Activate Coach Spy",
         "spyPausedTitle": "Coach Spy is Paused",
         "spyPausedDesc": "Live position evaluation and blunder detection are currently inactive.",
-        "enableSpy": "Enable Coach Spy"
+        "enableSpy": "Enable Coach Spy",
+        "fairPlayTitle": "Fair Play Mode",
+        "fairPlayDesc": "Coach is disabled during Task Today. You are given 3 attempts to solve the puzzle independently before the coach starts assisting."
       },
       "confirmation": {
         "blunderDetected": "Blunder Detected",
@@ -836,6 +838,8 @@
         "puzzles": "Puzzles",
         "breakdownTitle": "Your Report",
         "puzzlesCountShort": "Tasks",
+        "analyze": "Analysis",
+        "backToReport": "Back to Report",
         "backToStart": "Back to Dashboard",
         "startAnother": "Start Another Plan",
         "duration": {

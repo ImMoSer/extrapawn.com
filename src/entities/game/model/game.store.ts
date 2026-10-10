@@ -14,7 +14,7 @@ import type { Outcome as ChessopsOutcome } from 'chessops'
 import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo, IUserMoveInspector } from './strategy.types'
 import { GameAudioEngine } from './GameAudioEngine'
 
-export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS'
+export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS' | 'FAIRPLAY'
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -143,7 +143,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function _checkAndHandleGameOver(): boolean {
-    if (gamePhase.value !== 'PLAYING') {
+    if (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY') {
       return true
     }
 
@@ -165,7 +165,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handleGameResignation() {
-    if (gamePhase.value !== 'PLAYING') return
+    if (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY') return
     logger.warn('[GameStore] Game resigned by user action.')
 
     const status: GameStatusInfo = {
@@ -245,12 +245,12 @@ export const useGameStore = defineStore('game', () => {
       }
 
       // Race condition protection
-      if (boardStore.fen !== fenAtRequest || gamePhase.value !== 'PLAYING') {
+      if (boardStore.fen !== fenAtRequest || (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY')) {
         logger.warn('[GameStore] Bot move discarded due to position or phase change (race condition protected).')
         return
       }
 
-      if (uci && gamePhase.value === 'PLAYING') {
+      if (uci && (gamePhase.value === 'PLAYING' || gamePhase.value === 'FAIRPLAY')) {
         const fenBefore = boardStore.fen
         // Apply the bot move in PGN
         const chessopsMove = parseUci(uci)
@@ -294,6 +294,7 @@ export const useGameStore = defineStore('game', () => {
     strategy: IGameplayStrategy,
     userColor: ChessgroundColor,
     keepPgn: boolean = false,
+    initialPhase: GamePhase = 'PLAYING',
   ) {
     logger.info('[GameStore] Starting game with Strategy Context.')
 
@@ -332,7 +333,7 @@ export const useGameStore = defineStore('game', () => {
 
     userMovesCount.value = 0
     isGameActive.value = false
-    gamePhase.value = 'PLAYING'
+    gamePhase.value = initialPhase
 
     strategy.onGameStart?.(coreApi)
 
@@ -387,7 +388,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function handleUserMove(orig: Key, dest: Key) {
-    if ((gamePhase.value !== 'PLAYING' && gamePhase.value !== 'ANALYSIS') || isMoveProcessing.value) {
+    if ((gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY' && gamePhase.value !== 'ANALYSIS') || isMoveProcessing.value) {
       if (isMoveProcessing.value) {
         logger.warn('[GameStore] Rejected handleUserMove: move transaction already in progress.')
       }
@@ -404,7 +405,7 @@ export const useGameStore = defineStore('game', () => {
 
       const isAnalysis = gamePhase.value === 'ANALYSIS'
 
-      // Pre-validate move with Strategy (only during PLAYING, not in ANALYSIS)
+      // Pre-validate move with Strategy (only during PLAYING or FAIRPLAY, not in ANALYSIS)
       if (!isAnalysis && currentStrategy.value && currentStrategy.value.validateUserMove) {
         const isLegalForStrategy = await currentStrategy.value.validateUserMove(
           intendedUci,
@@ -460,7 +461,7 @@ export const useGameStore = defineStore('game', () => {
 
       isGameOver = _checkAndHandleGameOver()
 
-      if (!isGameOver && gamePhase.value === 'PLAYING' && boardStore.turn !== playerColor.value) {
+      if (!isGameOver && (gamePhase.value === 'PLAYING' || gamePhase.value === 'FAIRPLAY') && boardStore.turn !== playerColor.value) {
         await triggerBotMove()
       }
     } finally {
@@ -538,6 +539,7 @@ export const useGameStore = defineStore('game', () => {
     registerMoveInspector,
     unregisterMoveInspector,
     getGameStatus,
+    syncPgnVisualCuesToBoard,
   }
 })
 

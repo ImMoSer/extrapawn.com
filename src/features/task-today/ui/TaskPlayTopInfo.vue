@@ -13,17 +13,30 @@ const formattedTime = computed(() => {
 })
 
 function handleExit() {
+  if (taskTodayStore.isAnalysisMode) {
+    taskTodayStore.exitAnalysisMode()
+    return
+  }
   taskTodayStore.pauseTaskToday()
   router.push('/')
 }
 
 function handleRestart() {
+  if (taskTodayStore.isAnalysisMode) {
+    if (taskTodayStore.currentAnalysisPuzzle) {
+      taskTodayStore.selectPuzzleForAnalysis(taskTodayStore.currentAnalysisPuzzle)
+    }
+    return
+  }
   taskTodayStore.playCurrentPuzzle()
 }
 </script>
 
 <template>
-  <div class="top-info-banner" v-if="taskTodayStore.currentPuzzle && !taskTodayStore.isFinished">
+  <div
+    class="top-info-banner"
+    v-if="(taskTodayStore.currentPuzzle || taskTodayStore.currentAnalysisPuzzle) && (!taskTodayStore.isFinished || taskTodayStore.isAnalysisMode)"
+  >
     <div class="side-action left">
       <NButton circle quaternary type="error" size="small" @click="handleExit">
         <template #icon>
@@ -33,10 +46,10 @@ function handleRestart() {
     </div>
 
     <div class="center-meta">
-      <div class="target-badge target-win">
-        {{ taskTodayStore.currentPuzzle.puzzle_type.toUpperCase() }}
+      <div class="target-badge" :class="taskTodayStore.isAnalysisMode ? 'target-analysis' : 'target-win'">
+        {{ taskTodayStore.isAnalysisMode ? 'ANALYSIS' : taskTodayStore.currentPuzzle?.puzzle_type.toUpperCase() }}
       </div>
-      <span class="top-timer">{{ formattedTime }}</span>
+      <span v-if="!taskTodayStore.isAnalysisMode" class="top-timer">{{ formattedTime }}</span>
     </div>
 
     <div class="side-action right">
@@ -98,6 +111,13 @@ function handleRestart() {
   color: var(--neon-cyan);
   border: 1px solid var(--neon-cyan);
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.target-analysis {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--color-neon-purple, #b026ff);
+  border: 1px solid var(--color-neon-purple, #b026ff);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
 }
 
 .top-timer {

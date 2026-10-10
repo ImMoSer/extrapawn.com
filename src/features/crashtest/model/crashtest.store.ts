@@ -1,7 +1,8 @@
-import { useBoardStore, useGameStore } from '@/entities/game'
+import { useBoardStore, useGameStore, enginePlayService } from '@/entities/game'
 import { useAuthStore } from '@/entities/user'
 import { useCoachStore } from '@/features/coach'
 import { usePreferencesStore } from '@/features/settings'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 import logger from '@/shared/lib/logger'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
@@ -30,6 +31,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
 
   // FEN for which the last move was successfully initiated, preventing duplicate dispatch
   const lastExecutedFen = ref<string | null>(null)
+  const isResolvingMove = ref(false)
 
   // Promotion role currently planned for the pending move
   const plannedPromotionRole = ref<ChessopsRole | null>(null)
@@ -56,8 +58,8 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   watch(
     () => boardStore.promotionState,
     (promoState) => {
-      if (promoState && plannedPromotionRole.value && isCrashtestEnabled.value) {
-        const role = plannedPromotionRole.value
+      if (promoState && isCrashtestEnabled.value) {
+        const role = plannedPromotionRole.value || 'queen'
         logger.info(`[Crashtest] Deterministically resolving promotion to: ${role}`)
         boardStore.completePromotion(role)
       }
@@ -65,21 +67,68 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     { flush: 'sync' }
   )
 
-  // Predicate indicating whether all prerequisites for a synthetic user move are met
-  const isReadyForCrashtestMove = computed(() => {
+  const isEligibleForCrashtest = computed(() => {
     if (!isMo3ep.value || !isCrashtestEnabled.value) return false
-    if (gameStore.gamePhase !== 'PLAYING') return false
+    const phase = gameStore.gamePhase
+    if (phase !== 'PLAYING' && phase !== 'FAIRPLAY') return false
     if (gameStore.isMoveProcessing) return false
     if (boardStore.turn !== boardStore.orientation) return false
-    if (coachStore.isAnalyzing) return false
-
-    const topMove = coachStore.topMoves[0]?.uci
-    if (!topMove || topMove.length < 4) return false
-
+    if (isResolvingMove.value) return false
     if (lastExecutedFen.value === boardStore.fen) return false
 
     return true
   })
+
+  async function resolveBestMove(fen: string): Promise<string | null> {
+    // 1. Priority: Deterministic scenario move if strategy has it (Tactics / ScenarioPlus)
+    if (gameStore.currentStrategy?.getScenarioValidation) {
+      const validation = gameStore.currentStrategy.getScenarioValidation('', fen)
+      if (validation?.isScenario && validation.expectedMove) {
+        logger.info(`[Crashtest] Deterministic scenario move found: ${validation.expectedMove}`)
+        return validation.expectedMove
+      }
+    }
+
+    // 2. If in PLAYING phase and coachStore already has ready moves:
+    if (gameStore.gamePhase === 'PLAYING' && coachStore.topMoves.length > 0 && coachStore.topMoves[0]?.uci) {
+      return coachStore.topMoves[0].uci
+    }
+
+    // 3. Headless server analysis request (silent mode, zero UI side-effects)
+    try {
+      const { startFen, moves } = pgnService.getAnalysisPayloadContext()
+      const userId = authStore.effectiveLichessUsername || authStore.userProfile?.username || 'crashtest'
+      const response = await fetch('/api/coach-engine/uci_fen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, start_fen: startFen, moves }),
+      })
+      if (response.ok) {
+        const data = (await response.json()) as { top_moves?: Array<{ uci?: string }> }
+        const uci = data?.top_moves?.[0]?.uci
+        if (uci && uci.length >= 4) {
+          logger.info(`[Crashtest] Headless engine move received: ${uci}`)
+          return uci
+        }
+      }
+    } catch (err) {
+      logger.warn('[Crashtest] Headless coach engine request failed, falling back to engine service:', err)
+    }
+
+    // 4. Fallback: EnginePlayService (/api/bestmove)
+    try {
+      const botEngine = gameStore.botEngineId || 'maia-1500'
+      const fallbackMove = await enginePlayService.getBestMove(botEngine, fen)
+      if (fallbackMove) {
+        logger.info(`[Crashtest] Fallback engine move received: ${fallbackMove}`)
+        return fallbackMove
+      }
+    } catch (err) {
+      logger.error('[Crashtest] Fallback engine move failed:', err)
+    }
+
+    return null
+  }
 
   async function executeMove(token: number, targetFen: string) {
     if (token !== currentCycleToken) {
@@ -87,9 +136,11 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       return
     }
 
+    const currentPhase = gameStore.gamePhase
     if (
       boardStore.fen !== targetFen ||
-      gameStore.gamePhase !== 'PLAYING' ||
+      (currentPhase !== 'PLAYING' && currentPhase !== 'FAIRPLAY') ||
+      boardStore.turn !== boardStore.orientation ||
       gameStore.isMoveProcessing ||
       !isCrashtestEnabled.value
     ) {
@@ -97,27 +148,40 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       return
     }
 
-    const bestMoveUci = coachStore.topMoves[0]?.uci
-    if (!bestMoveUci || bestMoveUci.length < 4) {
-      logger.warn('[Crashtest] Execution aborted: topMoves empty after delay.')
-      return
-    }
-
-    const orig = bestMoveUci.substring(0, 2) as Key
-    const dest = bestMoveUci.substring(2, 4) as Key
-    const promoChar = bestMoveUci.length === 5 ? bestMoveUci.charAt(4) : null
-
-    plannedPromotionRole.value = promoChar ? getPromotionRole(promoChar) : null
-    lastExecutedFen.value = targetFen
-
-    logger.info(`[Crashtest] Dispatching 1st line move: ${bestMoveUci} for FEN: ${targetFen}`)
-
+    isResolvingMove.value = true
     try {
+      const bestMoveUci = await resolveBestMove(targetFen)
+
+      // Post-fetch race condition check
+      if (
+        token !== currentCycleToken ||
+        boardStore.fen !== targetFen ||
+        !isCrashtestEnabled.value ||
+        (gameStore.gamePhase !== 'PLAYING' && gameStore.gamePhase !== 'FAIRPLAY')
+      ) {
+        logger.warn('[Crashtest] Execution aborted: FEN or phase changed during move resolution.')
+        return
+      }
+
+      if (!bestMoveUci || bestMoveUci.length < 4) {
+        logger.warn(`[Crashtest] Execution aborted: no move resolved for FEN: ${targetFen}`)
+        return
+      }
+
+      const orig = bestMoveUci.substring(0, 2) as Key
+      const dest = bestMoveUci.substring(2, 4) as Key
+      const promoChar = bestMoveUci.length === 5 ? bestMoveUci.charAt(4) : null
+
+      plannedPromotionRole.value = promoChar ? getPromotionRole(promoChar) : null
+      lastExecutedFen.value = targetFen
+
+      logger.info(`[Crashtest] Dispatching 1st line move: ${bestMoveUci} for FEN: ${targetFen}`)
       await gameStore.handleUserMove(orig, dest)
       logger.info(`[Crashtest] Successfully dispatched handleUserMove(${orig}->${dest})`)
     } catch (err) {
       logger.error('[Crashtest] Exception during handleUserMove execution:', err)
     } finally {
+      isResolvingMove.value = false
       plannedPromotionRole.value = null
       // If position did not change (e.g. move rejected or errored), clear lastExecutedFen so we don't deadlock
       if (boardStore.fen === targetFen) {
@@ -152,37 +216,26 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     logger.info('[CrashtestStore] Initializing deterministic crashtest engine.')
 
     watch(
-      [isReadyForCrashtestMove, () => boardStore.fen],
-      ([ready, currentFen]) => {
-        if (ready && lastExecutedFen.value !== currentFen) {
+      [isEligibleForCrashtest, () => boardStore.fen],
+      ([eligible, currentFen]) => {
+        if (eligible && lastExecutedFen.value !== currentFen) {
           scheduleMove(currentFen)
-        } else if (!ready) {
+        } else if (!eligible && boardStore.turn !== boardStore.orientation) {
           cancelPendingCycle()
-          // If crashtest is active and it is user turn, but coach hasn't started analysis yet, trigger it
-          if (
-            isMo3ep.value &&
-            isCrashtestEnabled.value &&
-            gameStore.gamePhase === 'PLAYING' &&
-            boardStore.turn === boardStore.orientation &&
-            !coachStore.isAnalyzing &&
-            coachStore.topMoves.length === 0 &&
-            currentFen
-          ) {
-            void coachStore.runAnalysis(currentFen)
-          }
         }
       },
       { immediate: true }
     )
 
-    // Reset tracking and timers when crashtest is toggled or game phase changes away from PLAYING
+    // Reset tracking and timers when crashtest is toggled or game phase changes away from PLAYING/FAIRPLAY
     watch(
       [isCrashtestEnabled, () => gameStore.gamePhase],
       ([enabled, phase]) => {
-        if (!enabled || phase !== 'PLAYING') {
+        if (!enabled || (phase !== 'PLAYING' && phase !== 'FAIRPLAY')) {
           cancelPendingCycle()
           lastExecutedFen.value = null
           plannedPromotionRole.value = null
+          isResolvingMove.value = false
         }
       }
     )

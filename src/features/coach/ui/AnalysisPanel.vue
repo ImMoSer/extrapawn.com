@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 import { NIcon } from 'naive-ui'
-import { EyeOutline, EyeOffOutline } from '@vicons/ionicons5'
+import { EyeOutline, EyeOffOutline, ShieldCheckmarkOutline } from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
+import { useGameStore } from '@/entities/game'
 import { useCoachStore } from '../model/coach.store'
 import QualityIcon from './QualityIcon.vue'
 import SettingsPanel from './SettingsPanel.vue'
 
 const { t } = useI18n()
+const gameStore = useGameStore()
 const coachStore = useCoachStore()
 
 const props = defineProps<{
@@ -202,7 +204,7 @@ function getPlanBrief(move: CoachTopMove): string | null {
       <div class="flex items-center gap-2">
         <span class="text-xs font-bold uppercase tracking-wider text-text-primary">{{ t('features.coach.panel.title') }}</span>
       </div>
-      <div class="flex items-center gap-1.5">
+      <div v-if="gameStore.gamePhase !== 'FAIRPLAY'" class="flex items-center gap-1.5">
         <button
           @click="coachStore.toggleCoachSpy()"
           :title="coachStore.coachSpy ? t('features.coach.panel.pauseSpyTooltip') : t('features.coach.panel.activateSpyTooltip')"
@@ -220,9 +222,35 @@ function getPlanBrief(move: CoachTopMove): string | null {
         </button>
         <SettingsPanel @change="coachStore.handleSettingsChange()" />
       </div>
+      <div v-else class="flex items-center gap-1">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+          <NIcon size="12"><ShieldCheckmarkOutline /></NIcon>
+          <span>Fair Play</span>
+        </span>
+      </div>
     </div>
 
-    <template v-if="coachStore.coachSpy">
+    <!-- Fair Play State when in FAIRPLAY phase -->
+    <div
+      v-if="gameStore.gamePhase === 'FAIRPLAY'"
+      class="flex-1 flex flex-col items-center justify-center p-6 text-center text-text-secondary gap-3 select-none"
+    >
+      <div
+        class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner"
+      >
+        <NIcon size="24">
+          <ShieldCheckmarkOutline />
+        </NIcon>
+      </div>
+      <div class="flex flex-col gap-1.5 max-w-[240px]">
+        <span class="text-xs font-bold text-text-primary">{{ t('features.coach.panel.fairPlayTitle') }}</span>
+        <span class="text-[11px] leading-relaxed text-text-secondary">
+          {{ t('features.coach.panel.fairPlayDesc') }}
+        </span>
+      </div>
+    </div>
+
+    <template v-else-if="coachStore.coachSpy">
 
     <!-- Compact status line -->
     <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">

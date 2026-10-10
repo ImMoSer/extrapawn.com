@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { useTaskTodayStore, type PuzzleResult } from '../model/taskToday.store'
+import { useTaskTodayStore, type PuzzleResult, type PuzzleStrategyType, type WorkoutPuzzle } from '../model/taskToday.store'
+import { useGameStore } from '@/entities/game'
 import { NButton, NIcon, NText, NScrollbar } from 'naive-ui'
-import { RefreshOutline as RestartIcon, ChevronForwardOutline } from '@vicons/ionicons5'
+import { RefreshOutline as RestartIcon, ChevronForwardOutline, CheckmarkOutline } from '@vicons/ionicons5'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const taskTodayStore = useTaskTodayStore()
+const gameStore = useGameStore()
 const router = useRouter()
 
 interface DisplayPuzzleItem {
@@ -18,7 +20,15 @@ interface DisplayPuzzleItem {
   puzzle_type: string
   result?: PuzzleResult
   isCurrent: boolean
+  displayNumber: number | null
+  isSolved: boolean
+  initial_fen: string
+  first_move: 'bot' | 'user'
+  strategy: PuzzleStrategyType
+  tactical_solution?: string
 }
+
+const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS' || taskTodayStore.isAnalysisMode)
 
 function handleGoToStart() {
   taskTodayStore.isFinished = false
@@ -33,7 +43,24 @@ function handleRestart() {
 
 function selectTask(index: number) {
   taskTodayStore.currentTaskIndex = index
-  taskTodayStore.playCurrentPuzzle()
+  if (isAnalysisMode.value) {
+    const subMode = taskTodayStore.activeTask?.sub_mode || ''
+    const allPuzzles = [
+      ...(taskTodayStore.tasksPuzzles[subMode] || []),
+      ...(taskTodayStore.solvedPuzzlesPerTask[subMode] || []),
+    ]
+    if (allPuzzles[0]) {
+      taskTodayStore.selectPuzzleForAnalysis(allPuzzles[0])
+    }
+  } else {
+    taskTodayStore.playCurrentPuzzle()
+  }
+}
+
+function handlePuzzleClick(puzzle: DisplayPuzzleItem) {
+  if (isAnalysisMode.value) {
+    taskTodayStore.selectPuzzleForAnalysis(puzzle as unknown as WorkoutPuzzle)
+  }
 }
 
 const tasks = computed(() => taskTodayStore.trainingPlan?.tasks || [])
@@ -64,16 +91,32 @@ const displayList = computed(() => {
   const solved = taskTodayStore.solvedPuzzlesPerTask[subMode] || []
   const queue = taskTodayStore.tasksPuzzles[subMode] || []
 
-  const solvedItems = solved.map((p: { puzzle_id: string }) => ({
+  if (!isAnalysisMode.value) {
+    // FAIRPLAY / PLAYING: только нерешенные задачи в очереди с обратным отсчетом (queue.length ... 1)
+    return queue.map((p, index) => ({
+      ...p,
+      result: results[p.puzzle_id],
+      isCurrent: index === 0,
+      displayNumber: queue.length - index,
+      isSolved: false,
+    })) as DisplayPuzzleItem[]
+  }
+
+  // ANALYSIS: все задачи (очередь + решенные)
+  const queueItems = queue.map((p, index) => ({
     ...p,
     result: results[p.puzzle_id],
-    isCurrent: false,
+    isCurrent: taskTodayStore.currentAnalysisPuzzleId === p.puzzle_id,
+    displayNumber: queue.length - index,
+    isSolved: false,
   }))
 
-  const queueItems = queue.map((p: { puzzle_id: string }, index: number) => ({
+  const solvedItems = solved.map((p) => ({
     ...p,
     result: results[p.puzzle_id],
-    isCurrent: index === 0,
+    isCurrent: taskTodayStore.currentAnalysisPuzzleId === p.puzzle_id,
+    displayNumber: null,
+    isSolved: true,
   }))
 
   return [...queueItems, ...solvedItems] as DisplayPuzzleItem[]
@@ -93,8 +136,8 @@ const getPuzzleStatus = (puzzleId: string) => {
       TaskToday ({{ taskTodayStore.trainingPlan?.level || 'Novice' }})
     </h2>
 
-    <!-- State: Finished -->
-    <div v-if="taskTodayStore.isFinished" class="flex-1 flex flex-col items-center justify-center gap-3">
+    <!-- State: Finished (Not in Analysis Mode) -->
+    <div v-if="taskTodayStore.isFinished && !isAnalysisMode" class="flex-1 flex flex-col items-center justify-center gap-3">
       <NText type="success" class="font-display font-bold text-sm tracking-wider">
         TRAINING COMPLETED
       </NText>
@@ -161,22 +204,28 @@ const getPuzzleStatus = (puzzleId: string) => {
         <NScrollbar class="flex-1">
           <div class="divide-y divide-slate-800/50">
             <div
-              v-for="(puzzle, index) in displayList"
+              v-for="puzzle in displayList"
               :key="puzzle.puzzle_id"
               class="flex items-center justify-between p-2 text-xs transition-colors"
               :class="[
                 puzzle.isCurrent ? 'bg-pink-500/10 border-l-2 border-l-pink-500' : '',
                 getPuzzleStatus(puzzle.puzzle_id) === 'failed' ? 'bg-red-500/10 border-l-2 border-l-red-500' : '',
-                getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 'bg-emerald-500/10 border-l-2 border-l-emerald-500' : ''
+                getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 'bg-emerald-500/10 border-l-2 border-l-emerald-500' : '',
+                isAnalysisMode ? 'cursor-pointer hover:bg-slate-800/40' : ''
               ]"
+              @click="handlePuzzleClick(puzzle)"
             >
               <!-- Left: Index + Rating -->
               <div class="flex items-center gap-2">
                 <span
                   class="w-5 h-5 flex items-center justify-center rounded text-[11px] font-condensed font-bold shrink-0"
-                  :class="puzzle.isCurrent ? 'bg-pink-600 text-white' : 'bg-slate-800 text-slate-400'"
+                  :class="[
+                    puzzle.isCurrent ? 'bg-pink-600 text-white' : 'bg-slate-800 text-slate-400',
+                    puzzle.isSolved ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/40' : ''
+                  ]"
                 >
-                  {{ index + 1 }}
+                  <NIcon v-if="puzzle.isSolved" size="12"><CheckmarkOutline /></NIcon>
+                  <template v-else>{{ puzzle.displayNumber }}</template>
                 </span>
                 <span class="font-condensed font-bold text-cyan-400 text-[12px]">
                   R: {{ puzzle.rating || '?' }}
@@ -201,7 +250,7 @@ const getPuzzleStatus = (puzzleId: string) => {
         </NScrollbar>
       </div>
 
-      <!-- Footer: Timer & Stats & Restart -->
+      <!-- Footer: Timer & Stats & Restart / Back to Report -->
       <div class="mt-auto flex flex-col gap-2 pt-2 border-t border-slate-800/80 shrink-0">
         <div class="bg-slate-900/80 border border-yellow-500/30 rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 shadow-inner">
           <div class="font-condensed font-black text-xl text-yellow-400 tracking-wider">
@@ -213,6 +262,7 @@ const getPuzzleStatus = (puzzleId: string) => {
         </div>
 
         <NButton
+          v-if="!isAnalysisMode"
           block
           size="small"
           type="warning"
@@ -222,6 +272,16 @@ const getPuzzleStatus = (puzzleId: string) => {
             <NIcon><RestartIcon /></NIcon>
           </template>
           Restart Puzzle
+        </NButton>
+
+        <NButton
+          v-else
+          block
+          size="small"
+          type="primary"
+          @click="taskTodayStore.exitAnalysisMode"
+        >
+          {{ t('features.taskToday.completed.backToReport', 'Назад к отчету') }}
         </NButton>
       </div>
     </div>

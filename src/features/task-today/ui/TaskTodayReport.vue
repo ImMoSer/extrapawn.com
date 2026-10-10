@@ -22,6 +22,10 @@ function toggleMode(subMode: string) {
   }
 }
 
+function handleAnalysis() {
+  taskTodayStore.enterAnalysisMode()
+}
+
 function handleGoToDashboard() {
   taskTodayStore.clearSavedState()
   window.location.href = '/task-today'
@@ -308,7 +312,10 @@ const finishedReport = computed(() => {
       <!-- Action buttons -->
       <div class="completed-actions">
         <NSpace justify="center" size="large">
-          <NButton type="primary" size="large" @click="handleGoToStart" class="completed-action-btn primary">
+          <NButton type="primary" size="large" @click="handleAnalysis" class="completed-action-btn primary">
+            {{ t('features.taskToday.completed.analyze', 'Анализ') }}
+          </NButton>
+          <NButton secondary size="large" @click="handleGoToStart" class="completed-action-btn">
             {{ t('features.taskToday.completed.backToStart', 'Zurück zur Startseite') }}
           </NButton>
           <NButton secondary size="large" @click="handleGoToDashboard" class="completed-action-btn">
