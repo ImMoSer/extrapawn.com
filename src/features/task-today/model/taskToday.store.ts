@@ -15,6 +15,7 @@ import { makeSan } from 'chessops/san'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { PuzzleStrategy } from '@/features/puzzle'
 import { usePreferencesStore } from '@/features/settings'
+import { useCrashtestStore } from '@/features/crashtest'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
@@ -121,6 +122,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
   const boardStore = useBoardStore()
   const router = useRouter()
+  const crashtestStore = useCrashtestStore()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
   const activePlanId = ref<string | null>(null)
@@ -292,6 +294,24 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
+  // Динамическое переключение фазы игры при включении/выключении крэш-теста разработчика на лету
+  watch(
+    () => crashtestStore.isCrashtestEnabled,
+    (enabled) => {
+      if (isPlaying.value && !isAnalysisMode.value && gameStore.gamePhase !== 'GAMEOVER') {
+        if (enabled && crashtestStore.isMo3ep && gameStore.gamePhase === 'FAIRPLAY') {
+          gameStore.setGamePhase('PLAYING')
+        } else if (!enabled && gameStore.gamePhase === 'PLAYING') {
+          const puzzle = currentPuzzle.value
+          const attempts = puzzle ? (puzzleAttempts.value[puzzle.puzzle_id] || 0) : 0
+          if (attempts < 3) {
+            gameStore.setGamePhase('FAIRPLAY')
+          }
+        }
+      }
+    },
+  )
+
   function playCurrentPuzzle() {
     cancelPendingTransition()
     const puzzle = currentPuzzle.value
@@ -302,7 +322,8 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     const userColor = determineHumanColor(puzzle)
     const planId = activePlanId.value || 'current'
     const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
-    const initialPhase: GamePhase = attempts >= 3 ? 'PLAYING' : 'FAIRPLAY'
+    const isCrashtestActive = crashtestStore.isMo3ep && crashtestStore.isCrashtestEnabled
+    const initialPhase: GamePhase = (attempts >= 3 || isCrashtestActive) ? 'PLAYING' : 'FAIRPLAY'
 
     gameStore.setGamePhase('LOADING')
 
