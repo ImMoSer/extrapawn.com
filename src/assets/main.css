@@ -78,19 +78,22 @@
   /* === SEMANTIC COLORS === */
   /* primary brand */
   --color-primary: var(--neon-cyan);
+  --color-primary-rgb: 0, 229, 255;
   --color-primary-hover: #00cfe6;
   --color-primary-glow: rgba(0, 229, 255, 0.35);
 
   /* secondary */
   --color-secondary: var(--neon-purple);
+  --color-secondary-rgb: 176, 0, 255;
   --color-secondary-glow: rgba(176, 0, 255, 0.35);
 
   /* accent */
   --color-accent: var(--neon-pink);
+  --color-accent-rgb: 255, 0, 122;
 
   /* states */
   --color-success: var(--neon-lime);
-  --color-warning: var(--neon-orange);
+  --color-warning: var(--neon-yellow);
   --color-error: var(--neon-red);
 
   /* --- NAGs Cyber Neon Mapping --- */
@@ -131,6 +134,7 @@
   --color-bg-tertiary: var(--bg-2);
 
   --color-accent-primary: var(--color-primary);
+  --color-accent-primary-rgb: var(--color-primary-rgb);
   --color-accent-primary-hover: var(--color-primary-hover);
   --color-accent-secondary: var(--color-secondary);
   --color-accent-warning: var(--color-warning);

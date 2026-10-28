@@ -28,12 +28,11 @@ async function boot() {
 
   // Phase 1: Identity/Session Check (Prioritized)
   // We check Auth status BEFORE loading the rest of the app.
-  const { useAuthStore } = await import('@/entities/user')
+  const { useAuthStore, usePreferencesStore } = await import('@/entities/user')
   const pinia = createPinia()
   const authStore = useAuthStore(pinia)
   await authStore.initialize()
 
-  const { usePreferencesStore } = await import('@/features/settings')
   const preferencesStore = usePreferencesStore(pinia)
   await preferencesStore.initialize()
 

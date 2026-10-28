@@ -25,10 +25,4 @@ describe('soundService', () => {
     await expect(soundService.play('checkmate')).resolves.toBeUndefined()
     await expect(soundService.play('stalemate')).resolves.toBeUndefined()
   })
-
-  it('safely handles legacy playSound events', async () => {
-    await expect(soundService.playSound('board_move')).resolves.toBeUndefined()
-    await expect(soundService.playSound('board_load_position')).resolves.toBeUndefined()
-    await expect(soundService.playSound('unknown_event')).resolves.toBeUndefined()
-  })
 })

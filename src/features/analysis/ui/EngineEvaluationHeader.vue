@@ -141,12 +141,12 @@ const formatSearchTimeTooltip = (value: number) => {
           </template>
           
           <div class="settings-content">
-            <n-text strong class="settings-title">{{ t('features.analysis.engineSettings') || 'Engine-Optionen' }}</n-text>
+            <n-text strong class="settings-title">{{ t('features.analysis.engineSettings') }}</n-text>
 
             <!-- Engine Version Select -->
             <div class="settings-field">
               <div class="field-label-row">
-                <span class="field-label">Engine Version</span>
+                <span class="field-label">{{ t('features.analysis.engineVersion') }}</span>
               </div>
               <n-select
                 :value="engineVersion"
@@ -160,7 +160,7 @@ const formatSearchTimeTooltip = (value: number) => {
             <div class="settings-field">
               <div class="field-label-row">
                 <span class="field-label">MultiPV</span>
-                <span class="field-value">{{ multiPv }} Lines</span>
+                <span class="field-value">{{ t('features.analysis.lines', { count: multiPv }) }}</span>
               </div>
               <n-slider
                 v-model:value="multiPv"
@@ -175,8 +175,8 @@ const formatSearchTimeTooltip = (value: number) => {
             <!-- Search Time Slider -->
             <div class="settings-field">
               <div class="field-label-row">
-                <span class="field-label">Suchzeit</span>
-                <span class="field-value">{{ searchTime === 99 ? 'Unbegrenzt (∞)' : `${searchTime}s` }}</span>
+                <span class="field-label">{{ t('features.analysis.searchTime') }}</span>
+                <span class="field-value">{{ searchTime === 99 ? t('features.analysis.unlimited') : `${searchTime}s` }}</span>
               </div>
               <n-slider
                 v-model:value="sliderSearchTime"
@@ -195,7 +195,7 @@ const formatSearchTimeTooltip = (value: number) => {
                 :checked="showArrows"
                 @update:checked="handleShowArrowsChange"
               >
-                Pfeile auf Brett anzeigen
+                {{ t('features.analysis.showArrows') }}
               </n-checkbox>
             </div>
           </div>

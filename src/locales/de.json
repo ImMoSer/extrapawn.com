@@ -865,6 +865,16 @@
           "practical_chess": "PRAXIS",
           "theory_endings": "THEORIE"
         }
+      },
+      "sidebar": {
+        "trainingCompleted": "TRAINING BEENDET",
+        "noPlan": "Kein aktiver Trainingsplan",
+        "goToDashboard": "Zum Dashboard gehen",
+        "left": "{count} übrig",
+        "puzzleQueue": "Aufgaben-Warteschlange",
+        "puzzlesCount": "{count} Aufgaben",
+        "solvedAttempts": "Gelöst: {solved} / {attempts} Versuche",
+        "restartPuzzle": "Aufgabe neu starten"
       }
     },
     "settings": {
@@ -898,13 +908,22 @@
       "noTheorySubtext": "Versuche eine andere Zugfolge.",
       "openingTheory": "Eröffnungstheorie",
       "reviewModeOverlay": "Review-Modus für Theorie",
-      "viewOnWikibooks": "Auf Wikibooks ansehen"
+      "viewOnWikibooks": "Auf Wikibooks ansehen",
+      "engineSettings": "Engine-Optionen",
+      "engineVersion": "Engine-Version",
+      "lines": "{count} Linien",
+      "searchTime": "Suchzeit",
+      "unlimited": "Unbegrenzt (∞)",
+      "showArrows": "Pfeile auf Brett anzeigen"
     },
     "engine": {
       "select": "Sparringspartner wählen"
     },
     "profile": {},
     "puzzle": {
+      "next": "Weiter",
+      "selectLessonPrompt": "Wähle eine Lektion aus, um das Training zu starten",
+      "autoNextTooltip": "Automatisch zur nächsten Aufgabe nach Lösung",
       "feedback": {
         "loadFailed": "Laden der Aufgabe fehlgeschlagen.",
         "loss": "Verloren!",
@@ -1028,7 +1047,21 @@
       "close": "Schließen"
     },
     "board": {
-      "copied": "Kopiert!"
+      "copied": "Kopiert!",
+      "pgn": {
+        "noMoves": "Keine Züge vorhanden",
+        "moveHistory": "Zugverlauf",
+        "promoteToMain": "Als Hauptvariante setzen",
+        "promoteVariation": "Variante hochstufen",
+        "deleteVariation": "Ab hier löschen",
+        "startOfGame": "Start der Partie",
+        "moveBack": "Zug zurück",
+        "moveForward": "Zug vorwärts",
+        "endOfGame": "Ende der Partie",
+        "flipBoard": "Brett drehen",
+        "modeExplorer": "Engine-Linien & PGN (EXP)",
+        "modeCoach": "Coach-Analyse & Erklärungen (COACH)"
+      }
     },
     "app": {
       "limitless": "unbegrenzt",

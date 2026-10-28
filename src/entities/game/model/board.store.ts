@@ -38,8 +38,6 @@ const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 export const useBoardStore = defineStore('board', () => {
   const fen = ref<string>(INITIAL_FEN)
-  /** @deprecated Board state is reactively tracked natively via Vue 3. Deprecated legacy property. */
-  const boardSyncCounter = ref(0)
   const chessPosition = shallowRef(Chess.fromSetup(parseFen(fen.value).unwrap()).unwrap())
 
   const turn = computed(() => chessPosition.value.turn)
@@ -52,7 +50,8 @@ export const useBoardStore = defineStore('board', () => {
   const promotionState = ref<PromotionState | null>(null)
   const drawableShapes = ref<DrawShape[]>([])
   const coachShapes = ref<DrawShape[]>([])
-  const autoShapes = computed(() => coachShapes.value)
+  const analysisShapes = ref<DrawShape[]>([])
+  const autoShapes = computed(() => [...coachShapes.value, ...analysisShapes.value])
   const lastNag = ref<NagMarker | null>(null)
   const lastMoveTimestamp = ref<number>(0)
   const animationDurationMs = ref<number>(200)
@@ -82,6 +81,7 @@ export const useBoardStore = defineStore('board', () => {
     promotionState.value = null
     drawableShapes.value = []
     coachShapes.value = []
+    analysisShapes.value = []
     lastNag.value = null
     soundService.play('load_position')
   }
@@ -97,6 +97,7 @@ export const useBoardStore = defineStore('board', () => {
       if (cues.shapes !== undefined) drawableShapes.value = cues.shapes
     }
     coachShapes.value = []
+    analysisShapes.value = []
   }
 
   function loadPosition(newFen: string) {
@@ -134,6 +135,7 @@ export const useBoardStore = defineStore('board', () => {
     chessPosition.value = chessPosition.value.clone()
     fen.value = makeFen(chessPosition.value.toSetup())
     coachShapes.value = []
+    analysisShapes.value = []
 
     if (isNormal(move)) {
       lastMove.value = [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key]
@@ -224,8 +226,13 @@ export const useBoardStore = defineStore('board', () => {
     coachShapes.value = shapes
   }
 
+  function setAnalysisShapes(shapes: DrawShape[]) {
+    analysisShapes.value = shapes
+  }
+
   function clearAutoShapes() {
     coachShapes.value = []
+    analysisShapes.value = []
   }
 
   function resetBoardState() {
@@ -234,8 +241,8 @@ export const useBoardStore = defineStore('board', () => {
     orientation.value = 'white'
     drawableShapes.value = []
     coachShapes.value = []
+    analysisShapes.value = []
     lastNag.value = null
-    boardSyncCounter.value++
     logger.info('[BoardStore] Board state has been reset to initial.')
   }
 
@@ -250,7 +257,6 @@ export const useBoardStore = defineStore('board', () => {
     promotionState,
     drawableShapes,
     autoShapes,
-    boardSyncCounter,
     setupPosition,
     loadPosition,
     applyUciMove,
@@ -261,6 +267,7 @@ export const useBoardStore = defineStore('board', () => {
     flipBoard,
     setDrawableShapes,
     setCoachShapes,
+    setAnalysisShapes,
     clearAutoShapes,
     resetBoardState,
     lastNag,

@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useGameStore, PgnTree } from '@/entities/game'
+import { useGameStore } from '../model/game.store'
+import PgnTree from './PgnTree.vue'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { NText, NIcon } from 'naive-ui'
-import { 
-  ArrowUpOutline, 
-  TrashOutline, 
-  TrendingUpOutline 
-} from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
+import { ArrowUpOutline, TrashOutline, TrendingUpOutline } from '@vicons/ionicons5'
 
 const props = withDefaults(
   defineProps<{
@@ -15,9 +13,10 @@ const props = withDefaults(
   }>(),
   {
     readOnly: undefined,
-  }
+  },
 )
 
+const { t } = useI18n()
 const gameStore = useGameStore()
 const scrollContainer = ref<HTMLElement | null>(null)
 
@@ -26,7 +25,6 @@ const isReadOnly = computed(() => props.readOnly ?? gameStore.gamePhase === 'PLA
 watch(
   pgnTreeVersion,
   () => {
-    // Skip autoscrolling in portrait orientation (vertical/mobile stacked layout)
     if (window.matchMedia('(orientation: portrait)').matches) {
       return
     }
@@ -39,10 +37,9 @@ watch(
       })
     })
   },
-  { immediate: true }
+  { immediate: true },
 )
 
-// Context Menu State
 const showMenu = ref(false)
 const menuX = ref(0)
 const menuY = ref(0)
@@ -50,8 +47,7 @@ const selectedNode = ref<PgnNode | null>(null)
 
 const handleContextMenu = (payload: { event: MouseEvent; node: PgnNode }) => {
   const { event, node } = payload
-  
-  // Do not show menu on root node (ply 0) or during active play
+
   if (isReadOnly.value || node.ply === 0) return
 
   selectedNode.value = node
@@ -65,7 +61,6 @@ const closeMenu = () => {
   selectedNode.value = null
 }
 
-// Global click/contextmenu listeners to dismiss menu
 const handleGlobalClick = () => {
   if (showMenu.value) {
     closeMenu()
@@ -82,11 +77,9 @@ onUnmounted(() => {
   window.removeEventListener('contextmenu', handleGlobalClick)
 })
 
-// Menu Actions
 const promoteToMain = () => {
   if (selectedNode.value) {
     pgnService.promoteToMainline(selectedNode.value)
-    // Sync board
     gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
   }
   closeMenu()
@@ -95,7 +88,6 @@ const promoteToMain = () => {
 const promoteToVariant = () => {
   if (selectedNode.value) {
     pgnService.promoteToVariantMainline(selectedNode.value)
-    // Sync board
     gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
   }
   closeMenu()
@@ -104,7 +96,6 @@ const promoteToVariant = () => {
 const deleteMove = () => {
   if (selectedNode.value) {
     pgnService.deleteNode(selectedNode.value)
-    // Sync board (since deleteNode navigates current to parent if needed)
     gameStore.loadPosition(pgnService.getCurrentNavigatedFen())
   }
   closeMenu()
@@ -114,39 +105,34 @@ const deleteMove = () => {
 <template>
   <div class="pgn-move-history">
     <div class="history-header">
-      <n-text class="header-title" depth="3">Partieverlauf</n-text>
-    </div>
-    
-    <div ref="scrollContainer" class="history-content-scroll">
-      <PgnTree
-        :key="pgnTreeVersion"
-        :read-only="isReadOnly"
-        @contextmenu="handleContextMenu"
-      />
+      <n-text class="header-title" depth="3">{{ t('shared.board.pgn.moveHistory') }}</n-text>
     </div>
 
-    <!-- Custom Glassmorphic Context Menu -->
+    <div ref="scrollContainer" class="history-content-scroll">
+      <PgnTree :key="pgnTreeVersion" :read-only="isReadOnly" @contextmenu="handleContextMenu" />
+    </div>
+
     <teleport to="body">
       <transition name="fade">
-        <div 
-          v-if="showMenu && selectedNode" 
+        <div
+          v-if="showMenu && selectedNode"
           class="custom-context-menu glass"
           :style="{ left: menuX + 'px', top: menuY + 'px' }"
           @click.stop
         >
           <div class="menu-item" @click="promoteToMain">
             <n-icon class="menu-icon"><ArrowUpOutline /></n-icon>
-            <span>Als Hauptvariante setzen</span>
+            <span>{{ t('shared.board.pgn.promoteToMain') }}</span>
           </div>
-          
+
           <div class="menu-item" @click="promoteToVariant">
             <n-icon class="menu-icon"><TrendingUpOutline /></n-icon>
-            <span>Als Varianten-Hauptlinie setzen</span>
+            <span>{{ t('shared.board.pgn.promoteVariation') }}</span>
           </div>
-          
+
           <div class="menu-item delete" @click="deleteMove">
             <n-icon class="menu-icon"><TrashOutline /></n-icon>
-            <span>Variante löschen</span>
+            <span>{{ t('shared.board.pgn.deleteVariation') }}</span>
           </div>
         </div>
       </transition>
@@ -205,7 +191,6 @@ const deleteMove = () => {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Custom Context Menu */
 .custom-context-menu {
   position: fixed;
   z-index: 99999;
@@ -215,8 +200,8 @@ const deleteMove = () => {
   flex-direction: column;
   gap: 2px;
   border-radius: 10px;
-  transform: translate(0, 4px); /* offset slightly below cursor */
-  
+  transform: translate(0, 4px);
+
   .menu-item {
     display: flex;
     align-items: center;
@@ -237,15 +222,15 @@ const deleteMove = () => {
 
     &:hover {
       background: rgba(255, 255, 255, 0.06);
-      
+
       .menu-icon {
-        color: #fff;
+        color: var(--text-primary);
       }
     }
 
     &.delete {
       color: var(--color-error);
-      
+
       .menu-icon {
         color: var(--color-error);
       }
@@ -257,10 +242,11 @@ const deleteMove = () => {
   }
 }
 
-/* Context Menu Transition */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .fade-enter-from,
@@ -269,3 +255,4 @@ const deleteMove = () => {
   transform: translate(0, 0) scale(0.95);
 }
 </style>
+

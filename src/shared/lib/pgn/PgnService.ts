@@ -43,6 +43,12 @@ export const NAG_MAPPING: Record<number, { symbol: string; quality: string }> = 
   146: { symbol: 'N', quality: 'novelty' },
 }
 
+export interface PgnNodeMetadata {
+  nag?: string
+  quality?: string
+  [key: string]: unknown
+}
+
 export interface PgnNode {
   id: string
   ply: number
@@ -57,8 +63,7 @@ export interface PgnNode {
   nag?: number | undefined
   isCollapsed?: boolean | undefined
   shapes?: DrawShape[] | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any> | undefined
+  metadata?: PgnNodeMetadata | undefined
 }
 
 export interface NewNodeData {

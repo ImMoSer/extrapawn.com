@@ -1,2 +1,3 @@
 export * from './model/auth.store'
-export * from './api/AuthService'
+export * from './model/preferences.store'
+export * from './config/theme.config'

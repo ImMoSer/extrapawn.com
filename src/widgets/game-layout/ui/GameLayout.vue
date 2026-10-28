@@ -1,12 +1,11 @@
 <!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
-import { EvalBar, useCoachStore } from '@/features/coach'
+import { usePreferencesStore } from '@/entities/user'
+import { EvalBar, useCoachStore, useCrashtestStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
-import { usePreferencesStore } from '@/features/settings'
 import ControlCenter from './ControlCenter.vue'
 import RightSidebarSlot from './RightSidebarSlot.vue'
-import { useCrashtestStore } from '@/features/crashtest'
 import type { Key } from '@lichess-org/chessground/types'
 import { computed, onMounted, onUnmounted } from 'vue'
 
@@ -98,11 +97,10 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
                   :is-analysis-mode="isAnalysisMode"
                   :animation-enabled="isAnimationEnabled"
                   :animation-duration="preferencesStore.preferences.theme.animationDuration"
-                  :board-sync-counter="boardStore.boardSyncCounter"
                   :can-edit="true"
                   @user-move="handleUserMove"
                   @complete-promotion="boardStore.completePromotion"
-                  @shapes-change="(shapes: any) => boardStore.setDrawableShapes(shapes)"
+                  @shapes-change="boardStore.setDrawableShapes"
                 />
               </slot>
 

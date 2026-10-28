@@ -130,16 +130,16 @@ const getPuzzleStatus = (puzzleId: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col gap-3 p-3 bg-slate-950/60 backdrop-blur-md border-r border-slate-800/80 text-slate-100 select-none overflow-hidden">
+  <div class="h-full flex flex-col gap-3 p-3 bg-surface/80 backdrop-blur-md border-r border-border text-text-primary select-none overflow-hidden">
     <!-- Header Title -->
     <h2 class="font-display font-black text-base text-center tracking-wider text-pink-500 drop-shadow-[0_0_10px_rgba(217,0,76,0.3)] uppercase">
-      TaskToday ({{ taskTodayStore.trainingPlan?.level || 'Novice' }})
+      {{ t('features.taskToday.title') }} ({{ taskTodayStore.trainingPlan?.level || 'Novice' }})
     </h2>
 
     <!-- State: Finished (Not in Analysis Mode) -->
     <div v-if="taskTodayStore.isFinished && !isAnalysisMode" class="flex-1 flex flex-col items-center justify-center gap-3">
       <NText type="success" class="font-display font-bold text-sm tracking-wider">
-        TRAINING COMPLETED
+        {{ t('features.taskToday.sidebar.trainingCompleted') }}
       </NText>
       <NButton type="primary" size="small" @click="handleGoToStart">
         {{ t('shared.buttons.back') }}
@@ -149,10 +149,10 @@ const getPuzzleStatus = (puzzleId: string) => {
     <!-- State: No Plan -->
     <div v-else-if="!taskTodayStore.trainingPlan" class="flex-1 flex flex-col items-center justify-center gap-3">
       <NText depth="3" class="text-xs">
-        {{ t('features.taskToday.noPlan', 'Kein aktiver Trainingsplan') }}
+        {{ t('features.taskToday.sidebar.noPlan') }}
       </NText>
       <NButton type="primary" size="small" class="font-bold" @click="handleGoToStart">
-        Zum Dashboard gehen
+        {{ t('features.taskToday.sidebar.goToDashboard') }}
       </NButton>
     </div>
 
@@ -166,10 +166,10 @@ const getPuzzleStatus = (puzzleId: string) => {
           class="flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer text-xs"
           :class="[
             taskTodayStore.currentTaskIndex === index
-              ? 'border-pink-500/80 bg-pink-500/10 text-slate-100 shadow-[0_0_8px_rgba(217,0,76,0.2)]'
+              ? 'border-pink-500/80 bg-pink-500/10 text-text-primary shadow-[0_0_8px_rgba(217,0,76,0.2)]'
               : isTaskCompleted(task.sub_mode)
                 ? 'border-emerald-500/40 bg-emerald-500/10 opacity-75'
-                : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/50 text-slate-300'
+                : 'border-border bg-elevated/40 hover:bg-elevated text-text-secondary'
           ]"
           @click="selectTask(index)"
         >
@@ -177,11 +177,11 @@ const getPuzzleStatus = (puzzleId: string) => {
             <span class="font-display font-bold text-[11px] uppercase tracking-wider shrink-0">
               {{ t(`features.taskToday.modes.${task.sub_mode}`, task.sub_mode.replace('_', ' ').toUpperCase()) }}
             </span>
-            <span class="text-[10px] text-slate-400 truncate flex-1">
+            <span class="text-[10px] text-text-muted truncate flex-1">
               ({{ task.themes.map((t: { name: string }) => t.name).join(', ') }})
             </span>
-            <span class="font-condensed font-semibold text-[11px] text-slate-400 shrink-0 ml-auto">
-              {{ taskTodayStore.tasksPuzzles[task.sub_mode]?.length || 0 }} left
+            <span class="font-condensed font-semibold text-[11px] text-text-muted shrink-0 ml-auto">
+              {{ t('features.taskToday.sidebar.left', { count: taskTodayStore.tasksPuzzles[task.sub_mode]?.length || 0 }) }}
             </span>
           </div>
           <NIcon v-if="taskTodayStore.currentTaskIndex === index" class="ml-1 text-pink-400">
@@ -191,18 +191,18 @@ const getPuzzleStatus = (puzzleId: string) => {
       </div>
 
       <!-- Puzzle Queue Section -->
-      <div class="flex-1 flex flex-col min-h-0 border border-slate-800/80 rounded-lg bg-slate-900/30 overflow-hidden">
-        <div class="px-3 py-1.5 bg-slate-900/80 border-b border-slate-800/80 flex items-center justify-between">
-          <span class="font-display font-bold text-[11px] tracking-wider text-slate-400 uppercase">
-            Puzzle Queue
+      <div class="flex-1 flex flex-col min-h-0 border border-border rounded-lg bg-elevated/30 overflow-hidden">
+        <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex items-center justify-between">
+          <span class="font-display font-bold text-[11px] tracking-wider text-text-secondary uppercase">
+            {{ t('features.taskToday.sidebar.puzzleQueue') }}
           </span>
-          <span class="font-condensed font-semibold text-[11px] text-slate-500">
-            {{ displayList.length }} Puzzles
+          <span class="font-condensed font-semibold text-[11px] text-text-muted">
+            {{ t('features.taskToday.sidebar.puzzlesCount', { count: displayList.length }) }}
           </span>
         </div>
 
         <NScrollbar class="flex-1">
-          <div class="divide-y divide-slate-800/50">
+          <div class="divide-y divide-border/50">
             <div
               v-for="puzzle in displayList"
               :key="puzzle.puzzle_id"
@@ -211,7 +211,7 @@ const getPuzzleStatus = (puzzleId: string) => {
                 puzzle.isCurrent ? 'bg-pink-500/10 border-l-2 border-l-pink-500' : '',
                 getPuzzleStatus(puzzle.puzzle_id) === 'failed' ? 'bg-red-500/10 border-l-2 border-l-red-500' : '',
                 getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 'bg-emerald-500/10 border-l-2 border-l-emerald-500' : '',
-                isAnalysisMode ? 'cursor-pointer hover:bg-slate-800/40' : ''
+                isAnalysisMode ? 'cursor-pointer hover:bg-elevated/60' : ''
               ]"
               @click="handlePuzzleClick(puzzle)"
             >
@@ -220,7 +220,7 @@ const getPuzzleStatus = (puzzleId: string) => {
                 <span
                   class="w-5 h-5 flex items-center justify-center rounded text-[11px] font-condensed font-bold shrink-0"
                   :class="[
-                    puzzle.isCurrent ? 'bg-pink-600 text-white' : 'bg-slate-800 text-slate-400',
+                    puzzle.isCurrent ? 'bg-pink-600 text-white' : 'bg-elevated text-text-muted',
                     puzzle.isSolved ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/40' : ''
                   ]"
                 >
@@ -235,7 +235,7 @@ const getPuzzleStatus = (puzzleId: string) => {
               <!-- Right: Attempts + Timer -->
               <div class="flex items-center gap-2">
                 <span
-                  class="font-condensed text-[11px] px-1.5 py-0.5 rounded bg-slate-800/60 text-slate-300"
+                  class="font-condensed text-[11px] px-1.5 py-0.5 rounded bg-elevated/80 text-text-secondary"
                   :class="{ 'text-red-400 bg-red-500/20': getPuzzleStatus(puzzle.puzzle_id) === 'failed' }"
                 >
                   {{ getPuzzleStatus(puzzle.puzzle_id) === 'solved' ? 1 : 0 }}/{{ taskTodayStore.puzzleAttempts[puzzle.puzzle_id] || 0 }}
@@ -251,13 +251,13 @@ const getPuzzleStatus = (puzzleId: string) => {
       </div>
 
       <!-- Footer: Timer & Stats & Restart / Back to Report -->
-      <div class="mt-auto flex flex-col gap-2 pt-2 border-t border-slate-800/80 shrink-0">
-        <div class="bg-slate-900/80 border border-yellow-500/30 rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 shadow-inner">
+      <div class="mt-auto flex flex-col gap-2 pt-2 border-t border-border shrink-0">
+        <div class="bg-elevated/80 border border-yellow-500/30 rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 shadow-inner">
           <div class="font-condensed font-black text-xl text-yellow-400 tracking-wider">
             {{ taskTodayStore.formatMs(solvedTimesSumMs) }}
           </div>
           <div class="font-condensed font-bold text-xs text-cyan-400 opacity-90">
-            Solved: {{ solvedPuzzlesCount }} / {{ totalAttemptsCount }} Attempts
+            {{ t('features.taskToday.sidebar.solvedAttempts', { solved: solvedPuzzlesCount, attempts: totalAttemptsCount }) }}
           </div>
         </div>
 
@@ -271,7 +271,7 @@ const getPuzzleStatus = (puzzleId: string) => {
           <template #icon>
             <NIcon><RestartIcon /></NIcon>
           </template>
-          Restart Puzzle
+          {{ t('features.taskToday.sidebar.restartPuzzle') }}
         </NButton>
 
         <NButton
@@ -281,7 +281,7 @@ const getPuzzleStatus = (puzzleId: string) => {
           type="primary"
           @click="taskTodayStore.exitAnalysisMode"
         >
-          {{ t('features.taskToday.completed.backToReport', 'Назад к отчету') }}
+          {{ t('features.taskToday.completed.backToReport') }}
         </NButton>
       </div>
     </div>

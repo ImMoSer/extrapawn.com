@@ -164,22 +164,28 @@ const navigate = () => {
 }
 
 /* NAG colors */
-.move-san.best,
-.move-san.brilliant {
-  color: #26a69a !important; /* Greenish/Teal */
+.move-san.best {
+  color: var(--color-nag-best) !important;
 }
 
-.move-san.mistake,
+.move-san.brilliant {
+  color: var(--color-nag-brilliant) !important;
+}
+
 .move-san.inaccuracy {
-  color: #ffb300 !important; /* Yellow/Orange */
+  color: var(--color-nag-inaccuracy) !important;
+}
+
+.move-san.mistake {
+  color: var(--color-nag-mistake) !important;
 }
 
 .move-san.blunder {
-  color: #e53935 !important; /* Red */
+  color: var(--color-nag-blunder) !important;
 }
 
 .move-san.interesting {
-  color: #b39ddb !important; /* Purple/Magenta */
+  color: var(--color-nag-interesting) !important;
 }
 
 .move-san.is-active {

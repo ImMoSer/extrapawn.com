@@ -7,8 +7,6 @@ export function registerVolumeProvider(provider: SoundVolumeProvider): void {
   volumeProvider = provider
 }
 
-export const registerBoardVolumeProvider = registerVolumeProvider
-
 export const soundDefinitions: Record<SoundEffect, string | string[]> = {
   move: '/sounds/move.mp3',
   capture: '/sounds/capture.mp3',
@@ -36,69 +34,21 @@ export const soundDefinitions: Record<SoundEffect, string | string[]> = {
   timer_times_up: '/sounds/timer/timer_times_up.mp3',
 }
 
-const legacyEventMap: Record<string, SoundEffect> = {
-  board_move: 'move',
-  board_capture: 'capture',
-  board_castle: 'castle',
-  board_promote: 'promote',
-  board_check: 'check',
-  board_load_position: 'load_position',
-  blunder_sound: 'chpock',
-  game_training_error: 'chpock',
-  game_tacktics_error: 'tactics_error',
-  task_today_error: 'tactics_error',
-  game_tacktics_success: 'tactics_success',
-  task_today_success: 'tactics_success',
-  game_speedrun_finished: 'applause',
-  board_timer_10s: 'timer_10s',
-  board_timer_8s: 'timer_8s',
-  board_timer_times_up: 'timer_times_up',
-  board_checkmate: 'checkmate',
-  board_draw_stalemate: 'stalemate',
-  board_draw_repetition: 'draw_by_repetition',
-  board_draw_fifty_moves: 'fifty_moves_no_progress',
-  board_draw_insufficient_material: 'insufficient_material',
-  game_draw: 'stalemate',
-}
-
 export class SoundServiceController {
   private audioTemplates: Map<string, HTMLAudioElement> = new Map()
   private activeSounds: Set<HTMLAudioElement> = new Set()
 
   public get volume(): number {
-    if (volumeProvider) {
-      if (typeof volumeProvider.getVolume === 'function') {
-        return volumeProvider.getVolume()
-      }
-      if (typeof volumeProvider.getBoardVolume === 'function') {
-        return volumeProvider.getBoardVolume()
-      }
-    }
-    return 1.0
+    return volumeProvider ? volumeProvider.getVolume() : 1.0
   }
 
   public setVolume(vol: number): void {
     const clamped = Math.max(0, Math.min(1, vol))
-    if (volumeProvider) {
-      if (typeof volumeProvider.setVolume === 'function') {
-        volumeProvider.setVolume(clamped)
-      } else if (typeof volumeProvider.setBoardVolume === 'function') {
-        volumeProvider.setBoardVolume(clamped)
-      }
-    }
+    volumeProvider?.setVolume(clamped)
     this.activeSounds.forEach((audio) => {
       audio.volume = clamped
     })
   }
-
-  public setBoardVolume(vol: number): void {
-    this.setVolume(vol)
-  }
-
-  public getBoardVolume(): number {
-    return this.volume
-  }
-
 
   private _getTemplate(path: string): HTMLAudioElement | null {
     if (typeof Audio === 'undefined') return null
@@ -174,21 +124,6 @@ export class SoundServiceController {
     })
   }
 
-  public playSound(event: string, reason?: string): Promise<void> {
-    const mapped = legacyEventMap[event] || (event as SoundEffect)
-    if (mapped in soundDefinitions) {
-      return this.play(mapped, reason)
-    }
-    // If unknown or removed event (such as app_game_entry, game_play_out_start), resolve silently
-    return Promise.resolve()
-  }
-
-  public async playSequence(events: (SoundEffect | string)[], reason?: string): Promise<void> {
-    for (const event of events) {
-      await this.playSound(event, reason)
-    }
-  }
-
   public stopAll(): void {
     this.activeSounds.forEach((audio) => {
       audio.pause()
@@ -197,19 +132,7 @@ export class SoundServiceController {
     this.activeSounds.clear()
     logger.info('[SoundService] All sounds stopped.')
   }
-
-  public stopAllBackgroundSounds(): void {
-    this.stopAll()
-  }
-
-  public stopAllVoiceSounds(): void {
-    // Deprecated no-op: voice track removed
-  }
-
-  public async ensureInitialized(): Promise<void> {
-    return Promise.resolve()
-  }
 }
 
 export const soundService = new SoundServiceController()
-export const boardSoundService = soundService
+

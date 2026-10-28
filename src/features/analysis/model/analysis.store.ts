@@ -1,6 +1,6 @@
 import { analysisService, type EvaluatedLineWithSan } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
-import { usePreferencesStore } from '@/features/settings'
+import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
@@ -59,7 +59,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
         void stopAnalysis()
       }
       if (phase === 'FAIRPLAY') {
-        boardStore.setDrawableShapes([])
+        boardStore.setAnalysisShapes([])
       }
     },
   )
@@ -72,7 +72,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
         if (showArrows.value) {
           drawAnalysisArrows(lines)
         } else {
-          boardStore.setDrawableShapes([])
+          boardStore.setAnalysisShapes([])
         }
         lastRenderedDepth = currentDepth
       }
@@ -81,7 +81,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   watch(showArrows, (newVal) => {
     if (!newVal) {
-      boardStore.setDrawableShapes([])
+      boardStore.setAnalysisShapes([])
       lastArrowsSignature = ''
     } else if (isAnalysisActive.value && analysisLines.value.length > 0) {
       drawAnalysisArrows(analysisLines.value)
@@ -99,7 +99,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
     if (gameStore.gamePhase === 'FAIRPLAY') {
-      boardStore.setDrawableShapes([])
+      boardStore.setAnalysisShapes([])
       return
     }
 
@@ -129,7 +129,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
       }
     })
 
-    boardStore.setDrawableShapes(shapes)
+    boardStore.setAnalysisShapes(shapes)
     lastArrowsSignature = signature
   }
 
@@ -242,7 +242,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     analysisVersion++
     isAnalysisActive.value = false
     analysisLines.value = []
-    boardStore.setDrawableShapes([])
+    boardStore.setAnalysisShapes([])
     await analysisService.stopAnalysis()
     logger.info('[AnalysisStore] Stopped.')
   }

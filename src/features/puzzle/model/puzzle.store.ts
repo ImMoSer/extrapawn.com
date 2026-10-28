@@ -1,26 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { parseFen } from 'chessops/fen'
 import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 import {
   useGameStore,
   GameAudioEngine,
+  PuzzleStrategy,
+  determineHumanColor,
   type GameStatusInfo,
+  type PuzzlePuzzle,
+  type PuzzleStrategyType,
+  type PuzzleStrategyCallbacks,
 } from '@/entities/game'
-import { usePreferencesStore } from '@/features/settings'
+import { usePreferencesStore } from '@/entities/user'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { apiClient } from '@/shared/api/client'
 import i18n from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
+import { soundService } from '@/shared/lib/sound'
 import type { TopInfoDisplay } from './types'
-import { PuzzleStrategy } from './PuzzleStrategy'
 
 const t = i18n.global.t
 
+export type { PuzzlePuzzle, PuzzleStrategyType }
+
 export const VALID_SUBMODES = ['tactics', 'finish_him', 'practical_chess', 'theory_endings'] as const
-export type PuzzleSubmode = typeof VALID_SUBMODES[number]
+export type PuzzleSubmode = (typeof VALID_SUBMODES)[number]
 
 export const DEFAULT_SUBMODE_CATEGORY: Record<PuzzleSubmode, string> = {
   tactics: 'fork',
@@ -29,42 +35,12 @@ export const DEFAULT_SUBMODE_CATEGORY: Record<PuzzleSubmode, string> = {
   practical_chess: 'extraPawn',
 }
 
-export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
-
-export interface PuzzlePuzzle {
-  puzzle_id: string
-  puzzle_type: string
-  category: string
-  category_comby?: string[]
-  motifs_pg?: string[]
-  sub_category?: string
-  difficulty: string
-  rating?: number | string
-  strategy: PuzzleStrategyType
-  first_move: 'bot' | 'user'
-  initial_fen: string
-  tactical_solution?: string
-  puzzle_fen?: string
-  is_golden?: boolean
-  // UI Specific overrides
-  userSelectedColor?: boolean
-}
-
 export interface PuzzleParams {
   type?: string
   category?: string
   difficulty?: string
   puzzleId?: string
   golden_tactics?: boolean
-}
-
-function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {
-  const setup = parseFen(puzzle.initial_fen).unwrap()
-  const fenTurn = setup.turn === 'white' ? 'white' : 'black'
-  if (puzzle.first_move === 'bot') {
-    return fenTurn === 'white' ? 'black' : 'white'
-  }
-  return fenTurn
 }
 
 function getStrategyType(submode: PuzzleSubmode | null): PuzzleStrategyType {
@@ -101,7 +77,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
   function toggleAutoNext() {
     autoNextPuzzle.value = !autoNextPuzzle.value
   }
-  
+
   const feedbackMessage = ref(t('features.puzzle.feedback.pressNext'))
   const isProcessingGameOver = ref(false)
   const isWaitingForColorSelection = ref(false)
@@ -109,6 +85,29 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
   const gamePhase = computed(() => gameStore.gamePhase)
   const fenFinal = computed(() => activePuzzle.value?.puzzle_fen || '')
+
+  function createStrategyCallbacks(
+    puzzle: PuzzlePuzzle,
+    humanColor: 'white' | 'black',
+  ): PuzzleStrategyCallbacks {
+    return {
+      delays: preferencesStore.preferences.delays,
+      onFeedback: (msg: string) => {
+        feedbackMessage.value = msg
+      },
+      onUndo: () => {
+        setProcessingGameOver(false)
+      },
+      onSuccess: async (reason = 'scenario_complete') => {
+        soundService.play('tactics_success', 'PuzzleStrategy.scenarioSuccess')
+        await handleGameOver(puzzle, true, { winner: humanColor, reason }, humanColor)
+      },
+      onFailure: async () => {
+        soundService.play('tactics_error')
+        await handleGameOver(puzzle, false, { winner: undefined, reason: 'wrong_move' }, humanColor)
+      },
+    }
+  }
 
   function initialize(submode: PuzzleSubmode, puzzleIdFromRoute?: string) {
     if (!VALID_SUBMODES.includes(submode)) {
@@ -123,7 +122,10 @@ export const usePuzzleStore = defineStore('puzzle', () => {
         difficulty: activeParams.value.difficulty || 'Novice',
       }
     }
-    if (puzzleIdFromRoute && (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleIdFromRoute)) {
+    if (
+      puzzleIdFromRoute &&
+      (!activePuzzle.value || activePuzzle.value.puzzle_id !== puzzleIdFromRoute)
+    ) {
       void loadPuzzleById(submode, puzzleIdFromRoute)
     } else if (!activePuzzle.value) {
       void loadNewPuzzle(submode)
@@ -138,15 +140,18 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       currentUserColor.value = humanColor
       gameStore.startWithStrategy(
         activePuzzle.value.initial_fen,
-        new PuzzleStrategy(activePuzzle.value, humanColor, activeSubmode.value),
+        new PuzzleStrategy(
+          activePuzzle.value,
+          humanColor,
+          activeSubmode.value,
+          createStrategyCallbacks(activePuzzle.value, humanColor),
+        ),
         humanColor,
-        false
+        false,
       )
       feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
     }
   }
-
-
 
   async function handleGameOver(
     puzzle: PuzzlePuzzle,
@@ -199,15 +204,20 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     }
     isProcessingGameOver.value = false
     gameStore.setGamePhase('PLAYING')
-    
+
     const humanColor = determineHumanColor(activePuzzle.value)
     currentUserColor.value = humanColor
 
     gameStore.startWithStrategy(
       activePuzzle.value.initial_fen,
-      new PuzzleStrategy(activePuzzle.value, humanColor, activeSubmode.value),
+      new PuzzleStrategy(
+        activePuzzle.value,
+        humanColor,
+        activeSubmode.value,
+        createStrategyCallbacks(activePuzzle.value, humanColor),
+      ),
       humanColor,
-      false
+      false,
     )
     feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
   }
@@ -217,7 +227,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     isWaitingForColorSelection.value = false
 
     if (!VALID_SUBMODES.includes(type as PuzzleSubmode)) {
-      throw new Error(`[PuzzleStore] Invalid submode requested for puzzle loading: "${type}". Fail-Fast!`)
+      throw new Error(
+        `[PuzzleStore] Invalid submode requested for puzzle loading: "${type}". Fail-Fast!`,
+      )
     }
     activeSubmode.value = type as PuzzleSubmode
 
@@ -228,7 +240,8 @@ export const usePuzzleStore = defineStore('puzzle', () => {
     const baseActiveParams = { ...activeParams.value }
     delete baseActiveParams.puzzleId
 
-    const isGolden = type === 'tactics' && (queryParams.golden_tactics ?? baseActiveParams.golden_tactics ?? false)
+    const isGolden =
+      type === 'tactics' && (queryParams.golden_tactics ?? baseActiveParams.golden_tactics ?? false)
 
     let category = queryParams.category
     if (!isGolden && !category) {
@@ -251,7 +264,7 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       let puzzle: PuzzlePuzzle
       if (targetPuzzleId) {
         puzzle = await apiClient<PuzzlePuzzle>(
-          `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`
+          `/play-puzzle/puzzle/${targetPuzzleId}?puzzle_type=${type}`,
         )
       } else if (isGolden) {
         const url = `/play-puzzle/start?puzzle_type=${type}&difficulty=${difficulty}&golden_tactics`
@@ -279,7 +292,6 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
       activePuzzle.value = mappedPuzzle
 
-      // Dynamically sync URL route parameter to active puzzle_id
       const currentRouteId = router.currentRoute.value.params.puzzleId
       if (mappedPuzzle.puzzle_id && currentRouteId !== mappedPuzzle.puzzle_id) {
         const routeName = router.currentRoute.value.name || type
@@ -288,15 +300,20 @@ export const usePuzzleStore = defineStore('puzzle', () => {
           params: { ...router.currentRoute.value.params, puzzleId: mappedPuzzle.puzzle_id },
         })
       }
-      
+
       const humanColor = determineHumanColor(mappedPuzzle)
       currentUserColor.value = humanColor
 
       gameStore.startWithStrategy(
         mappedPuzzle.initial_fen,
-        new PuzzleStrategy(mappedPuzzle, humanColor, activeSubmode.value),
+        new PuzzleStrategy(
+          mappedPuzzle,
+          humanColor,
+          activeSubmode.value,
+          createStrategyCallbacks(mappedPuzzle, humanColor),
+        ),
         humanColor,
-        false
+        false,
       )
       feedbackMessage.value = t('features.puzzle.feedback.yourTurn')
     } catch (error) {
@@ -326,11 +343,17 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       if (confirmed === 'confirm') {
         gameStore.stop()
         if (activePuzzle.value) {
-          await loadNewPuzzle(activePuzzle.value.puzzle_type, { puzzleId: activePuzzle.value.puzzle_id, ...activeParams.value })
+          await loadNewPuzzle(activePuzzle.value.puzzle_type, {
+            puzzleId: activePuzzle.value.puzzle_id,
+            ...activeParams.value,
+          })
         }
       }
     } else if (activePuzzle.value) {
-      await loadNewPuzzle(activePuzzle.value.puzzle_type, { puzzleId: activePuzzle.value.puzzle_id, ...activeParams.value })
+      await loadNewPuzzle(activePuzzle.value.puzzle_type, {
+        puzzleId: activePuzzle.value.puzzle_id,
+        ...activeParams.value,
+      })
     }
   }
 
@@ -372,14 +395,28 @@ export const usePuzzleStore = defineStore('puzzle', () => {
       const puzzle = activePuzzle.value
       if (!puzzle) return { title: '', badges: [], stats: [] }
 
-      const isGolden = activeSubmode.value === 'tactics' && (puzzle.is_golden || activeParams.value.golden_tactics)
+      const isGolden =
+        activeSubmode.value === 'tactics' && (puzzle.is_golden || activeParams.value.golden_tactics)
       const namespace = activeSubmode.value === 'tactics' ? 'tactics' : 'themes'
       const title = isGolden
         ? t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase()
-        : (puzzle.category ? t(`puzzleCategories.${namespace}.${puzzle.category}`) : puzzle.puzzle_type).toUpperCase()
-      const badges = [{ text: isGolden ? t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase() : puzzle.puzzle_type.toUpperCase() }]
+        : (puzzle.category
+            ? t(`puzzleCategories.${namespace}.${puzzle.category}`)
+            : puzzle.puzzle_type
+          ).toUpperCase()
+      const badges = [
+        {
+          text: isGolden
+            ? t('puzzleCategories.tactics.goldenTactics', 'Золотая коллекция').toUpperCase()
+            : puzzle.puzzle_type.toUpperCase(),
+        },
+      ]
       if (puzzle.difficulty) {
-         badges.push({ text: t(`puzzleCategories.difficulties.level_${puzzle.difficulty.toLowerCase()}`).toUpperCase() })
+        badges.push({
+          text: t(
+            `puzzleCategories.difficulties.level_${puzzle.difficulty.toLowerCase()}`,
+          ).toUpperCase(),
+        })
       }
 
       const stats = []
@@ -389,7 +426,9 @@ export const usePuzzleStore = defineStore('puzzle', () => {
 
       return {
         title,
-        secondaryText: puzzle.sub_category ? t(`puzzleCategories.subThemes.${puzzle.sub_category}`) : undefined,
+        secondaryText: puzzle.sub_category
+          ? t(`puzzleCategories.subThemes.${puzzle.sub_category}`)
+          : undefined,
         badges,
         stats,
       }

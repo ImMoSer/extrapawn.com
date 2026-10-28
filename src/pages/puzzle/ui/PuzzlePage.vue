@@ -92,13 +92,13 @@ onUnmounted(() => {
             "
             style="margin-left: 12px"
           >
-            Next
+            {{ t('features.puzzle.next') }}
           </n-button>
         </div>
       </div>
       <div v-else class="learning-top-info-placeholder">
         <n-text class="status-indicator select-lesson-prompt">
-          Select a lesson to begin training
+          {{ t('features.puzzle.selectLessonPrompt') }}
         </n-text>
       </div>
     </template>

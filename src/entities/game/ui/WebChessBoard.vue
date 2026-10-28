@@ -27,7 +27,6 @@ const props = defineProps({
   isAnalysisMode: { type: Boolean, default: false },
   animationEnabled: { type: Boolean, default: true },
   animationDuration: { type: Number, default: 200 },
-  boardSyncCounter: { type: Number, default: 0 },
   canEdit: { type: Boolean, default: true },
   hideNag: { type: Boolean, default: false },
 })

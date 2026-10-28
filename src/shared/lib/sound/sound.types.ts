@@ -23,13 +23,8 @@ export type SoundEffect =
   | 'timer_8s'
   | 'timer_times_up'
 
-export type BoardSoundEvent = SoundEffect
-
 export interface SoundVolumeProvider {
-  getVolume?(): number
-  setVolume?(vol: number): void
-  getBoardVolume?(): number
-  setBoardVolume?(vol: number): void
+  getVolume(): number
+  setVolume(vol: number): void
 }
 
-export type BoardVolumeProvider = SoundVolumeProvider

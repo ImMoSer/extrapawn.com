@@ -865,6 +865,16 @@
           "practical_chess": "PRACTICE",
           "theory_endings": "THEORY"
         }
+      },
+      "sidebar": {
+        "trainingCompleted": "TRAINING COMPLETED",
+        "noPlan": "No active training plan",
+        "goToDashboard": "Go to Dashboard",
+        "left": "{count} left",
+        "puzzleQueue": "Puzzle Queue",
+        "puzzlesCount": "{count} Puzzles",
+        "solvedAttempts": "Solved: {solved} / {attempts} Attempts",
+        "restartPuzzle": "Restart Puzzle"
       }
     },
     "settings": {
@@ -898,13 +908,22 @@
       "noTheorySubtext": "Try a more common move order.",
       "openingTheory": "Opening Theory",
       "reviewModeOverlay": "Review mode to see theory",
-      "viewOnWikibooks": "View on Wikibooks"
+      "viewOnWikibooks": "View on Wikibooks",
+      "engineSettings": "Engine Settings",
+      "engineVersion": "Engine Version",
+      "lines": "{count} Lines",
+      "searchTime": "Search Time",
+      "unlimited": "Unlimited (∞)",
+      "showArrows": "Show arrows on board"
     },
     "engine": {
       "select": "Sparring partner"
     },
     "profile": {},
     "puzzle": {
+      "next": "Next",
+      "selectLessonPrompt": "Select a lesson to begin training",
+      "autoNextTooltip": "Auto-advance to next puzzle on solve",
       "feedback": {
         "loadFailed": "Failed to load puzzle.",
         "loss": "You lost!",
@@ -1028,7 +1047,21 @@
       "close": "Close"
     },
     "board": {
-      "copied": "Copied!"
+      "copied": "Copied!",
+      "pgn": {
+        "noMoves": "No moves available",
+        "moveHistory": "Move History",
+        "promoteToMain": "Promote to Main Line",
+        "promoteVariation": "Promote Variation",
+        "deleteVariation": "Delete from here",
+        "startOfGame": "Start of game",
+        "moveBack": "Previous move",
+        "moveForward": "Next move",
+        "endOfGame": "End of game",
+        "flipBoard": "Flip board",
+        "modeExplorer": "Engine Lines & PGN (EXP)",
+        "modeCoach": "Coach Analysis & Explanations (COACH)"
+      }
     },
     "app": {
       "limitless": "limitless",

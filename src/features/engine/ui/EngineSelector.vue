@@ -1,14 +1,14 @@
 <!-- src/features/engine/ui/EngineSelector.vue -->
 <script setup lang="ts">
-import { useAuthStore } from '@/entities/user'
+import { useGameStore } from '@/entities/game'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import i18n from '@/shared/config/i18n'
-import type { EngineId } from '@/shared/types/api.types'
+import { AVAILABLE_ENGINES, ENGINE_NAMES, type EngineId } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { usePreferencesStore } from '@/features/settings'
-import { AVAILABLE_ENGINES, ENGINE_NAMES } from '../config/constants'
 
 const preferencesStore = usePreferencesStore()
+const gameStore = useGameStore()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const t = i18n.global.t
@@ -39,13 +39,14 @@ const handleEngineSelectorClick = async () => {
     )
 
     if (userConfirmedLogin === 'confirm') {
-      authStore.login()
+      void authStore.login()
     }
   }
 }
 
 const selectEngine = (engine: EngineId) => {
-  preferencesStore.setBotEngine(engine)
+  void preferencesStore.setBotEngine(engine)
+  gameStore.setBotEngineId(engine)
   isOpen.value = false
 }
 

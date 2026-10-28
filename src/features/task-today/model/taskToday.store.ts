@@ -2,38 +2,23 @@ import {
   useGameStore,
   useBoardStore,
   GameAudioEngine,
+  PuzzleStrategy,
+  determineHumanColor,
   type GamePhase,
+  type WorkoutPuzzle,
+  type PuzzleStrategyType,
 } from '@/entities/game'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import { computed, ref, watch } from 'vue'
-import { soundService } from '@/shared/lib/sound.service'
 import { defineStore } from 'pinia'
 import { apiClient } from '@/shared/api/client'
 import { useRouter } from 'vue-router'
-import { parseFen } from 'chessops/fen'
 import { parseUci } from 'chessops/util'
 import { makeSan } from 'chessops/san'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
-import { PuzzleStrategy } from '@/features/puzzle'
-import { usePreferencesStore } from '@/features/settings'
-import { useCrashtestStore } from '@/features/crashtest'
 import type { TrainingPlanCurrentResponse, DailyTrainingPlanEntity, CompletedPlanReport } from '@/shared/types/api.types'
 
-export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
-
-export interface WorkoutPuzzle {
-  puzzle_id: string
-  puzzle_type: string
-  category: string
-  category_comby?: string[]
-  sub_category?: string
-  difficulty: string
-  rating?: number | string
-  strategy: PuzzleStrategyType
-  first_move: 'bot' | 'user'
-  initial_fen: string
-  tactical_solution?: string
-  puzzle_fen?: string
-}
+export type { WorkoutPuzzle, PuzzleStrategyType }
 
 export interface TrainingTask {
   mode: string
@@ -63,12 +48,6 @@ export interface PuzzleResult {
 }
 
 const STORAGE_KEY = 'task_today_state'
-
-function determineHumanColor(puzzle: WorkoutPuzzle): 'white' | 'black' {
-  const setup = parseFen(puzzle.initial_fen).unwrap()
-  const isBotFirst = puzzle.first_move === 'bot'
-  return isBotFirst ? (setup.turn === 'white' ? 'black' : 'white') : setup.turn
-}
 
 export interface SubModeConfig {
   categories: number
@@ -121,8 +100,9 @@ export function getSubModeScopeConfig(
 export const useTaskTodayStore = defineStore('taskToday', () => {
   const gameStore = useGameStore()
   const boardStore = useBoardStore()
+  const authStore = useAuthStore()
+  const preferencesStore = usePreferencesStore()
   const router = useRouter()
-  const crashtestStore = useCrashtestStore()
 
   const trainingPlan = ref<TrainingPlan | null>(null)
   const activePlanId = ref<string | null>(null)
@@ -296,10 +276,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
   // Динамическое переключение фазы игры при включении/выключении крэш-теста разработчика на лету
   watch(
-    () => crashtestStore.isCrashtestEnabled,
+    () => preferencesStore.preferences.gameplay.global_crashtest,
     (enabled) => {
       if (isPlaying.value && !isAnalysisMode.value && gameStore.gamePhase !== 'GAMEOVER') {
-        if (enabled && crashtestStore.isMo3ep && gameStore.gamePhase === 'FAIRPLAY') {
+        if (enabled && authStore.isMo3ep && gameStore.gamePhase === 'FAIRPLAY') {
           gameStore.setGamePhase('PLAYING')
         } else if (!enabled && gameStore.gamePhase === 'PLAYING') {
           const puzzle = currentPuzzle.value
@@ -322,7 +302,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
     const userColor = determineHumanColor(puzzle)
     const planId = activePlanId.value || 'current'
     const attempts = puzzleAttempts.value[puzzle.puzzle_id] || 0
-    const isCrashtestActive = crashtestStore.isMo3ep && crashtestStore.isCrashtestEnabled
+    const isCrashtestActive = authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest
     const initialPhase: GamePhase = (attempts >= 3 || isCrashtestActive) ? 'PLAYING' : 'FAIRPLAY'
 
     gameStore.setGamePhase('LOADING')
@@ -338,6 +318,7 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
         puzzle.puzzle_type,
         {
           planId,
+          delays: preferencesStore.preferences.delays,
           onSuccess: () => handlePuzzleSuccess(currentTimeMs.value),
           onFailure: () => handlePuzzleFailure(),
         }
@@ -615,7 +596,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       saveState()
       await startPlanOnBackend()
 
-      soundService.playSound('app_game_entry', 'taskTodayStore.startPlan')
       playCurrentPuzzle()
 
       return true
@@ -694,7 +674,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
       saveState()
       await startPlanOnBackend()
 
-      soundService.playSound('app_game_entry', 'taskTodayStore.startCustomPlan')
       playCurrentPuzzle()
 
       return true
@@ -710,7 +689,10 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
       if (loadState()) {
         console.log('[TaskTodayStore] Resumed existing state for today.')
-        if (autoPlay && isPlaying.value && currentPuzzle.value) {
+        if (!autoPlay) {
+          isPlaying.value = false
+          stopTimer()
+        } else if (isPlaying.value && currentPuzzle.value) {
           playCurrentPuzzle()
         }
         return true
@@ -951,7 +933,6 @@ export const useTaskTodayStore = defineStore('taskToday', () => {
 
       saveState()
 
-      soundService.playSound('app_game_entry', 'taskTodayStore.replayPlan')
       playCurrentPuzzle()
 
       return true

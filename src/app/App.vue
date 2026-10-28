@@ -6,7 +6,6 @@ import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
 import GalaxyBackground from '@/shared/ui/visuals/GalaxyBackground.vue'
 import { NavMenu } from '@/widgets/nav-menu'
 import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
-import MessageBridge from './ui/MessageBridge.vue'
 import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { MenuOutline } from '@vicons/ionicons5'
 import { darkTheme } from 'naive-ui'
@@ -60,7 +59,6 @@ onUnmounted(() => {
 <template>
   <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
     <n-message-provider :duration="6000">
-      <MessageBridge />
       <n-dialog-provider>
         <n-layout has-sider position="absolute" class="root-layout">
           <!-- Desktop Sidebar (Landscape) -->

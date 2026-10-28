@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import PgnTreeNode from './PgnTreeNode.vue'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -34,7 +37,7 @@ const emit = defineEmits<{
       />
     </div>
     <div v-else class="empty-pgn">
-      Keine Züge vorhanden
+      {{ t('shared.board.pgn.noMoves') }}
     </div>
   </div>
 </template>

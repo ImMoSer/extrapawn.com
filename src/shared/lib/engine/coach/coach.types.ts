@@ -70,6 +70,14 @@ export interface CoachEngineAnalyzeResponse {
   gaviota_lines?: string[]
 }
 
+export interface TheoreticalContinuation {
+  san: string
+  name?: string | null
+  eco?: string | null
+  popularity?: number | null
+  total?: number | null
+}
+
 export interface CoachTopMove {
   rank: number
   uci: string
@@ -108,7 +116,7 @@ export interface CoachTopMove {
   plan_pv?: string[]
   rawPv?: string[]
   pv?: string[]
-  theoreticalContinuations?: Array<Record<string, unknown>>
+  theoreticalContinuations?: TheoreticalContinuation[]
 
   pvLine?: { san: string; tts?: string; tagline?: string }[]
   pv_line?: Array<Record<string, unknown>> | { san: string; tts?: string; tagline?: string }[]

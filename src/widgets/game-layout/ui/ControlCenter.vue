@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useGameStore, useBoardStore } from '@/entities/game'
 import { useSidebarStore } from '../model/sidebar.store'
+import { useI18n } from 'vue-i18n'
 import { NIcon } from 'naive-ui'
 import {
   ChevronBackOutline,
@@ -10,6 +11,7 @@ import {
   SwapVerticalOutline,
 } from '@vicons/ionicons5'
 
+const { t } = useI18n()
 const gameStore = useGameStore()
 const boardStore = useBoardStore()
 const sidebarStore = useSidebarStore()
@@ -22,7 +24,7 @@ const sidebarStore = useSidebarStore()
       <button
         v-if="gameStore.gamePhase !== 'FAIRPLAY'"
         @click="sidebarStore.setMode('explorer')"
-        title="Engine Lines & PGN (EXP)"
+        :title="t('shared.board.pgn.modeExplorer')"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
         :class="
           sidebarStore.activeMode === 'explorer'
@@ -35,7 +37,7 @@ const sidebarStore = useSidebarStore()
 
       <button
         @click="sidebarStore.setMode('coach')"
-        title="Coach Analysis & Explanations (COACH)"
+        :title="t('shared.board.pgn.modeCoach')"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
         :class="
           sidebarStore.activeMode === 'coach'
@@ -51,28 +53,28 @@ const sidebarStore = useSidebarStore()
     <div class="flex items-center gap-1 bg-elevated/80 border border-border p-1 rounded-lg shadow-inner">
       <button
         @click="gameStore.navigatePgn('start')"
-        title="Start der Partie"
+        :title="t('shared.board.pgn.startOfGame')"
         class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
       >
         <n-icon size="16"><PlaySkipBackOutline /></n-icon>
       </button>
       <button
         @click="gameStore.navigatePgn('backward')"
-        title="Zug zurück"
+        :title="t('shared.board.pgn.moveBack')"
         class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
       >
         <n-icon size="16"><ChevronBackOutline /></n-icon>
       </button>
       <button
         @click="gameStore.navigatePgn('forward')"
-        title="Zug vorwärts"
+        :title="t('shared.board.pgn.moveForward')"
         class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
       >
         <n-icon size="16"><ChevronForwardOutline /></n-icon>
       </button>
       <button
         @click="gameStore.navigatePgn('end')"
-        title="Ende der Partie"
+        :title="t('shared.board.pgn.endOfGame')"
         class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
       >
         <n-icon size="16"><PlaySkipForwardOutline /></n-icon>
@@ -82,7 +84,7 @@ const sidebarStore = useSidebarStore()
 
       <button
         @click="boardStore.flipBoard()"
-        title="Brett drehen"
+        :title="t('shared.board.pgn.flipBoard')"
         class="p-1.5 rounded-md text-text-secondary hover:text-neon-cyan hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
       >
         <n-icon size="16"><SwapVerticalOutline /></n-icon>

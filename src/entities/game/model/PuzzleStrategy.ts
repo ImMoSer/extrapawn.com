@@ -1,23 +1,58 @@
-import {
-  enginePlayService,
-  useBoardStore,
-  useGameStore,
-  type GameStatusInfo,
-  type IGameplayStrategy,
-} from '@/entities/game'
+import { enginePlayService } from '../lib/EnginePlayService'
+import { useBoardStore } from './board.store'
+import { useGameStore } from './game.store'
+import type { GameplayStrategyConfig, GameStatusInfo, IGameplayStrategy } from './strategy.types'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
-import { usePuzzleStore, type PuzzlePuzzle } from './puzzle.store'
-import { usePreferencesStore } from '@/features/settings'
 import i18n from '@/shared/config/i18n'
+import { parseFen } from 'chessops/fen'
+import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 const t = i18n.global.t
 
+export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
+
+export interface PuzzlePuzzle {
+  puzzle_id: string
+  puzzle_type: string
+  category: string
+  category_comby?: string[]
+  motifs_pg?: string[]
+  sub_category?: string
+  difficulty: string
+  rating?: number | string
+  strategy: PuzzleStrategyType
+  first_move: 'bot' | 'user'
+  initial_fen: string
+  tactical_solution?: string
+  puzzle_fen?: string
+  is_golden?: boolean
+  userSelectedColor?: boolean
+}
+
+export type WorkoutPuzzle = PuzzlePuzzle
+
+export function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {
+  const parsed = parseFen(puzzle.initial_fen)
+  if (parsed.isErr) {
+    throw new Error(`[PuzzleStrategy] Invalid initial_fen in puzzle ${puzzle.puzzle_id}: "${puzzle.initial_fen}". Fail-Fast!`)
+  }
+  const setup = parsed.unwrap()
+  const fenTurn = setup.turn === 'white' ? 'white' : 'black'
+  if (puzzle.first_move === 'bot') {
+    return fenTurn === 'white' ? 'black' : 'white'
+  }
+  return fenTurn
+}
+
 export interface PuzzleStrategyCallbacks {
-  onSuccess?: (timeMs?: number) => void | Promise<void>
+  onSuccess?: (reason?: string) => void | Promise<void>
   onFailure?: () => void | Promise<void>
   onGameOver?: (status: GameStatusInfo) => void
+  onFeedback?: (message: string) => void
+  onUndo?: () => void
   planId?: string
+  delays?: Partial<GameplayStrategyConfig>
 }
 
 export class PuzzleStrategy implements IGameplayStrategy {
@@ -62,19 +97,14 @@ export class PuzzleStrategy implements IGameplayStrategy {
     return this.isPlayoutMode
   }
 
-  get config() {
-    const preferencesStore = usePreferencesStore()
+  get config(): GameplayStrategyConfig {
     return {
-      initialBotDelayMs: preferencesStore.preferences.delays.initialBotDelayMs,
-      botDelayMs: preferencesStore.preferences.delays.botDelayMs,
+      initialBotDelayMs: this.callbacks?.delays?.initialBotDelayMs ?? 500,
+      botDelayMs: this.callbacks?.delays?.botDelayMs ?? 250,
       playGameStatusSounds: false,
-      nextPuzzleDelayMs: preferencesStore.preferences.delays.nextPuzzleDelayMs,
-      restartDelayMs: preferencesStore.preferences.delays.restartDelayMs,
+      nextPuzzleDelayMs: this.callbacks?.delays?.nextPuzzleDelayMs ?? 2000,
+      restartDelayMs: this.callbacks?.delays?.restartDelayMs ?? 500,
     }
-  }
-
-  private get store() {
-    return usePuzzleStore()
   }
 
   private get gameStore() {
@@ -112,9 +142,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
     return false
   }
 
-  getScenarioValidation(uciMove: string): { isScenario: boolean; isCorrect: boolean; expectedMove?: string } | null {
+  getScenarioValidation(
+    uciMove: string,
+  ): { isScenario: boolean; isCorrect: boolean; expectedMove?: string } | null {
     if (this.isPlayoutMode) return null
-    if (this.puzzle.strategy !== 'scenarioOnly' && this.puzzle.strategy !== 'scenarioPlus') return null
+    if (this.puzzle.strategy !== 'scenarioOnly' && this.puzzle.strategy !== 'scenarioPlus')
+      return null
     if (this.scenarioIndex >= this.scenarioMoves.length) return null
 
     const expectedMove = this.scenarioMoves[this.scenarioIndex]
@@ -134,17 +167,11 @@ export class PuzzleStrategy implements IGameplayStrategy {
     this.gameStore.setGamePhase('GAMEOVER')
 
     if (this.callbacks?.onSuccess) {
-      await this.callbacks.onSuccess()
+      await this.callbacks.onSuccess(reason)
       return
     }
 
     soundService.play('tactics_success', 'PuzzleStrategy.scenarioSuccess')
-    await this.store.handleGameOver(
-      this.puzzle,
-      true,
-      { winner: this.humanColor, reason },
-      this.humanColor,
-    )
   }
 
   private async triggerFailure(): Promise<void> {
@@ -158,12 +185,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
 
     soundService.play('tactics_error')
-    await this.store.handleGameOver(
-      this.puzzle,
-      false,
-      { winner: undefined, reason: 'wrong_move' },
-      this.humanColor,
-    )
   }
 
   async onUserMoveExecuted(uciMove: string): Promise<void> {
@@ -172,18 +193,14 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
-    // 1. In Playout Mode, check for checkmate victory or blunder takebacks
     if (this.isPlayoutMode) {
       if (isCheckmate) {
         logger.info('[PuzzleStrategy] Checkmate delivered in playout mode. Game won!')
         await this.triggerSuccess('checkmate')
-        return
       }
-
       return
     }
 
-    // 2. In Scenario Mode (following the predefined tactical solution)
     const expectedMove = this.scenarioMoves[this.scenarioIndex]
 
     if (uciMove === expectedMove || isCheckmate) {
@@ -200,18 +217,19 @@ export class PuzzleStrategy implements IGameplayStrategy {
           await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
-          this.store.feedbackMessage = t('features.puzzle.feedback.playoutStart')
+          this.callbacks?.onFeedback?.(t('features.puzzle.feedback.playoutStart'))
         }
       }
     } else {
       if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
-        this.store.feedbackMessage = t('features.puzzle.feedback.playoutDeviation')
+        this.callbacks?.onFeedback?.(t('features.puzzle.feedback.playoutDeviation'))
       } else {
-        logger.info(`[PuzzleStrategy] Scenario deviation on expected move: ${expectedMove}. Triggering failure.`)
+        logger.info(
+          `[PuzzleStrategy] Scenario deviation on expected move: ${expectedMove}. Triggering failure.`,
+        )
         await this.triggerFailure()
-        return
       }
     }
   }
@@ -219,7 +237,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   onUserMoveUndone() {
     this.scenarioIndex = this.prevScenarioIndex
     this.isPlayoutMode = this.prevPlayoutMode
-    this.store.setProcessingGameOver(false)
+    this.callbacks?.onUndo?.()
     if (this.nextPuzzleTimeout) {
       clearTimeout(this.nextPuzzleTimeout)
       this.nextPuzzleTimeout = null

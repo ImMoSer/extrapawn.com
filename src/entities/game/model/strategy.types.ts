@@ -20,6 +20,8 @@ export interface IUserMoveInspector {
   inspectUserMove: (uciMove: string, fen: string) => Promise<MoveInspectionDecision>
 }
 
+export type GameplayStrategyConfig = NonNullable<IGameplayStrategy['config']>
+
 export interface IGameplayStrategy {
   readonly strategyId?: 'sparring' | 'puzzle' | 'endgame'
   readonly sessionId?: string

@@ -27,12 +27,9 @@ defineProps({
 const taskTodayStore = useTaskTodayStore()
 
 onMounted(() => {
-  // Try to load local state first, but ensure we stay on the dashboard/history by forcing isPlaying to false
+  // Try to load local state first, staying on the dashboard when not actively playing
   if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
-    taskTodayStore.startTaskToday(false).then(() => {
-      taskTodayStore.isPlaying = false
-      taskTodayStore.stopTimer()
-    })
+    void taskTodayStore.startTaskToday(false)
   }
 })
 

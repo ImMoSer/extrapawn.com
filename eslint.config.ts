@@ -93,7 +93,6 @@ export default defineConfigWithVueTs(
               allow: [
                 { to: { element: { type: 'shared' } } },
                 { to: { element: { type: 'entities' } } },
-                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'features', captured: { featureName: '{{from.featureName}}' } } } }
               ]
             },

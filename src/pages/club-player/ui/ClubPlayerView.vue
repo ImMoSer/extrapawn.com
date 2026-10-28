@@ -14,7 +14,7 @@ import {
   NText,
   type DataTableColumns,
 } from 'naive-ui'
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -38,14 +38,21 @@ const loading = ref(false)
 
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
 const isMobile = computed(() => windowWidth.value < 600)
+const updateWindowWidth = () => {
+  windowWidth.value = window.innerWidth
+}
 
 onMounted(() => {
   if (typeof window !== 'undefined') {
-    window.addEventListener('resize', () => {
-      windowWidth.value = window.innerWidth
-    })
+    window.addEventListener('resize', updateWindowWidth)
   }
   fetchLeaderboard()
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateWindowWidth)
+  }
 })
 
 const fetchLeaderboard = async () => {

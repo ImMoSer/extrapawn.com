@@ -329,7 +329,7 @@ function formatSubTheme(subTheme: string): string {
   color: #cbd5e1;
   padding: 3px 8px;
   border-radius: 6px;
-  font-size: 30px;
+  font-size: 0.78rem;
   font-weight: 500;
   transition: all 0.2s ease;
 }

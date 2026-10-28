@@ -1,43 +1,68 @@
+import type { DrawShape } from '@lichess-org/chessground/draw'
+import type { Key } from '@lichess-org/chessground/types'
+
+export type CoachDrawShape = DrawShape & {
+  nag?: string
+  customNag?: string
+  stepBadge?: string
+}
+
+const VALID_BRUSHES = [
+  'green',
+  'red',
+  'blue',
+  'yellow',
+  'orange',
+  'purple',
+  'cyan',
+  'pink',
+  'brown',
+  'gray',
+  'bestmove',
+  'enginePlan',
+  'paleBlue',
+  'paleGreen',
+] as const
+
+const COLOR_PRIORITY: Record<string, number> = {
+  coachgray: 0,
+  coachbrown: 1,
+  coachyellow: 2,
+  coachgreen: 3,
+  coachcyan: 4,
+  coachblue: 5,
+  coachpurple: 6,
+  coachpink: 7,
+  coachorange: 8,
+  coachred: 9,
+  bestmove: 10,
+  enginePlan: 10,
+}
+
 /**
  * Visualizer command parser for Chessground board shapes.
  * Parses visual commands strings (e.g. "[mark:e4:green;arrow:e2->e4:green]") into Chessground DrawShapes.
  */
-
-export function parseVisualCommands(actionStr) {
+export function parseVisualCommands(actionStr: string): CoachDrawShape[] {
   if (!actionStr) return []
   const subActions = actionStr.split(';')
-  const allShapes = []
-  const VALID_BRUSHES = [
-    'green',
-    'red',
-    'blue',
-    'yellow',
-    'orange',
-    'purple',
-    'cyan',
-    'pink',
-    'brown',
-    'gray',
-    'bestmove',
-    'enginePlan',
-    'paleBlue',
-    'paleGreen',
-  ]
+  const allShapes: CoachDrawShape[] = []
 
   for (const sub of subActions) {
     if (!sub.trim()) continue
 
-    const cleanSub = sub.replace(/[\[\]]/g, '').trim()
+    const cleanSub = sub.replace(/[[\]]/g, '').trim()
     const parts = cleanSub.split(':')
     const cmd = parts[0]?.trim()
     const data = parts[1]?.trim()
     let brush = parts[2]?.trim() || 'green'
 
-    if (!VALID_BRUSHES.includes(brush)) {
+    if (!(VALID_BRUSHES as readonly string[]).includes(brush)) {
       brush = 'green'
     }
 
-    const coachBrush = brush === 'bestmove' || brush === 'enginePlan' ? 'enginePlan' : `coach${brush}`
+    const coachBrush =
+      brush === 'bestmove' || brush === 'enginePlan' ? 'enginePlan' : `coach${brush}`
 
     if (cmd === 'clear') {
       return []
@@ -53,8 +78,8 @@ export function parseVisualCommands(actionStr) {
 
         if (orig && dest && orig.length === 2 && dest.length === 2) {
           allShapes.push({
-            orig: orig,
-            dest: dest,
+            orig: orig as Key,
+            dest: dest as Key,
             brush: coachBrush,
             modifiers: { lineWidth: 3 },
           })
@@ -66,7 +91,7 @@ export function parseVisualCommands(actionStr) {
         const cleanSq = sq.trim()
         if (cleanSq && cleanSq.length === 2) {
           allShapes.push({
-            orig: cleanSq,
+            orig: cleanSq as Key,
             brush: coachBrush,
           })
         }
@@ -78,7 +103,7 @@ export function parseVisualCommands(actionStr) {
         const cleanSq = sq.trim()
         if (cleanSq && cleanSq.length === 2) {
           allShapes.push({
-            orig: cleanSq,
+            orig: cleanSq as Key,
             nag: quality,
           })
         }
@@ -91,7 +116,7 @@ export function parseVisualCommands(actionStr) {
         const cleanSq = sq.trim()
         if (cleanSq && cleanSq.length === 2) {
           allShapes.push({
-            orig: cleanSq,
+            orig: cleanSq as Key,
             stepBadge: label,
             brush: bColor,
           })
@@ -100,20 +125,6 @@ export function parseVisualCommands(actionStr) {
     }
   }
 
-  const COLOR_PRIORITY = {
-    coachgray: 0,
-    coachbrown: 1,
-    coachyellow: 2,
-    coachgreen: 3,
-    coachcyan: 4,
-    coachblue: 5,
-    coachpurple: 6,
-    coachpink: 7,
-    coachorange: 8,
-    coachred: 9,
-    bestmove: 10,
-    enginePlan: 10,
-  }
   allShapes.sort((a, b) => {
     const pA = COLOR_PRIORITY[a.brush || ''] || 0
     const pB = COLOR_PRIORITY[b.brush || ''] || 0
@@ -122,3 +133,4 @@ export function parseVisualCommands(actionStr) {
 
   return allShapes
 }
+

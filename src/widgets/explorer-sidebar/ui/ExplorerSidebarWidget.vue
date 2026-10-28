@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { PgnMoveHistory } from '@/entities/game'
 import { EngineEvaluationHeader } from '@/features/analysis'
-import { PgnMoveHistory } from '@/features/coach'
 </script>
 
 <template>

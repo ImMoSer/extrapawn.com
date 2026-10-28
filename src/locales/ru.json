@@ -865,6 +865,16 @@
           "practical_chess": "ПРАКТИКА",
           "theory_endings": "ТЕОРИЯ"
         }
+      },
+      "sidebar": {
+        "trainingCompleted": "ТРЕНИРОВКА ЗАВЕРШЕНА",
+        "noPlan": "Нет активного плана тренировки",
+        "goToDashboard": "Перейти к дашборду",
+        "left": "ост. {count}",
+        "puzzleQueue": "Очередь задач",
+        "puzzlesCount": "{count} задач",
+        "solvedAttempts": "Решено: {solved} / {attempts} попыток",
+        "restartPuzzle": "Перезапустить задачу"
       }
     },
     "settings": {
@@ -898,13 +908,22 @@
       "noTheorySubtext": "Попробуйте другой порядок ходов.",
       "openingTheory": "Теория дебютов",
       "reviewModeOverlay": "Режим просмотра для теории",
-      "viewOnWikibooks": "Смотреть на Wikibooks"
+      "viewOnWikibooks": "Смотреть на Wikibooks",
+      "engineSettings": "Настройки движка",
+      "engineVersion": "Версия движка",
+      "lines": "{count} линий",
+      "searchTime": "Время поиска",
+      "unlimited": "Безлимитно (∞)",
+      "showArrows": "Показывать стрелки на доске"
     },
     "engine": {
       "select": "Выбрать партнера"
     },
     "profile": {},
     "puzzle": {
+      "next": "Далее",
+      "selectLessonPrompt": "Выберите тему, чтобы начать тренировку",
+      "autoNextTooltip": "Автопереход к следующей задаче при решении",
       "feedback": {
         "loadFailed": "Не удалось загрузить задачу.",
         "loss": "Поражение!",
@@ -1028,7 +1047,21 @@
       "close": "Закрыть"
     },
     "board": {
-      "copied": "Скопировано!"
+      "copied": "Скопировано!",
+      "pgn": {
+        "noMoves": "Ходов пока нет",
+        "moveHistory": "История ходов",
+        "promoteToMain": "Сделать главной линией",
+        "promoteVariation": "Повысить вариант",
+        "deleteVariation": "Удалить отсюда",
+        "startOfGame": "Начало партии",
+        "moveBack": "Ход назад",
+        "moveForward": "Ход вперёд",
+        "endOfGame": "Конец партии",
+        "flipBoard": "Перевернуть доску",
+        "modeExplorer": "Линии движка и PGN (EXP)",
+        "modeCoach": "Анализ тренера и объяснения (COACH)"
+      }
     },
     "app": {
       "limitless": "безлимитно",

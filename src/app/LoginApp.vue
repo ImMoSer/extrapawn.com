@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { authService } from '@/entities/user'
+import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n({ useScope: 'global' })
+const authStore = useAuthStore()
 
 const handleLogin = async () => {
-  // Lichess redirect
-  await authService.login(['email:read', 'preference:read'])
+  await authStore.login(['email:read', 'preference:read'])
 }
 
 const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {

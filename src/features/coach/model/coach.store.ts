@@ -4,13 +4,12 @@ import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 
 import { useBoardStore, useGameStore, type IUserMoveInspector, type MoveInspectionDecision } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import { parseVisualCommands } from '@/shared/lib/engine/coach/visualizer'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
-import { usePreferencesStore } from '@/features/settings'
 
 export interface CoachVisualLayers {
   lastMoveNag: boolean
@@ -34,8 +33,6 @@ export interface CoachSettingsDto {
   visualLayers: CoachVisualLayers
 }
 
-const COACH_SETTINGS_STORAGE_KEY = 'extrapawn_coach_settings'
-
 export const useCoachStore = defineStore('coach', () => {
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
@@ -48,12 +45,12 @@ export const useCoachStore = defineStore('coach', () => {
   const posExplanation = ref<CoachExplanation | null>(null)
   const coachMood = ref<CoachMood>('neutral')
 
-  // 2. Settings (Coach Spy, Auto Takeback & Delay)
+  // 2. Settings (Coach Spy, Auto Takeback & Delay) persisted in unified PreferencesStore
   const preferencesStore = usePreferencesStore()
-  const coachSpy = ref(true)
+  const coachSpy = computed(() => preferencesStore.preferences.coach.coachSpy)
   const isCoachSpyActive = computed(() => coachSpy.value || preferencesStore.preferences.gameplay.global_crashtest)
-  const autoTakeback = ref(true)
-  const autoTakebackDelay = ref(1000)
+  const autoTakeback = computed(() => preferencesStore.preferences.coach.autoTakeback)
+  const autoTakebackDelay = computed(() => preferencesStore.preferences.coach.autoTakebackDelay)
 
   // 3. Interactive Decision State (when autoTakeback is false)
   const pendingDecision = ref<CoachPendingDecision | null>(null)
@@ -67,55 +64,13 @@ export const useCoachStore = defineStore('coach', () => {
   let inFlightAnalysisKey: string | null = null
 
   // Visuals State
-  const showVisuals = ref(true)
-  const visualLayers = ref<CoachVisualLayers>({
-    lastMoveNag: true,
-    candidateArrow: true,
-    tacticalPlans: true,
-  })
-
-  // Load persisted settings
-  function loadSettings() {
-    try {
-      const raw = localStorage.getItem(COACH_SETTINGS_STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<CoachSettingsDto>
-        if (typeof parsed.coachSpy === 'boolean') coachSpy.value = parsed.coachSpy
-        if (typeof parsed.autoTakeback === 'boolean') autoTakeback.value = parsed.autoTakeback
-        if (typeof parsed.autoTakebackDelay === 'number') {
-          autoTakebackDelay.value = Math.min(3000, Math.max(100, Math.round(parsed.autoTakebackDelay)))
-        }
-        if (typeof parsed.showVisuals === 'boolean') showVisuals.value = parsed.showVisuals
-        if (parsed.visualLayers) {
-          visualLayers.value = { ...visualLayers.value, ...parsed.visualLayers }
-        }
-      }
-    } catch (err) {
-      logger.error('[CoachStore] Failed to load coach settings:', err)
-    }
-  }
-
-  function saveSettings() {
-    try {
-      const data: CoachSettingsDto = {
-        coachSpy: coachSpy.value,
-        autoTakeback: autoTakeback.value,
-        autoTakebackDelay: autoTakebackDelay.value,
-        showVisuals: showVisuals.value,
-        visualLayers: visualLayers.value,
-      }
-      localStorage.setItem(COACH_SETTINGS_STORAGE_KEY, JSON.stringify(data))
-    } catch (err) {
-      logger.error('[CoachStore] Failed to save coach settings:', err)
-    }
-  }
-
-  loadSettings()
+  const showVisuals = computed(() => preferencesStore.preferences.coach.showVisuals)
+  const visualLayers = computed(() => preferencesStore.preferences.coach.visualLayers)
 
   function toggleCoachSpy() {
-    coachSpy.value = !coachSpy.value
-    saveSettings()
-    if (!coachSpy.value) {
+    const next = !coachSpy.value
+    void preferencesStore.updatePreferences({ coach: { coachSpy: next } })
+    if (!next) {
       boardStore.setCoachShapes([])
       posExplanation.value = null
       cancelPendingDecision()
@@ -125,13 +80,12 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   function toggleAutoTakeback() {
-    autoTakeback.value = !autoTakeback.value
-    saveSettings()
+    void preferencesStore.updatePreferences({ coach: { autoTakeback: !autoTakeback.value } })
   }
 
   function setAutoTakebackDelay(delay: number) {
-    autoTakebackDelay.value = Math.min(3000, Math.max(100, Math.round(delay)))
-    saveSettings()
+    const clamped = Math.min(3000, Math.max(100, Math.round(delay)))
+    void preferencesStore.updatePreferences({ coach: { autoTakebackDelay: clamped } })
   }
 
   function cancelPendingDecision() {
@@ -234,14 +188,20 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   function toggleVisualLayer(layer: keyof CoachVisualLayers) {
-    visualLayers.value[layer] = !visualLayers.value[layer]
-    saveSettings()
+    void preferencesStore.updatePreferences({
+      coach: {
+        visualLayers: {
+          ...visualLayers.value,
+          [layer]: !visualLayers.value[layer],
+        },
+      },
+    })
   }
 
   function toggleVisuals() {
-    showVisuals.value = !showVisuals.value
-    saveSettings()
-    if (!showVisuals.value) {
+    const next = !showVisuals.value
+    void preferencesStore.updatePreferences({ coach: { showVisuals: next } })
+    if (!next) {
       boardStore.setCoachShapes([])
     } else if (posExplanation.value?.action) {
       executeVisualCommands(posExplanation.value.action)

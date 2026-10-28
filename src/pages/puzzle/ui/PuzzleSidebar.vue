@@ -263,7 +263,7 @@ const isPuzzleActive = computed(() => {
               <div
                 @click="puzzleStore.toggleAutoNext()"
                 class="flex items-center gap-2 cursor-pointer group py-0.5 px-1 rounded hover:bg-elevated/40 transition-colors"
-                title="Автопереход к следующей задаче при решении"
+                :title="t('features.puzzle.autoNextTooltip')"
               >
                 <span class="text-xs font-bold uppercase tracking-wider text-text-secondary group-hover:text-neon-cyan transition-colors">
                   AUTO

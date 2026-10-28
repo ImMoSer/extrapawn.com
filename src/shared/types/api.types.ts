@@ -9,6 +9,24 @@ export type EngineId =
   | 'badgyal'
   | 't1000'
 
+export const ENGINE_NAMES: Record<EngineId, string> = {
+  'maia-1500': 'Maia 1500',
+  'maia-1700': 'Maia 1700',
+  'maia-1900': 'Maia 1900',
+  'maia-2200': 'Maia 2200',
+  badgyal: 'Bad Gyal',
+  t1000: 'T1000',
+}
+
+export const AVAILABLE_ENGINES: EngineId[] = [
+  'maia-1500',
+  'maia-1700',
+  'maia-1900',
+  'maia-2200',
+  'badgyal',
+  't1000',
+]
+
 export type Color = 'white' | 'black'
 
 // --- FINISH HIM MODE ---
@@ -141,215 +159,8 @@ export type TacticsDifficulty = 'Novice' | 'Pro' | 'Master';
 
 // --- UNIFIED PLAY PUZZLE API ---
 export type PlayPuzzleType = 'tactics' | 'finish_him' | 'practical_chess' | 'theory_endings';
-
-export interface PlayPuzzleResultDto {
-  wasCorrect: boolean;
-  puzzle: object; // Full puzzle object as received from /start
-}
-
 export type PlayPuzzleDifficulty = 'Novice' | 'Pro' | 'Master';
 // --- END UNIFIED PLAY PUZZLE API ---
-
-export interface PuzzleResultEntry {
-  username: string
-  lichess_id: string
-  time_in_seconds: number
-  record_timestamp_ms: number
-}
-
-export interface FinishHimLeaderboardEntry {
-  rank: number
-  username: string
-  lichess_id: string
-  best_time: number
-  days_old: number
-  puzzle_id: string
-}
-
-export interface FinishHimPuzzle {
-  puzzle_id: string
-  initial_fen: string
-  tactical_solution: string
-  eval: number
-  material_count: number
-  material_advantage: number
-  pieces_count: number
-  engm_rating: number
-  difficulty: string
-  tactical_rating: number
-  category: string
-  sub_category?: string
-  puzzle_fen?: string
-  game_modus?: string
-  first_move?: string
-}
-
-export interface PracticalPuzzle {
-  puzzle_id: string
-  initial_fen: string
-  winner: string
-  difficulty: string
-  material_count: number
-  pieces_count: number
-  eval: number
-  category: string
-  rating?: number
-  puzzle_fen?: string
-  game_modus?: string
-  first_move?: string
-}
-
-export interface TheoryPuzzle {
-  puzzle_id: string
-  initial_fen: string
-  weak_side: string
-  pieces_count: number
-  material_count: number
-  category: string
-  only_move: boolean
-  difficulty: string
-  result: string
-  rating?: number
-  puzzle_fen?: string
-  game_modus?: string
-  first_move?: string
-}
-
-export interface GamePuzzle {
-  PuzzleId: string
-  id?: string
-  FEN_0: string
-  Moves: string
-  Rating: number
-  rating?: number
-  Themes?: string
-  puzzle_theme?: string
-  solve_time?: number
-  bw_value?: number
-  mc_value?: number
-  num_pieces?: number
-  eval?: number
-  EndgameType?: string
-  fen_final?: string
-  endgame_results?: PuzzleResultEntry[]
-  Themes_PG?: string[]
-  themes?: string[]
-  engm_type?: string | null
-  difficulty_level?: string | null
-  engmRating?: number
-  EngmThemes_PG?: string
-  difficulty?: string
-  engmMap?: string
-  theme_key?: string
-  meta?: {
-    theme_key: string
-    [key: string]: unknown
-  }
-  // New unified fields (optional adapters for compatibility)
-  puzzle_id?: string
-  initial_fen?: string
-  tactical_solution?: string
-  tactical_rating?: number
-  winner?: string // for Practical
-  weak_side?: string // for Theory
-  result?: string // for Theory
-}
-
-export interface PlanStreakLeaderboardEntry {
-  id: string
-  username: string
-  training_status?: string
-  current_streak?: number
-  completed_count?: number
-  puzzles_solved?: number
-  time_spent?: number
-  accuracy?: number
-}
-
-export interface PlanStreakLeaderboardResponse {
-  Novice: PlanStreakLeaderboardEntry[]
-  Pro: PlanStreakLeaderboardEntry[]
-  Master: PlanStreakLeaderboardEntry[]
-}
-
-export interface UnifiedLeaderboardEntry {
-  id: string
-  username: string
-  game_mode?: string
-  sub_mode?: string
-  maxRating: number
-  avgRating: number
-  score: number
-  highScore: number
-  activeDays: number
-  solved: number
-  failed: number
-  accuracy: number
-  totalAttempts: number
-  rank: number | string
-  training_status?: string
-  current_streak?: number
-  plansCount?: number
-}
-
-export type LeaderboardDifficulty = 'Novice' | 'Pro' | 'Master'
-export type UnifiedLeaderboardResponse = Record<string, UnifiedLeaderboardEntry[]>
-
-export interface SidebarLeaderboardEntry {
-  id: string
-  username: string
-  solved: number
-  failed: number
-  maxRating: number
-  avgRating: number
-  highScore: number
-  activeDays: number
-}
-
-export interface SidebarLeaderboardResponse {
-  top10: SidebarLeaderboardEntry[]
-  currentUser: SidebarLeaderboardEntry | null
-}
-
-interface WorktableLeaderboards {
-  finishHimLeaderboard?: UnifiedLeaderboardResponse
-  theoryLeaderboard?: UnifiedLeaderboardResponse
-  practicalLeaderboard?: UnifiedLeaderboardResponse
-  strategicLeaderboard?: UnifiedLeaderboardResponse
-  overallLeaderboard?: UnifiedLeaderboardResponse
-}
-
-export type SkillPeriod = '7' | '14' | '21' | '30'
-
-export interface LeaderboardEntry {
-  id: string // lichess_id
-  username: string
-  training_status: 'N' | 'P' | 'M'
-  current_streak: number
-  score: Record<string, number>
-  solved: Record<string, number>
-  failed: Record<string, number>
-}
-
-export interface LeaderboardResponse {
-  period: number | string
-  entries: LeaderboardEntry[]
-}
-
-export interface LeaderboardApiResponse extends WorktableLeaderboards {
-  overallSkillLeaderboard: LeaderboardResponse
-  skillStreakLeaderboard: SolveStreakLeaderboardEntry[]
-  topTodayLeaderboard: LeaderboardResponse
-}
-
-export interface SolveStreakLeaderboardEntry {
-  lichess_id: string
-  username: string
-  current_streak: number
-  total_solved: number
-  total_score?: number
-  solved_by_mode: Record<string, number>
-}
 
 export interface UserMeta {
   id: string

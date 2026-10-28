@@ -1,7 +1,6 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
-import { useAuthStore } from '@/entities/user'
-import { useCoachStore } from '@/features/coach'
-import { usePreferencesStore } from '@/features/settings'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
+import { useCoachStore } from './coach.store'
 import logger from '@/shared/lib/logger'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
@@ -15,32 +14,32 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   const coachStore = useCoachStore()
   const preferencesStore = usePreferencesStore()
 
-  // 1. Check if the user is mo3ep / MO3EP
   const isMo3ep = computed(() => authStore.isMo3ep)
 
-  // Use preferences store state for toggling crashtest
   const isCrashtestEnabled = computed({
     get: () => preferencesStore.preferences.gameplay.global_crashtest,
-    set: (val: boolean) => preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } }),
+    set: (val: boolean) =>
+      preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } }),
   })
 
-  // Token of the current scheduled cycle to prevent race conditions & stale execution
   let currentCycleToken = 0
   let activeTimer: ReturnType<typeof setTimeout> | null = null
 
-  // FEN for which the last move was successfully initiated, preventing duplicate dispatch
   const lastExecutedFen = ref<string | null>(null)
-
-  // Promotion role currently planned for the pending move
   const plannedPromotionRole = ref<ChessopsRole | null>(null)
 
   function getPromotionRole(char: string): ChessopsRole {
     switch (char) {
-      case 'q': return 'queen'
-      case 'r': return 'rook'
-      case 'b': return 'bishop'
-      case 'n': return 'knight'
-      default: return 'queen'
+      case 'q':
+        return 'queen'
+      case 'r':
+        return 'rook'
+      case 'b':
+        return 'bishop'
+      case 'n':
+        return 'knight'
+      default:
+        return 'queen'
     }
   }
 
@@ -52,7 +51,6 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     }
   }
 
-  // Synchronous watcher for promotionState to auto-complete promotions without blind timeouts
   watch(
     () => boardStore.promotionState,
     (promoState) => {
@@ -62,10 +60,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
         boardStore.completePromotion(role)
       }
     },
-    { flush: 'sync' }
+    { flush: 'sync' },
   )
 
-  // Predicate indicating whether all prerequisites for a synthetic user move are met
   const isReadyForCrashtestMove = computed(() => {
     if (!isMo3ep.value || !isCrashtestEnabled.value) return false
     if (gameStore.gamePhase !== 'PLAYING') return false
@@ -83,7 +80,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
 
   async function executeMove(token: number, targetFen: string) {
     if (token !== currentCycleToken) {
-      logger.info(`[Crashtest] Execution aborted: token mismatch (${token} !== ${currentCycleToken})`)
+      logger.info(
+        `[Crashtest] Execution aborted: token mismatch (${token} !== ${currentCycleToken})`,
+      )
       return
     }
 
@@ -119,7 +118,6 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       logger.error('[Crashtest] Exception during handleUserMove execution:', err)
     } finally {
       plannedPromotionRole.value = null
-      // If position did not change (e.g. move rejected or errored), clear lastExecutedFen so we don't deadlock
       if (boardStore.fen === targetFen) {
         lastExecutedFen.value = null
       }
@@ -131,7 +129,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     const token = currentCycleToken
     const delay = preferencesStore.preferences.delays.crashtestDelayMs
 
-    logger.info(`[Crashtest] Scheduling move for FEN: ${targetFen} with delay: ${delay}ms (token: ${token})`)
+    logger.info(
+      `[Crashtest] Scheduling move for FEN: ${targetFen} with delay: ${delay}ms (token: ${token})`,
+    )
 
     if (delay <= 0) {
       void executeMove(token, targetFen)
@@ -158,7 +158,6 @@ export const useCrashtestStore = defineStore('crashtest', () => {
           scheduleMove(currentFen)
         } else if (!ready) {
           cancelPendingCycle()
-          // If crashtest is active and it is user turn, but coach hasn't started analysis yet, trigger it
           if (
             isMo3ep.value &&
             isCrashtestEnabled.value &&
@@ -172,10 +171,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
           }
         }
       },
-      { immediate: true }
+      { immediate: true },
     )
 
-    // Reset tracking and timers when crashtest is toggled or game phase changes away from PLAYING
     watch(
       [isCrashtestEnabled, () => gameStore.gamePhase],
       ([enabled, phase]) => {
@@ -184,7 +182,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
           lastExecutedFen.value = null
           plannedPromotionRole.value = null
         }
-      }
+      },
     )
   }
 
@@ -194,3 +192,4 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     init,
   }
 })
+

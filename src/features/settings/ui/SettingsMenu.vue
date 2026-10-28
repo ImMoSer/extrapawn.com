@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useAuthStore } from '@/entities/user'
+import {
+  useAuthStore,
+  usePreferencesStore,
+  AVAILABLE_BOARDS,
+  AVAILABLE_PIECE_SETS,
+  type UserPreferencesDto,
+} from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
   SettingsOutline,
@@ -22,8 +28,6 @@ import {
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { AVAILABLE_BOARDS, AVAILABLE_PIECE_SETS } from '../config/theme.config'
-import { usePreferencesStore, type UserPreferencesDto } from '../model/preferences.store'
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()

@@ -528,16 +528,16 @@ function getPlanBrief(move: CoachTopMove): string | null {
                 :key="i"
                 class="text-[11px] flex items-baseline gap-2 leading-tight"
               >
-                <span class="font-mono font-bold text-text-primary shrink-0 min-w-[42px]">{{ Number(i) + 1 }}. {{ (tc as any).san }}</span>
-                <span class="text-text-secondary flex-1 truncate" :title="String((tc as any).name || '')">
-                  <span v-if="(tc as any).eco" class="font-mono text-text-disabled text-[10px] mr-1">[{{ (tc as any).eco }}]</span>
-                  <span>{{ (tc as any).name }}</span>
+                <span class="font-mono font-bold text-text-primary shrink-0 min-w-[42px]">{{ Number(i) + 1 }}. {{ tc.san }}</span>
+                <span class="text-text-secondary flex-1 truncate" :title="String(tc.name || '')">
+                  <span v-if="tc.eco" class="font-mono text-text-disabled text-[10px] mr-1">[{{ tc.eco }}]</span>
+                  <span>{{ tc.name }}</span>
                 </span>
-                <span v-if="(tc as any).popularity !== null && (tc as any).popularity !== undefined" class="text-[10px] font-mono text-text-secondary shrink-0" :title="(tc as any).total ? `${formatGames(Number((tc as any).total))}` : ''">
-                  {{ (tc as any).popularity }}%
+                <span v-if="tc.popularity !== null && tc.popularity !== undefined" class="text-[10px] font-mono text-text-secondary shrink-0" :title="tc.total ? `${formatGames(Number(tc.total))}` : ''">
+                  {{ tc.popularity }}%
                 </span>
-                <span v-else-if="(tc as any).total" class="text-[10px] font-mono text-text-disabled shrink-0">
-                  {{ formatGames(Number((tc as any).total)) }}
+                <span v-else-if="tc.total" class="text-[10px] font-mono text-text-disabled shrink-0">
+                  {{ formatGames(Number(tc.total)) }}
                 </span>
               </div>
             </div>

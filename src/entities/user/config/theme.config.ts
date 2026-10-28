@@ -81,7 +81,7 @@ export const AVAILABLE_PIECE_SETS: PieceSet[] = [
 const DYNAMIC_STYLE_ELEMENT_ID = 'dynamic-chessboard-styles'
 const PIECE_ROLES = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
 const PIECE_COLORS = ['white', 'black']
-const PIECE_FILES: { [key: string]: { w: string; b: string } } = {
+const PIECE_FILES: Record<string, { w: string; b: string }> = {
   pawn: { w: 'wP.svg', b: 'bP.svg' },
   knight: { w: 'wN.svg', b: 'bN.svg' },
   bishop: { w: 'wB.svg', b: 'bB.svg' },
@@ -91,8 +91,9 @@ const PIECE_FILES: { [key: string]: { w: string; b: string } } = {
 }
 
 export function applyThemeStyle(boardName: string, pieceSetName: string) {
-  const board = AVAILABLE_BOARDS.find((b) => b.name === boardName) || AVAILABLE_BOARDS[0]
-  const pieceSet = AVAILABLE_PIECE_SETS.find((p) => p.name === pieceSetName) || AVAILABLE_PIECE_SETS[0]
+  const board = AVAILABLE_BOARDS.find((b) => b.name === boardName) || AVAILABLE_BOARDS[0]!
+  const pieceSet =
+    AVAILABLE_PIECE_SETS.find((p) => p.name === pieceSetName) || AVAILABLE_PIECE_SETS[0]!
 
   const boardPath = `/board/jpg_png/${board.imageFile}`
 
@@ -115,7 +116,6 @@ export function applyThemeStyle(boardName: string, pieceSetName: string) {
     styleEl.id = DYNAMIC_STYLE_ELEMENT_ID
     document.head.appendChild(styleEl)
   }
-  if (styleEl) {
-    styleEl.textContent = css
-  }
+  styleEl.textContent = css
 }
+

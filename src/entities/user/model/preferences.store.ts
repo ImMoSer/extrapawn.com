@@ -1,14 +1,15 @@
-import { useAuthStore } from '@/entities/user'
+import { useAuthStore } from './auth.store'
 import { applyThemeStyle } from '../config/theme.config'
 import { apiClient } from '@/shared/api/client'
+import { changeLang } from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound'
-import { AVAILABLE_ENGINES } from '@/features/engine/config/constants'
-import type { EngineId } from '@/shared/types/api.types'
+import { AVAILABLE_ENGINES, type EngineId } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 const LOCAL_STORAGE_KEY = 'user_preferences_backup_v1'
+const LEGACY_COACH_STORAGE_KEY = 'extrapawn_coach_settings'
 
 export interface ThemePreferences {
   board: string
@@ -51,6 +52,20 @@ export interface AnalysisPreferences {
   engineVersion: 'lite' | 'full'
 }
 
+export interface CoachVisualLayersPreferences {
+  lastMoveNag: boolean
+  candidateArrow: boolean
+  tacticalPlans: boolean
+}
+
+export interface CoachPreferences {
+  coachSpy: boolean
+  autoTakeback: boolean
+  autoTakebackDelay: number
+  showVisuals: boolean
+  visualLayers: CoachVisualLayersPreferences
+}
+
 export interface UserPreferencesDto {
   theme: ThemePreferences
   engine: EnginePreferences
@@ -59,6 +74,7 @@ export interface UserPreferencesDto {
   delays: DelayPreferences
   puzzle: PuzzlePreferences
   analysis: AnalysisPreferences
+  coach: CoachPreferences
 }
 
 export interface BackendUserPreferencesDto {
@@ -110,6 +126,17 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     showArrows: true,
     engineVersion: 'lite',
   },
+  coach: {
+    coachSpy: true,
+    autoTakeback: true,
+    autoTakebackDelay: 1000,
+    showVisuals: true,
+    visualLayers: {
+      lastMoveNag: true,
+      candidateArrow: true,
+      tacticalPlans: true,
+    },
+  },
 }
 
 function deepMerge<T extends object>(target: T, source: DeepPartial<T>): T {
@@ -119,7 +146,7 @@ function deepMerge<T extends object>(target: T, source: DeepPartial<T>): T {
     if (val && typeof val === 'object' && !Array.isArray(val)) {
       result[key] = deepMerge(
         (result[key] || {}) as Record<string, unknown>,
-        val as DeepPartial<Record<string, unknown>>
+        val as DeepPartial<Record<string, unknown>>,
       ) as T[keyof T]
     } else if (val !== undefined) {
       result[key] = val as T[keyof T]
@@ -132,11 +159,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const authStore = useAuthStore()
   const rawPreferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
 
-  const isMo3ep = computed(() => {
-    const profile = authStore.userProfile
-    if (!profile) return false
-    return profile.id === 'mo3ep' || profile.username === 'MO3EP'
-  })
+  const isMo3ep = computed(() => authStore.isMo3ep)
 
   const preferences = computed<UserPreferencesDto>({
     get: () => {
@@ -174,36 +197,37 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   const isLoaded = ref(false)
 
-  // Register shared provider to comply with Feature-Sliced Design
   registerVolumeProvider({
     getVolume: () => preferences.value.audio.boardVolume,
-    getBoardVolume: () => preferences.value.audio.boardVolume,
     setVolume: (vol) => updatePreferences({ audio: { boardVolume: vol } }),
-    setBoardVolume: (vol) => updatePreferences({ audio: { boardVolume: vol } }),
   })
 
   let saveTimeout: number | null = null
 
-  // Load initial preferences
   function loadLocal(): UserPreferencesDto {
+    let merged = { ...DEFAULT_USER_PREFERENCES }
     try {
       const backup = localStorage.getItem(LOCAL_STORAGE_KEY)
       if (backup) {
         const parsed = JSON.parse(backup)
-        return deepMerge(DEFAULT_USER_PREFERENCES, parsed)
+        merged = deepMerge(merged, parsed)
+      }
+      // Migrate legacy coach settings if present
+      const legacyCoach = localStorage.getItem(LEGACY_COACH_STORAGE_KEY)
+      if (legacyCoach) {
+        const parsedCoach = JSON.parse(legacyCoach)
+        merged = deepMerge(merged, { coach: parsedCoach })
+        localStorage.removeItem(LEGACY_COACH_STORAGE_KEY)
       }
     } catch (err) {
       logger.error('[PreferencesStore] Failed to parse local preferences:', err)
     }
-    return { ...DEFAULT_USER_PREFERENCES }
+    return merged
   }
 
   function saveLocal() {
     try {
-      const payload = {
-        ...preferences.value,
-      }
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload))
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(rawPreferences.value))
     } catch (err) {
       logger.error('[PreferencesStore] Failed to save local preferences:', err)
     }
@@ -216,34 +240,54 @@ export const usePreferencesStore = defineStore('preferences', () => {
     try {
       const rawBackendPrefs = await apiClient<BackendUserPreferencesDto>('/users/me/preferences')
 
-      const mappedPrefs: UserPreferencesDto = {
+      const mappedPrefs: DeepPartial<UserPreferencesDto> = {
         theme: rawBackendPrefs.theme,
         engine: rawBackendPrefs.engine,
         audio: rawBackendPrefs.audio,
         gameplay: {
-          language: rawBackendPrefs.gameplay?.language ?? DEFAULT_USER_PREFERENCES.gameplay.language,
-          botEngine: rawBackendPrefs.gameplay?.botEngine ?? DEFAULT_USER_PREFERENCES.gameplay.botEngine,
-          global_crashtest: rawBackendPrefs.gameplay?.global_autoplay ?? DEFAULT_USER_PREFERENCES.gameplay.global_crashtest,
+          language:
+            rawBackendPrefs.gameplay?.language ?? DEFAULT_USER_PREFERENCES.gameplay.language,
+          botEngine:
+            rawBackendPrefs.gameplay?.botEngine ?? DEFAULT_USER_PREFERENCES.gameplay.botEngine,
+          global_crashtest:
+            rawBackendPrefs.gameplay?.global_autoplay ??
+            DEFAULT_USER_PREFERENCES.gameplay.global_crashtest,
         },
         delays: {
-          initialBotDelayMs: rawBackendPrefs.delays?.initialBotDelayMs ?? DEFAULT_USER_PREFERENCES.delays.initialBotDelayMs,
-          botDelayMs: rawBackendPrefs.delays?.botDelayMs ?? DEFAULT_USER_PREFERENCES.delays.botDelayMs,
-          nextPuzzleDelayMs: rawBackendPrefs.delays?.nextPuzzleDelayMs ?? DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
-          restartDelayMs: rawBackendPrefs.delays?.restartDelayMs ?? DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
-          crashtestDelayMs: rawBackendPrefs.delays?.autoPlayDelayMs ?? DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
+          initialBotDelayMs:
+            rawBackendPrefs.delays?.initialBotDelayMs ??
+            DEFAULT_USER_PREFERENCES.delays.initialBotDelayMs,
+          botDelayMs:
+            rawBackendPrefs.delays?.botDelayMs ?? DEFAULT_USER_PREFERENCES.delays.botDelayMs,
+          nextPuzzleDelayMs:
+            rawBackendPrefs.delays?.nextPuzzleDelayMs ??
+            DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
+          restartDelayMs:
+            rawBackendPrefs.delays?.restartDelayMs ??
+            DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
+          crashtestDelayMs:
+            rawBackendPrefs.delays?.autoPlayDelayMs ??
+            DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
         },
         puzzle: {
           autoNext: rawBackendPrefs.puzzle?.autoNext ?? DEFAULT_USER_PREFERENCES.puzzle.autoNext,
         },
         analysis: {
           multiPv: rawBackendPrefs.analysis?.multiPv ?? DEFAULT_USER_PREFERENCES.analysis.multiPv,
-          searchTime: rawBackendPrefs.analysis?.searchTime ?? DEFAULT_USER_PREFERENCES.analysis.searchTime,
-          showArrows: rawBackendPrefs.analysis?.showArrows ?? DEFAULT_USER_PREFERENCES.analysis.showArrows,
-          engineVersion: rawBackendPrefs.analysis?.engineVersion ?? DEFAULT_USER_PREFERENCES.analysis.engineVersion,
+          searchTime:
+            rawBackendPrefs.analysis?.searchTime ?? DEFAULT_USER_PREFERENCES.analysis.searchTime,
+          showArrows:
+            rawBackendPrefs.analysis?.showArrows ?? DEFAULT_USER_PREFERENCES.analysis.showArrows,
+          engineVersion:
+            rawBackendPrefs.analysis?.engineVersion ??
+            DEFAULT_USER_PREFERENCES.analysis.engineVersion,
         },
       }
 
-      preferences.value = deepMerge(DEFAULT_USER_PREFERENCES, mappedPrefs)
+      preferences.value = deepMerge(preferences.value, mappedPrefs)
+      if (preferences.value.gameplay.language) {
+        changeLang(preferences.value.gameplay.language)
+      }
       saveLocal()
       logger.info('[PreferencesStore] Preferences loaded from backend.')
     } catch (err) {
@@ -255,32 +299,41 @@ export const usePreferencesStore = defineStore('preferences', () => {
     preferences.value = deepMerge(preferences.value, updateDto)
     saveLocal()
 
-    // Sync to backend if authenticated
-    if (authStore.isAuthenticated) {
+    const hasBackendFields = Boolean(
+      updateDto.theme ||
+        updateDto.engine ||
+        updateDto.audio ||
+        updateDto.gameplay ||
+        updateDto.delays ||
+        updateDto.puzzle ||
+        updateDto.analysis,
+    )
+
+    if (authStore.isAuthenticated && hasBackendFields) {
       if (saveTimeout) {
         window.clearTimeout(saveTimeout)
       }
       saveTimeout = window.setTimeout(async () => {
         try {
-          const backendDto: DeepPartial<BackendUserPreferencesDto> = {}
-          if (updateDto.theme) backendDto.theme = updateDto.theme
-          if (updateDto.engine) backendDto.engine = updateDto.engine
-          if (updateDto.audio) backendDto.audio = updateDto.audio
-          if (updateDto.gameplay) {
-            backendDto.gameplay = {
-              language: updateDto.gameplay.language,
-              botEngine: updateDto.gameplay.botEngine,
-              global_autoplay: updateDto.gameplay.global_crashtest,
-            }
-          }
-          if (updateDto.delays) {
-            backendDto.delays = {
-              initialBotDelayMs: updateDto.delays.initialBotDelayMs,
-              botDelayMs: updateDto.delays.botDelayMs,
-              nextPuzzleDelayMs: updateDto.delays.nextPuzzleDelayMs,
-              restartDelayMs: updateDto.delays.restartDelayMs,
-              autoPlayDelayMs: updateDto.delays.crashtestDelayMs,
-            }
+          const current = rawPreferences.value
+          const backendDto: DeepPartial<BackendUserPreferencesDto> = {
+            theme: current.theme,
+            engine: current.engine,
+            audio: current.audio,
+            gameplay: {
+              language: current.gameplay.language,
+              botEngine: current.gameplay.botEngine,
+              global_autoplay: current.gameplay.global_crashtest,
+            },
+            delays: {
+              initialBotDelayMs: current.delays.initialBotDelayMs,
+              botDelayMs: current.delays.botDelayMs,
+              nextPuzzleDelayMs: current.delays.nextPuzzleDelayMs,
+              restartDelayMs: current.delays.restartDelayMs,
+              autoPlayDelayMs: current.delays.crashtestDelayMs,
+            },
+            puzzle: current.puzzle,
+            analysis: current.analysis,
           }
 
           await apiClient<BackendUserPreferencesDto>('/users/me/preferences', {
@@ -303,20 +356,17 @@ export const usePreferencesStore = defineStore('preferences', () => {
     isLoaded.value = true
   }
 
-  // React to auth status changes
   watch(
     () => authStore.isAuthenticated,
     async (isAuthenticated) => {
       if (isAuthenticated && isLoaded.value) {
         await fetchBackend()
       } else if (!isAuthenticated) {
-        // Just keep local
         preferences.value = loadLocal()
       }
-    }
+    },
   )
 
-  // Watch theme preferences and automatically update dynamic board/piece styles
   watch(
     () => [preferences.value.theme.board, preferences.value.theme.pieces],
     ([board, pieces]) => {
@@ -324,30 +374,16 @@ export const usePreferencesStore = defineStore('preferences', () => {
         applyThemeStyle(board as string, pieces as string)
       }
     },
-    { immediate: true }
+    { immediate: true },
   )
 
-  // Engine selection (bot opponent)
-  const isEngineSelectorOpen = ref(false)
   const selectedBotEngine = computed<EngineId>(() => {
     const current = preferences.value.gameplay.botEngine as EngineId
-    return (current && AVAILABLE_ENGINES.includes(current)) ? current : 'maia-1500'
+    return current && AVAILABLE_ENGINES.includes(current) ? current : 'maia-1500'
   })
-
-  function toggleEngineSelector() {
-    isEngineSelectorOpen.value = !isEngineSelectorOpen.value
-  }
 
   async function setBotEngine(engineId: EngineId) {
     await updatePreferences({ gameplay: { botEngine: engineId } })
-    isEngineSelectorOpen.value = false
-    try {
-      const { useGameStore } = await import('@/entities/game')
-      const gameStore = useGameStore()
-      gameStore.setBotEngineId(engineId)
-    } catch (e) {
-      logger.error('[PreferencesStore] Failed to notify gameStore of botEngine change', e)
-    }
   }
 
   return {
@@ -355,9 +391,8 @@ export const usePreferencesStore = defineStore('preferences', () => {
     isLoaded,
     initialize,
     updatePreferences,
-    isEngineSelectorOpen,
     selectedBotEngine,
-    toggleEngineSelector,
     setBotEngine,
   }
 })
+
