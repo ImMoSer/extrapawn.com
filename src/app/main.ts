@@ -6,7 +6,6 @@ import { createPinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 
 import i18n from '@/shared/config/i18n'
-import FallbackApp from './FallbackApp.vue'
 
 // Basic checks for required APIs
 const checkEnvironment = () => {
@@ -19,11 +18,7 @@ const checkEnvironment = () => {
 async function boot() {
   // Phase 0: Environment Validation (Fastest Check)
   if (!checkEnvironment()) {
-    console.error('Environment check failed.')
-    const app = createApp(FallbackApp)
-    app.use(i18n)
-    app.mount('#app')
-    return
+    throw new Error('Environment check failed: Cache API and IndexedDB are required.')
   }
 
   // Phase 1: Identity/Session Check (Prioritized)
@@ -58,7 +53,6 @@ async function boot() {
   // Phase 2: Application Assembly (Heavy Imports)
   const App = (await import('./App.vue')).default
   const router = (await import('./router')).default
-  const { setupErrorHandler } = await import('./lib/error-handler')
 
   const app = createApp(App)
   const queryClient = new QueryClient({
@@ -75,7 +69,6 @@ async function boot() {
   app.use(router)
   app.use(i18n)
   app.use(VueQueryPlugin, { queryClient })
-  setupErrorHandler(app)
 
   // Handle post-login redirects
   await router.isReady()

@@ -6,7 +6,6 @@ declare global {
 }
 
 const IS_DEV_MODE = import.meta.env.MODE === 'development'
-const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_API_URL as string) || ''
 
 if (typeof window.APP_FORCE_LOGGING === 'undefined') {
   window.APP_FORCE_LOGGING = null
@@ -20,93 +19,6 @@ function shouldLog(level: 'error' | 'warn' | 'info' | 'debug' | 'log' = 'log'): 
     return true
   } else {
     return level === 'error'
-  }
-}
-
-let isReporting = false
-
-/**
- * Очистка стека от "шума" фреймворков и библиотек для экономии токенов n8n/AI
- */
-function cleanStack(stack: string): string {
-  if (!stack) return ''
-  return stack
-    .split('\n')
-    .filter((line) => {
-      // Оставляем только те строки, которые относятся к нашему коду (/src/)
-      // И убираем шум библиотек (node_modules, vue, pinia, chunk-...)
-      return line.includes('/src/') && !line.includes('node_modules') && !line.includes('?v=')
-    })
-    .map((line) => line.trim())
-    .join('\n')
-}
-
-/**
- * Умная передача логов на бэкенд (n8n proxy)
- */
-async function reportToRemote(args: unknown[]) {
-  if (isReporting) return
-  isReporting = true
-
-  try {
-    const savedProfile = localStorage.getItem('user_profile')
-    let user = { id: 'anonymous', username: 'anonymous' }
-
-    if (savedProfile) {
-      try {
-        const profile = JSON.parse(savedProfile)
-        user = {
-          id: profile.id || 'unknown',
-          username: profile.username || 'unknown',
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    // Извлекаем "Event" из тегов [Tag] в первом аргументе (даже если там есть текст после тега)
-    let eventName = 'client_error'
-    const firstArg = args[0]
-    if (typeof firstArg === 'string' && firstArg.startsWith('[')) {
-      const closingBracketIndex = firstArg.indexOf(']')
-      if (closingBracketIndex > 0) {
-        eventName = firstArg.slice(0, closingBracketIndex + 1)
-      }
-    }
-
-    const cleanedArgs = args.map((a) => {
-      if (a instanceof Error) {
-        return {
-          message: a.message,
-          stack: cleanStack(a.stack || ''),
-        }
-      }
-      return a
-    })
-
-    const apiPath = '/logs/client-error'
-    const fullUrl = BACKEND_API_URL ? `${BACKEND_API_URL}${apiPath}` : `/api${apiPath}`
-
-    await fetch(fullUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: eventName,
-        user,
-        payload: {
-          args: cleanedArgs,
-          url: window.location.href,
-          timestamp: new Date().toISOString(),
-        },
-        metadata: {
-          browser: navigator.userAgent,
-        },
-      }),
-    })
-  } catch (e) {
-    console.warn('[LOGGER_REMOTE] Failed to send report:', e)
-  } finally {
-    isReporting = false
   }
 }
 
@@ -129,7 +41,6 @@ const logger = {
   error: (...args: unknown[]) => {
     if (shouldLog('error')) {
       console.error('%c[ERROR]', 'color: red; font-weight: bold;', ...args)
-      reportToRemote(args)
     }
   },
   debug: (...args: unknown[]) => {
