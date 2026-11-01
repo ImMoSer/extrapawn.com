@@ -1,8 +1,5 @@
 import {
-  BookOutline,
-  SkullOutline,
-  GridOutline,
-  ExtensionPuzzleOutline,
+  FlameOutline,
   FlashOutline,
   PersonOutline,
   TrophyOutline,
@@ -17,50 +14,22 @@ export interface GameModeConfig {
   color: string
 }
 
-export type GameModeKey =
-  | 'theory_endings'
-  | 'finish_him'
-  | 'practical_chess'
-  | 'tactics'
-  | 'task_today'
-  | 'user_cabinet'
-  | 'club_player'
+export type GameModeKey = 'training_center' | 'warmup' | 'user_cabinet' | 'club_player'
 
 export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
-  theory_endings: {
-    key: 'theory_endings',
-    path: '/theory-endings',
-    icon: BookOutline,
-    labelKey: 'shared.nav.theoryEndgames',
-    color: 'var(--neon-yellow)',
-  },
-  finish_him: {
-    key: 'finish_him',
-    path: '/finish-him',
-    icon: SkullOutline,
-    labelKey: 'shared.nav.finishHim',
-    color: 'var(--neon-purple)',
-  },
-  practical_chess: {
-    key: 'practical_chess',
-    path: '/practical-chess',
-    icon: GridOutline,
-    labelKey: 'shared.nav.practicalChess',
-    color: 'var(--neon-blue)',
-  },
-  tactics: {
-    key: 'tactics',
-    path: '/tactics',
-    icon: ExtensionPuzzleOutline,
-    labelKey: 'shared.nav.tactics',
-    color: 'var(--neon-pink)',
-  },
-  task_today: {
-    key: 'task_today',
-    path: '/task-today',
+  training_center: {
+    key: 'training_center',
+    path: '/training',
     icon: FlashOutline,
-    labelKey: 'shared.nav.taskToday',
+    labelKey: 'shared.nav.trainingCenter',
     color: 'var(--neon-cyan)',
+  },
+  warmup: {
+    key: 'warmup',
+    path: '/warmup',
+    icon: FlameOutline,
+    labelKey: 'shared.nav.warmup',
+    color: 'var(--neon-purple)',
   },
   user_cabinet: {
     key: 'user_cabinet',

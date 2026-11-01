@@ -29,11 +29,8 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 
 // Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
-  GAME_MODES.tactics,
-  GAME_MODES.finish_him,
-  GAME_MODES.practical_chess,
-  GAME_MODES.theory_endings,
-  GAME_MODES.task_today,
+  GAME_MODES.training_center,
+  GAME_MODES.warmup,
   GAME_MODES.user_cabinet,
 ]
 

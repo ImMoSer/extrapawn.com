@@ -1,5 +1,0 @@
-export { useTaskTodayStore, type WorkoutPuzzle, type PuzzleStrategyType, type PuzzleResult } from './model/taskToday.store'
-export { default as TaskTodayDashboard } from './ui/TaskTodayDashboard.vue'
-export { default as TaskTodayReport } from './ui/TaskTodayReport.vue'
-export { default as TaskSidebar } from './ui/TaskSidebar.vue'
-export { default as TaskPlayTopInfo } from './ui/TaskPlayTopInfo.vue'

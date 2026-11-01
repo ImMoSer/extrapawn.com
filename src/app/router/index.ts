@@ -1,6 +1,4 @@
-// src/router/index.ts
 import { useGameStore } from '@/entities/game'
-import { usePuzzleStore } from '@/features/puzzle'
 import i18n from '@/shared/config/i18n'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import { watch } from 'vue'
@@ -32,44 +30,56 @@ const router = createRouter({
       },
     },
     {
+      path: '/training',
+      name: 'training-center',
+      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
+      props: { mode: 'course' },
+      meta: { isGame: true, requiresAuth: true, game: 'training-center' },
+    },
+    {
+      path: '/warmup',
+      name: 'warmup',
+      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
+      props: { mode: 'warmup' },
+      meta: { isGame: true, requiresAuth: true, game: 'warmup' },
+    },
+    {
+      path: '/task-today/:pathMatch(.*)*',
+      redirect: '/training',
+    },
+    {
       path: '/endgames',
-      redirect: '/theory-endings',
+      redirect: { path: '/warmup', query: { discipline: 'theoretical_endgames' } },
     },
     {
       path: '/tactics/:puzzleId?',
-      name: 'tactics',
-      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'tactics' },
-      props: (route) => ({ submode: 'tactics', puzzleId: route.params.puzzleId }),
+      redirect: { path: '/warmup', query: { discipline: 'tactics' } },
     },
     {
       path: '/finish-him/:puzzleId?',
-      name: 'finish-him',
-      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'finish_him' },
-      props: (route) => ({ submode: 'finish_him', puzzleId: route.params.puzzleId }),
+      redirect: { path: '/warmup', query: { discipline: 'finishhim' } },
     },
     {
       path: '/practical-chess/:puzzleId?',
-      name: 'practical-chess',
-      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'practical_chess' },
-      props: (route) => ({ submode: 'practical_chess', puzzleId: route.params.puzzleId }),
+      redirect: { path: '/warmup', query: { discipline: 'practical_chess' } },
     },
     {
       path: '/theory-endings/:puzzleId?',
-      name: 'theory-endings',
-      component: () => import('@/pages/puzzle/ui/PuzzlePage.vue'),
-      meta: { isGame: true, requiresAuth: true, game: 'theory_endings' },
-      props: (route) => ({ submode: 'theory_endings', puzzleId: route.params.puzzleId }),
+      redirect: { path: '/warmup', query: { discipline: 'theoretical_endgames' } },
     },
     {
       path: '/workout/:type?/:puzzleId?',
       redirect: (to) => {
-        if (to.params.type === 'tactics') return '/tactics'
-        if (to.params.type === 'finish_him') return '/finish-him'
-        if (to.params.type === 'practical_chess') return '/practical-chess'
-        return '/theory-endings'
+        if (to.params.type === 'tactics') {
+          return { path: '/warmup', query: { discipline: 'tactics' } }
+        }
+        if (to.params.type === 'finish_him') {
+          return { path: '/warmup', query: { discipline: 'finishhim' } }
+        }
+        if (to.params.type === 'practical_chess') {
+          return { path: '/warmup', query: { discipline: 'practical_chess' } }
+        }
+        return { path: '/warmup', query: { discipline: 'theoretical_endgames' } }
       },
     },
     {
@@ -122,18 +132,7 @@ const router = createRouter({
     },
     {
       path: '/learning-coach',
-      redirect: '/workout',
-    },
-    {
-      path: '/task-today/:planId?/:puzzleType?/:puzzleId?',
-      name: 'task-today',
-      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
-      meta: { isGame: true, requiresAuth: true, game: 'task-today' },
-      props: (route) => ({
-        planId: route.params.planId,
-        puzzleType: route.params.puzzleType,
-        puzzleId: route.params.puzzleId,
-      }),
+      redirect: '/training',
     },
     {
       path: '/:pathMatch(.*)*',
@@ -207,18 +206,9 @@ router.beforeEach(async (to, from) => {
   }
 })
 
-router.afterEach(async (to, from) => {
+router.afterEach(async (to) => {
   const t = i18n.global.t
 
-  const puzzleGames = ['tactics', 'finish_him', 'practical_chess', 'theory_endings']
-  const isFromPuzzle = puzzleGames.includes(String(from.meta.game))
-  const isToPuzzle = puzzleGames.includes(String(to.meta.game))
-
-  if (isFromPuzzle && !isToPuzzle) {
-    usePuzzleStore().reset()
-  }
-
-  // Update SEO Meta Tags with translations
   updateSeoWithRoute(to.meta as RouteMetaWithSeo, t)
 })
 

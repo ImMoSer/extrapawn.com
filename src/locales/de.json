@@ -476,6 +476,50 @@
         "title": "Täglicher Trainingsplan",
         "viewLeaderboard": "Bestenliste ansehen",
         "warmupDesc": "Aufwärmen mit leichten Puzzles"
+      },
+      "macro": {
+        "goToTrainingCenter": "Zum Trainingszentrum",
+        "woodpeckerRuleHint": "24h Pause · 3 fehlerfreie Durchläufe in Folge bis zur Meisterschaft",
+        "timelineTitle": "12-Monats-Meisterschaftsverlauf (Glicko-2 & EMA-Präzision)",
+        "rolling52Weeks": "Rollierendes 52-Wochen-Fenster für die gewählte Disziplin",
+        "yearlySummary": "12M: {solved} gelöst ({acc}%) · {days} aktive Tage",
+        "noTimelineYet": "Schließen Sie Ihre erste Trainingssitzung ab, um den 12-Monats-Verlauf aufzubauen.",
+        "chartRating": "Glicko-2 Wertung",
+        "chartAccuracy": "EMA-Präzision %",
+        "recentCoursesTitle": "Kurshistorie (7 / 30 Tage)"
+      },
+      "diagnostics": {
+        "topStrengthTitle": "Top-Stärke",
+        "primaryWeaknessTitle": "Hauptschwäche / Stufen-Blocker",
+        "blindSpotTitle": "Blinder Fleck (Hohe RD-Unsicherheit)",
+        "attemptsShort": "Versuche",
+        "gateTarget": "Zielschwelle: {rating}",
+        "trainWarmup": "WarmUp",
+        "fixInWarmup": "Im WarmUp beheben",
+        "calibrateInWarmup": "Im WarmUp kalibrieren",
+        "warmupAction": "Im WarmUp trainieren",
+        "notEnoughData": "Lösen Sie mehr Aufgaben in dieser Disziplin für die automatische Diagnose.",
+        "allCalibrated": "Alle Bereiche kalibriert! Keine blinden Flecken mit hoher RD vorhanden."
+      },
+      "map": {
+        "endgameTitle": "Analytische Karte der Endspiel-Domänen & Materialklassen",
+        "endgameSubtitle": "Horizontale Bullet-Bars zeigen Ihre Glicko-2-Wertung relativ zur Stufenschwelle ({gate}).",
+        "tacticsTitle": "Taktik-Radar: Strukturkompass & 4 Kampfmotiv-Konturen",
+        "tacticsSubtitle": "Glicko-2-Wertung, EMA-Präzision sowie Kurz- (1-2Z) vs. Tiefhorizont (3+Z) (Schwelle: {gate}).",
+        "sortWeakest": "Schwächste zuerst",
+        "sortBlindSpots": "Wenigste Versuche",
+        "sortStrongest": "Stärkste zuerst",
+        "attemptsShort": "Vers.",
+        "domainsHeader": "Endspiel-Domänen",
+        "gateMarkerLabel": "Schwelle: {gate}",
+        "classesCount": "Klassen",
+        "activeDomainDrilldown": "Klassen-Details der Domäne",
+        "trainEntireDomain": "Gesamte Domäne trainieren",
+        "trainShort": "Start",
+        "structuralCompass": "Strukturkompass",
+        "motifsCount": "Motive",
+        "shortHorizon": "Kurz (1-2Z)",
+        "deepHorizon": "Tief (3+Z)"
       }
     },
     "pricing": {
@@ -1002,6 +1046,274 @@
           "linesCount": "{count} Linien"
         }
       }
+    },
+    "trainingCenter": {
+      "title": "Trainingszentrum",
+      "subtitle": "Vereintes Glicko-2-Kurssystem, Specht-Methode (24h / 3×) & gezieltes WarmUp",
+      "disciplines": {
+        "tactics": "Taktik",
+        "theoretical_endgames": "Theoretische Endspiele",
+        "practical_chess": "Praktische Endspiele",
+        "finishhim": "Finish Him"
+      },
+      "modes": {
+        "courseTab": "Kurse (7 / 30 Tage)",
+        "warmupTab": "Gezieltes WarmUp",
+        "courseBadge": "KURS",
+        "warmupBadge": "WARMUP"
+      },
+      "actions": {
+        "analyze": "Analyse",
+        "backToHub": "Zum Trainingszentrum",
+        "continueSession": "Fortsetzen",
+        "dismissSession": "Verwerfen",
+        "exitAnalysis": "Analyse beenden",
+        "nextCourseBatch": "Nächster Kurs-Batch",
+        "nextPuzzle": "Weiter",
+        "openCabinet": "Spielerkabinett",
+        "pauseToHub": "Pause / Zentrum",
+        "resumeSession": "Sitzung fortsetzen",
+        "showSolution": "Lösung zeigen"
+      },
+      "badges": {
+        "analysis": "ANALYSE",
+        "holdDrawFide": "REMIS HALTEN — FIDE",
+        "objectiveHoldDraw": "Remis halten (FIDE)",
+        "objectiveWin": "Auf Gewinn spielen",
+        "winTarget": "AUF GEWINN",
+        "woodpeckerStreak": "Specht {streak}/3"
+      },
+      "units": {
+        "dayShort": "T",
+        "hourShort": "Std",
+        "minShort": "Min"
+      },
+      "woodpecker": {
+        "title": "Specht-Warteschlange (24h Pause · 3× Serie)",
+        "vaultTitle": "Specht-Tresor",
+        "dueNow": "Jetzt fällig",
+        "dueShort": "fällig",
+        "cooldown24h": "24h Pause",
+        "queued24h": "Im Specht eingereiht (24h)",
+        "graduated": "Heute gemeistert (3/3)",
+        "mastered": "Dauerhaft gemeistert",
+        "masteredShort": "gemeistert"
+      },
+      "session": {
+        "unfinishedBadge": "OFFENE SITZUNG",
+        "activeTitle": "Aktive Trainingssitzung",
+        "completedPuzzles": "gelöst"
+      },
+      "course": {
+        "activeProgressTitle": "Aktiver Kursfortschritt",
+        "noActiveCourseShort": "Kein aktiver Kurs",
+        "puzzlesSolved": "Aufgaben gelöst",
+        "quotaTarget": "Quote: {count} Aufgaben",
+        "durationDays": "{days} Tage",
+        "expired": "Abgelaufen",
+        "batchSizeLabel": "Batch-Größe:",
+        "launchBatchBtn": "Batch starten ({count})",
+        "abortBtn": "Kurs abbrechen",
+        "abortConfirmTitle": "Aktiven Kurs abbrechen?",
+        "abortConfirmMessage": "Der Kurs wird als abgebrochen archiviert, aber alle Glicko-2-Wertungen, Ihre Specht-Warteschlange und die 12-Monats-Statistik bleiben vollständig erhalten.",
+        "selectTierLabel": "1. Kursstufe wählen",
+        "selectDurationLabel": "2. Kursdauer & Quote",
+        "startCourseBtn": "Kurs starten ({days}T · {quota} Aufgaben)",
+        "status": {
+          "active": "Aktiv",
+          "completed": "Abgeschlossen",
+          "incomplete": "Unvollständig",
+          "aborted": "Abgebrochen"
+        }
+      },
+      "gate": {
+        "title": "Zulassung für Stufe {tier}",
+        "conditionQuota": "1. Kursquote erfüllen ({days}T)",
+        "conditionScopes": "2. Wertung ≥ {rating} in allen Pflichtbereichen",
+        "done": "Erfüllt",
+        "pending": "Offen",
+        "laggingScopesLabel": "Rückständige Bereiche ({count})",
+        "masterUnlockedTitle": "Master-Stufe freigeschaltet!",
+        "masterUnlockedDesc": "Sie haben die höchste Stufe in dieser Disziplin freigeschaltet. Alle Kurse stehen offen."
+      },
+      "warmup": {
+        "selectTierLabel": "1. Schwierigkeitsgrad",
+        "selectCountLabel": "2. Aufgaben pro Sitzung",
+        "puzzlesUnit": "Aufgaben",
+        "focusGroupLabel": "3. Fokus-Kontur (Optional)",
+        "focusKeyLabel": "4. Konkretes Motiv / Klasse",
+        "objectiveFilterLabel": "5. Zielvektor (Theorie)",
+        "objectiveAll": "Alle Ziele (Gewinn + Remis)",
+        "startBtn": "WarmUp starten ({count} Aufgaben)",
+        "focusGroups": {
+          "all": "Alle Themen (Smart-Coach-Balance)",
+          "motif_group": "Kampfmotiv-Kontur",
+          "motif": "Konkretes Taktikmotiv",
+          "phase": "Partiephase",
+          "length": "Rechentiefe (Länge)",
+          "goal": "Taktisches Ziel",
+          "cognitive": "Kognitives Profil",
+          "master_game": "Meisterpartien",
+          "domain": "Endspiel-Domäne",
+          "class": "Materialklasse",
+          "objective": "Zielvektor (Gewinn / Remis)"
+        },
+        "motifGroups": {
+          "geometry": "Geometrie (9)",
+          "operator": "Operatoren (7)",
+          "concept": "Konzepte (3)",
+          "trigger": "Trigger (6)"
+        }
+      },
+      "play": {
+        "attemptSolved": "Aufgabe korrekt gelöst!",
+        "attemptFailed": "Fehler! Für 24h in die Specht-Warteschlange eingereiht",
+        "solvedShort": "GELÖST",
+        "failedShort": "FEHLER"
+      },
+      "sidebar": {
+        "queueTitle": "Sitzungs-Warteschlange",
+        "solvedRatio": "Präzision",
+        "sparringBot": "Sparrings-Bot"
+      },
+      "promotion": {
+        "unlockedTitle": "Neue Stufe freigeschaltet: {tier}!",
+        "unlockedSubtitle": "Sie haben die Kursquote und die Wertungsschwelle in allen Bereichen gemeistert."
+      },
+      "report": {
+        "completedHeading": "Trainingsbericht",
+        "solvedTotal": "Gelöst / Gesamt",
+        "accuracy": "Sitzungspräzision",
+        "netDelta": "Glicko-2 Delta",
+        "avgTime": "Ø Zeit / Aufgabe",
+        "totalTime": "Gesamtzeit",
+        "puzzleBreakdownTitle": "Aufgabenübersicht der Sitzung",
+        "clickToAnalyzeHint": "Klicken Sie auf eine Aufgabe zur Stockfish-Analyse auf dem Brett"
+      },
+      "taxonomy": {
+        "master_game": {
+          "true": "Partien von Titelträgern",
+          "false": "Turnierpraxis"
+        },
+        "scopes": {
+          "pawn": "Bauernendspiele",
+          "rook": "Turmendspiele",
+          "minor": "Leichtfigurenendspiele",
+          "rook_minor": "Turm & Leichtfigur",
+          "queen": "Damenendspiele",
+          "double_rook": "Doppelturmendspiele",
+          "extra": "Mehrfigurenendspiele",
+          "P": "Bauernendspiele (K+P)",
+          "R": "Turmendspiele (K+R)",
+          "B": "Läuferendspiele (K+B)",
+          "N": "Springerendspiele (K+N)",
+          "BB": "Zwei Läufer (K+BB)",
+          "BN": "Läufer & Springer (K+BN)",
+          "NN": "Zwei Springer (K+NN)",
+          "RB": "Turm & Läufer (R+B)",
+          "RN": "Turm & Springer (R+N)",
+          "Q": "Damenendspiele (K+Q)",
+          "QP": "Dame & Bauern (Q+P)",
+          "QR": "Dame & Turm (Q+R)",
+          "QB": "Dame & Läufer (Q+B)",
+          "QN": "Dame & Springer (Q+N)",
+          "RR": "Doppeltürme (RR vs RR)",
+          "RR_minor": "Doppeltürme & Leichtfigur",
+          "Q_minor": "Dame & Leichtfigur",
+          "other": "Komplexe Materialverhältnisse",
+          "fork": "Gabel (Doppelangriff)",
+          "pin": "Fesselung",
+          "skewer": "Spieß",
+          "xRayAttack": "Röntgenangriff",
+          "discoveredAttack": "Abzugsangriff",
+          "doubleCheck": "Doppelschach",
+          "hookMate": "Hakenmatt",
+          "backRankMate": "Grundreihenmatt",
+          "smotheredMate": "Ersticktes Matt",
+          "trappedPiece": "Gefangene Figur",
+          "sacrifice": "Opfer",
+          "attraction": "Hinlenkung",
+          "deflection": "Ablenkung",
+          "capturingDefender": "Beseitigung des Verteidigers",
+          "interference": "Verstellung",
+          "clearance": "Räumung",
+          "intermezzo": "Zwischenzug",
+          "defensiveMove": "Verteidigungszug",
+          "quietMove": "Stiller Zug",
+          "zugzwang": "Zugzwang",
+          "kingsideAttack": "Königsangriff",
+          "queensideAttack": "Damenflügelangriff",
+          "exposedKing": "Exponierter König",
+          "attackingF2F7": "Angriff auf f2 / f7",
+          "advancedPawn": "Vorgerückter Freibauer",
+          "promotion": "Bauernumwandlung",
+          "opening": "Eröffnung",
+          "middlegame": "Mittelspiel",
+          "endgame": "Endspiel",
+          "oneMove": "Einzügiger Schlag",
+          "short": "Kurzer Horizont (2 Züge)",
+          "long": "Tiefer Horizont (3 Züge)",
+          "veryLong": "Weite Berechnung (4+ Züge)",
+          "mate": "Mattangriff",
+          "material_gain": "Materialgewinn",
+          "equalize": "Rettung / Ausgleich",
+          "pattern_recognition": "Mustererkennung",
+          "tactical_combining": "Kombinationsblick",
+          "deep_calculation": "Tiefe Variantenberechnung",
+          "quiet_precision": "Stille Präzision",
+          "win": "Auf Gewinn spielen",
+          "hold_draw": "Remis halten (FIDE)",
+          "PAWN": "Bauernendspiele",
+          "KNIGHT": "Springerendspiele",
+          "BISHOP": "Läuferendspiele",
+          "ROOK": "Turmendspiele",
+          "QUEEN": "Damenendspiele",
+          "COMPLEX": "Komplexe Endspiele",
+          "EXTRA": "Mehrbauer-Verwertung",
+          "pawnEnding": "Bauernendspiele",
+          "knightEnding": "Springerendspiele",
+          "knightVsPawns": "Springer gegen Bauern",
+          "twoKnightsVsPawn": "Zwei Springer gegen Bauer",
+          "bishopVsPawns": "Läufer gegen Bauern",
+          "oppositeColorBishops": "Ungleichfarbige Läufer",
+          "sameColorBishops": "Gleichfarbige Läufer",
+          "twoBishopsEnding": "Zwei-Läufer-Endspiel",
+          "doubleRookEnding": "Doppelturmendspiele",
+          "rookEnding": "Turmendspiele",
+          "rookVsPawns": "Turm gegen Bauern",
+          "queenEnding": "Damenendspiele",
+          "queenVsPawns": "Dame gegen Bauern",
+          "bishopKnightEnding": "Läufer & Springer Endspiel",
+          "bishopVsKnight": "Läufer gegen Springer",
+          "mixEnding": "Gemischte Endspiele",
+          "queenBishopVsQueen": "Dame & Läufer gegen Dame",
+          "queenKnightVsQueen": "Dame & Springer gegen Dame",
+          "queenMinorVsQueenMinor": "Dame & Leichtfigur",
+          "queenRookEnding": "Dame & Turm Endspiel",
+          "queenVsMinors": "Dame gegen Leichtfiguren",
+          "queenVsRook": "Dame gegen Turm",
+          "queenVsRookMinor": "Dame gegen Turm & Leichtfigur",
+          "queenVsTwoRooks": "Dame gegen zwei Türme",
+          "rookMinorVsRook": "Turm & Leichtfigur gegen Turm",
+          "rookMinorVsRookMinor": "Turm & Leichtfigur",
+          "rookVsMinor": "Turm gegen Leichtfigur",
+          "rookVsTwoMinors": "Turm gegen zwei Leichtfiguren",
+          "extraPawn": "Mehrbauer-Verwertung",
+          "crushing": "Entscheidender Vorteil",
+          "advantage": "Klarer Vorteil",
+          "equality": "Rettung / Ausgleich",
+          "pure_calc": "Reine Variantenberechnung",
+          "geometry_only": "Geometrischer Blick",
+          "operator_geometry": "Taktische Operatoren",
+          "other_motif": "Spezielle Motive",
+          "discoveredCheck": "Abzugsschach",
+          "hangingPiece": "Hängende Figur"
+        }
+      },
+      "warmupPage": {
+        "title": "Gezieltes WarmUp",
+        "subtitle": "Freie Wahl jeder Stufe, Motiv-Kontur, Domäne oder Materialklasse mit vollem Glicko-2- & Specht-Tracking"
+      }
     }
   },
   "shared": {
@@ -1021,7 +1333,9 @@
       "repertoire": "Study",
       "login": "Anmelden",
       "logout": "Abmelden",
-      "loginWithLichess": "Mit Lichess anmelden"
+      "loginWithLichess": "Mit Lichess anmelden",
+      "trainingCenter": "Trainingszentrum",
+      "warmup": "WarmUp"
     },
     "errors": {
       "backendConnectionFailed": "Verbindung zum Server fehlgeschlagen.",
@@ -1079,6 +1393,9 @@
       "practicalChess": "PRAXIS",
       "theoryEndgames": "THEORIE",
       "repertoire": "Repertoire"
+    },
+    "actions": {
+      "retry": "Wiederholen"
     }
   }
 }

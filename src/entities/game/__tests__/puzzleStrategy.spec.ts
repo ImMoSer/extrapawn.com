@@ -1,0 +1,311 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enginePlayService } from '../lib/EnginePlayService'
+import { useBoardStore } from '../model/board.store'
+import { useGameStore } from '../model/game.store'
+import {
+  determineHumanColor,
+  PuzzleStrategy,
+  type PuzzleAttemptTelemetry,
+  type PuzzlePuzzle,
+} from '../model/PuzzleStrategy'
+
+vi.mock('@/shared/lib/sound', () => ({
+  soundService: {
+    play: vi.fn(),
+  },
+  registerVolumeProvider: vi.fn(),
+}))
+
+function createEndgamePuzzle(overrides: Partial<PuzzlePuzzle>): PuzzlePuzzle {
+  return {
+    puzzle_id: 'TH-TEST-1',
+    puzzle_type: 'theoretical_endgames',
+    category: 'queenVsPawns',
+    domain: 'QUEEN',
+    difficulty: 'Pro',
+    rating: 1650,
+    strategy: 'playOutOnly',
+    first_move: 'user',
+    user_color: 'white',
+    objective: 'hold_draw',
+    initial_fen: '7k/5Q2/7K/8/8/8/8/8 w - - 0 1',
+    ...overrides,
+  }
+}
+
+describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.restoreAllMocks()
+  })
+
+  it('validates user_color strictly against initial_fen + first_move (Fail-Fast)', () => {
+    const valid = createEndgamePuzzle({
+      initial_fen: '7k/5Q2/7K/8/8/8/8/8 b - - 0 1',
+      first_move: 'bot',
+      user_color: 'white',
+    })
+    expect(determineHumanColor(valid)).toBe('white')
+
+    const mismatch = createEndgamePuzzle({
+      initial_fen: '7k/5Q2/7K/8/8/8/8/8 w - - 0 1',
+      first_move: 'user',
+      user_color: 'black',
+    })
+    expect(() => determineHumanColor(mismatch)).toThrow(/user_color mismatch/)
+  })
+
+  it('treats stalemate as WIN for hold_draw and LOSS for win objective', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // White Qf7->g6 stalemates Black king on h8 (White Kh6, Qf7, Black Kh8)
+    const fen = '7k/5Q2/7K/8/8/8/8/8 w - - 0 1'
+
+    // 1. Hold Draw -> WIN
+    const onHoldSuccess = vi.fn()
+    const onHoldFailure = vi.fn()
+    const holdPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'hold_draw' })
+    const holdStrategy = new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
+      onSuccess: onHoldSuccess,
+      onFailure: onHoldFailure,
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+    })
+
+    gameStore.startWithStrategy(fen, holdStrategy, 'white')
+    await gameStore.handleUserMove('f7', 'g6')
+
+    expect(onHoldSuccess).toHaveBeenCalledTimes(1)
+    expect(onHoldSuccess).toHaveBeenCalledWith('stalemate', {
+      firstMoveFailed: false,
+      failStage: 'none',
+      outcomeReason: 'stalemate',
+    })
+    expect(onHoldFailure).not.toHaveBeenCalled()
+
+    // 2. Win -> LOSS
+    const onWinSuccess = vi.fn()
+    const onWinFailure = vi.fn()
+    const winPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'win' })
+    const winStrategy = new PuzzleStrategy(winPuzzle, 'white', 'theoretical_endgames', {
+      onSuccess: onWinSuccess,
+      onFailure: onWinFailure,
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+    })
+
+    gameStore.startWithStrategy(fen, winStrategy, 'white')
+    await gameStore.handleUserMove('f7', 'g6')
+
+    expect(onWinSuccess).not.toHaveBeenCalled()
+    expect(onWinFailure).toHaveBeenCalledTimes(1)
+    expect(onWinFailure).toHaveBeenCalledWith({
+      firstMoveFailed: true,
+      failStage: 'playout',
+      outcomeReason: 'stalemate',
+    })
+  })
+
+  it('treats insufficient_material as WIN for hold_draw and LOSS for win objective', async () => {
+    const gameStore = useGameStore()
+    // White Kxe4 captures Black's last pawn leaving K vs K
+    const fen = '8/8/4k3/8/4p3/4K3/8/8 w - - 0 1'
+
+    const onHoldSuccess = vi.fn()
+    const holdPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'hold_draw' })
+    gameStore.startWithStrategy(
+      fen,
+      new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
+        onSuccess: onHoldSuccess,
+      }),
+      'white',
+    )
+    await gameStore.handleUserMove('e3', 'e4')
+    expect(onHoldSuccess).toHaveBeenCalledTimes(1)
+    expect(onHoldSuccess.mock.calls[0]?.[0]).toBe('insufficient_material')
+
+    const onWinFailure = vi.fn()
+    const winPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'win' })
+    gameStore.startWithStrategy(
+      fen,
+      new PuzzleStrategy(winPuzzle, 'white', 'theoretical_endgames', {
+        onFailure: onWinFailure,
+      }),
+      'white',
+    )
+    await gameStore.handleUserMove('e3', 'e4')
+    expect(onWinFailure).toHaveBeenCalledTimes(1)
+    expect(onWinFailure.mock.calls[0]?.[0]).toEqual({
+      firstMoveFailed: true,
+      failStage: 'playout',
+      outcomeReason: 'insufficient_material',
+    })
+  })
+
+  it('detects FIDE 50-move rule (halfmoves >= 100) and scores hold_draw as WIN (while 100th-ply checkmate still wins)', async () => {
+    const gameStore = useGameStore()
+
+    // Non-checkmate 100th halfmove: White Ra1->a2 (halfmoves 99 -> 100)
+    const draw50Fen = '7k/8/6K1/8/8/8/8/R7 w - - 99 50'
+    const onHoldSuccess = vi.fn()
+    const holdPuzzle = createEndgamePuzzle({ initial_fen: draw50Fen, objective: 'hold_draw' })
+    gameStore.startWithStrategy(
+      draw50Fen,
+      new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
+        onSuccess: onHoldSuccess,
+      }),
+      'white',
+    )
+    await gameStore.handleUserMove('a1', 'a2')
+    expect(onHoldSuccess).toHaveBeenCalledTimes(1)
+    expect(onHoldSuccess.mock.calls[0]?.[0]).toBe('fifty_move_rule')
+
+    // 100th halfmove is checkmate: White Ra1->a8# (halfmoves 99 -> 100, Black Kh8, White Kg6)
+    const mate100Fen = '7k/8/6K1/8/8/8/8/R7 w - - 99 50'
+    const onMateSuccess = vi.fn()
+    const winPuzzle = createEndgamePuzzle({ initial_fen: mate100Fen, objective: 'win' })
+    gameStore.startWithStrategy(
+      mate100Fen,
+      new PuzzleStrategy(winPuzzle, 'white', 'theoretical_endgames', {
+        onSuccess: onMateSuccess,
+      }),
+      'white',
+    )
+    await gameStore.handleUserMove('a1', 'a8')
+    // Wait — Kh8, Kg6, Ra8 is checkmate! Verify single-fire onSuccess('checkmate')
+    expect(onMateSuccess).toHaveBeenCalledTimes(1)
+    expect(onMateSuccess.mock.calls[0]?.[0]).toBe('checkmate')
+  })
+
+  it('detects FIDE threefold_repetition and scores hold_draw as WIN and win as LOSS', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const fen = '6k1/8/6K1/8/8/8/8/R7 w - - 0 1'
+    let botToggle = false
+    vi.spyOn(enginePlayService, 'getBestMove').mockImplementation(async () => {
+      botToggle = !botToggle
+      return botToggle ? 'g8h8' : 'h8g8'
+    })
+
+    const onHoldSuccess = vi.fn()
+    const holdPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'hold_draw' })
+    const strategy = new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
+      onSuccess: onHoldSuccess,
+      botEngineOverride: 'maia-2200',
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+    })
+
+    gameStore.startWithStrategy(fen, strategy, 'white')
+
+    // Occurrence 1 is root FEN. Repeat position twice more:
+    await gameStore.handleUserMove('a1', 'b1') // bot plays g8h8
+    await gameStore.handleUserMove('b1', 'a1') // bot plays h8g8 -> Occurrence 2
+    await gameStore.handleUserMove('a1', 'b1') // bot plays g8h8
+    await gameStore.handleUserMove('b1', 'a1') // bot plays h8g8 -> Occurrence 3!
+
+    expect(onHoldSuccess).toHaveBeenCalledTimes(1)
+    expect(onHoldSuccess.mock.calls[0]?.[0]).toBe('threefold_repetition')
+    expect(enginePlayService.getBestMove).toHaveBeenCalledWith('maia-2200', expect.any(String))
+  })
+
+  it('always treats resignation as LOSS even in hold_draw', () => {
+    const gameStore = useGameStore()
+    const fen = '7k/5Q2/7K/8/8/8/8/8 w - - 0 1'
+
+    const onSuccess = vi.fn()
+    const onFailure = vi.fn()
+    const holdPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'hold_draw' })
+    gameStore.startWithStrategy(
+      fen,
+      new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
+        onSuccess,
+        onFailure,
+      }),
+      'white',
+    )
+
+    gameStore.handleGameResignation()
+
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(onFailure).toHaveBeenCalledTimes(1)
+    expect(onFailure.mock.calls[0]?.[0]).toEqual({
+      firstMoveFailed: true,
+      failStage: 'playout',
+      outcomeReason: 'resign',
+    })
+  })
+
+  it('attributes FinishHim (scenarioPlus) failure to scenario vs playout accurately', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // White Kh6, Qf5, Black Kg8. Tactical solution: "f5d5 g8h8" -> transitions to playout!
+    const fen = '6k1/8/7K/5Q2/8/8/8/8 w - - 0 1'
+    const baseFinishHim: PuzzlePuzzle = {
+      puzzle_id: 'FH-TEST-1',
+      puzzle_type: 'finishhim',
+      category: 'queenEnding',
+      domain: 'QUEEN',
+      difficulty: 'Master',
+      rating: 2100,
+      strategy: 'scenarioPlus',
+      first_move: 'user',
+      user_color: 'white',
+      objective: 'win',
+      initial_fen: fen,
+      tactical_solution: 'f5d5 g8h8',
+      puzzle_fen: '7k/8/7K/3Q4/8/8/8/8 w - - 2 2',
+    }
+
+    // Case A: User completes tactical_solution (f5d5 -> bot g8h8), then stalemates Black in playout (Qd5->g5) -> failStage: 'playout', firstMoveFailed: false
+    let capturedTelemetryA: PuzzleAttemptTelemetry | undefined
+    const strategyA = new PuzzleStrategy(baseFinishHim, 'white', 'finishhim', {
+      botEngineOverride: 't1000',
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      onFailure: (tel) => {
+        capturedTelemetryA = tel
+      },
+    })
+    gameStore.startWithStrategy(fen, strategyA, 'white')
+
+    await gameStore.handleUserMove('f5', 'd5') // matches scenario; bot plays g8h8 -> playout starts!
+    expect(strategyA.isPlayout).toBe(true)
+
+    await gameStore.handleUserMove('d5', 'g5') // stalemates Black king on h8 during playout!
+    expect(capturedTelemetryA).toEqual({
+      firstMoveFailed: false,
+      failStage: 'playout',
+      outcomeReason: 'stalemate',
+    })
+
+    // Case B: User deviates on first move (plays Kh6->g5 instead of f5d5) and then resigns -> failStage: 'scenario', firstMoveFailed: true
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue('g8h8')
+
+    let capturedTelemetryB: PuzzleAttemptTelemetry | undefined
+    gameStore.startWithStrategy(
+      fen,
+      new PuzzleStrategy(baseFinishHim, 'white', 'finishhim', {
+        botEngineOverride: 't1000',
+        delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+        onFailure: (tel) => {
+          capturedTelemetryB = tel
+        },
+      }),
+      'white',
+    )
+
+    await gameStore.handleUserMove('h6', 'g5') // Deviates on move 1! Bot plays g8h8 in playout.
+    gameStore.handleGameResignation()
+
+    expect(capturedTelemetryB).toEqual({
+      firstMoveFailed: true,
+      failStage: 'scenario',
+      outcomeReason: 'resign',
+    })
+  })
+})
+

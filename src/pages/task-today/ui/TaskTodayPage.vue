@@ -1,57 +1,53 @@
 <script setup lang="ts">
-import { 
-  useTaskTodayStore, 
-  TaskTodayDashboard, 
-  TaskTodayReport, 
-  TaskSidebar, 
-  TaskPlayTopInfo, 
-} from '@/features/task-today'
+import {
+  TrainingHubDashboard,
+  TrainingPlayTopInfo,
+  TrainingSessionReport,
+  TrainingSessionSidebar,
+  useTrainingSessionStore,
+} from '@/features/training-session'
 import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
-import { onMounted, onUnmounted } from 'vue'
+import { onUnmounted, watch } from 'vue'
 
-defineProps({
-  planId: {
-    type: String,
-    default: undefined,
+const props = withDefaults(
+  defineProps<{
+    mode?: 'course' | 'warmup'
+  }>(),
+  {
+    mode: 'course',
   },
-  puzzleType: {
-    type: String,
-    default: undefined,
-  },
-  puzzleId: {
-    type: String,
-    default: undefined,
-  },
-})
+)
 
-const taskTodayStore = useTaskTodayStore()
+const store = useTrainingSessionStore()
 
-onMounted(() => {
-  // Try to load local state first, staying on the dashboard when not actively playing
-  if (!taskTodayStore.isPlaying && !taskTodayStore.isFinished) {
-    void taskTodayStore.startTaskToday(false)
-  }
-})
+watch(
+  () => props.mode,
+  () => {
+    if (store.viewState !== 'hub') {
+      store.pauseToHub()
+    }
+  },
+)
 
 onUnmounted(() => {
-  if (taskTodayStore.isPlaying) {
-    taskTodayStore.pauseTaskToday()
+  if (store.isPlaying || store.isAwaitingNext || store.isAnalysisMode) {
+    store.pauseToHub()
   }
 })
 </script>
 
 <template>
-  <TaskTodayDashboard v-if="!taskTodayStore.isPlaying && !taskTodayStore.isFinished && !taskTodayStore.isAnalysisMode" />
-  <TaskTodayReport v-else-if="taskTodayStore.isFinished && !taskTodayStore.isAnalysisMode" />
-  <GameLayout v-else>
+  <TrainingHubDashboard v-if="store.viewState === 'hub'" :mode="props.mode" />
+  <TrainingSessionReport v-else-if="store.viewState === 'report'" />
+  <GameLayout v-else :hide-engine-selector="true">
     <template #left-panel>
-      <TaskSidebar />
+      <TrainingSessionSidebar />
     </template>
     <template #top-info>
-      <TaskPlayTopInfo />
+      <TrainingPlayTopInfo />
     </template>
     <template #center-column>
-      <!-- Game board is handled by GameLayout -->
+      <!-- Board rendered by GameLayout -->
     </template>
     <template #right-panel>
       <RightSidebarSlot />

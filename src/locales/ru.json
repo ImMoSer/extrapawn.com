@@ -476,6 +476,50 @@
         "title": "Ежедневный план тренироввок",
         "viewLeaderboard": "Посмотреть таблицу лидеров",
         "warmupDesc": "Разминка простыми задачами"
+      },
+      "macro": {
+        "goToTrainingCenter": "В Тренировочный Центр",
+        "woodpeckerRuleHint": "Пауза 24ч · 3 безошибочных цикла подряд до полного усвоения",
+        "timelineTitle": "Динамика мастерства за 12 месяцев (Glicko-2 и точность EMA)",
+        "rolling52Weeks": "Скользящее окно 52 недель по выбранной дисциплине",
+        "yearlySummary": "За 12 мес: {solved} решено ({acc}%) · {days} акт. дн.",
+        "noTimelineYet": "Завершите первую тренировочную сессию, чтобы построить 12-месячный график прогресса.",
+        "chartRating": "Рейтинг Glicko-2",
+        "chartAccuracy": "Точность EMA %",
+        "recentCoursesTitle": "История курсов (7 / 30 дней)"
+      },
+      "diagnostics": {
+        "topStrengthTitle": "Главная опора (Top Strength)",
+        "primaryWeaknessTitle": "Главная уязвимость / Блокер допуска",
+        "blindSpotTitle": "Слепое пятно (Высокое отклонение RD)",
+        "attemptsShort": "попыток",
+        "gateTarget": "Порог допуска: {rating}",
+        "trainWarmup": "Разминка",
+        "fixInWarmup": "Исправить в разминке",
+        "calibrateInWarmup": "Откалибровать в разминке",
+        "warmupAction": "Тренировать в WarmUp",
+        "notEnoughData": "Решите больше задач в этой дисциплине для автоматической диагностики.",
+        "allCalibrated": "Все темы откалиброваны! Слепых пятен с высоким RD не обнаружено."
+      },
+      "map": {
+        "endgameTitle": "Аналитическая карта эндшпильных доменов и классов",
+        "endgameSubtitle": "Горизонтальные индикаторы показывают ваш Glicko-2 относительно порога допуска ({gate}).",
+        "tacticsTitle": "Тактический радар: Структурный компас и 4 боевых контура",
+        "tacticsSubtitle": "Рейтинг Glicko-2, точность EMA и расщепление на короткий (1-2 хода) и глубокий (3+ хода) горизонт счета (порог: {gate}).",
+        "sortWeakest": "Слабые сверху",
+        "sortBlindSpots": "Мало попыток",
+        "sortStrongest": "Сильные сверху",
+        "attemptsShort": "поп.",
+        "domainsHeader": "Домены эндшпиля",
+        "gateMarkerLabel": "Порог: {gate}",
+        "classesCount": "классов",
+        "activeDomainDrilldown": "Детализация классов домена",
+        "trainEntireDomain": "Тренировать весь домен",
+        "trainShort": "Старт",
+        "structuralCompass": "Структурный компас",
+        "motifsCount": "мотивов",
+        "shortHorizon": "Короткие (1-2х)",
+        "deepHorizon": "Глубокие (3+х)"
       }
     },
     "pricing": {
@@ -1002,6 +1046,274 @@
           "linesCount": "{count} линий"
         }
       }
+    },
+    "trainingCenter": {
+      "title": "Тренировочный Центр",
+      "subtitle": "Единая система курсов Glicko-2, Метод Дятла (24ч / 3×) и целевая разминка",
+      "disciplines": {
+        "tactics": "Тактика",
+        "theoretical_endgames": "Теория эндшпиля",
+        "practical_chess": "Практический эндшпиль",
+        "finishhim": "Добивание (Finish Him)"
+      },
+      "modes": {
+        "courseTab": "Курсы (7 / 30 дней)",
+        "warmupTab": "Быстрая разминка (WarmUp)",
+        "courseBadge": "КУРС",
+        "warmupBadge": "РАЗМИНКА"
+      },
+      "actions": {
+        "analyze": "Анализ",
+        "backToHub": "В Тренировочный Центр",
+        "continueSession": "Продолжить",
+        "dismissSession": "Сбросить",
+        "exitAnalysis": "Выйти из анализа",
+        "nextCourseBatch": "Следующий батч курса",
+        "nextPuzzle": "Далее",
+        "openCabinet": "Личный кабинет",
+        "pauseToHub": "Пауза / В Центр",
+        "resumeSession": "Продолжить сессию",
+        "showSolution": "Показать решение"
+      },
+      "badges": {
+        "analysis": "АНАЛИЗ",
+        "holdDrawFide": "УДЕРЖАТЬ НИЧЬЮ — FIDE",
+        "objectiveHoldDraw": "Удержать ничью (FIDE)",
+        "objectiveWin": "Игра на победу",
+        "winTarget": "ИГРА НА ПОБЕДУ",
+        "woodpeckerStreak": "Дятел {streak}/3"
+      },
+      "units": {
+        "dayShort": "д",
+        "hourShort": "ч",
+        "minShort": "м"
+      },
+      "woodpecker": {
+        "title": "Очередь Метода Дятла (24ч пауза · 3× подряд)",
+        "vaultTitle": "Хранилище Дятла",
+        "dueNow": "Готовы к повтору",
+        "dueShort": "к повтору",
+        "cooldown24h": "Пауза 24ч",
+        "queued24h": "В очередь Дятла (24ч)",
+        "graduated": "Изучено сегодня (3/3)",
+        "mastered": "Изучено навсегда",
+        "masteredShort": "изучено"
+      },
+      "session": {
+        "unfinishedBadge": "НЕЗАВЕРШЕННАЯ СЕССИЯ",
+        "activeTitle": "Активная тренировочная сессия",
+        "completedPuzzles": "решено"
+      },
+      "course": {
+        "activeProgressTitle": "Прогресс активного курса",
+        "noActiveCourseShort": "Нет активного курса",
+        "puzzlesSolved": "задач решено",
+        "quotaTarget": "Квота: {count} задач",
+        "durationDays": "{days} дней",
+        "expired": "Время истекло",
+        "batchSizeLabel": "Размер тренировочного батча:",
+        "launchBatchBtn": "Запустить батч ({count})",
+        "abortBtn": "Прервать курс",
+        "abortConfirmTitle": "Прервать активный курс?",
+        "abortConfirmMessage": "Курс перейдет в историю со статусом прерванного, но весь ваш рейтинг Glicko-2, очередь Дятла и 12-месячная статистика сохранятся.",
+        "selectTierLabel": "1. Уровень сложности курса",
+        "selectDurationLabel": "2. Длительность и квота курса",
+        "startCourseBtn": "Начать курс ({days} дн. · {quota} задач)",
+        "status": {
+          "active": "Активен",
+          "completed": "Завершен",
+          "incomplete": "Не завершен",
+          "aborted": "Прерван"
+        }
+      },
+      "gate": {
+        "title": "Допуск к уровню {tier}",
+        "conditionQuota": "1. Закрыть квоту курса ({days} дн.)",
+        "conditionScopes": "2. Рейтинг ≥ {rating} во всех обязательных темах",
+        "done": "Выполнено",
+        "pending": "В процессе",
+        "laggingScopesLabel": "Отстающие темы ({count})",
+        "masterUnlockedTitle": "Уровень Master открыт!",
+        "masterUnlockedDesc": "Вы достигли высшего уровня допуска в этой дисциплине. Все курсы доступны без ограничений."
+      },
+      "warmup": {
+        "selectTierLabel": "1. Сложность задач",
+        "selectCountLabel": "2. Количество задач в сессии",
+        "puzzlesUnit": "задач",
+        "focusGroupLabel": "3. Контур фокусировки (опционально)",
+        "focusKeyLabel": "4. Конкретная тема / класс",
+        "objectiveFilterLabel": "5. Целевой вектор (Теория)",
+        "objectiveAll": "Любая цель (Победа + Ничья)",
+        "startBtn": "Запустить разминку ({count} задач)",
+        "focusGroups": {
+          "all": "Все темы (авто-баланс тренера)",
+          "motif_group": "Боевой контур мотивов",
+          "motif": "Конкретный тактический мотив",
+          "phase": "Стадия партии",
+          "length": "Глубина расчета (длина)",
+          "goal": "Тактическая цель",
+          "cognitive": "Когнитивный профиль",
+          "master_game": "Партии мастеров",
+          "domain": "Эндшпильный домен",
+          "class": "Материальный класс",
+          "objective": "Целевой вектор (Win / Hold Draw)"
+        },
+        "motifGroups": {
+          "geometry": "Геометрия (9)",
+          "operator": "Операторы (7)",
+          "concept": "Концепты (3)",
+          "trigger": "Триггеры (6)"
+        }
+      },
+      "play": {
+        "attemptSolved": "Задача решена верно!",
+        "attemptFailed": "Ошибка! Задача отправлена в очередь Дятла на 24ч",
+        "solvedShort": "ВЕРНО",
+        "failedShort": "ОШИБКА"
+      },
+      "sidebar": {
+        "queueTitle": "Очередь сессии",
+        "solvedRatio": "Точность",
+        "sparringBot": "Спарринг-бот"
+      },
+      "promotion": {
+        "unlockedTitle": "Новый уровень открыт: {tier}!",
+        "unlockedSubtitle": "Вы выполнили квоту курса и преодолели порог рейтинга во всех темах."
+      },
+      "report": {
+        "completedHeading": "Отчет о тренировочной сессии",
+        "solvedTotal": "Решено / Всего",
+        "accuracy": "Точность сессии",
+        "netDelta": "Изменение Glicko-2",
+        "avgTime": "Среднее время",
+        "totalTime": "Общее время",
+        "puzzleBreakdownTitle": "Разбор задач сессии",
+        "clickToAnalyzeHint": "Нажмите на задачу для анализа со Stockfish"
+      },
+      "taxonomy": {
+        "master_game": {
+          "true": "Партии титулованных мастеров",
+          "false": "Турнирная практика"
+        },
+        "scopes": {
+          "pawn": "Пешечные окончания",
+          "rook": "Ладейные окончания",
+          "minor": "Легкофигурные окончания",
+          "rook_minor": "Ладья и легкая фигура",
+          "queen": "Ферзевые окончания",
+          "double_rook": "Двухладейные окончания",
+          "extra": "Многофигурные окончания",
+          "P": "Пешечные (K+P)",
+          "R": "Ладейные (K+R)",
+          "B": "Слоновые (K+B)",
+          "N": "Коневые (K+N)",
+          "BB": "Два слона (K+BB)",
+          "BN": "Слон и конь (K+BN)",
+          "NN": "Два коня (K+NN)",
+          "RB": "Ладья и слон (R+B)",
+          "RN": "Ладья и конь (R+N)",
+          "Q": "Чисто ферзевые (K+Q)",
+          "QP": "Ферзь и пешки (Q+P)",
+          "QR": "Ферзь и ладья (Q+R)",
+          "QB": "Ферзь и слон (Q+B)",
+          "QN": "Ферзь и конь (Q+N)",
+          "RR": "Две ладьи (RR vs RR)",
+          "RR_minor": "Две ладьи и легкая фигура",
+          "Q_minor": "Ферзь и легкая фигура",
+          "other": "Сложные соотношения",
+          "fork": "Двойной удар (Вилка)",
+          "pin": "Связка",
+          "skewer": "Линейный удар (Рентген)",
+          "xRayAttack": "Рентген-атака",
+          "discoveredAttack": "Вскрытое нападение",
+          "doubleCheck": "Двойной шах",
+          "hookMate": "Хук-мат",
+          "backRankMate": "Мат по последней горизонтали",
+          "smotheredMate": "Спертый мат",
+          "trappedPiece": "Ловля фигуры (Капкан)",
+          "sacrifice": "Жертва материала",
+          "attraction": "Завлечение",
+          "deflection": "Отвлечение",
+          "capturingDefender": "Уничтожение защиты",
+          "interference": "Перекрытие",
+          "clearance": "Освобождение поля / линии",
+          "intermezzo": "Промежуточный ход (Цвишенцуг)",
+          "defensiveMove": "Точная защита",
+          "quietMove": "Тихий ход",
+          "zugzwang": "Цугцванг",
+          "kingsideAttack": "Атака на королевском фланге",
+          "queensideAttack": "Атака на ферзевом фланге",
+          "exposedKing": "Открытый король",
+          "attackingF2F7": "Удар на f2 / f7",
+          "advancedPawn": "Далеко продвинутая пешка",
+          "promotion": "Превращение пешки",
+          "opening": "Дебют",
+          "middlegame": "Миттельшпиль",
+          "endgame": "Эндшпиль",
+          "oneMove": "В 1 ход (Мгновенный удар)",
+          "short": "Короткий расчет (2 хода)",
+          "long": "Глубокий расчет (3 хода)",
+          "veryLong": "Дальний расчет (4+ хода)",
+          "mate": "Матовая атака",
+          "material_gain": "Выигрыш материала",
+          "equalize": "Спасение / Уравнение",
+          "pattern_recognition": "Распознавание паттернов",
+          "tactical_combining": "Комбинационное зрение",
+          "deep_calculation": "Глубокий счет вариантов",
+          "quiet_precision": "Тихая точность",
+          "win": "Игра на победу",
+          "hold_draw": "Удержание ничьей (FIDE)",
+          "PAWN": "Пешечные окончания",
+          "KNIGHT": "Коневые окончания",
+          "BISHOP": "Слоновые окончания",
+          "ROOK": "Ладейные окончания",
+          "QUEEN": "Ферзевые окончания",
+          "COMPLEX": "Сложные окончания",
+          "EXTRA": "Лишняя пешка (Реализация)",
+          "pawnEnding": "Пешечные окончания",
+          "knightEnding": "Коневые окончания",
+          "knightVsPawns": "Конь против пешек",
+          "twoKnightsVsPawn": "Два коня против пешки",
+          "bishopVsPawns": "Слон против пешек",
+          "oppositeColorBishops": "Разноцветные слоны",
+          "sameColorBishops": "Одноцветные слоны",
+          "twoBishopsEnding": "Два слона",
+          "doubleRookEnding": "Двухладейные окончания",
+          "rookEnding": "Ладейные окончания",
+          "rookVsPawns": "Ладья против пешек",
+          "queenEnding": "Ферзевые окончания",
+          "queenVsPawns": "Ферзь против пешек",
+          "bishopKnightEnding": "Слон и конь (Мат и эндшпиль)",
+          "bishopVsKnight": "Слон против коня",
+          "mixEnding": "Смешанные окончания",
+          "queenBishopVsQueen": "Ферзь и слон против ферзя",
+          "queenKnightVsQueen": "Ферзь и конь против ферзя",
+          "queenMinorVsQueenMinor": "Ферзь с легкой фигурой",
+          "queenRookEnding": "Ферзь и ладья",
+          "queenVsMinors": "Ферзь против легких фигур",
+          "queenVsRook": "Ферзь против ладьи",
+          "queenVsRookMinor": "Ферзь против ладьи и фигуры",
+          "queenVsTwoRooks": "Ферзь против двух ладей",
+          "rookMinorVsRook": "Ладья и фигура против ладьи",
+          "rookMinorVsRookMinor": "Ладья с легкой фигурой",
+          "rookVsMinor": "Ладья против легкой фигуры",
+          "rookVsTwoMinors": "Ладья против двух легких фигур",
+          "extraPawn": "Реализация лишней пешки",
+          "crushing": "Решающий перевес",
+          "advantage": "Позиционный / материальный перевес",
+          "equality": "Уравнение / Спасение",
+          "pure_calc": "Чистый счет вариантов (Pure Calc)",
+          "geometry_only": "Геометрическое зрение",
+          "operator_geometry": "Комбинационные операторы",
+          "other_motif": "Специальные мотивы",
+          "discoveredCheck": "Вскрытый шах",
+          "hangingPiece": "Незащищенная фигура"
+        }
+      },
+      "warmupPage": {
+        "title": "Целевая Разминка (WarmUp)",
+        "subtitle": "Свободный выбор любой сложности, мотивов, доменов и классов с полным учетом Glicko-2 и Метода Дятла"
+      }
     }
   },
   "shared": {
@@ -1021,7 +1333,9 @@
       "repertoire": "Студия",
       "login": "Вход",
       "logout": "Выход",
-      "loginWithLichess": "Войти через Lichess"
+      "loginWithLichess": "Войти через Lichess",
+      "trainingCenter": "Тренировочный Центр",
+      "warmup": "Разминка (WarmUp)"
     },
     "errors": {
       "backendConnectionFailed": "Не удалось подключиться к серверу.",
@@ -1079,6 +1393,9 @@
       "practicalChess": "ПРАКТИКА",
       "theoryEndgames": "ТЕОРИЯ",
       "repertoire": "Репертуар"
+    },
+    "actions": {
+      "retry": "Повторить"
     }
   }
 }

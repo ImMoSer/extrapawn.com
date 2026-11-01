@@ -16,6 +16,20 @@ import { GameAudioEngine } from './GameAudioEngine'
 
 export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS' | 'FAIRPLAY'
 
+export const FIDE_DRAW_REASONS = [
+  'stalemate',
+  'insufficient_material',
+  'threefold_repetition',
+  'fifty_move_rule',
+  'draw',
+] as const
+
+export type FideDrawReason = (typeof FIDE_DRAW_REASONS)[number]
+
+export function isFideDrawReason(reason?: string): reason is FideDrawReason {
+  return !!reason && (FIDE_DRAW_REASONS as readonly string[]).includes(reason)
+}
+
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 function normalizeFenForRepetition(fen: string): string {
@@ -121,6 +135,14 @@ export const useGameStore = defineStore('game', () => {
       gameEndOutcome = { winner: outcomeDetails.winner, reason }
     }
 
+    // FIDE Article 9.3: 50-move rule draw (checked after checkmate/stalemate so 100th-ply checkmate still wins)
+    if (!isGameOver && chessPosition.halfmoves >= 100) {
+      isGameOver = true
+      gameEndOutcome = { winner: undefined, reason: 'fifty_move_rule' }
+      logger.info(`[GameStore] 50-move rule draw detected (halfmoves: ${chessPosition.halfmoves}).`)
+    }
+
+    // FIDE Article 9.2: Threefold repetition draw
     if (!isGameOver) {
       const fenHistory = pgnService.getFenHistoryForRepetition()
       const currentRepetitionFen = normalizeFenForRepetition(boardStore.fen)

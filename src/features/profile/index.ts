@@ -1,3 +1,5 @@
-export { default as ThemeRoseChart } from './ui/ThemeRoseChart.vue'
-export { default as UserProfileHeader } from './ui/UserProfileHeader.vue'
+export { default as CabinetMacroPulse } from './ui/CabinetMacroPulse.vue'
+export { default as CabinetDiagnosticStrip } from './ui/CabinetDiagnosticStrip.vue'
+export { default as CabinetEndgameMap } from './ui/CabinetEndgameMap.vue'
+export { default as CabinetTacticsMap } from './ui/CabinetTacticsMap.vue'
 export { default as UserProfileWidget } from './ui/UserProfileWidget.vue'

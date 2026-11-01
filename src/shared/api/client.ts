@@ -11,6 +11,22 @@ if (!BACKEND_API_URL) {
   )
 }
 
+function extractErrorMessage(data: unknown, fallback: string): string {
+  if (typeof data === 'string' && data.trim().length > 0) {
+    return data
+  }
+  if (data && typeof data === 'object') {
+    const rec = data as Record<string, unknown>
+    if (typeof rec.error === 'string' && rec.error.trim().length > 0) {
+      return rec.error
+    }
+    if (typeof rec.message === 'string' && rec.message.trim().length > 0) {
+      return rec.message
+    }
+  }
+  return fallback
+}
+
 /**
  * Perform a generic fetch request
  */
@@ -32,42 +48,40 @@ export async function apiClient<T>(
       ...defaultHeaders,
       ...options.headers,
     },
-    // by default always include credentials if interacting with our backend, as seen in AuthService.
     credentials: options.credentials || 'include',
   })
 
   if (!response.ok) {
-    if (response.status === 401) {
-      let errorData
+    let errorData: unknown
+    const rawText = await response.text()
+    if (rawText) {
       try {
-        errorData = await response.json()
+        errorData = JSON.parse(rawText) as unknown
       } catch {
-        errorData = { message: 'Unauthorized' }
+        errorData = rawText
       }
-      throw new ApiError(401, typeof errorData === 'string' ? errorData : (errorData.message || 'Unauthorized'))
+    }
+
+    if (response.status === 401) {
+      throw new ApiError(401, extractErrorMessage(errorData, 'Unauthorized'), errorData)
     }
 
     if (response.status === 403) {
-      let errorData
-      try {
-        errorData = await response.json()
-      } catch {
-        errorData = { message: 'Forbidden' }
-      }
-      throw new ApiError(403, errorData.message || 'Forbidden')
+      throw new ApiError(403, extractErrorMessage(errorData, 'Forbidden'), errorData)
     }
 
-    let errorData
-    try {
-      errorData = await response.json()
-    } catch {
-      // Not JSON
-      errorData = await response.text()
-    }
-    throw new ApiError(response.status, response.statusText, errorData)
+    throw new ApiError(
+      response.status,
+      extractErrorMessage(errorData, response.statusText || `HTTP ${response.status}`),
+      errorData,
+    )
   }
 
-  const data = await response.json()
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  const data: unknown = await response.json()
 
   if (schema) {
     const parsed = schema.safeParse(data)

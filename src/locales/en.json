@@ -476,6 +476,50 @@
         "title": "Daily Training Plan",
         "viewLeaderboard": "View Leaderboard",
         "warmupDesc": "Warm up with easy puzzles"
+      },
+      "macro": {
+        "goToTrainingCenter": "Open Training Center",
+        "woodpeckerRuleHint": "24h cooldown · 3 consecutive clean solves to graduate",
+        "timelineTitle": "12-Month Mastery Timeline (Glicko-2 & EMA Accuracy)",
+        "rolling52Weeks": "Rolling 52-week performance window for the selected discipline",
+        "yearlySummary": "12M: {solved} solved ({acc}%) · {days} active days",
+        "noTimelineYet": "Complete your first training session to populate the 12-month mastery chart.",
+        "chartRating": "Glicko-2 Rating",
+        "chartAccuracy": "EMA Accuracy %",
+        "recentCoursesTitle": "Course History (7 / 30 Days)"
+      },
+      "diagnostics": {
+        "topStrengthTitle": "Top Strength",
+        "primaryWeaknessTitle": "Primary Weakness / Gate Blocker",
+        "blindSpotTitle": "Blind Spot (High RD Uncertainty)",
+        "attemptsShort": "attempts",
+        "gateTarget": "Gate Target: {rating}",
+        "trainWarmup": "WarmUp",
+        "fixInWarmup": "Fix in WarmUp",
+        "calibrateInWarmup": "Calibrate in WarmUp",
+        "warmupAction": "Train in WarmUp",
+        "notEnoughData": "Solve more puzzles in this discipline to unlock automated diagnostics.",
+        "allCalibrated": "All scopes calibrated! No high-RD blind spots remaining."
+      },
+      "map": {
+        "endgameTitle": "Endgame Domains & Material Classes Analytical Map",
+        "endgameSubtitle": "Horizontal bullet-bars display your Glicko-2 rating relative to the tier gate ({gate}).",
+        "tacticsTitle": "Tactical Radar: Structural Compass & 4 Combat Motif Contours",
+        "tacticsSubtitle": "Glicko-2 rating, EMA accuracy, and Short (1-2m) vs Deep (3+m) horizon breakdown (gate: {gate}).",
+        "sortWeakest": "Weakest First",
+        "sortBlindSpots": "Least Practiced",
+        "sortStrongest": "Strongest First",
+        "attemptsShort": "att.",
+        "domainsHeader": "Endgame Domains",
+        "gateMarkerLabel": "Gate: {gate}",
+        "classesCount": "classes",
+        "activeDomainDrilldown": "Domain Class Drill-Down",
+        "trainEntireDomain": "Train Entire Domain",
+        "trainShort": "Train",
+        "structuralCompass": "Structural Compass",
+        "motifsCount": "motifs",
+        "shortHorizon": "Short (1-2m)",
+        "deepHorizon": "Deep (3+m)"
       }
     },
     "pricing": {
@@ -1002,6 +1046,274 @@
           "linesCount": "{count} lines"
         }
       }
+    },
+    "trainingCenter": {
+      "title": "Training Center",
+      "subtitle": "Unified Glicko-2 Courses, Woodpecker Method (24h / 3×) & Targeted WarmUp",
+      "disciplines": {
+        "tactics": "Tactics",
+        "theoretical_endgames": "Theoretical Endgames",
+        "practical_chess": "Practical Endgames",
+        "finishhim": "Finish Him"
+      },
+      "modes": {
+        "courseTab": "Courses (7 / 30 Days)",
+        "warmupTab": "Targeted WarmUp",
+        "courseBadge": "COURSE",
+        "warmupBadge": "WARMUP"
+      },
+      "actions": {
+        "analyze": "Analyze",
+        "backToHub": "Back to Training Center",
+        "continueSession": "Continue",
+        "dismissSession": "Dismiss",
+        "exitAnalysis": "Exit Analysis",
+        "nextCourseBatch": "Next Course Batch",
+        "nextPuzzle": "Next Puzzle",
+        "openCabinet": "User Cabinet",
+        "pauseToHub": "Pause / Hub",
+        "resumeSession": "Resume Session",
+        "showSolution": "Show Solution"
+      },
+      "badges": {
+        "analysis": "ANALYSIS",
+        "holdDrawFide": "HOLD DRAW — FIDE",
+        "objectiveHoldDraw": "Hold Draw (FIDE)",
+        "objectiveWin": "Play for Win",
+        "winTarget": "PLAY FOR WIN",
+        "woodpeckerStreak": "Woodpecker {streak}/3"
+      },
+      "units": {
+        "dayShort": "d",
+        "hourShort": "h",
+        "minShort": "m"
+      },
+      "woodpecker": {
+        "title": "Woodpecker Queue (24h Cooldown · 3× Streak)",
+        "vaultTitle": "Woodpecker Vault",
+        "dueNow": "Due for Review",
+        "dueShort": "due now",
+        "cooldown24h": "24h Cooldown",
+        "queued24h": "Queued in Woodpecker (24h)",
+        "graduated": "Graduated Today (3/3)",
+        "mastered": "Mastered Forever",
+        "masteredShort": "mastered"
+      },
+      "session": {
+        "unfinishedBadge": "UNFINISHED SESSION",
+        "activeTitle": "Active Training Session",
+        "completedPuzzles": "completed"
+      },
+      "course": {
+        "activeProgressTitle": "Active Course Progress",
+        "noActiveCourseShort": "No Active Course",
+        "puzzlesSolved": "puzzles solved",
+        "quotaTarget": "Quota: {count} puzzles",
+        "durationDays": "{days} Days",
+        "expired": "Expired",
+        "batchSizeLabel": "Training Batch Size:",
+        "launchBatchBtn": "Launch Batch ({count})",
+        "abortBtn": "Abort Course",
+        "abortConfirmTitle": "Abort Active Course?",
+        "abortConfirmMessage": "The course will move to history as aborted, while all your Glicko-2 ratings, Woodpecker queue, and 12-month analytics remain intact.",
+        "selectTierLabel": "1. Select Course Tier",
+        "selectDurationLabel": "2. Course Duration & Quota",
+        "startCourseBtn": "Start Course ({days}d · {quota} puzzles)",
+        "status": {
+          "active": "Active",
+          "completed": "Completed",
+          "incomplete": "Incomplete",
+          "aborted": "Aborted"
+        }
+      },
+      "gate": {
+        "title": "Next Tier Gate: {tier}",
+        "conditionQuota": "1. Complete Course Quota ({days}d)",
+        "conditionScopes": "2. Reach Rating ≥ {rating} Across All Required Scopes",
+        "done": "Done",
+        "pending": "Pending",
+        "laggingScopesLabel": "Lagging Scopes ({count})",
+        "masterUnlockedTitle": "Master Tier Unlocked!",
+        "masterUnlockedDesc": "You have unlocked the highest tier in this discipline. All course tiers are available."
+      },
+      "warmup": {
+        "selectTierLabel": "1. Puzzle Difficulty Tier",
+        "selectCountLabel": "2. Session Batch Size",
+        "puzzlesUnit": "puzzles",
+        "focusGroupLabel": "3. Focus Contour (Optional)",
+        "focusKeyLabel": "4. Specific Motif / Class",
+        "objectiveFilterLabel": "5. Objective Vector (Theoretical)",
+        "objectiveAll": "Any Objective (Win + Hold Draw)",
+        "startBtn": "Start WarmUp ({count} puzzles)",
+        "focusGroups": {
+          "all": "All Scopes (Smart Coach Balance)",
+          "motif_group": "Combat Motif Contour",
+          "motif": "Specific Tactical Motif",
+          "phase": "Game Phase",
+          "length": "Calculation Horizon (Length)",
+          "goal": "Tactical Goal",
+          "cognitive": "Cognitive Profile",
+          "master_game": "Master Games",
+          "domain": "Endgame Domain",
+          "class": "Material Class",
+          "objective": "Objective Vector (Win / Hold Draw)"
+        },
+        "motifGroups": {
+          "geometry": "Geometry (9)",
+          "operator": "Operators (7)",
+          "concept": "Concepts (3)",
+          "trigger": "Triggers (6)"
+        }
+      },
+      "play": {
+        "attemptSolved": "Puzzle Solved!",
+        "attemptFailed": "Failed! Queued in Woodpecker for 24h cooldown",
+        "solvedShort": "SOLVED",
+        "failedShort": "FAILED"
+      },
+      "sidebar": {
+        "queueTitle": "Session Queue",
+        "solvedRatio": "Accuracy",
+        "sparringBot": "Sparring Bot"
+      },
+      "promotion": {
+        "unlockedTitle": "New Tier Unlocked: {tier}!",
+        "unlockedSubtitle": "You completed the course quota and cleared the rating gate across all scopes."
+      },
+      "report": {
+        "completedHeading": "Training Session Report",
+        "solvedTotal": "Solved / Total",
+        "accuracy": "Session Accuracy",
+        "netDelta": "Glicko-2 Net Delta",
+        "avgTime": "Avg Time / Puzzle",
+        "totalTime": "Total Time",
+        "puzzleBreakdownTitle": "Session Puzzle Breakdown",
+        "clickToAnalyzeHint": "Click any puzzle row to analyze with Stockfish on the board"
+      },
+      "taxonomy": {
+        "master_game": {
+          "true": "Titled Master Games",
+          "false": "Tournament Practice"
+        },
+        "scopes": {
+          "pawn": "Pawn Endgames",
+          "rook": "Rook Endgames",
+          "minor": "Minor Piece Endgames",
+          "rook_minor": "Rook & Minor Piece",
+          "queen": "Queen Endgames",
+          "double_rook": "Double Rook Endgames",
+          "extra": "Multi-Piece Endgames",
+          "P": "Pawn Endings (K+P)",
+          "R": "Rook Endings (K+R)",
+          "B": "Bishop Endings (K+B)",
+          "N": "Knight Endings (K+N)",
+          "BB": "Two Bishops (K+BB)",
+          "BN": "Bishop & Knight (K+BN)",
+          "NN": "Two Knights (K+NN)",
+          "RB": "Rook & Bishop (R+B)",
+          "RN": "Rook & Knight (R+N)",
+          "Q": "Queen Endings (K+Q)",
+          "QP": "Queen & Pawns (Q+P)",
+          "QR": "Queen & Rook (Q+R)",
+          "QB": "Queen & Bishop (Q+B)",
+          "QN": "Queen & Knight (Q+N)",
+          "RR": "Double Rooks (RR vs RR)",
+          "RR_minor": "Double Rooks & Minor Piece",
+          "Q_minor": "Queen & Minor Piece",
+          "other": "Complex Material Balances",
+          "fork": "Fork (Double Attack)",
+          "pin": "Pin",
+          "skewer": "Skewer",
+          "xRayAttack": "X-Ray Attack",
+          "discoveredAttack": "Discovered Attack",
+          "doubleCheck": "Double Check",
+          "hookMate": "Hook Mate",
+          "backRankMate": "Back Rank Mate",
+          "smotheredMate": "Smothered Mate",
+          "trappedPiece": "Trapped Piece",
+          "sacrifice": "Sacrifice",
+          "attraction": "Attraction",
+          "deflection": "Deflection",
+          "capturingDefender": "Capturing the Defender",
+          "interference": "Interference",
+          "clearance": "Clearance",
+          "intermezzo": "Intermezzo (Zwischenzug)",
+          "defensiveMove": "Defensive Move",
+          "quietMove": "Quiet Move",
+          "zugzwang": "Zugzwang",
+          "kingsideAttack": "Kingside Attack",
+          "queensideAttack": "Queenside Attack",
+          "exposedKing": "Exposed King",
+          "attackingF2F7": "Attacking f2 / f7",
+          "advancedPawn": "Advanced Pawn",
+          "promotion": "Pawn Promotion",
+          "opening": "Opening",
+          "middlegame": "Middlegame",
+          "endgame": "Endgame",
+          "oneMove": "One-Move Strike",
+          "short": "Short Horizon (2 Moves)",
+          "long": "Deep Horizon (3 Moves)",
+          "veryLong": "Extended Calculation (4+ Moves)",
+          "mate": "Checkmate Attack",
+          "material_gain": "Winning Material",
+          "equalize": "Defensive Equalization",
+          "pattern_recognition": "Pattern Recognition",
+          "tactical_combining": "Tactical Combining",
+          "deep_calculation": "Deep Calculation",
+          "quiet_precision": "Quiet Precision",
+          "win": "Play for Win",
+          "hold_draw": "Hold Draw (FIDE)",
+          "PAWN": "Pawn Endgames",
+          "KNIGHT": "Knight Endgames",
+          "BISHOP": "Bishop Endgames",
+          "ROOK": "Rook Endgames",
+          "QUEEN": "Queen Endgames",
+          "COMPLEX": "Complex Endgames",
+          "EXTRA": "Extra Pawn Conversion",
+          "pawnEnding": "Pawn Endings",
+          "knightEnding": "Knight Endings",
+          "knightVsPawns": "Knight vs Pawns",
+          "twoKnightsVsPawn": "Two Knights vs Pawn",
+          "bishopVsPawns": "Bishop vs Pawns",
+          "oppositeColorBishops": "Opposite-Colored Bishops",
+          "sameColorBishops": "Same-Colored Bishops",
+          "twoBishopsEnding": "Two Bishops Ending",
+          "doubleRookEnding": "Double Rook Endings",
+          "rookEnding": "Rook Endings",
+          "rookVsPawns": "Rook vs Pawns",
+          "queenEnding": "Queen Endings",
+          "queenVsPawns": "Queen vs Pawns",
+          "bishopKnightEnding": "Bishop & Knight Ending",
+          "bishopVsKnight": "Bishop vs Knight",
+          "mixEnding": "Mixed Endings",
+          "queenBishopVsQueen": "Queen & Bishop vs Queen",
+          "queenKnightVsQueen": "Queen & Knight vs Queen",
+          "queenMinorVsQueenMinor": "Queen & Minor Piece",
+          "queenRookEnding": "Queen & Rook Ending",
+          "queenVsMinors": "Queen vs Minor Pieces",
+          "queenVsRook": "Queen vs Rook",
+          "queenVsRookMinor": "Queen vs Rook & Minor",
+          "queenVsTwoRooks": "Queen vs Two Rooks",
+          "rookMinorVsRook": "Rook & Minor vs Rook",
+          "rookMinorVsRookMinor": "Rook & Minor Piece",
+          "rookVsMinor": "Rook vs Minor Piece",
+          "rookVsTwoMinors": "Rook vs Two Minor Pieces",
+          "extraPawn": "Extra Pawn Conversion",
+          "crushing": "Crushing Advantage",
+          "advantage": "Winning Advantage",
+          "equality": "Defensive Equalization",
+          "pure_calc": "Pure Calculation",
+          "geometry_only": "Geometric Vision",
+          "operator_geometry": "Tactical Operators",
+          "other_motif": "Specialized Motifs",
+          "discoveredCheck": "Discovered Check",
+          "hangingPiece": "Hanging Piece"
+        }
+      },
+      "warmupPage": {
+        "title": "Targeted WarmUp Arena",
+        "subtitle": "Free selection of any tier, motif contour, endgame domain, or material class with full Glicko-2 & Woodpecker tracking"
+      }
     }
   },
   "shared": {
@@ -1021,7 +1333,9 @@
       "repertoire": "Study",
       "login": "Login",
       "logout": "Logout",
-      "loginWithLichess": "Login with Lichess"
+      "loginWithLichess": "Login with Lichess",
+      "trainingCenter": "Training Center",
+      "warmup": "WarmUp"
     },
     "errors": {
       "backendConnectionFailed": "Could not connect to the server.",
@@ -1079,6 +1393,9 @@
       "practicalChess": "PRACTICE",
       "theoryEndgames": "THEORY",
       "repertoire": "Repertoire"
+    },
+    "actions": {
+      "retry": "Retry"
     }
   }
 }

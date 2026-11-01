@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import {
-  BookOutline,
   CashOutline,
-  ExtensionPuzzleOutline,
+  FlameOutline,
   FlashOutline,
-  GridOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
-  SkullOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
@@ -29,14 +26,10 @@ defineProps({
 
 const emit = defineEmits(['select'])
 
-/**
- * Рендерит иконку n-icon
- */
 function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-// Custom Icon for Legal (§)
 const ParagraphIcon = () =>
   h('span', { style: 'font-weight: bold; font-size: 1.2rem; font-family: serif;' }, '§')
 
@@ -47,29 +40,14 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline),
   },
   {
-    label: () => t('shared.nav.tactics'),
-    key: '/tactics',
-    icon: renderIcon(ExtensionPuzzleOutline),
-  },
-  {
-    label: () => t('shared.nav.finishHim'),
-    key: '/finish-him',
-    icon: renderIcon(SkullOutline),
-  },
-  {
-    label: () => t('shared.nav.practicalChess'),
-    key: '/practical-chess',
-    icon: renderIcon(GridOutline),
-  },
-  {
-    label: () => t('shared.nav.theoryEndgames'),
-    key: '/theory-endings',
-    icon: renderIcon(BookOutline),
-  },
-  {
-    label: () => t('shared.nav.taskToday'),
-    key: '/task-today',
+    label: () => t('shared.nav.trainingCenter'),
+    key: '/training',
     icon: renderIcon(FlashOutline),
+  },
+  {
+    label: () => t('shared.nav.warmup'),
+    key: '/warmup',
+    icon: renderIcon(FlameOutline),
   },
   {
     label: () => t('shared.nav.userCabinet'),
@@ -98,20 +76,20 @@ const menuOptions: MenuOption[] = [
   },
 ]
 
-// Determine current active key based on route path
 const activeKey = computed(() => {
   const path = route.path
   if (path === '/') return '/'
 
-  // Find match
-  const matched = menuOptions.find((opt) => opt.key && path.startsWith(opt.key as string))
+  const matched = menuOptions.find(
+    (opt) => opt.key && opt.key !== '/' && path.startsWith(opt.key as string),
+  )
   if (matched) return matched.key as string
 
   return path
 })
 
 const handleUpdateValue = (key: string) => {
-  router.push(key)
+  void router.push(key)
   emit('select', key)
 }
 </script>
