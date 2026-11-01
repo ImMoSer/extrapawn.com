@@ -78,6 +78,11 @@ export default defineConfig(({ mode }) => {
           target: 'http://127.0.0.1:3000',
           changeOrigin: true,
         },
+        '/challenge/records.json': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+          rewrite: () => '/api/training/challenges/records.json',
+        },
       }
     },
     build: {

@@ -1218,7 +1218,19 @@
         "noParticipantsYet": "Станьте первым, кто решит этот челлендж!",
         "confirmSurrenderTitle": "Сдаться и открыть Анализ?",
         "confirmSurrenderMessage": "Переход к анализу откроет решение и зафиксирует сдачу (0 баллов). Вы больше не сможете делать попытки в этой задаче.",
-        "confirmSurrenderBtn": "Сдаться и в Анализ"
+        "confirmSurrenderBtn": "Сдаться и в Анализ",
+        "openRecordsBtn": "Лидеры челленджей",
+        "recordsTitle": "Лидеры челленджей",
+        "recordsSubtitle": "Общий зачёт по всем челленджам (сумма очков 1/N за решение и суммарное время)",
+        "recordsTableHeader": "Сводная таблица рекордов",
+        "totalParticipantsCount": "Участников: {count}",
+        "legendLabel": "Дисциплины",
+        "secondsBarLegend": "Сумма секунд (время решения)",
+        "pointsBarLabel": "Сумма очков",
+        "secondsBarLabel": "Сумма секунд",
+        "ptsUnit": "очк.",
+        "userSolvedStats": "Решено: {solved}/{puzzles} · Попыток: {attempts}",
+        "refreshBtn": "Обновить"
       }
     }
   },

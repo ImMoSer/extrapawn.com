@@ -1218,7 +1218,19 @@
         "noParticipantsYet": "Sei der Erste, der diese Challenge löst!",
         "confirmSurrenderTitle": "Aufgeben & Analyse öffnen?",
         "confirmSurrenderMessage": "Das Öffnen der Analyse zeigt die Lösung und wertet die Challenge als aufgegeben (0 Punkte). Weitere Versuche sind danach nicht mehr möglich.",
-        "confirmSurrenderBtn": "Aufgeben & Analysieren"
+        "confirmSurrenderBtn": "Aufgeben & Analysieren",
+        "openRecordsBtn": "Challenge-Rekorde",
+        "recordsTitle": "Challenge-Bestenliste",
+        "recordsSubtitle": "Gesamtwertung aller Challenges (1/N Punkte pro gelöster Aufgabe & Gesamtlösungszeit)",
+        "recordsTableHeader": "Gesamtrangliste der Challenges",
+        "totalParticipantsCount": "{count} Teilnehmer",
+        "legendLabel": "Disziplinen",
+        "secondsBarLegend": "Gesamtzeit (Sekunden)",
+        "pointsBarLabel": "Gesamtpunkte",
+        "secondsBarLabel": "Gesamtzeit",
+        "ptsUnit": "Pkt.",
+        "userSolvedStats": "{solved}/{puzzles} gelöst · {attempts} Versuche",
+        "refreshBtn": "Aktualisieren"
       }
     }
   },

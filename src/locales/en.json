@@ -1218,7 +1218,19 @@
         "noParticipantsYet": "Be the first to solve this challenge!",
         "confirmSurrenderTitle": "Give up & open Analysis?",
         "confirmSurrenderMessage": "Opening Analysis will reveal the solution and finalize your challenge score as surrendered (0 points). You won't be able to make further attempts.",
-        "confirmSurrenderBtn": "Give Up & Analyze"
+        "confirmSurrenderBtn": "Give Up & Analyze",
+        "openRecordsBtn": "Challenge Records",
+        "recordsTitle": "Challenge Leaders",
+        "recordsSubtitle": "Global ranking across all challenges (1/N points per solved puzzle & total solve time)",
+        "recordsTableHeader": "Combined Challenge Standings",
+        "totalParticipantsCount": "{count} participants",
+        "legendLabel": "Disciplines",
+        "secondsBarLegend": "Total Solve Time (sec)",
+        "pointsBarLabel": "Total Score",
+        "secondsBarLabel": "Solve Time",
+        "ptsUnit": "pts",
+        "userSolvedStats": "{solved}/{puzzles} solved · {attempts} attempts",
+        "refreshBtn": "Refresh"
       }
     }
   },

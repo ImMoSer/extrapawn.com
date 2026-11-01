@@ -44,6 +44,11 @@ const router = createRouter({
       meta: { isGame: true, requiresAuth: true, game: 'warmup' },
     },
     {
+      path: '/challenge/records',
+      name: 'challenge-records',
+      component: () => import('@/pages/challenge').then((m) => m.ChallengeRecordsPage),
+    },
+    {
       path: '/challenge/:discipline/:puzzleId',
       name: 'challenge',
       component: () => import('@/pages/challenge').then((m) => m.ChallengePage),

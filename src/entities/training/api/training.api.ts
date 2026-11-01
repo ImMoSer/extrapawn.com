@@ -6,6 +6,7 @@ import type {
   CabinetDTO,
   CatalogManifestDTO,
   ChallengeAttemptRequest,
+  ChallengeRecordEntryDTO,
   ChallengeStateDTO,
   CourseDTO,
   CourseHistoryResponseDTO,
@@ -230,5 +231,15 @@ export const trainingApi = {
         method: 'POST',
       },
     )
+  },
+
+  async getChallengeRecords(): Promise<ChallengeRecordEntryDTO[]> {
+    const raw = await apiClient<unknown>('/training/challenges/records')
+    if (!Array.isArray(raw)) {
+      throw new Error(
+        '[trainingApi] Invalid ChallengeRecordEntryDTO[] payload: expected array. Fail-Fast!',
+      )
+    }
+    return raw as ChallengeRecordEntryDTO[]
   },
 }

@@ -590,4 +590,21 @@ export interface ChallengeAttemptRequest {
   time_ms: number
 }
 
+export interface ChallengeRecordEntryDTO {
+  rank: number
+  user_id: string
+  username: string
+  total_points: number
+  tactics_points: number
+  finishhim_points: number
+  practical_points: number
+  theoretical_points: number
+  total_time_ms: number
+  total_seconds: number
+  solved_count: number
+  attempted_puzzles: number
+  total_attempts: number
+}
+
+
 

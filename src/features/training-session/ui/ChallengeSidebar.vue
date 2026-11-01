@@ -76,6 +76,11 @@ function goToTrainingCenter(): void {
   store.stopChallenge()
   void router.push('/training')
 }
+
+function goToChallengeRecords(): void {
+  store.stopChallenge()
+  void router.push('/challenge/records')
+}
 </script>
 
 <template>
@@ -342,6 +347,12 @@ function goToTrainingCenter(): void {
 
     <!-- Footer Controls -->
     <div class="mt-auto pt-2 border-t border-border flex flex-col gap-2 shrink-0">
+      <NButton block size="small" type="primary" secondary @click="goToChallengeRecords()">
+        <template #icon>
+          <NIcon><TrophyOutline /></NIcon>
+        </template>
+        {{ t('features.trainingCenter.challenge.openRecordsBtn') }}
+      </NButton>
       <NButton block size="small" secondary @click="goToTrainingCenter()">
         {{ t('features.trainingCenter.actions.backToHub') }}
       </NButton>
