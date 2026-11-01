@@ -1201,6 +1201,24 @@
       "warmupPage": {
         "title": "Gezieltes WarmUp",
         "subtitle": "Freie Wahl jeder Stufe, Motiv-Kontur, Domäne oder Materialklasse mit vollem Glicko-2- & Specht-Tracking"
+      },
+      "challenge": {
+        "badge": "CHALLENGE",
+        "loading": "Challenge wird geladen...",
+        "errorTitle": "Challenge nicht verfügbar",
+        "notFoundError": "Die angeforderte Aufgabe wurde nicht gefunden oder der Link ist ungültig.",
+        "solvedBannerTitle": "Challenge gelöst!",
+        "surrenderedBannerTitle": "Aufgegeben",
+        "surrenderedShort": "AUFG.",
+        "attemptFailedTitle": "Falscher Zug",
+        "tryAgainBtn": "Erneut versuchen",
+        "currentAttemptLabel": "Versuch #{attempt}",
+        "leaderboardTitle": "Challenge-Teilnehmer",
+        "solvedParticipantsRatio": "{solved}/{total} gelöst",
+        "noParticipantsYet": "Sei der Erste, der diese Challenge löst!",
+        "confirmSurrenderTitle": "Aufgeben & Analyse öffnen?",
+        "confirmSurrenderMessage": "Das Öffnen der Analyse zeigt die Lösung und wertet die Challenge als aufgegeben (0 Punkte). Weitere Versuche sind danach nicht mehr möglich.",
+        "confirmSurrenderBtn": "Aufgeben & Analysieren"
       }
     }
   },

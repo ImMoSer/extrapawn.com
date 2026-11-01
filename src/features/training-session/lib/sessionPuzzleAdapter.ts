@@ -2,6 +2,7 @@ import { determineHumanColor, type PuzzleObjective, type PuzzlePuzzle } from '@/
 import {
   isValidTrainingDifficulty,
   isValidTrainingDiscipline,
+  type ChallengeStateDTO,
   type EndgamePuzzleV2,
   type HydratedSessionItem,
   type TacticalPuzzleV2,
@@ -255,4 +256,37 @@ export function adaptSessionItemToPuzzle(
 
   return adaptEndgamePuzzleV2(item.endgame, wpMeta)
 }
+
+export function adaptChallengeStateToPuzzle(state: ChallengeStateDTO): PuzzlePuzzle {
+  if (!isValidTrainingDiscipline(state.discipline)) {
+    throw new Error(
+      `[sessionPuzzleAdapter] Invalid challenge discipline "${String(state.discipline)}". Fail-Fast!`,
+    )
+  }
+  if (!state.puzzle_id?.trim()) {
+    throw new Error('[sessionPuzzleAdapter] Challenge state has empty puzzle_id. Fail-Fast!')
+  }
+
+  const wpMeta: WoodpeckerAdapterMeta = {
+    isWoodpecker: false,
+    woodpeckerStreak: 0,
+  }
+
+  if (state.discipline === 'tactics') {
+    if (!state.tactical) {
+      throw new Error(
+        `[sessionPuzzleAdapter] Missing tactical payload for challenge ${state.puzzle_id}. Fail-Fast!`,
+      )
+    }
+    return adaptTacticalPuzzleV2(state.tactical, wpMeta)
+  }
+
+  if (!state.endgame) {
+    throw new Error(
+      `[sessionPuzzleAdapter] Missing endgame payload for ${state.discipline} challenge ${state.puzzle_id}. Fail-Fast!`,
+    )
+  }
+  return adaptEndgamePuzzleV2(state.endgame, wpMeta)
+}
+
 

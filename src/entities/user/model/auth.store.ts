@@ -96,14 +96,23 @@ export const useAuthStore = defineStore('auth', () => {
     return isAuthenticated.value
   }
 
-  async function login(scopes: string[] = ['email:read', 'preference:read']): Promise<void> {
+  async function login(
+    scopes: string[] = ['email:read', 'preference:read'],
+    returnToPath?: string,
+  ): Promise<void> {
     logger.info('[AuthStore] Redirecting to backend for Lichess login...')
     isLoading.value = true
-    let url = `${BACKEND_API_URL}/auth/lichess/login`
+    const params = new URLSearchParams()
     if (scopes.length > 0) {
-      url += `?scopes=${encodeURIComponent(scopes.join(' '))}`
+      params.set('scopes', scopes.join(' '))
     }
-    window.location.href = url
+    const targetReturnTo = returnToPath ?? localStorage.getItem('redirect_after_login') ?? ''
+    if (targetReturnTo && targetReturnTo.startsWith('/') && !targetReturnTo.startsWith('//')) {
+      params.set('returnTo', targetReturnTo)
+      localStorage.removeItem('redirect_after_login')
+    }
+    const qs = params.toString()
+    window.location.href = `${BACKEND_API_URL}/auth/lichess/login${qs ? `?${qs}` : ''}`
   }
 
   async function logout(): Promise<void> {

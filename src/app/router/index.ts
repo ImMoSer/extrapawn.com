@@ -44,6 +44,12 @@ const router = createRouter({
       meta: { isGame: true, requiresAuth: true, game: 'warmup' },
     },
     {
+      path: '/challenge/:discipline/:puzzleId',
+      name: 'challenge',
+      component: () => import('@/pages/challenge').then((m) => m.ChallengePage),
+      meta: { isGame: true, requiresAuth: true, game: 'challenge' },
+    },
+    {
       path: '/task-today/:pathMatch(.*)*',
       redirect: '/training',
     },
@@ -177,7 +183,11 @@ router.beforeEach(async (to, from) => {
     )
 
     if (userConfirmedLogin === 'confirm') {
-      authStore.login()
+      await authStore.login(['email:read', 'preference:read'], to.fullPath)
+      return false
+    }
+    if (!from.name) {
+      return { name: 'welcome' }
     }
     return false
   }

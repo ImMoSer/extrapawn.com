@@ -555,3 +555,39 @@ export interface CabinetDTO {
   recent_courses: CourseDTO[]
 }
 
+// ============================================================================
+// Challenge Mode & Leaderboard DTOs
+// ============================================================================
+
+export type ChallengeStatus = 'in_progress' | 'solved' | 'surrendered'
+
+export interface ChallengeParticipantDTO {
+  rank: number
+  user_id: string
+  username: string
+  status: ChallengeStatus
+  solved: boolean
+  attempts: number
+  score_text: string
+  solved_time_ms?: number
+  updated_at: string
+  completed_at?: string
+}
+
+export interface ChallengeStateDTO {
+  discipline: TrainingDiscipline
+  puzzle_id: string
+  difficulty: TrainingDifficulty
+  bot_engine: BotLadderEngineId
+  tactical?: TacticalPuzzleV2
+  endgame?: EndgamePuzzleV2
+  my_entry?: ChallengeParticipantDTO
+  leaderboard: ChallengeParticipantDTO[]
+}
+
+export interface ChallengeAttemptRequest {
+  solved: boolean
+  time_ms: number
+}
+
+

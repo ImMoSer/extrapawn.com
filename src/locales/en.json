@@ -1201,6 +1201,24 @@
       "warmupPage": {
         "title": "Targeted WarmUp Arena",
         "subtitle": "Free selection of any tier, motif contour, endgame domain, or material class with full Glicko-2 & Woodpecker tracking"
+      },
+      "challenge": {
+        "badge": "CHALLENGE",
+        "loading": "Loading challenge...",
+        "errorTitle": "Challenge Unavailable",
+        "notFoundError": "The requested challenge puzzle was not found or the link is invalid.",
+        "solvedBannerTitle": "Challenge Solved!",
+        "surrenderedBannerTitle": "Surrendered",
+        "surrenderedShort": "GAVE UP",
+        "attemptFailedTitle": "Incorrect Move",
+        "tryAgainBtn": "Try Again",
+        "currentAttemptLabel": "Attempt #{attempt}",
+        "leaderboardTitle": "Challenge Participants",
+        "solvedParticipantsRatio": "{solved}/{total} solved",
+        "noParticipantsYet": "Be the first to solve this challenge!",
+        "confirmSurrenderTitle": "Give up & open Analysis?",
+        "confirmSurrenderMessage": "Opening Analysis will reveal the solution and finalize your challenge score as surrendered (0 points). You won't be able to make further attempts.",
+        "confirmSurrenderBtn": "Give Up & Analyze"
       }
     }
   },

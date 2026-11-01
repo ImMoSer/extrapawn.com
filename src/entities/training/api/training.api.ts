@@ -5,6 +5,8 @@ import type {
   AttemptResultDTO,
   CabinetDTO,
   CatalogManifestDTO,
+  ChallengeAttemptRequest,
+  ChallengeStateDTO,
   CourseDTO,
   CourseHistoryResponseDTO,
   CourseSessionRequest,
@@ -181,6 +183,52 @@ export const trainingApi = {
     const id = assertNonEmptyId('puzzleId', puzzleId)
     return apiClient<EndgamePuzzleV2>(
       `/training/puzzle/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`,
+    )
+  },
+
+  getChallengeState(
+    discipline: TrainingDiscipline,
+    puzzleId: string,
+  ): Promise<ChallengeStateDTO> {
+    const id = assertNonEmptyId('puzzleId', puzzleId)
+    return apiClient<ChallengeStateDTO>(
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`,
+    )
+  },
+
+  submitChallengeAttempt(
+    discipline: TrainingDiscipline,
+    puzzleId: string,
+    payload: ChallengeAttemptRequest,
+  ): Promise<ChallengeStateDTO> {
+    const id = assertNonEmptyId('puzzleId', puzzleId)
+    if (payload.time_ms < 0 || !Number.isFinite(payload.time_ms)) {
+      throw new Error(
+        `[trainingApi] Invalid challenge attempt time_ms (${String(payload.time_ms)}) for puzzle ${id}. Fail-Fast!`,
+      )
+    }
+    return apiClient<ChallengeStateDTO>(
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/attempt`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          solved: payload.solved,
+          time_ms: Math.round(payload.time_ms),
+        }),
+      },
+    )
+  },
+
+  surrenderChallenge(
+    discipline: TrainingDiscipline,
+    puzzleId: string,
+  ): Promise<ChallengeStateDTO> {
+    const id = assertNonEmptyId('puzzleId', puzzleId)
+    return apiClient<ChallengeStateDTO>(
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/surrender`,
+      {
+        method: 'POST',
+      },
     )
   },
 }
