@@ -10,7 +10,6 @@ const router = useRouter()
 
 const activeTab = ref('imprint')
 
-// Mapping of hash to tab name
 const tabMap: Record<string, string> = {
   '#imprint': 'imprint',
   '#privacy': 'privacy',
@@ -28,7 +27,6 @@ onMounted(() => {
   syncTabWithHash()
 })
 
-// Update hash when tab changes
 watch(activeTab, (newTab) => {
   const hash = Object.keys(tabMap).find((key) => tabMap[key] === newTab)
   if (hash && window.location.hash !== hash) {
@@ -36,7 +34,6 @@ watch(activeTab, (newTab) => {
   }
 })
 
-// Also listen for external hash changes (e.g. back button)
 watch(
   () => route.hash,
   () => {
@@ -48,7 +45,6 @@ const formatAddress = (text: string) => {
   return text.split('\n')
 }
 
-// Order definitions for content sections
 const orderedPrivacyKeys = [
   'intro',
   'logfiles',
@@ -78,12 +74,19 @@ const showPrecedenceNotice = computed(() => {
 </script>
 
 <template>
-  <div class="legal-page-container">
-    <n-card class="legal-card" :bordered="false">
-      <n-h1 align-text class="legal-title">{{ t('legal.title') }}</n-h1>
+  <div class="mx-auto my-2.5 max-w-[900px] px-2.5 sm:my-10 sm:px-5">
+    <n-card class="glass text-text-primary" :bordered="false">
+      <n-h1 align-text class="!mb-7.5 text-center font-display tracking-[2px] !text-neon-cyan uppercase">
+        {{ t('legal.title') }}
+      </n-h1>
 
       <!-- Language Precedence Notice -->
-      <n-alert v-if="showPrecedenceNotice" type="info" class="precedence-alert" :bordered="false">
+      <n-alert
+        v-if="showPrecedenceNotice"
+        type="info"
+        class="mb-7.5 !bg-neon-cyan/5 text-[0.95rem] leading-normal text-text-secondary italic"
+        :bordered="false"
+      >
         {{ t('legal.precedence') }}
       </n-alert>
 
@@ -92,17 +95,19 @@ const showPrecedenceNotice = computed(() => {
         type="line"
         animated
         justify-content="space-evenly"
-        class="legal-tabs"
       >
         <!-- IMPRESSUM -->
         <n-tab-pane name="imprint" :tab="t('legal.tabs.imprint')">
-          <div class="legal-content">
-            <n-h2>{{ t('legal.imprint.title') }}</n-h2>
+          <div class="px-2.5 py-5 leading-relaxed">
+            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+              {{ t('legal.imprint.title') }}
+            </n-h2>
             <n-text depth="3">{{ t('legal.imprint.subtitle') }}</n-text>
 
-            <n-p class="address-block">
-              <strong>{{ t('legal.imprint.name') }}</strong
-              ><br />
+            <n-p
+              class="mt-2.5 !mb-4 rounded-lg border-l-4 border-neon-cyan bg-elevated/50 p-3.5 !text-text-secondary"
+            >
+              <strong class="text-text-primary">{{ t('legal.imprint.name') }}</strong><br />
               <template
                 v-for="(line, index) in formatAddress(t('legal.imprint.address'))"
                 :key="index"
@@ -111,69 +116,80 @@ const showPrecedenceNotice = computed(() => {
               </template>
             </n-p>
 
-            <n-h2>{{ t('legal.imprint.contact') }}</n-h2>
-            <n-p>
+            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+              {{ t('legal.imprint.contact') }}
+            </n-h2>
+            <n-p class="!mb-4 !text-text-secondary">
               {{ t('legal.imprint.email') }}<br />
               {{ t('legal.imprint.phone') }}
             </n-p>
 
-            <n-p
-              ><strong>{{ t('legal.imprint.vatId') }}</strong></n-p
-            >
+            <n-p class="!mb-4 !text-text-secondary">
+              <strong class="text-text-primary">{{ t('legal.imprint.vatId') }}</strong>
+            </n-p>
 
             <n-divider />
 
-            <n-h2>{{ t('legal.imprint.dispute') }}</n-h2>
-            <n-p>
+            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+              {{ t('legal.imprint.dispute') }}
+            </n-h2>
+            <n-p class="!mb-4 !text-text-secondary">
               {{ t('legal.imprint.disputeText') }}
               <a
                 :href="t('legal.imprint.disputeLink')"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="legal-link"
+                class="break-all text-neon-cyan underline transition-opacity hover:opacity-80"
               >
                 {{ t('legal.imprint.disputeLink') }}
               </a>
             </n-p>
-            <n-p>{{ t('legal.imprint.disputeRefusal') }}</n-p>
+            <n-p class="!mb-4 !text-text-secondary">{{ t('legal.imprint.disputeRefusal') }}</n-p>
 
             <n-divider />
 
-            <n-h2>{{ t('legal.imprint.legalNotice') }}</n-h2>
-            <n-p
-              ><strong>{{ t('legal.imprint.liabilityTitle') }}</strong></n-p
-            >
-            <n-p>{{ t('legal.imprint.liabilityContent') }}</n-p>
+            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+              {{ t('legal.imprint.legalNotice') }}
+            </n-h2>
+            <n-p class="!mb-2 !text-text-secondary">
+              <strong class="text-text-primary">{{ t('legal.imprint.liabilityTitle') }}</strong>
+            </n-p>
+            <n-p class="!mb-4 !text-text-secondary">{{ t('legal.imprint.liabilityContent') }}</n-p>
 
-            <n-p
-              ><strong>{{ t('legal.imprint.copyrightTitle') }}</strong></n-p
-            >
-            <n-p>{{ t('legal.imprint.copyrightContent') }}</n-p>
+            <n-p class="!mb-2 !text-text-secondary">
+              <strong class="text-text-primary">{{ t('legal.imprint.copyrightTitle') }}</strong>
+            </n-p>
+            <n-p class="!mb-4 !text-text-secondary">{{ t('legal.imprint.copyrightContent') }}</n-p>
           </div>
         </n-tab-pane>
 
         <!-- PRIVACY -->
         <n-tab-pane name="privacy" :tab="t('legal.tabs.privacy')">
-          <div class="legal-content">
-            <n-h1 style="font-size: 1.8rem; margin-bottom: 20px">{{
-              t('legal.privacy.title')
-            }}</n-h1>
+          <div class="px-2.5 py-5 leading-relaxed">
+            <n-h1 class="!mb-5 text-[1.8rem]">{{ t('legal.privacy.title') }}</n-h1>
 
-            <div v-for="key in orderedPrivacyKeys" :key="key" class="legal-section">
-              <n-h2>{{ t(`legal.privacy.sections.${key}Title`) }}</n-h2>
+            <div v-for="key in orderedPrivacyKeys" :key="key" class="mb-10">
+              <n-h2
+                class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan"
+              >
+                {{ t(`legal.privacy.sections.${key}Title`) }}
+              </n-h2>
               <n-p
                 v-for="(para, index) in tm(`legal.privacy.sections.${key}Paragraphs`)"
                 :key="index"
+                class="!mb-4 !text-text-secondary"
               >
-                <span style="white-space: pre-wrap">{{ para }}</span>
+                <span class="whitespace-pre-wrap">{{ para }}</span>
               </n-p>
-              <!-- Dynamic link for payment section -->
-              <n-p v-if="key === 'payment' && te('legal.privacy.sections.paymentLink')">
+              <n-p
+                v-if="key === 'payment' && te('legal.privacy.sections.paymentLink')"
+                class="!mb-4"
+              >
                 <a
                   :href="t('legal.privacy.sections.paymentLink')"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="legal-link"
+                  class="break-all text-neon-cyan underline transition-opacity hover:opacity-80"
                 >
                   {{ t('legal.privacy.sections.paymentLink') }}
                 </a>
@@ -184,16 +200,21 @@ const showPrecedenceNotice = computed(() => {
 
         <!-- TERMS (AGB) -->
         <n-tab-pane name="terms" :tab="t('legal.tabs.terms')">
-          <div class="legal-content">
-            <n-h1 style="font-size: 1.8rem; margin-bottom: 20px">{{ t('legal.terms.title') }}</n-h1>
+          <div class="px-2.5 py-5 leading-relaxed">
+            <n-h1 class="!mb-5 text-[1.8rem]">{{ t('legal.terms.title') }}</n-h1>
 
-            <div v-for="key in orderedTermsKeys" :key="key" class="legal-section">
-              <n-h2>{{ t(`legal.terms.sections.${key}Title`) }}</n-h2>
+            <div v-for="key in orderedTermsKeys" :key="key" class="mb-10">
+              <n-h2
+                class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan"
+              >
+                {{ t(`legal.terms.sections.${key}Title`) }}
+              </n-h2>
               <n-p
                 v-for="(para, index) in tm(`legal.terms.sections.${key}Paragraphs`)"
                 :key="index"
+                class="!mb-4 !text-text-secondary"
               >
-                <span style="white-space: pre-wrap">{{ para }}</span>
+                <span class="whitespace-pre-wrap">{{ para }}</span>
               </n-p>
             </div>
           </div>
@@ -202,96 +223,3 @@ const showPrecedenceNotice = computed(() => {
     </n-card>
   </div>
 </template>
-
-<style scoped>
-.legal-page-container {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 0 20px;
-}
-
-.legal-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border) !important;
-  border-radius: var(--panel-border-radius);
-  color: var(--color-text-default);
-  min-height: auto;
-}
-
-.legal-title {
-  color: var(--color-accent-primary);
-  text-align: center;
-  margin-bottom: 30px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.precedence-alert {
-  margin-bottom: 30px;
-  background: rgba(0, 242, 255, 0.05);
-  color: var(--color-text-muted);
-  font-style: italic;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.legal-tabs :deep(.n-tabs-tab) {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.legal-content {
-  padding: 20px 10px;
-  line-height: 1.6;
-}
-
-.legal-section {
-  margin-bottom: 40px;
-}
-
-.address-block {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 15px;
-  border-radius: 8px;
-  border-left: 4px solid var(--color-accent-primary);
-  margin-top: 10px;
-}
-
-.legal-link {
-  color: var(--color-accent-primary);
-  text-decoration: underline;
-  word-break: break-all;
-  transition: opacity 0.2s;
-}
-
-.legal-link:hover {
-  opacity: 0.8;
-}
-
-:deep(.n-h2) {
-  color: var(--color-accent-primary);
-  font-size: 1.3rem;
-  margin-top: 25px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 242, 255, 0.1);
-  padding-bottom: 5px;
-}
-
-:deep(.n-p) {
-  margin-bottom: 15px;
-  color: var(--color-text-muted);
-}
-
-@media (max-width: 600px) {
-  .legal-page-container {
-    margin: 10px auto;
-    padding: 0 10px;
-  }
-
-  .legal-tabs :deep(.n-tabs-tab) {
-    font-size: 0.9rem;
-    padding: 0 8px;
-  }
-}
-</style>

@@ -1,4 +1,3 @@
-<!-- src/components/WebChessBoard.vue -->
 <script setup lang="ts">
 import { Chessground } from '@lichess-org/chessground'
 import type { Api } from '@lichess-org/chessground/api'
@@ -12,6 +11,7 @@ import type {
 } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops/types'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch, type PropType } from 'vue'
+import { tokens } from '@/shared/theme/tokens'
 import { useBoardStore, type PromotionState } from '../model/board.store'
 import PromotionDialog from './PromotionDialog.vue'
 
@@ -95,21 +95,21 @@ function getNagSymbol(quality: string, nag?: string) {
   return '!'
 }
 
-const QUALITY_BG_HEX: Record<string, string> = {
-  brilliant: '#00f6ff',
-  great: '#00e676',
-  best: '#00e676',
-  excellent: '#00e676',
-  good: '#29b6f6',
-  neutral: '#8b93a8',
-  inaccuracy: '#ffd700',
-  mistake: '#ff9100',
-  blunder: '#ff1744',
-  missed_mate: '#ff1744',
+const QUALITY_BG_COLOR: Record<string, string> = {
+  brilliant: tokens.neonCyan,
+  great: tokens.success,
+  best: tokens.success,
+  excellent: tokens.success,
+  good: tokens.infoDeep,
+  neutral: tokens.textSecondary,
+  inaccuracy: tokens.warning,
+  mistake: tokens.orange,
+  blunder: tokens.danger,
+  missed_mate: tokens.danger,
 }
 
-function getNagHexColor(quality: string): string {
-  return QUALITY_BG_HEX[quality] || '#00e676'
+function getNagColor(quality: string): string {
+  return QUALITY_BG_COLOR[quality] || tokens.success
 }
 
 type LooseShape = DrawShape & { stepBadge?: string; nag?: string; customNag?: string }
@@ -123,11 +123,11 @@ const combinedShapes = computed(() => {
   if (!props.hideNag && boardStore.lastNag?.square) {
     const q = boardStore.lastNag.quality || 'brilliant'
     const sym = getNagSymbol(q, boardStore.lastNag.nag)
-    const color = getNagHexColor(q)
+    const color = getNagColor(q)
     result.push({
       orig: boardStore.lastNag.square as Key,
       customSvg: {
-        html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="#0b0e14" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="#0b0e14" text-anchor="middle">${sym}</text></g>`,
+        html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.void}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.void}" text-anchor="middle">${sym}</text></g>`,
         center: 'orig',
       },
     })
@@ -139,11 +139,11 @@ const combinedShapes = computed(() => {
     if (s.orig && (s.nag || s.customNag) && !nagAdded.has(s.orig)) {
       const q = s.nag || s.customNag || 'brilliant'
       const sym = getNagSymbol(q, s.nag)
-      const color = getNagHexColor(q)
+      const color = getNagColor(q)
       result.push({
         orig: s.orig as Key,
         customSvg: {
-          html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="#0b0e14" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="#0b0e14" text-anchor="middle">${sym}</text></g>`,
+          html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.void}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.void}" text-anchor="middle">${sym}</text></g>`,
           center: 'orig',
         },
       })
@@ -154,13 +154,13 @@ const combinedShapes = computed(() => {
       result.push({
         orig: s.orig as Key,
         customSvg: {
-          html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="#ffd700" stroke="#0b0e14" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="#0b0e14" text-anchor="middle">${label}</text></g>`,
+          html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="${tokens.warning}" stroke="${tokens.void}" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="${tokens.void}" text-anchor="middle">${label}</text></g>`,
           center: 'orig',
         },
       })
     } else if (s.orig && (s.dest || s.brush)) {
       const brushKey = typeof s.brush === 'string' ? s.brush : undefined
-      const safeBrush = (brushKey && brushKey in CHESSGROUND_BRUSHES) ? brushKey : 'green'
+      const safeBrush = brushKey && brushKey in CHESSGROUND_BRUSHES ? brushKey : 'green'
       result.push({
         orig: s.orig as Key,
         dest: s.dest as Key | undefined,
@@ -172,8 +172,6 @@ const combinedShapes = computed(() => {
 
   return result
 })
-
-
 
 const handleWheel = (event: WheelEvent) => {
   emit('wheel-navigate', event.deltaY > 0 ? 'down' : 'up')
@@ -226,10 +224,11 @@ onMounted(() => {
         onChange: (shapes) => {
           const autoKey = (s: DrawShape) => `${s.orig}-${s.dest || ''}-${s.brush || ''}`
           const autoKeys = new Set(boardStore.autoShapes.map(autoKey))
-          const userShapes = (shapes as DrawShape[]).filter((s) => !s.customSvg && !autoKeys.has(autoKey(s)))
+          const userShapes = (shapes as DrawShape[]).filter(
+            (s) => !s.customSvg && !autoKeys.has(autoKey(s)),
+          )
           emit('shapes-change', userShapes)
         },
-
       },
     }
     ground.value = Chessground(chessboardRef.value, config)
@@ -240,11 +239,6 @@ onUnmounted(() => {
   ground.value?.destroy()
   ground.value = null
 })
-
-// --- Consolidated Watcher ---
-// To avoid sending multiple .set() calls to Chessground in the same reactive tick
-// (which cancels piece movement animations), we consolidate all props into a single batch watcher.
-
 
 watch(
   [
@@ -304,11 +298,8 @@ watch(
 </script>
 
 <template>
-  <div class="board-wrapper" @wheel.passive="handleWheel">
-    <div ref="chessboardRef" class="chessboard"></div>
-
-
-
+  <div class="absolute h-full w-full touch-none" @wheel.passive="handleWheel">
+    <div ref="chessboardRef" class="h-full w-full"></div>
 
     <!-- Custom overlays slot -->
     <slot name="overlays"></slot>
@@ -324,57 +315,6 @@ watch(
 </template>
 
 <style scoped>
-.board-wrapper {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  /* Блокируем системный скролл на доске */
-  touch-action: none;
-}
-
-.chessboard {
-  width: 100%;
-  height: 100%;
-}
-
-.nag-container {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5; /* Higher than board but lower than promotion dialog */
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  box-sizing: border-box;
-}
-
-.nag-badge {
-  width: 30%;
-  height: 30%;
-  min-width: 18px;
-  min-height: 18px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #ffffff; /* White text */
-  font-weight: 800; /* Bold */
-  font-size: 1.5rem;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7);
-  border: 1.8px solid #ffffff; /* White border */
-  /* Remove outgoing transform to keep inside the square */
-  user-select: none;
-  z-index: 6;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Boost contrast for symbols */
-}
-
-@media (max-width: 768px) {
-  .nag-badge {
-    font-size: 0.9rem;
-    min-width: 16px;
-    min-height: 16px;
-  }
-}
-
 /* Pulsating animation for the BEST MOVE (bestmove brush) */
 @keyframes bestmove-arrow-pulse {
   0% {
@@ -388,27 +328,37 @@ watch(
   }
 }
 
-/* Apply thickness pulsation to arrows (paths/lines) - NO scale to prevent displacement */
 :deep(.cg-shapes) g.bestmove path,
 :deep(.cg-shapes) g.bestmove line,
-:deep(.cg-shapes) [stroke="#ff007a"] {
+:deep(.cg-shapes) [stroke='var(--color-highlight)'] {
   animation: bestmove-arrow-pulse 1.8s infinite ease-in-out;
 }
 
 /* Make Coach-specific arrows thin and distinct */
-:deep(.cg-shapes) g.coachgreen path, :deep(.cg-shapes) g.coachgreen line,
-:deep(.cg-shapes) g.coachred path, :deep(.cg-shapes) g.coachred line,
-:deep(.cg-shapes) g.coachblue path, :deep(.cg-shapes) g.coachblue line,
-:deep(.cg-shapes) g.coachyellow path, :deep(.cg-shapes) g.coachyellow line,
-:deep(.cg-shapes) g.coachorange path, :deep(.cg-shapes) g.coachorange line,
-:deep(.cg-shapes) g.coachpurple path, :deep(.cg-shapes) g.coachpurple line,
-:deep(.cg-shapes) g.coachcyan path, :deep(.cg-shapes) g.coachcyan line,
-:deep(.cg-shapes) g.coachpink path, :deep(.cg-shapes) g.coachpink line,
-:deep(.cg-shapes) g.coachbrown path, :deep(.cg-shapes) g.coachbrown line,
-:deep(.cg-shapes) g.coachgray path, :deep(.cg-shapes) g.coachgray line,
-:deep(.cg-shapes) g.coachpaleBlue path, :deep(.cg-shapes) g.coachpaleBlue line,
-:deep(.cg-shapes) g.coachpaleGreen path, :deep(.cg-shapes) g.coachpaleGreen line {
+:deep(.cg-shapes) g.coachgreen path,
+:deep(.cg-shapes) g.coachgreen line,
+:deep(.cg-shapes) g.coachred path,
+:deep(.cg-shapes) g.coachred line,
+:deep(.cg-shapes) g.coachblue path,
+:deep(.cg-shapes) g.coachblue line,
+:deep(.cg-shapes) g.coachyellow path,
+:deep(.cg-shapes) g.coachyellow line,
+:deep(.cg-shapes) g.coachorange path,
+:deep(.cg-shapes) g.coachorange line,
+:deep(.cg-shapes) g.coachpurple path,
+:deep(.cg-shapes) g.coachpurple line,
+:deep(.cg-shapes) g.coachcyan path,
+:deep(.cg-shapes) g.coachcyan line,
+:deep(.cg-shapes) g.coachpink path,
+:deep(.cg-shapes) g.coachpink line,
+:deep(.cg-shapes) g.coachbrown path,
+:deep(.cg-shapes) g.coachbrown line,
+:deep(.cg-shapes) g.coachgray path,
+:deep(.cg-shapes) g.coachgray line,
+:deep(.cg-shapes) g.coachpaleBlue path,
+:deep(.cg-shapes) g.coachpaleBlue line,
+:deep(.cg-shapes) g.coachpaleGreen path,
+:deep(.cg-shapes) g.coachpaleGreen line {
   stroke-width: 0.35% !important;
 }
-
 </style>

@@ -1,7 +1,7 @@
 <template>
   <span
     v-if="symbol"
-    class="quality-icon"
+    class="inline-flex items-center justify-center text-center font-display leading-none font-extrabold not-italic select-none"
     :style="computedStyle"
     aria-hidden="true"
   >
@@ -46,17 +46,3 @@ const computedStyle = computed(() => {
   }
 })
 </script>
-
-<style scoped>
-.quality-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 800;
-  line-height: 1;
-  user-select: none;
-  text-align: center;
-  font-style: normal;
-}
-</style>

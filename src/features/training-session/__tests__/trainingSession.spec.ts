@@ -1,4 +1,6 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { usePreferencesStore } from '@/entities/user'
+import { CRASHTEST_ENGINES } from '@/shared/types/api.types'
 import {
   resolveBotEngineForDifficulty,
   trainingApi,
@@ -353,7 +355,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       first_move_failed: false,
       fail_stage: 'none',
     })
-    expect(store.viewState).toBe('awaiting_next')
+    expect(store.viewState).toBe('playing')
     expect(store.currentItem?.status).toBe('solved')
 
     // Enter board analysis, then exit to advance to Puzzle 2
@@ -372,7 +374,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
 
     expect(submitSpy).toHaveBeenCalledTimes(2)
     expect(store.promotionBannerTier).toBe('Master')
-    expect(store.viewState).toBe('awaiting_next')
+    expect(store.viewState).toBe('playing')
 
     // Advance after final puzzle -> transitions to Session Report!
     store.advanceAfterAttempt()
@@ -388,5 +390,273 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       woodpeckerSolvedCount: 1,
       woodpeckerGraduatedCount: 1,
     })
+  })
+
+  it('auto-advances on solved puzzle, pauses on failed puzzle in normal mode, and auto-advances on failed puzzle in Crashtest mode with selectable engines', async () => {
+    vi.useFakeTimers()
+    try {
+      const store = useTrainingSessionStore()
+      const gameStore = useGameStore()
+      const boardStore = useBoardStore()
+      const preferencesStore = usePreferencesStore()
+      boardStore.animationDurationMs = 0
+
+      // Verify all 6 Crashtest engines are registered
+      expect(CRASHTEST_ENGINES).toEqual([
+        'stockfish',
+        'maia-1500',
+        'maia-1900',
+        'maia-2200',
+        't1000',
+        'badgyal',
+      ])
+      expect(preferencesStore.preferences.gameplay.crashtestEngine).toBe('stockfish')
+
+      const sessionDto: HydratedSessionDTO = {
+        session: createSessionSummary({
+          discipline: 'tactics',
+          difficulty: 'Novice',
+          bot_engine: 'maia-1500',
+          total_count: 3,
+        }),
+        items: [
+          {
+            index: 0,
+            puzzle_id: 'TAC-1',
+            is_woodpecker: false,
+            woodpecker_streak: 0,
+            status: 'pending',
+            tactical: {
+              puzzle_id: 'TAC-1',
+              discipline: 'tactics',
+              strategy: 'scenarioOnly',
+              first_move: 'user',
+              user_color: 'white',
+              difficulty: 'Novice',
+              phase: 'endgame',
+              length: 'oneMove',
+              goal: 'mate',
+              master_game: false,
+              course_eligible: true,
+              cognitive_profile: 'geometry_only',
+              geometry_motifs: ['backRankMate'],
+              operator_motifs: [],
+              concept_motifs: [],
+              trigger_motifs: [],
+              meta_themes: ['mate'],
+              tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+              tactical_solution: 'e1e8',
+              rating: 1200,
+              popularity: 95,
+              nb_plays: 500,
+            },
+          },
+          {
+            index: 1,
+            puzzle_id: 'TAC-2',
+            is_woodpecker: false,
+            woodpecker_streak: 0,
+            status: 'pending',
+            tactical: {
+              puzzle_id: 'TAC-2',
+              discipline: 'tactics',
+              strategy: 'scenarioOnly',
+              first_move: 'user',
+              user_color: 'white',
+              difficulty: 'Novice',
+              phase: 'endgame',
+              length: 'oneMove',
+              goal: 'mate',
+              master_game: false,
+              course_eligible: true,
+              cognitive_profile: 'geometry_only',
+              geometry_motifs: ['backRankMate'],
+              operator_motifs: [],
+              concept_motifs: [],
+              trigger_motifs: [],
+              meta_themes: ['mate'],
+              tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+              tactical_solution: 'e1e8',
+              rating: 1210,
+              popularity: 95,
+              nb_plays: 500,
+            },
+          },
+          {
+            index: 2,
+            puzzle_id: 'TAC-3',
+            is_woodpecker: false,
+            woodpecker_streak: 0,
+            status: 'pending',
+            tactical: {
+              puzzle_id: 'TAC-3',
+              discipline: 'tactics',
+              strategy: 'scenarioOnly',
+              first_move: 'user',
+              user_color: 'white',
+              difficulty: 'Novice',
+              phase: 'endgame',
+              length: 'oneMove',
+              goal: 'mate',
+              master_game: false,
+              course_eligible: true,
+              cognitive_profile: 'geometry_only',
+              geometry_motifs: ['backRankMate'],
+              operator_motifs: [],
+              concept_motifs: [],
+              trigger_motifs: [],
+              meta_themes: ['mate'],
+              tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+              tactical_solution: 'e1e8',
+              rating: 1220,
+              popularity: 95,
+              nb_plays: 500,
+            },
+          },
+        ],
+      }
+
+      vi.spyOn(trainingApi, 'composeWarmupSession').mockResolvedValue(sessionDto)
+      vi.spyOn(trainingApi, 'getOverview').mockResolvedValue({
+        user: {
+          user_id: 'u1',
+          last_solved_at: '2026-11-01T15:00:00Z',
+          tactics_tier: 'Novice',
+          theoretical_tier: 'Pro',
+          practical_tier: 'Novice',
+          finishhim_tier: 'Novice',
+          woodpecker_mastered_total: 4,
+        },
+        bot_engines: {
+          Novice: 'maia-1500',
+          Pro: 'maia-2200',
+          Master: 't1000',
+        },
+        disciplines: {
+          tactics: {
+            discipline: 'tactics',
+            unlocked_tier: 'Novice',
+            global_rating: 1500,
+            global_rd: 350,
+            ema_accuracy: 0.5,
+            solved_total: 0,
+            failed_total: 0,
+            warmup_allowed_sizes: [50, 100, 200],
+            course_batch_sizes: [25, 50, 100],
+            default_course_batch: 50,
+          },
+          theoretical_endgames: {
+            discipline: 'theoretical_endgames',
+            unlocked_tier: 'Pro',
+            global_rating: 1740,
+            global_rd: 120,
+            ema_accuracy: 0.78,
+            solved_total: 40,
+            failed_total: 10,
+            warmup_allowed_sizes: [10, 25, 50],
+            course_batch_sizes: [10, 20, 30],
+            default_course_batch: 20,
+          },
+          practical_chess: {
+            discipline: 'practical_chess',
+            unlocked_tier: 'Novice',
+            global_rating: 1500,
+            global_rd: 350,
+            ema_accuracy: 0.5,
+            solved_total: 0,
+            failed_total: 0,
+            warmup_allowed_sizes: [10, 25, 50],
+            course_batch_sizes: [10, 20, 30],
+            default_course_batch: 20,
+          },
+          finishhim: {
+            discipline: 'finishhim',
+            unlocked_tier: 'Novice',
+            global_rating: 1500,
+            global_rd: 350,
+            ema_accuracy: 0.5,
+            solved_total: 0,
+            failed_total: 0,
+            warmup_allowed_sizes: [10, 25, 50],
+            course_batch_sizes: [10, 20, 30],
+            default_course_batch: 20,
+          },
+        },
+        woodpecker: {
+          due_now: 1,
+          on_cooldown: 0,
+          mastered_total: 4,
+          by_discipline: {
+            tactics: { due_now: 0, on_cooldown: 0 },
+            theoretical_endgames: { due_now: 1, on_cooldown: 0 },
+            practical_chess: { due_now: 0, on_cooldown: 0 },
+            finishhim: { due_now: 0, on_cooldown: 0 },
+          },
+        },
+      })
+      vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
+        async (_sessionId, payload): Promise<AttemptResultDTO> => ({
+          puzzle_id: payload.puzzle_id,
+          solved: payload.solved,
+          global_rating_before: 1500,
+          global_rating_after: payload.solved ? 1510 : 1490,
+          global_rating_delta: payload.solved ? 10 : -10,
+          scope_deltas: [],
+          woodpecker: { action: payload.solved ? 'none' : 'queued', streak: 0 },
+          session: createSessionSummary({
+            discipline: 'tactics',
+            total_count: 3,
+            current_index: payload.puzzle_id === 'TAC-1' ? 1 : payload.puzzle_id === 'TAC-2' ? 2 : 3,
+            solved_count: payload.solved ? 1 : 0,
+            failed_count: payload.solved ? 0 : 1,
+            is_completed: payload.puzzle_id === 'TAC-3',
+          }),
+        }),
+      )
+
+      await store.startWarmupSession({
+        discipline: 'tactics',
+        difficulty: 'Novice',
+        count: 50,
+      })
+
+      expect(store.currentItemIndex).toBe(0)
+
+      // 1. Solve TAC-1 -> should stay in 'playing' (no 'awaiting_next' flash) and auto-advance to TAC-2 after nextPuzzleDelayMs (100ms)
+      await gameStore.handleUserMove('e1', 'e8')
+      expect(store.viewState).toBe('playing')
+      expect(store.isAwaitingNext).toBe(false)
+      vi.advanceTimersByTime(100)
+      expect(store.viewState).toBe('playing')
+      expect(store.currentItemIndex).toBe(1)
+      expect(store.currentPuzzle?.puzzle_id).toBe('TAC-2')
+
+      // 2. Fail TAC-2 in normal mode -> should pause in awaiting_next even after timer
+      await gameStore.handleUserMove('e1', 'e2')
+      expect(store.viewState).toBe('awaiting_next')
+      expect(store.isAwaitingNext).toBe(true)
+      expect(store.currentItem?.status).toBe('failed')
+      vi.advanceTimersByTime(2000)
+      expect(store.viewState).toBe('awaiting_next')
+      expect(store.currentItemIndex).toBe(1)
+
+      // Manually advance to TAC-3
+      store.advanceAfterAttempt()
+      expect(store.currentItemIndex).toBe(2)
+      expect(store.currentPuzzle?.puzzle_id).toBe('TAC-3')
+
+      // 3. Enable Developer Crashtest with Bad Gyal neural network and fail TAC-3 -> should auto-advance to Report without awaiting_next flash
+      preferencesStore.preferences.gameplay.global_crashtest = true
+      preferencesStore.preferences.gameplay.crashtestEngine = 'badgyal'
+      preferencesStore.preferences.delays.crashtestDelayMs = 400
+
+      await gameStore.handleUserMove('e1', 'e2')
+      expect(store.viewState).toBe('playing')
+      expect(store.isAwaitingNext).toBe(false)
+      vi.advanceTimersByTime(400)
+      expect(store.viewState).toBe('report')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

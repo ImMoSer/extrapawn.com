@@ -16,167 +16,49 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 </script>
 
 <template>
-  <div class="login-app-wrapper">
-    <div class="login-content">
-      <div class="brand-header">
-        <img src="/webp/extra_pawn_black.webp" alt="Logo" class="login-logo" />
-        <h1 class="login-title">EXTRAPAWN</h1>
+  <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-void text-text-primary font-display">
+    <div class="flex flex-col items-center max-w-[440px] w-[90%] text-center p-6 bg-surface/80 backdrop-blur-md border border-border rounded-lg shadow-2xl">
+      <div class="mb-8 flex flex-col items-center">
+        <img
+          src="/webp/extra_pawn_black.webp"
+          alt="Logo"
+          class="w-[180px] h-auto mb-5 object-contain"
+        />
+        <h1 class="text-3xl font-bold tracking-[0.15em] m-0 text-neon-cyan">
+          EXTRAPAWN
+        </h1>
       </div>
 
-      <div class="welcome-section">
-        <h2 class="welcome-title">{{ t('pages.login.welcomeTitle') }}</h2>
-        <p class="welcome-text">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold mb-3 text-text-primary">
+          {{ t('pages.login.welcomeTitle') }}
+        </h2>
+        <p class="text-sm text-text-secondary leading-relaxed">
           {{ t('pages.login.welcomeText') }}
         </p>
       </div>
 
-      <button @click="handleLogin" class="login-button">
+      <button
+        type="button"
+        class="w-full py-3.5 px-8 mb-8 rounded-md bg-neon-cyan text-void font-display font-bold text-base cursor-pointer transition-all hover:bg-cyan-deep border-0"
+        @click="handleLogin"
+      >
         {{ t('shared.nav.loginWithLichess') }}
       </button>
 
-      <div class="lang-switcher">
-        <button
-          class="lang-btn"
-          :class="{ active: locale === 'en' }"
-          @click="handleChangeLang('en')"
-        >
-          EN
-        </button>
-        <span class="lang-divider">|</span>
-        <button
-          class="lang-btn"
-          :class="{ active: locale === 'ru' }"
-          @click="handleChangeLang('ru')"
-        >
-          RU
-        </button>
-        <span class="lang-divider">|</span>
-        <button
-          class="lang-btn"
-          :class="{ active: locale === 'de' }"
-          @click="handleChangeLang('de')"
-        >
-          DE
-        </button>
+      <div class="flex items-center justify-center gap-2 pt-4 border-t border-border w-4/5">
+        <template v-for="(lang, idx) in ['en', 'ru', 'de'] as const" :key="lang">
+          <span v-if="idx > 0" class="text-border">|</span>
+          <button
+            type="button"
+            class="bg-transparent border-0 text-sm font-semibold cursor-pointer px-2 py-1 transition-colors"
+            :class="locale === lang ? 'text-neon-cyan' : 'text-text-secondary hover:text-text-primary'"
+            @click="handleChangeLang(lang)"
+          >
+            {{ lang.toUpperCase() }}
+          </button>
+        </template>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.login-app-wrapper {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #0b0d17;
-  color: #fff;
-  font-family: 'Ubuntu', sans-serif;
-  z-index: 9999;
-}
-
-.login-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 440px;
-  width: 90%;
-  text-align: center;
-  padding: 20px;
-  background: rgba(15, 17, 26, 0.45);
-  border: 1px solid rgba(0, 242, 255, 0.15);
-  border-radius: 24px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-.brand-header {
-  margin-bottom: 32px;
-}
-
-.login-logo {
-  width: 200px; /* Bigger logo as requested */
-  height: auto;
-  margin-bottom: 20px;
-  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.3));
-}
-
-.login-title {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  margin: 0;
-  color: #00f2ff;
-  text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
-}
-
-.welcome-section {
-  margin-bottom: 20px;
-}
-
-.welcome-title {
-  font-size: 1.4rem;
-  margin-bottom: 12px;
-  color: #fff;
-}
-
-.welcome-text {
-  font-size: 1rem;
-  color: #a0aec0;
-  line-height: 1.6;
-}
-
-.login-button {
-  width: 100%;
-  padding: 16px 32px;
-  background: linear-gradient(90deg, #00f2ff, #b000ff);
-  border: none;
-  border-radius: 14px;
-  color: #0b0d17;
-  font-weight: 700;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Ubuntu', sans-serif;
-  margin-bottom: 32px;
-}
-
-.login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
-}
-
-.lang-switcher {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  width: 80%;
-  justify-content: center;
-}
-
-.lang-btn {
-  background: none;
-  border: none;
-  color: #718096;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 4px 8px;
-  transition: all 0.2s ease;
-}
-
-.lang-btn:hover {
-  color: #fff;
-}
-
-.lang-btn.active {
-  color: #00f2ff;
-}
-
-.lang-divider {
-  color: rgba(255, 255, 255, 0.1);
-}
-</style>

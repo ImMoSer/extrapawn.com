@@ -47,6 +47,7 @@ export const useGameStore = defineStore('game', () => {
   const currentStrategy = ref<IGameplayStrategy | null>(null)
   const moveInspector = ref<IUserMoveInspector | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
+  let gameSessionToken = 0
 
   function registerMoveInspector(inspector: IUserMoveInspector) {
     moveInspector.value = inspector
@@ -210,7 +211,8 @@ export const useGameStore = defineStore('game', () => {
 
   function undoLastUserMove() {
     logger.info('[GameStore] Undoing last user move (Takeback).')
-    
+    gameSessionToken++
+
     // If it is the player's turn, it means the bot has already made a move.
     // We need to undo the bot's move first, then the user's move.
     const isPlayerTurn = boardStore.turn === playerColor.value
@@ -241,11 +243,12 @@ export const useGameStore = defineStore('game', () => {
     }
 
     if (currentStrategy.value) {
+      const tokenAtRequest = gameSessionToken
       const fenAtRequest = boardStore.fen
       const startTime = Date.now()
       const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
-      if (!uci) {
-        logger.info('[GameStore] No bot move requested by strategy.')
+      if (!uci || tokenAtRequest !== gameSessionToken) {
+        logger.info('[GameStore] No bot move requested by strategy or session changed.')
         return
       }
       const elapsedTime = Date.now() - startTime
@@ -255,6 +258,10 @@ export const useGameStore = defineStore('game', () => {
       const remainingDelay = Math.max(0, targetDelay - elapsedTime)
       if (remainingDelay > 0) {
         await new Promise((resolve) => setTimeout(resolve, remainingDelay))
+      }
+
+      if (tokenAtRequest !== gameSessionToken) {
+        return
       }
 
       // Ensure the previous move's animation is fully completed before showing the bot's response
@@ -267,8 +274,12 @@ export const useGameStore = defineStore('game', () => {
       }
 
       // Race condition protection
-      if (boardStore.fen !== fenAtRequest || (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY')) {
-        logger.warn('[GameStore] Bot move discarded due to position or phase change (race condition protected).')
+      if (
+        tokenAtRequest !== gameSessionToken ||
+        boardStore.fen !== fenAtRequest ||
+        (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY')
+      ) {
+        logger.warn('[GameStore] Bot move discarded due to position, token, or phase change (race condition protected).')
         return
       }
 
@@ -335,6 +346,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     // Cleanup old strategy and reset Orchestrator state if exists
+    gameSessionToken++
     currentStrategy.value?.onDestroy?.()
     _executeStopHandlers()
 
@@ -500,6 +512,7 @@ export const useGameStore = defineStore('game', () => {
 
   function enterAnalysisMode() {
     logger.info('[GameStore] Entering ANALYSIS / FREEPLAY mode.')
+    gameSessionToken++
     currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
     stopHandlers.clear()
@@ -513,7 +526,8 @@ export const useGameStore = defineStore('game', () => {
 
   function stop() {
     logger.info('[GameStore] Stopping game and clearing entity states.')
-    
+    gameSessionToken++
+
     // 1. Clear Strategy
     currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null

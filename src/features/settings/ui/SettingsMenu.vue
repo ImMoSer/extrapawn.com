@@ -1,32 +1,38 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import {
-  useAuthStore,
-  usePreferencesStore,
   AVAILABLE_BOARDS,
   AVAILABLE_PIECE_SETS,
+  useAuthStore,
+  usePreferencesStore,
   type UserPreferencesDto,
 } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
 import {
-  SettingsOutline,
-  LogOutOutline,
-  LogInOutline,
-  VolumeHighOutline,
+  CRASHTEST_ENGINES,
+  CRASHTEST_ENGINE_NAMES,
+  type CrashtestEngineId,
+} from '@/shared/types/api.types'
+import {
+  ColorPaletteOutline,
   GameControllerOutline,
-  ColorPaletteOutline
+  LogInOutline,
+  LogOutOutline,
+  SettingsOutline,
+  VolumeHighOutline,
 } from '@vicons/ionicons5'
 import {
-  NIcon,
-  NSwitch,
-  NDrawer,
-  NDrawerContent,
+  NButton,
   NCollapse,
   NCollapseItem,
+  NDrawer,
+  NDrawerContent,
+  NIcon,
+  NSelect,
   NSlider,
-  NButton
+  NSwitch,
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
@@ -39,6 +45,13 @@ const isOpen = ref(false)
 const boardTabRef = ref<HTMLElement | null>(null)
 const expandedCollapseNames = ref<string[]>([])
 
+const crashtestEngineOptions = computed(() =>
+  CRASHTEST_ENGINES.map((id) => ({
+    label: CRASHTEST_ENGINE_NAMES[id],
+    value: id,
+  })),
+)
+
 const handleCollapseChange = (expandedNames: string[]) => {
   if (expandedNames.includes('board_pieces')) {
     setTimeout(() => {
@@ -47,28 +60,27 @@ const handleCollapseChange = (expandedNames: string[]) => {
   }
 }
 
-// Local draft preferences state that is cloned from the store when opening the drawer
 const draftPreferences = ref<UserPreferencesDto>(
-  JSON.parse(JSON.stringify(preferencesStore.preferences))
+  JSON.parse(JSON.stringify(preferencesStore.preferences)),
 )
 
 const initializeDraft = () => {
   draftPreferences.value = JSON.parse(JSON.stringify(preferencesStore.preferences))
 }
 
-// Re-initialize draft when the drawer is opened
 watch(isOpen, (newVal) => {
   if (newVal) {
     initializeDraft()
   }
 })
 
+const handleCrashtestEngineChange = (val: CrashtestEngineId) => {
+  draftPreferences.value.gameplay.crashtestEngine = val
+}
+
 const handleSave = async () => {
-  // Apply language change
   changeLang(draftPreferences.value.gameplay.language)
-  // Save updated preferences to store & backend
   await preferencesStore.updatePreferences(draftPreferences.value)
-  // Close the drawer
   isOpen.value = false
 }
 
@@ -83,443 +95,254 @@ const handleAuthAction = () => {
 </script>
 
 <template>
-  <div class="settings-menu-container">
+  <div class="inline-block">
     <button
-      class="settings-toggle-button"
-      @click="isOpen = true"
+      class="p-2 flex items-center justify-center bg-transparent border-0 cursor-pointer transition-transform duration-300 hover:rotate-60 hover:scale-110"
       :title="t('features.settings.title')"
+      @click="isOpen = true"
     >
-      <n-icon class="settings-gear-icon">
+      <NIcon class="text-[1.85rem] text-warning">
         <SettingsOutline />
-      </n-icon>
+      </NIcon>
     </button>
 
-    <n-drawer
+    <NDrawer
       v-model:show="isOpen"
       :width="380"
       placement="right"
       resizable
-      class="settings-drawer"
+      class="bg-surface!"
     >
-      <n-drawer-content closable :title="t('features.settings.title')" class="settings-drawer-content">
-        <div class="drawer-inner-layout">
-          
-          <!-- 1. Top level Language Selector -->
-          <div class="settings-section-card language-section-card">
-            <div class="section-label">{{ t('features.settings.language') }}</div>
-            <div class="language-selector">
+      <NDrawerContent
+        closable
+        :title="t('features.settings.title')"
+        class="bg-surface! text-text-primary"
+      >
+        <div class="flex flex-col h-full gap-4 pb-6">
+          <!-- 1. Language Selector -->
+          <div class="p-3.5 rounded-lg bg-elevated/50 border border-border transition-colors hover:border-border-hover">
+            <div class="text-xs font-display font-bold uppercase tracking-wider text-text-secondary mb-2.5">
+              {{ t('features.settings.language') }}
+            </div>
+            <div class="flex gap-1.5 p-1 rounded-md bg-void/60 border border-border">
               <button
-                v-for="lang in ['en', 'de', 'ru']"
+                v-for="lang in ['en', 'de', 'ru'] as const"
                 :key="lang"
-                class="lang-btn"
-                :class="{ active: draftPreferences.gameplay.language === lang }"
-                @click="draftPreferences.gameplay.language = lang as 'en' | 'de' | 'ru'"
+                type="button"
+                class="flex-1 py-2 px-2 rounded-sm font-display font-bold text-xs uppercase transition-all cursor-pointer border"
+                :class="
+                  draftPreferences.gameplay.language === lang
+                    ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/50'
+                    : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary hover:bg-elevated/60'
+                "
+                @click="draftPreferences.gameplay.language = lang"
               >
                 {{ lang.toUpperCase() }}
               </button>
             </div>
           </div>
 
-          <!-- 2. Sound & Audio Settings (Top level) -->
-          <div class="settings-section-card">
-            <div class="section-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-              <n-icon><VolumeHighOutline /></n-icon>
+          <!-- 2. Sound & Audio Settings -->
+          <div class="p-3.5 rounded-lg bg-elevated/50 border border-border transition-colors hover:border-border-hover">
+            <div class="flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider text-text-secondary mb-3">
+              <NIcon><VolumeHighOutline /></NIcon>
               <span>{{ t('features.settings.sounds.title') }}</span>
             </div>
-            
-            <div>
-              <div class="slider-row">
-                <n-slider v-model:value="draftPreferences.audio.boardVolume" :min="0" :max="1" :step="0.1" />
-                <span class="value-badge">{{ Math.round(draftPreferences.audio.boardVolume * 100) }}%</span>
-              </div>
+            <div class="flex items-center gap-3.5">
+              <NSlider
+                v-model:value="draftPreferences.audio.boardVolume"
+                :min="0"
+                :max="1"
+                :step="0.1"
+              />
+              <span class="font-condensed font-bold text-xs text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-sm min-w-13 text-center">
+                {{ Math.round(draftPreferences.audio.boardVolume * 100) }}%
+              </span>
             </div>
           </div>
 
-          <!-- 3. Animation Duration (Top level, extracted from board tab) -->
-          <div class="settings-section-card">
-            <div class="section-label">{{ t('features.settings.animationDuration') }}</div>
-            <div class="slider-row">
-              <n-slider v-model:value="draftPreferences.theme.animationDuration" :min="0" :max="500" :step="50" />
-              <span class="value-badge">{{ draftPreferences.theme.animationDuration }}ms</span>
+          <!-- 3. Animation Duration -->
+          <div class="p-3.5 rounded-lg bg-elevated/50 border border-border transition-colors hover:border-border-hover">
+            <div class="text-xs font-display font-bold uppercase tracking-wider text-text-secondary mb-2.5">
+              {{ t('features.settings.animationDuration') }}
+            </div>
+            <div class="flex items-center gap-3.5">
+              <NSlider
+                v-model:value="draftPreferences.theme.animationDuration"
+                :min="0"
+                :max="500"
+                :step="50"
+              />
+              <span class="font-condensed font-bold text-xs text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-sm min-w-13 text-center">
+                {{ draftPreferences.theme.animationDuration }}ms
+              </span>
             </div>
           </div>
 
-          <!-- 4. Gameplay & Bot Delays (Top level) -->
-          <div class="settings-section-card">
-            <div class="section-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-              <n-icon><GameControllerOutline /></n-icon>
+          <!-- 4. Gameplay & Bot Delays -->
+          <div class="p-3.5 rounded-lg bg-elevated/50 border border-border transition-colors hover:border-border-hover flex flex-col gap-3">
+            <div class="flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider text-text-secondary">
+              <NIcon><GameControllerOutline /></NIcon>
               <span>{{ t('features.settings.gameplayBotDelays') }}</span>
             </div>
 
             <!-- Bot Thinking Delay -->
-            <div style="margin-bottom: 12px;">
-              <div class="section-label" style="font-size: 0.7rem; color: #71717a;">{{ t('features.settings.botThinkingDelay') }}</div>
-              <div class="slider-row">
-                <n-slider v-model:value="draftPreferences.delays.botDelayMs" :min="50" :max="5000" :step="50" />
-                <span class="value-badge">{{ draftPreferences.delays.botDelayMs }}ms</span>
+            <div>
+              <div class="text-[11px] font-display font-bold uppercase tracking-wider text-text-secondary mb-2">
+                {{ t('features.settings.botThinkingDelay') }}
+              </div>
+              <div class="flex items-center gap-3.5">
+                <NSlider
+                  v-model:value="draftPreferences.delays.botDelayMs"
+                  :min="50"
+                  :max="5000"
+                  :step="50"
+                />
+                <span class="font-condensed font-bold text-xs text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-sm min-w-13 text-center">
+                  {{ draftPreferences.delays.botDelayMs }}ms
+                </span>
               </div>
             </div>
 
-            <!-- Dev Crashtest Move Delay -->
-            <div v-if="authStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
-              <div class="section-label" style="color: var(--neon-bordeaux, #d9004c); font-weight: bold;">Crashtest Speed (Overrides All)</div>
-              <div class="slider-row">
-                <n-slider v-model:value="draftPreferences.delays.crashtestDelayMs" :min="0" :max="1000" :step="50" />
-                <span class="value-badge" style="background: rgba(217, 0, 76, 0.2); border-color: rgba(217, 0, 76, 0.4);">{{ draftPreferences.delays.crashtestDelayMs }}ms</span>
+            <!-- Developer Crashtest Section (Only for MO3EP) -->
+            <div
+              v-if="authStore.isMo3ep"
+              class="p-3 rounded-md bg-danger/10 border border-dashed border-danger/40 flex flex-col gap-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-display font-bold uppercase tracking-wider text-danger">
+                  {{ t('features.settings.devCrashtest') }}
+                </span>
+                <NSwitch
+                  v-model:value="draftPreferences.gameplay.global_crashtest"
+                  size="medium"
+                />
+              </div>
+
+              <!-- Crashtest Engine Selector -->
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-display font-bold uppercase tracking-wider text-danger">
+                  {{ t('features.settings.devCrashtestEngine') }}
+                </span>
+                <NSelect
+                  :value="draftPreferences.gameplay.crashtestEngine"
+                  :options="crashtestEngineOptions"
+                  size="small"
+                  @update:value="handleCrashtestEngineChange"
+                />
+              </div>
+
+              <!-- Crashtest Move Delay -->
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] font-display font-bold uppercase tracking-wider text-danger">
+                  {{ t('features.settings.devCrashtestSpeed') }}
+                </span>
+                <div class="flex items-center gap-3.5">
+                  <NSlider
+                    v-model:value="draftPreferences.delays.crashtestDelayMs"
+                    :min="0"
+                    :max="1000"
+                    :step="50"
+                  />
+                  <span class="font-condensed font-bold text-xs text-danger bg-danger/15 border border-danger/40 px-2 py-0.5 rounded-sm min-w-13 text-center">
+                    {{ draftPreferences.delays.crashtestDelayMs }}ms
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Dev Crashtest switch -->
-            <div v-if="authStore.isMo3ep" class="settings-section-card dev-crashtest-card" style="margin-bottom: 8px;">
-              <div class="dev-crashtest-row">
-                <span class="dev-crashtest-label">{{ t('features.settings.devCrashtest') }}</span>
-                <n-switch v-model:value="draftPreferences.gameplay.global_crashtest" size="medium" />
-              </div>
-            </div>          </div>
-
-          <!-- 5. Board & Pieces Tab at the Bottom -->
+          <!-- 5. Board & Pieces Tab -->
           <div ref="boardTabRef">
-            <n-collapse v-model:expanded-names="expandedCollapseNames" @update:expanded-names="handleCollapseChange">
-              <n-collapse-item name="board_pieces">
+            <NCollapse
+              v-model:expanded-names="expandedCollapseNames"
+              @update:expanded-names="handleCollapseChange"
+            >
+              <NCollapseItem name="board_pieces">
                 <template #header>
-                  <div class="collapse-header-title">
-                    <n-icon><ColorPaletteOutline /></n-icon>
+                  <div class="flex items-center gap-2.5 font-display font-bold text-sm text-text-primary">
+                    <NIcon><ColorPaletteOutline /></NIcon>
                     <span>{{ t('features.settings.selectBoard') }} & {{ t('features.settings.selectPieces') }}</span>
                   </div>
                 </template>
-                
-                <div class="settings-section-card">
-                  <div class="section-label">{{ t('features.settings.board') }}</div>
-                  <div class="board-selector-grid">
-                    <div
+
+                <div class="p-3.5 rounded-lg bg-elevated/50 border border-border mb-3">
+                  <div class="text-xs font-display font-bold uppercase tracking-wider text-text-secondary mb-2.5">
+                    {{ t('features.settings.board') }}
+                  </div>
+                  <div class="grid grid-cols-4 gap-2 max-h-44 overflow-y-auto p-0.5">
+                    <button
                       v-for="board in AVAILABLE_BOARDS"
                       :key="board.name"
-                      class="selector-item board-item"
-                      :class="{ selected: board.name === draftPreferences.theme.board }"
+                      type="button"
+                      class="p-0.5 rounded-md border-2 bg-void/40 cursor-pointer transition-transform hover:scale-105"
+                      :class="
+                        board.name === draftPreferences.theme.board
+                          ? 'border-neon-cyan'
+                          : 'border-transparent hover:border-border-hover'
+                      "
                       @click="draftPreferences.theme.board = board.name"
                     >
-                      <img :src="`/board/jpg_png/${board.thumbnailFile}`" :alt="board.name" />
-                    </div>
+                      <img
+                        :src="`/board/jpg_png/${board.thumbnailFile}`"
+                        :alt="board.name"
+                        class="w-full h-auto block rounded-sm"
+                      />
+                    </button>
                   </div>
                 </div>
 
-                <div class="settings-section-card">
-                  <div class="section-label">{{ t('features.settings.pieces') }}</div>
-                  <div class="piece-selector-grid">
-                    <div
+                <div class="p-3.5 rounded-lg bg-elevated/50 border border-border">
+                  <div class="text-xs font-display font-bold uppercase tracking-wider text-text-secondary mb-2.5">
+                    {{ t('features.settings.pieces') }}
+                  </div>
+                  <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-0.5">
+                    <button
                       v-for="pieceSet in AVAILABLE_PIECE_SETS"
                       :key="pieceSet.name"
-                      class="selector-item piece-item"
-                      :class="{ selected: pieceSet.name === draftPreferences.theme.pieces }"
+                      type="button"
+                      class="aspect-square p-1 rounded-md border-2 bg-void/40 cursor-pointer flex items-center justify-center transition-transform hover:scale-105"
+                      :class="
+                        pieceSet.name === draftPreferences.theme.pieces
+                          ? 'border-neon-cyan'
+                          : 'border-transparent hover:border-border-hover'
+                      "
                       @click="draftPreferences.theme.pieces = pieceSet.name"
                     >
-                      <img :src="pieceSet.previewPieceFile" :alt="pieceSet.name" />
-                    </div>
+                      <img
+                        :src="pieceSet.previewPieceFile"
+                        :alt="pieceSet.name"
+                        class="max-w-4/5 max-h-4/5"
+                      />
+                    </button>
                   </div>
                 </div>
-              </n-collapse-item>
-            </n-collapse>
+              </NCollapseItem>
+            </NCollapse>
           </div>
 
-          <!-- Bottom Save and authentication buttons -->
-          <div class="drawer-footer">
-            <n-button
-              block
-              size="large"
-              class="save-btn"
-              @click="handleSave"
-            >
+          <!-- Footer Actions -->
+          <div class="mt-auto pt-4 border-t border-border flex flex-col gap-3">
+            <NButton block type="primary" size="large" @click="handleSave">
               {{ t('features.settings.save') }}
-            </n-button>
+            </NButton>
 
-            <n-button
+            <NButton
               block
               size="large"
-              class="auth-action-btn"
-              :class="{ 'logout-mode': isAuthenticated }"
+              :type="isAuthenticated ? 'error' : 'success'"
+              secondary
               @click="handleAuthAction"
             >
               <template #icon>
-                <n-icon v-if="isAuthenticated"><LogOutOutline /></n-icon>
-                <n-icon v-else><LogInOutline /></n-icon>
+                <NIcon v-if="isAuthenticated"><LogOutOutline /></NIcon>
+                <NIcon v-else><LogInOutline /></NIcon>
               </template>
               {{ isAuthenticated ? t('shared.nav.logout') : t('shared.nav.login') }}
-            </n-button>
+            </NButton>
           </div>
-
         </div>
-      </n-drawer-content>
-    </n-drawer>
+      </NDrawerContent>
+    </NDrawer>
   </div>
 </template>
-
-<style scoped>
-.settings-menu-container {
-  display: inline-block;
-}
-
-.settings-toggle-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  transition: transform 0.3s ease;
-}
-
-.settings-gear-icon {
-  font-size: 1.85rem;
-  color: var(--neon-yellow);
-  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.3));
-}
-
-.settings-toggle-button:hover {
-  transform: rotate(60deg) scale(1.1);
-}
-
-/* Glassmorphism drawer content inner rules */
-.drawer-inner-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: 16px;
-  padding-bottom: 24px;
-}
-
-.collapse-header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #e4e4e7;
-}
-
-.settings-section-card {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
-}
-
-.settings-section-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.section-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #a1a1aa;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.value-badge {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--neon-yellow, #f7d547);
-  background: rgba(247, 213, 71, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  min-width: 54px;
-  text-align: center;
-}
-
-/* Board grid selector */
-.board-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
-  gap: 8px;
-  max-height: 180px;
-  overflow-y: auto;
-  padding: 2px;
-}
-
-/* Pieces grid selector */
-.piece-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-  gap: 8px;
-  max-height: 150px;
-  overflow-y: auto;
-  padding: 2px;
-}
-
-.selector-item {
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  padding: 2px;
-  background: rgba(255, 255, 255, 0.02);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.selector-item:hover {
-  transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.selector-item.selected {
-  border-color: var(--neon-bordeaux, #d9004c);
-  box-shadow: 0 0 8px rgba(217, 0, 76, 0.4);
-}
-
-.selector-item img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 6px;
-}
-
-.piece-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1 / 1;
-}
-
-.piece-item img {
-  max-width: 80%;
-  max-height: 80%;
-}
-
-/* Horizontal language buttons selector */
-.language-selector {
-  display: flex;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 4px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.lang-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #a1a1aa;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.8rem;
-  transition: all 0.2s ease;
-}
-
-.lang-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.lang-btn.active {
-  background: var(--neon-bordeaux, #d9004c);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(217, 0, 76, 0.35);
-}
-
-/* Crashtest Row */
-.dev-crashtest-card {
-  background: rgba(217, 0, 76, 0.05);
-  border: 1px dashed rgba(217, 0, 76, 0.25);
-}
-
-.dev-crashtest-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dev-crashtest-label {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--neon-bordeaux, #d9004c);
-}
-
-
-
-/* Drawer Footer and Auth/Save buttons */
-.drawer-footer {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.save-btn {
-  font-weight: 800 !important;
-  letter-spacing: 1px !important;
-  border-radius: 8px !important;
-  background: linear-gradient(135deg, var(--neon-cyan, #00e5ff), var(--neon-blue, #0055ff)) !important;
-  color: #fff !important;
-  border: none !important;
-  transition: all 0.3s ease !important;
-}
-
-.save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
-}
-
-.auth-action-btn {
-  font-weight: 800 !important;
-  letter-spacing: 1px !important;
-  border-radius: 8px !important;
-  background-color: var(--color-accent-success, #22c55e) !important;
-  color: #fff !important;
-  border: none !important;
-  transition: all 0.3s ease !important;
-}
-
-.auth-action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
-}
-
-.auth-action-btn.logout-mode {
-  background-color: var(--neon-bordeaux, #d9004c) !important;
-}
-
-.auth-action-btn.logout-mode:hover {
-  box-shadow: 0 4px 15px rgba(217, 0, 76, 0.4);
-}
-
-/* Naive UI Drawer Customizations */
-:deep(.n-drawer-header__title) {
-  font-weight: 800 !important;
-  font-size: 1.15rem !important;
-  color: #fff !important;
-}
-
-:deep(.n-drawer-header) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-:deep(.n-collapse-item__header-main) {
-  width: 100%;
-}
-</style>
-
-<style>
-.settings-drawer,
-.settings-drawer .n-drawer-content {
-  background-color: var(--bg-1, #0a0b14) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-</style>

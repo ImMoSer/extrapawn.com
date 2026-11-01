@@ -4,21 +4,17 @@ import { EngineEvaluationHeader } from '@/features/analysis'
 </script>
 
 <template>
-  <div class="explorer-widget-container flex flex-col h-full w-full flex-1 p-2 gap-2 overflow-hidden bg-surface rounded-md border border-border">
+  <div
+    class="flex h-full min-h-0 w-full flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-surface p-2"
+  >
     <!-- 1. Engine Evaluation Header (Stockfish lines & eval) -->
     <div class="shrink-0">
       <EngineEvaluationHeader />
     </div>
 
     <!-- 2. PGN Move History (Partieverlauf) -->
-    <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <PgnMoveHistory class="h-full" />
     </div>
   </div>
 </template>
-
-<style scoped>
-.explorer-widget-container {
-  min-height: 0;
-}
-</style>

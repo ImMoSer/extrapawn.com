@@ -199,37 +199,37 @@
       }
     },
     "modules": {
-      "puzzlePlay": {
-        "title": "PUZZLE PLAY — Tactics & Endgames",
-        "text": "Four highly specialized training modes for focused learning. All tasks are divided into three difficulties: **Novice, Pro, and Master**. An intelligent **Coach Sidebar** on the right provides visual hints, prevents blunders, and can be set to permanent mode for beginners.\n\n• **Theoretical Endgames**: Textbook endgame positions. Memorize and internalize the exact winning or defensive paths.\n• **FinishHim**: Convert a winning advantage against dedicated neural network sparring models (Maia, Bad Gyal, T1000) across 19 popular practical themes.\n• **Practical Endgames**: 20 themes classified from real practical games. Perfect your realization technique under realistic conditions.\n• **Tactics**: The most popular Lichess tactics, categorized into 20 distinct motifs."
+      "trainingCenter": {
+        "title": "TRAINING CENTER — 7 / 30-Day Course System",
+        "text": "Structured training courses across four core disciplines (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) divided into three progression tiers (**Novice, Pro, Master**).\n\n• **Dual-Gate Progression**: Unlocking the next tier requires completing the course puzzle quota and clearing the Glicko-2 rating gate across all mandatory scopes.\n• **Intelligent Coach Sidebar**: Live move evaluation, visual strategic plans, and blunder protection.\n• **Neural Playouts**: In Endgames and Finish Him, transition seamlessly from forced lines into full conversion playouts against human-like neural networks (Maia, Bad Gyal, T1000)."
       },
-      "taskToday": {
-        "title": "TASK TODAY — Personalized Daily Trainer",
-        "text": "The ultimate tool for daily training. Training plans are generated in three difficulties (Novice, Pro, Master) based on three strategies:\n\n• 💡 **Discovery**: Learn new themes and fill gaps in your knowledge.\n• 🔥 **Hardcore**: Target and attack your biggest weaknesses (where you get beaten most often).\n• ⚡ **Warmup**: Reinforce your knowledge by sharpening your strongest themes.\n\nSolve under pressure with a timer and progress tracker. At the end, you get a detailed performance report. All results are saved on the backend and shape future plans."
+      "warmup": {
+        "title": "TARGETED WARMUP — Precision Calibration Arena",
+        "text": "Free-form training arena for rapid warmups and surgical weakness elimination without course schedule constraints.\n\n• 🎯 **Granular Focus Contours**: Filter by combat motif contour, specific tactical motif, game phase, calculation horizon, endgame domain, or material class.\n• 📊 **Blind-Spot Calibration**: Rapidly reduce rating deviation (RD) and bring lagging scopes above the tier gate.\n• ⚡ **Full Rating Sync**: Every attempt updates your Glicko-2 skill profile and cabinet analytics in real time."
       },
-      "sparring": {
-        "title": "SPARRING — Play Practice & Analysis",
-        "text": "Play free games starting from the initial position or any custom setup, with or without tablebase support and graphical hints.\n\n• **Coach Sidebar**: Features strategic information and an Analysis tab on the right.\n• **Opening Explorer**: Stats-based opening book on the left, created from Lichess games of 2000+ Elo users, using color-coded hints.\n• **Wikibooks Integration**: Access extensive theoretical guides and information on any played opening.\n• **AI Coach**: Under active development and will soon be upgraded with a personal AI sparring coach."
+      "woodpecker": {
+        "title": "WOODPECKER METHOD — 24h Cooldown · 3× Streak",
+        "text": "Automated spaced-repetition engine inspired by the classic Woodpecker Method.\n\n• ⏳ **24-Hour Cooldown**: Any failed puzzle is automatically placed in the Woodpecker vault for a 24-hour cooldown to reset short-term memory.\n• 🔥 **3× Consecutive Streak**: To graduate a puzzle permanently, you must solve it cleanly 3 times in a row across separate 24h+ intervals.\n• 🧠 **Pattern Reflexes**: Turns former tactical and endgame blind spots into instant tournament reflexes."
       },
       "userCabinet": {
-        "title": "USER CABINET — Your Chess DNA",
-        "text": "The visual command center for displaying your training results. Analyze your chess development across all themes, identify your strengths and weaknesses precisely, and track your performance history."
+        "title": "USER CABINET 2.0 — Your Chess DNA",
+        "text": "Visual command center for macro progress and automated diagnostics.\n\n• 📈 **12-Month Mastery Timeline**: Rolling 52-week Glicko-2 rating and EMA accuracy trajectory.\n• 🧭 **Tactical Radar & Endgame Map**: Full breakdown across every motif, domain, material class, and calculation horizon (Short 1-2m vs Deep 3+m).\n• 🚀 **One-Click Action**: Automatically identifies your top strength, primary gate blocker, and high-RD blind spots with one-click WarmUp launch."
       }
     },
     "techStack": {
-      "title": "Advanced Tech Stack",
+      "title": "Advanced Tech Stack v2.0",
       "frontend": "Frontend: ",
-      "frontendStack": "Vue 3.5 (Composition API), Vite, Pinia, Naive UI",
-      "backend": "Orchestration: ",
-      "backendStack": "NestJS (Node.js) & FastAPI (Python) distributed architecture",
+      "frontendStack": "Vue 3.5 (Composition API), TypeScript, Vite, Tailwind CSS v4, Pinia, Naive UI",
+      "backend": "Core & Orchestration: ",
+      "backendStack": "Go Training Engine v2.0 (Glicko-2 / Woodpecker) + Fastify (Node.js) + SQLite mmap & PostgreSQL",
       "chessLogic": "Core Logic: ",
       "chessLogicStack": "Chessops & Chessground high-performance engines",
       "boardRendering": "Data Visualization: ",
-      "boardRenderingStack": "Apache ECharts for complex analytics",
-      "chessEngine": "Analysis Cluster: ",
-      "chessEngineStack": "Stockfish 19, LCZero (Neural Network Hub), n8n workflow core",
+      "boardRenderingStack": "Apache ECharts for 12-month timelines & tactical radars",
+      "chessEngine": "Analysis & Sparring Cluster: ",
+      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia, Bad Gyal, T1000 Neural Hub)",
       "api": "Protocols: ",
-      "apiStack": "Lichess REST API & OAuth2"
+      "apiStack": "Lichess REST API & OAuth 2.0"
     },
     "contributing": "We welcome all contributions to make EXTRAPAWN the ultimate training tool! If you have ideas or found a bug, please create an issue or a PR on GitHub.",
     "licenseAndAcknowledgements": {
@@ -822,105 +822,6 @@
         "days21": "Last 21 days"
       }
     },
-    "taskToday": {
-      "title": "Task Today",
-      "modes": {
-        "tactics": "TACTICS",
-        "finish_him": "FINISHING",
-        "practical_chess": "PRACTICE",
-        "theory_endings": "THEORY"
-      },
-      "helpDone": "Done & Try Again",
-      "setupTitle": "Task Setup",
-      "readyToStart": "Are you ready to start the task? The timer will start immediately.",
-      "startBtn": "Start Task",
-      "subtitle": "Complete your daily personalized chess training",
-      "chooseDifficulty": "1. Choose Difficulty",
-      "completedStatus": "Completed",
-      "insufficientCoinsBadge": "Low PC",
-      "trainingStrategy": "2. Training Strategy",
-      "preview": "Plan Preview",
-      "previewTasks": "0 Tasks | 1 Task | {count} Tasks",
-      "previewChooseStrategy": "Select a strategy for preview.",
-      "history": "History",
-      "runningTraining": "Running Training",
-      "resumeActiveBtn": "Continue",
-      "cancelActiveBtn": "Cancel Plan",
-      "noPastPlans": "No past plans found.",
-      "startTrainingBtn": "🚀 START TRAINING",
-      "strategies": {
-        "discovery": {
-          "title": "💡 Discovery",
-          "desc": "Learn new themes and fill gaps in your knowledge."
-        },
-        "hardcore": {
-          "title": "🔥 Hardcore",
-          "desc": "Target and attack your biggest weaknesses."
-        },
-        "warmup": {
-          "title": "⚡ Warmup",
-          "desc": "Reinforce your knowledge with your strongest themes."
-        }
-      },
-      "feedback": {
-        "resumeSuccess": "Training resumed!",
-        "resumeError": "Failed to resume training.",
-        "cancelSuccess": "Training plan canceled!",
-        "cancelError": "Failed to cancel training plan.",
-        "startSuccess": "Daily training plan started!",
-        "startError": "Failed to generate plan.",
-        "replaySuccess": "Replay started!",
-        "replayError": "Failed to load replay."
-      },
-      "completed": {
-        "title": "Training Successfully Completed!",
-        "puzzles": "Puzzles",
-        "breakdownTitle": "Your Report",
-        "puzzlesCountShort": "Tasks",
-        "analyze": "Analysis",
-        "backToReport": "Back to Report",
-        "backToStart": "Back to Dashboard",
-        "startAnother": "Start Another Plan",
-        "duration": {
-          "hour": "hour",
-          "hours": "hours",
-          "minute": "minute",
-          "minutes": "minutes",
-          "second": "second",
-          "seconds": "seconds"
-        },
-        "stats": {
-          "accuracy": "Accuracy",
-          "totalAttempts": "Total Attempts",
-          "totalFailed": "Failed",
-          "avgTime": "Avg. Time / Puzzle",
-          "avgRating": "Avg. Rating"
-        },
-        "details": {
-          "category": "Category",
-          "solved": "Solved",
-          "failed": "Failed",
-          "avgTime": "Avg. Time",
-          "rating": "Rating"
-        },
-        "modes": {
-          "tactics": "TACTICS",
-          "finish_him": "FINISHING",
-          "practical_chess": "PRACTICE",
-          "theory_endings": "THEORY"
-        }
-      },
-      "sidebar": {
-        "trainingCompleted": "TRAINING COMPLETED",
-        "noPlan": "No active training plan",
-        "goToDashboard": "Go to Dashboard",
-        "left": "{count} left",
-        "puzzleQueue": "Puzzle Queue",
-        "puzzlesCount": "{count} Puzzles",
-        "solvedAttempts": "Solved: {solved} / {attempts} Attempts",
-        "restartPuzzle": "Restart Puzzle"
-      }
-    },
     "settings": {
       "title": "Settings",
       "selectBoard": "Board",
@@ -929,6 +830,8 @@
       "crashtestDelay": "Crashtest Delay",
       "botThinkingDelay": "Bot Thinking Delay",
       "devCrashtest": "Developer Crashtest",
+      "devCrashtestEngine": "Crashtest Engine",
+      "devCrashtestSpeed": "Crashtest Move Delay",
       "gameplayBotDelays": "Gameplay & Bot Delays",
       "initialBotDelay": "Initial Bot Delay",
       "nextPuzzleDelay": "Next Puzzle Delay",
@@ -964,23 +867,6 @@
       "select": "Sparring partner"
     },
     "profile": {},
-    "puzzle": {
-      "next": "Next",
-      "selectLessonPrompt": "Select a lesson to begin training",
-      "autoNextTooltip": "Auto-advance to next puzzle on solve",
-      "feedback": {
-        "loadFailed": "Failed to load puzzle.",
-        "loss": "You lost!",
-        "pressNext": "Press 'Play Button' to begin.",
-        "win": "You won!",
-        "yourTurn": "Your turn! Find the correct continuation."
-      },
-      "header": {
-        "rating": "Rating",
-        "style": "Style",
-        "motifs": "Motifs"
-      }
-    },
     "gameplay": {
       "confirmExit": {
         "title": "Exit Game?",
@@ -1169,7 +1055,9 @@
         "attemptSolved": "Puzzle Solved!",
         "attemptFailed": "Failed! Queued in Woodpecker for 24h cooldown",
         "solvedShort": "SOLVED",
-        "failedShort": "FAILED"
+        "failedShort": "FAILED",
+        "playoutStart": "Forced line completed! Finish the position against the sparring bot.",
+        "playoutDeviation": "Off-book move. Prove your evaluation against the sparring bot!"
       },
       "sidebar": {
         "queueTitle": "Session Queue",

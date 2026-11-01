@@ -95,7 +95,7 @@ const handleUpdateValue = (key: string) => {
 </script>
 
 <template>
-  <div class="nav-menu-wrapper">
+  <div class="w-full font-display font-medium">
     <n-menu
       :value="activeKey"
       :collapsed="collapsed"
@@ -106,14 +106,3 @@ const handleUpdateValue = (key: string) => {
     />
   </div>
 </template>
-
-<style scoped>
-.nav-menu-wrapper {
-  width: 100%;
-}
-
-:deep(.n-menu-item-content-header) {
-  font-family: inherit;
-  font-weight: 500;
-}
-</style>

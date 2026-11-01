@@ -12,7 +12,7 @@ const props = withDefaults(
   }>(),
   {
     readOnly: false,
-  }
+  },
 )
 
 const rootNode = computed(() => {
@@ -27,8 +27,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="pgn-tree-view">
-    <div v-if="rootNode && rootNode.children.length > 0" class="tree-content">
+  <div class="text-left font-condensed text-[0.95rem] leading-relaxed text-text-primary">
+    <div v-if="rootNode && rootNode.children.length > 0" class="p-1">
       <PgnTreeNode
         :node="rootNode"
         :depth="0"
@@ -36,30 +36,8 @@ const emit = defineEmits<{
         @contextmenu="emit('contextmenu', $event)"
       />
     </div>
-    <div v-else class="empty-pgn">
+    <div v-else class="p-5 text-center text-[0.9rem] text-text-secondary italic">
       {{ t('shared.board.pgn.noMoves') }}
     </div>
   </div>
 </template>
-
-<style scoped>
-.pgn-tree-view {
-  font-family: 'JetBrains Mono', monospace;
-  line-height: 1.6;
-  font-size: 0.95rem;
-  color: var(--color-text-primary);
-  text-align: left;
-}
-
-.tree-content {
-  padding: 4px;
-}
-
-.empty-pgn {
-  padding: 20px;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-style: italic;
-  font-size: 0.9rem;
-}
-</style>

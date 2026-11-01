@@ -14,7 +14,7 @@ const props = withDefaults(
     isMainline: false,
     depth: 0,
     readOnly: false,
-  }
+  },
 )
 
 const gameStore = useGameStore()
@@ -28,23 +28,20 @@ const isActive = computed(() => {
 const moveNumber = computed(() => {
   const ply = props.node.ply
   if (ply === 0) return ''
-  
+
   const moveNum = Math.ceil(ply / 2)
   const isWhite = ply % 2 !== 0
 
   if (isWhite) return `${moveNum}.`
-  
-  // For black: show number only if it's the very first move of a variation
-  // or if explicitly forced (like in Lichess when a variation starts with black)
-  const isFirstInBranch = props.node.parent && props.node.parent.children[0] === props.node && props.node.parent.ply === 0
+
+  const isFirstInBranch =
+    props.node.parent && props.node.parent.children[0] === props.node && props.node.parent.ply === 0
   const isStartOfVariation = props.node.parent && props.node.parent.children[0] !== props.node
-  
-  if (isFirstInBranch || isStartOfVariation || props.depth && props.depth > 0) {
-     // Check if the previous move in this specific branch was white. 
-     // If not, we need the ... notation.
-     return `${moveNum}...`
+
+  if (isFirstInBranch || isStartOfVariation || (props.depth && props.depth > 0)) {
+    return `${moveNum}...`
   }
-  
+
   return ''
 })
 
@@ -66,10 +63,29 @@ const nagInfo = computed(() => {
   if (meta && meta.nag && meta.nag !== 'OK') {
     return {
       symbol: meta.nag,
-      quality: meta.quality || 'good'
+      quality: meta.quality || 'good',
     }
   }
   return null
+})
+
+const qualityColorClass = computed(() => {
+  switch (nagInfo.value?.quality) {
+    case 'best':
+      return '!text-success'
+    case 'brilliant':
+      return '!text-neon-purple'
+    case 'inaccuracy':
+      return '!text-orange'
+    case 'mistake':
+      return '!text-highlight'
+    case 'blunder':
+      return '!text-danger'
+    case 'interesting':
+      return '!text-neon-cyan'
+    default:
+      return ''
+  }
 })
 
 const emit = defineEmits<{
@@ -83,163 +99,68 @@ const navigate = () => {
 </script>
 
 <template>
-  <div :class="['pgn-node-wrapper', { 'is-variation': depth && depth > 0 }]">
+  <div class="inline" :class="{ 'text-text-secondary': depth && depth > 0 }">
     <!-- The Move itself -->
-    <span v-if="node.ply > 0" class="move-item">
-      <span v-if="moveNumber" class="move-number">{{ moveNumber }}</span>
-      <span 
-        :class="['move-san', { 'is-active': isActive, 'read-only': readOnly }, nagInfo?.quality]" 
+    <span v-if="node.ply > 0" class="mr-1 inline-flex items-baseline py-0.5 whitespace-nowrap">
+      <span
+        v-if="moveNumber"
+        class="mr-[3px] text-[0.82em] font-normal text-text-secondary select-none"
+      >
+        {{ moveNumber }}
+      </span>
+      <span
+        class="move-san rounded border px-[5px] py-px font-semibold transition-all duration-150"
+        :class="[
+          isActive
+            ? 'is-active border-highlight/40 bg-highlight/20 font-extrabold text-highlight'
+            : 'border-transparent text-text-primary',
+          readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-elevated/80 hover:text-text-primary',
+          qualityColorClass,
+        ]"
         @click="navigate"
         @contextmenu.prevent="emit('contextmenu', { event: $event, node: props.node })"
       >
         {{ node.san }}{{ nagInfo ? nagInfo.symbol : '' }}
       </span>
-      <span v-if="node.comment" class="move-comment" :title="node.comment">
+      <span
+        v-if="node.comment"
+        class="ml-1.5 inline-block max-w-[320px] rounded-r border-l-2 border-neon-cyan bg-elevated/50 px-1.5 py-0.5 align-middle font-display text-[0.82em] whitespace-normal text-text-secondary italic"
+        :title="node.comment"
+      >
         {{ node.comment }}
       </span>
     </span>
 
     <!-- Branching Logic -->
-    <div class="move-children">
+    <div class="inline">
       <!-- 1. Variations first (if any) -->
-      <div v-if="variations.length > 0" class="variations-container">
-        <div v-for="(vNode, idx) in variations" :key="idx" class="variation-block">
-          <span class="variation-bracket">(</span>
-          <PgnTreeNode :node="vNode" :depth="(depth || 0) + 1" :read-only="readOnly" @contextmenu="emit('contextmenu', $event)" />
-          <span class="variation-bracket">)</span>
+      <div
+        v-if="variations.length > 0"
+        class="my-1.5 ml-3 block rounded-r-md border-l-2 border-border-hover bg-elevated/20 py-1 pl-3"
+      >
+        <div
+          v-for="(vNode, idx) in variations"
+          :key="idx"
+          class="mb-1 block text-[0.92em] last:mb-0"
+        >
+          <PgnTreeNode
+            :node="vNode"
+            :depth="(depth || 0) + 1"
+            :read-only="readOnly"
+            @contextmenu="emit('contextmenu', $event)"
+          />
         </div>
       </div>
 
       <!-- 2. Continue Mainline -->
-      <PgnTreeNode 
-        v-if="mainlineChild" 
-        :node="mainlineChild" 
-        :depth="depth" 
-        :is-mainline="true" 
+      <PgnTreeNode
+        v-if="mainlineChild"
+        :node="mainlineChild"
+        :depth="depth"
+        :is-mainline="true"
         :read-only="readOnly"
         @contextmenu="emit('contextmenu', $event)"
       />
     </div>
   </div>
 </template>
-
-<style scoped>
-.pgn-node-wrapper {
-  display: inline;
-}
-
-.move-item {
-  display: inline-flex;
-  align-items: baseline;
-  margin-right: 4px;
-  padding: 2px 0;
-  white-space: nowrap;
-}
-
-.move-number {
-  color: var(--color-text-muted);
-  font-size: 0.82em;
-  margin-right: 3px;
-  font-weight: 400;
-  user-select: none;
-}
-
-.move-san {
-  cursor: pointer;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  transition: all 0.15s ease;
-  border: 1px solid transparent;
-}
-
-.move-san:not(.read-only):hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.move-san.read-only {
-  cursor: default;
-}
-
-/* NAG colors */
-.move-san.best {
-  color: var(--color-nag-best) !important;
-}
-
-.move-san.brilliant {
-  color: var(--color-nag-brilliant) !important;
-}
-
-.move-san.inaccuracy {
-  color: var(--color-nag-inaccuracy) !important;
-}
-
-.move-san.mistake {
-  color: var(--color-nag-mistake) !important;
-}
-
-.move-san.blunder {
-  color: var(--color-nag-blunder) !important;
-}
-
-.move-san.interesting {
-  color: var(--color-nag-interesting) !important;
-}
-
-.move-san.is-active {
-  background: rgba(var(--color-accent-rgb), 0.2);
-  color: var(--color-accent);
-  font-weight: 800;
-  border-color: rgba(var(--color-accent-rgb), 0.4);
-  box-shadow: 0 0 8px rgba(var(--color-accent-rgb), 0.1);
-}
-
-.move-children {
-  display: inline;
-}
-
-.variations-container {
-  display: block; /* Variation starts on a new line */
-  margin: 6px 0 6px 12px;
-  padding: 4px 0 4px 12px;
-  border-left: 2px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.01);
-  border-radius: 0 6px 6px 0;
-}
-
-.variation-block {
-  display: block; /* Each sibling variation gets its own line if many */
-  margin-bottom: 4px;
-  font-size: 0.92em;
-}
-
-.variation-block:last-child {
-  margin-bottom: 0;
-}
-
-.variation-bracket {
-  display: none; /* We use borders and indentation instead of brackets for a cleaner tree look */
-}
-
-.is-variation {
-  color: var(--color-text-muted);
-}
-
-.move-comment {
-  font-family: var(--font-sans, sans-serif);
-  font-style: italic;
-  font-size: 0.82em;
-  color: #a1a1aa;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border-left: 2px solid var(--neon-cyan, #1890ff);
-  margin-left: 6px;
-  display: inline-block;
-  white-space: normal;
-  max-width: 320px;
-  vertical-align: middle;
-}
-</style>

@@ -103,156 +103,57 @@ const deleteMove = () => {
 </script>
 
 <template>
-  <div class="pgn-move-history">
-    <div class="history-header">
-      <n-text class="header-title" depth="3">{{ t('shared.board.pgn.moveHistory') }}</n-text>
+  <div
+    class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-surface"
+  >
+    <div class="px-3 pt-2 pb-1">
+      <n-text class="text-xs font-bold tracking-[0.5px] uppercase" depth="3">
+        {{ t('shared.board.pgn.moveHistory') }}
+      </n-text>
     </div>
 
-    <div ref="scrollContainer" class="history-content-scroll">
+    <div
+      ref="scrollContainer"
+      class="mx-2 mb-2 min-h-0 flex-1 overflow-y-auto rounded border border-border bg-void/40 px-3 py-2"
+    >
       <PgnTree :key="pgnTreeVersion" :read-only="isReadOnly" @contextmenu="handleContextMenu" />
     </div>
 
     <teleport to="body">
-      <transition name="fade">
+      <div
+        v-if="showMenu && selectedNode"
+        class="glass fixed z-[99999] flex min-w-[250px] translate-y-1 flex-col gap-0.5 rounded-[10px] p-1.5"
+        :style="{ left: menuX + 'px', top: menuY + 'px' }"
+        @click.stop
+      >
         <div
-          v-if="showMenu && selectedNode"
-          class="custom-context-menu glass"
-          :style="{ left: menuX + 'px', top: menuY + 'px' }"
-          @click.stop
+          class="group flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[0.85rem] font-medium text-text-primary transition-colors select-none hover:bg-elevated"
+          @click="promoteToMain"
         >
-          <div class="menu-item" @click="promoteToMain">
-            <n-icon class="menu-icon"><ArrowUpOutline /></n-icon>
-            <span>{{ t('shared.board.pgn.promoteToMain') }}</span>
-          </div>
-
-          <div class="menu-item" @click="promoteToVariant">
-            <n-icon class="menu-icon"><TrendingUpOutline /></n-icon>
-            <span>{{ t('shared.board.pgn.promoteVariation') }}</span>
-          </div>
-
-          <div class="menu-item delete" @click="deleteMove">
-            <n-icon class="menu-icon"><TrashOutline /></n-icon>
-            <span>{{ t('shared.board.pgn.deleteVariation') }}</span>
-          </div>
+          <n-icon class="text-base text-text-secondary group-hover:text-text-primary">
+            <ArrowUpOutline />
+          </n-icon>
+          <span>{{ t('shared.board.pgn.promoteToMain') }}</span>
         </div>
-      </transition>
+
+        <div
+          class="group flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[0.85rem] font-medium text-text-primary transition-colors select-none hover:bg-elevated"
+          @click="promoteToVariant"
+        >
+          <n-icon class="text-base text-text-secondary group-hover:text-text-primary">
+            <TrendingUpOutline />
+          </n-icon>
+          <span>{{ t('shared.board.pgn.promoteVariation') }}</span>
+        </div>
+
+        <div
+          class="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[0.85rem] font-medium text-danger transition-colors select-none hover:bg-danger/15"
+          @click="deleteMove"
+        >
+          <n-icon class="text-base text-danger"><TrashOutline /></n-icon>
+          <span>{{ t('shared.board.pgn.deleteVariation') }}</span>
+        </div>
+      </div>
     </teleport>
   </div>
 </template>
-
-<style scoped lang="scss">
-.pgn-move-history {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  background: var(--bg-1);
-  border-radius: 8px;
-  border: 1px solid var(--glass-border);
-  overflow: hidden;
-}
-
-.history-header {
-  padding: 8px 12px 4px;
-}
-
-.header-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.history-content-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  margin: 0 8px 8px;
-  border-radius: 6px;
-}
-
-.history-content-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.history-content-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.history-content-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-.history-content-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.custom-context-menu {
-  position: fixed;
-  z-index: 99999;
-  min-width: 250px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  border-radius: 10px;
-  transform: translate(0, 4px);
-
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-
-    .menu-icon {
-      font-size: 1rem;
-      color: var(--text-secondary);
-    }
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.06);
-
-      .menu-icon {
-        color: var(--text-primary);
-      }
-    }
-
-    &.delete {
-      color: var(--color-error);
-
-      .menu-icon {
-        color: var(--color-error);
-      }
-
-      &:hover {
-        background: rgba(255, 7, 58, 0.15);
-      }
-    }
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translate(0, 0) scale(0.95);
-}
-</style>
-

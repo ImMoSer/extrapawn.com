@@ -112,6 +112,7 @@ class AnalysisServiceController {
   }
 
   public async startNewGame() {
+    this.sanCache.clear()
     if (!this.activeEngineManager) {
       await this.initialize()
     }
@@ -121,6 +122,7 @@ class AnalysisServiceController {
   }
 
   public async stopAnalysis() {
+    this.sanCache.clear()
     if (!this.activeEngineManager) {
       return
     }
@@ -207,6 +209,12 @@ class AnalysisServiceController {
     }
 
     const result = { pvSan: sanMoves, initialFullMoveNumber, initialTurn }
+    if (this.sanCache.size >= 500) {
+      const oldestKey = this.sanCache.keys().next().value
+      if (oldestKey !== undefined) {
+        this.sanCache.delete(oldestKey)
+      }
+    }
     this.sanCache.set(cacheKey, result)
     return result
   }

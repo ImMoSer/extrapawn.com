@@ -346,7 +346,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
           await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
-          this.callbacks?.onFeedback?.(t('features.puzzle.feedback.playoutStart'))
+          this.callbacks?.onFeedback?.(t('features.trainingCenter.play.playoutStart'))
         }
       }
     } else {
@@ -357,7 +357,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         }
         this.isPlayoutMode = true
         this.scenarioIndex = this.scenarioMoves.length
-        this.callbacks?.onFeedback?.(t('features.puzzle.feedback.playoutDeviation'))
+        this.callbacks?.onFeedback?.(t('features.trainingCenter.play.playoutDeviation'))
       } else {
         logger.info(
           `[PuzzleStrategy] Scenario deviation on expected move: ${expectedMove}. Triggering failure.`,
@@ -391,7 +391,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
         await this.triggerSuccess('scenario_complete')
       } else if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true
-        this.callbacks?.onFeedback?.(t('features.puzzle.feedback.playoutStart'))
+        this.callbacks?.onFeedback?.(t('features.trainingCenter.play.playoutStart'))
       }
     }
   }

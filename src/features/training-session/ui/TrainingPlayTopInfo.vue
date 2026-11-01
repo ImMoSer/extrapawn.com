@@ -147,7 +147,7 @@ function handleBackAction(): void {
 
     <!-- Right: Post-Attempt Actions / Analysis Controls -->
     <div class="flex items-center gap-1.5 shrink-0">
-      <template v-if="store.isAwaitingNext && store.lastAttemptResult">
+      <template v-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved">
         <span
           class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm font-condensed font-bold text-xs border"
           :class="

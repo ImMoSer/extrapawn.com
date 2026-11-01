@@ -7,14 +7,11 @@ import { useI18n } from 'vue-i18n'
 import { LogInOutline } from '@vicons/ionicons5'
 import { GAME_MODES } from '@/shared/config/gameModes.config'
 
-// Инициализируем хранилище, роутер и i18n
 const authStore = useAuthStore()
 const { t, locale } = useI18n()
 
-// Получаем реактивные свойства из хранилища
 const { isAuthenticated, isLoading, error } = storeToRefs(authStore)
 
-// Метод для обработки входа
 const handleLogin = async () => {
   if (isLoading.value) {
     return
@@ -22,19 +19,16 @@ const handleLogin = async () => {
   await authStore.login()
 }
 
-// Метод для смены языка
 const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
   changeLang(lang)
 }
 
-// Конфигурация карточек меню для чистоты кода в шаблоне
 const menuItems = [
   GAME_MODES.training_center,
   GAME_MODES.warmup,
   GAME_MODES.user_cabinet,
 ]
 
-// Mobile detection logic
 const isMobile = ref(false)
 const updateMobile = () => {
   isMobile.value = window.innerWidth <= 768
@@ -55,25 +49,38 @@ const filteredMenuItems = computed(() => {
 </script>
 
 <template>
-  <div class="welcome-container">
-    <div class="content-wrapper">
+  <div
+    class="box-border flex h-full w-full items-start justify-center overflow-y-auto px-3 py-5 md:items-center md:overflow-hidden md:p-2.5"
+  >
+    <div
+      class="relative z-10 flex h-auto max-h-none w-full max-w-[1000px] flex-col items-center justify-center gap-4 md:max-h-full md:gap-[2vh]"
+    >
       <!-- Hero Section -->
-      <div class="hero-section">
-        <div class="brand-group">
-          <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="hero-logo" />
-          <div class="brand-text-content">
-            <h1 class="brand-name brand-text">EXTRAPAWN</h1>
-            <p class="brand-slogan">{{ t('pages.welcome.slogan') }}</p>
+      <div class="flex shrink-0 flex-col items-center gap-2 md:gap-[15px]">
+        <div class="flex flex-col items-center gap-2 md:gap-5">
+          <img
+            src="/webp/extra_pawn_black.webp"
+            alt="EXTRAPAWN"
+            class="h-20 w-auto drop-shadow-[0_0_15px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)] md:h-[clamp(100px,25vh,500px)]"
+          />
+          <div class="flex flex-col items-center gap-1 md:gap-[5px]">
+            <h1 class="brand-text m-0 text-[2rem] leading-none md:text-[clamp(2rem,6vw,4.5rem)]">
+              EXTRAPAWN
+            </h1>
+            <p
+              class="m-0 text-center text-xs font-normal tracking-[0.15rem] text-text-secondary uppercase opacity-70 md:text-[clamp(0.7rem,1.5vw,1.2rem)] md:tracking-[0.25rem]"
+            >
+              {{ t('pages.welcome.slogan') }}
+            </p>
           </div>
         </div>
 
         <!-- Login Button (Visible only if not authenticated) -->
-        <div v-if="!isAuthenticated" class="auth-section">
+        <div v-if="!isAuthenticated" class="mt-[5px]">
           <n-button
             type="primary"
             size="large"
             :loading="isLoading"
-            class="login-btn"
             @click="handleLogin"
           >
             <template #icon>
@@ -83,27 +90,49 @@ const filteredMenuItems = computed(() => {
           </n-button>
         </div>
 
-        <n-text v-if="error" type="error" class="error-text">
+        <n-text v-if="error" type="error">
           {{ `Error: ${error}` }}
         </n-text>
       </div>
 
       <!-- Mode Selection Grid -->
-      <n-grid :x-gap="isMobile ? 10 : 20" :y-gap="isMobile ? 10 : 20" cols="2 s:3 m:3 l:3" responsive="screen" class="menu-grid">
+      <n-grid
+        :x-gap="isMobile ? 10 : 20"
+        :y-gap="isMobile ? 10 : 20"
+        cols="2 s:3 m:3 l:3"
+        responsive="screen"
+        class="flex max-h-none w-full grow content-center justify-center md:max-h-[60vh]"
+      >
         <n-grid-item v-for="item in filteredMenuItems" :key="item.path">
           <router-link :to="item.path" custom v-slot="{ navigate }">
             <n-card
               hoverable
-              class="menu-card glass-card"
+              class="group relative flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-border bg-surface/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:border-[var(--card-glow-color)] hover:bg-elevated/80 hover:shadow-[0_0_25px_-5px_var(--card-glow-color)] md:rounded-[var(--radius-lg)]"
+              :content-style="{
+                padding: '0',
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }"
               @click="navigate"
               :bordered="false"
               :style="{ '--card-glow-color': item.color }"
             >
-              <div class="card-content">
-                <n-icon size="34" :color="item.color" class="card-icon">
+              <div
+                class="relative z-10 flex w-full flex-col items-center justify-center gap-1.5 px-2 py-3 text-center md:gap-2 md:px-4 md:py-6"
+              >
+                <n-icon
+                  :size="isMobile ? 24 : 34"
+                  :color="item.color"
+                  class="transition-transform duration-300 group-hover:scale-110"
+                >
                   <component :is="item.icon" />
                 </n-icon>
-                <n-text class="card-title">
+                <n-text
+                  class="font-display text-[0.8rem] font-bold tracking-[1px] text-text-primary uppercase transition-colors duration-300 group-hover:text-text-primary md:text-[1.1rem] md:tracking-[1.5px]"
+                >
                   {{ t(item.labelKey) }}
                 </n-text>
               </div>
@@ -113,27 +142,39 @@ const filteredMenuItems = computed(() => {
       </n-grid>
 
       <!-- Language Switcher -->
-      <div class="footer-section">
+      <div class="mt-auto shrink-0 py-2.5">
         <n-space justify="center" size="small">
           <button
-            class="lang-text-btn"
-            :class="{ active: locale === 'en' }"
+            class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
+            :class="
+              locale === 'en'
+                ? 'font-bold text-neon-cyan'
+                : 'text-text-secondary hover:text-text-primary'
+            "
             @click="handleChangeLang('en')"
           >
             EN
           </button>
-          <span class="lang-divider">|</span>
+          <span class="text-text-secondary opacity-50">|</span>
           <button
-            class="lang-text-btn"
-            :class="{ active: locale === 'ru' }"
+            class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
+            :class="
+              locale === 'ru'
+                ? 'font-bold text-neon-cyan'
+                : 'text-text-secondary hover:text-text-primary'
+            "
             @click="handleChangeLang('ru')"
           >
             RU
           </button>
-          <span class="lang-divider">|</span>
+          <span class="text-text-secondary opacity-50">|</span>
           <button
-            class="lang-text-btn"
-            :class="{ active: locale === 'de' }"
+            class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
+            :class="
+              locale === 'de'
+                ? 'font-bold text-neon-cyan'
+                : 'text-text-secondary hover:text-text-primary'
+            "
             @click="handleChangeLang('de')"
           >
             DE
@@ -143,291 +184,3 @@ const filteredMenuItems = computed(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.welcome-container {
-  height: 100%;
-  width: 100%;
-  background: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-  box-sizing: border-box;
-  overflow: hidden; /* Prevent scrolling */
-}
-
-.content-wrapper {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 1000px;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2vh; /* Use vh for dynamic vertical spacing */
-}
-
-.hero-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  flex-shrink: 0;
-}
-
-.hero-logo {
-  height: clamp(100px, 25vh, 500px);
-  width: auto;
-  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.2));
-}
-
-.brand-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  animation: float 6s ease-in-out infinite;
-}
-
-.brand-text-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.brand-name {
-  margin: 0;
-  font-size: clamp(2rem, 6vw, 4.5rem);
-  line-height: 1;
-}
-
-.brand-slogan {
-  margin: 0;
-  font-size: clamp(0.7rem, 1.5vw, 1.2rem);
-  font-weight: 400;
-  color: var(--color-text-muted);
-  letter-spacing: 0.25rem;
-  text-transform: uppercase;
-  opacity: 0.7;
-  text-align: center;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.auth-section {
-  margin-top: 5px;
-}
-
-.menu-grid {
-  width: 100%;
-  flex-grow: 1; /* Allow grid to take available space */
-  display: flex; /* Fix for centering content if needed, though grid handles cols */
-  align-content: center; /* Center rows vertically if they don't fill */
-  justify-content: center;
-  max-height: 60vh;
-}
-
-/* Glassmorphism Card Style */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--panel-border-radius, 16px);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  cursor: pointer;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  --n-padding-left: 0px !important;
-  --n-padding-right: 0px !important;
-  --n-padding-bottom: 0px !important;
-  --n-padding-top: 0px !important;
-}
-
-.glass-card :deep(.n-card__content),
-.glass-card :deep(.n-card-content) {
-  padding: 0 !important;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Subtle underlying colored gradient that fades in on hover */
-.glass-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, var(--card-glow-color) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.glass-card:hover {
-  transform: translateY(-5px) scale(1.02);
-  border-color: var(--card-glow-color);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    0 10px 40px -10px rgba(0, 0, 0, 0.7),
-    0 0 25px -5px var(--card-glow-color);
-  z-index: 2;
-}
-
-.glass-card:hover::before {
-  opacity: 0.15;
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px 16px;
-  text-align: center;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-.card-icon {
-  color: var(--card-glow-color) !important;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.glass-card:hover .card-icon {
-  transform: scale(1.15);
-  filter: drop-shadow(0 0 12px var(--card-glow-color));
-}
-
-.card-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #e0e0e0;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover .card-title {
-  color: #fff;
-  text-shadow: 0 0 10px var(--card-glow-color);
-}
-
-.footer-section {
-  margin-top: auto;
-  padding: 10px 0;
-  flex-shrink: 0;
-}
-
-/* Custom Text Buttons for Language to match App style */
-.lang-text-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  padding: 0 5px;
-  transition: color 0.2s;
-}
-
-.lang-text-btn:hover {
-  color: var(--color-text-default);
-}
-
-.lang-text-btn.active {
-  color: var(--color-accent-primary);
-  font-weight: bold;
-}
-
-.lang-divider {
-  color: var(--color-text-muted);
-  opacity: 0.5;
-}
-
-/* Mobile Adaptation */
-@media (max-width: 768px) {
-  .welcome-container {
-    overflow-y: auto;
-    align-items: flex-start;
-    padding: 20px 12px;
-  }
-
-  .content-wrapper {
-    height: auto;
-    max-height: none;
-    gap: 16px;
-  }
-
-  .hero-section {
-    gap: 8px;
-  }
-
-  .brand-group {
-    gap: 8px;
-    animation: none; /* Disable floating animation on mobile to save battery and performance */
-  }
-
-  .brand-text-content {
-    gap: 4px;
-  }
-
-  .hero-logo {
-    height: 80px;
-  }
-
-  .brand-name {
-    font-size: 2.0rem;
-  }
-
-  .brand-slogan {
-    letter-spacing: 0.15rem;
-    font-size: 0.75rem;
-  }
-
-  .menu-grid {
-    max-height: none;
-  }
-
-  .glass-card {
-    border-radius: 10px;
-  }
-
-  .card-content {
-    padding: 12px 8px;
-    gap: 6px;
-  }
-
-  .card-icon {
-    font-size: 24px !important;
-  }
-
-  .card-title {
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-  }
-}
-</style>

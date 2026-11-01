@@ -1,4 +1,3 @@
-<!-- src/features/engine/ui/EngineSelector.vue -->
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
 import { useAuthStore, usePreferencesStore } from '@/entities/user'
@@ -65,21 +64,37 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="engine-selector" ref="dropdownRef" @click="handleEngineSelectorClick">
+  <div
+    ref="dropdownRef"
+    class="relative flex w-full max-w-[250px] justify-end"
+    @click="handleEngineSelectorClick"
+  >
     <button
-      class="selector-toggle"
+      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-border bg-elevated px-2.5 py-2 text-xs font-bold whitespace-nowrap text-text-primary transition-colors hover:enabled:border-neon-cyan disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-sm"
       :disabled="!isAuthenticated"
       :title="!isAuthenticated ? t('shared.auth.requiredForAction') : t('features.engine.select')"
     >
       {{ ENGINE_NAMES[selectedEngine] }}
-      <span class="selector-arrow" :class="{ 'is-open': isOpen }">▼</span>
+      <span
+        class="text-xs transition-transform duration-200"
+        :class="{ 'rotate-180': isOpen }"
+      >
+        ▼
+      </span>
     </button>
-    <div v-if="isOpen && isAuthenticated" class="engine-dropdown">
+    <div
+      v-if="isOpen && isAuthenticated"
+      class="absolute top-[calc(100%+5px)] right-0 z-[1010] flex max-h-[60vh] w-max min-w-full flex-col overflow-y-auto rounded-xl border border-border-hover bg-surface"
+    >
       <button
         v-for="engine in availableEngines"
         :key="engine"
-        class="engine-item"
-        :class="{ active: engine === selectedEngine }"
+        class="w-full cursor-pointer border-none px-3.5 py-2 text-left text-xs whitespace-nowrap transition-colors sm:py-2.5 sm:text-sm"
+        :class="
+          engine === selectedEngine
+            ? 'bg-neon-cyan font-bold text-void'
+            : 'bg-transparent text-text-primary hover:bg-border-hover'
+        "
         @click.stop="selectEngine(engine)"
       >
         {{ ENGINE_NAMES[engine] }}
@@ -87,114 +102,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.engine-selector {
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  max-width: 250px;
-}
-
-.selector-toggle {
-  background-color: var(--color-bg-tertiary);
-  color: var(--color-text-default);
-  border: 1px solid var(--color-border);
-  border-radius: var(--panel-border-radius);
-  padding: 10px 10px;
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  white-space: nowrap;
-  gap: 8px;
-  transition:
-    border-color 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.selector-toggle:hover:not(:disabled) {
-  border-color: var(--color-accent-primary);
-}
-
-.selector-toggle:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.selector-arrow {
-  margin-left: 0px;
-  font-size: var(--font-size-xsmall);
-  transition: transform 0.2s ease;
-}
-
-.selector-arrow.is-open {
-  transform: rotate(180deg);
-}
-
-.engine-dropdown {
-  position: absolute;
-  top: calc(100% + 5px);
-  right: 0;
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-hover);
-  border-radius: var(--panel-border-radius);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 1010;
-  min-width: 100%;
-  width: max-content;
-  max-height: 60vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.engine-item {
-  background: none;
-  border: none;
-  color: var(--color-text-default);
-  padding: 10px 15px;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-  white-space: nowrap;
-  font-size: var(--font-size-small);
-  transition: background-color 0.2s ease;
-}
-
-.engine-item:hover {
-  background-color: var(--color-border-hover);
-}
-
-.engine-item.active {
-  background-color: var(--color-accent-primary);
-  color: var(--color-text-dark);
-  font-weight: bold;
-}
-
-/* Скрываем полосу прокрутки */
-.engine-dropdown::-webkit-scrollbar {
-  width: 5px;
-}
-
-.engine-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.engine-dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-border-hover);
-  border-radius: 5px;
-}
-
-@media (orientation: portrait) {
-  .selector-toggle,
-  .engine-item {
-    padding: 5px 5px;
-    font-size: var(--font-size-xsmall);
-  }
-}
-</style>

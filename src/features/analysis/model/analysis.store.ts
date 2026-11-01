@@ -64,6 +64,17 @@ export const useAnalysisStore = defineStore('analysis', () => {
     },
   )
 
+  // Reset local engine analysis when a new puzzle strategy starts
+  watch(
+    () => gameStore.currentStrategy,
+    (newStrategy) => {
+      if (newStrategy && isAnalysisActive.value) {
+        logger.info('[AnalysisStore] Stopping local engine analysis for new puzzle strategy.')
+        void stopAnalysis()
+      }
+    },
+  )
+
   // Watch lines to update board arrows
   watch(analysisLines, (lines) => {
     if (isAnalysisActive.value && lines.length > 0) {
@@ -240,8 +251,14 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function stopAnalysis() {
     analysisVersion++
+    if (fenDebounceTimer) {
+      clearTimeout(fenDebounceTimer)
+      fenDebounceTimer = null
+    }
     isAnalysisActive.value = false
     analysisLines.value = []
+    lastArrowsSignature = ''
+    lastRenderedDepth = 0
     boardStore.setAnalysisShapes([])
     await analysisService.stopAnalysis()
     logger.info('[AnalysisStore] Stopped.')

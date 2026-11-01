@@ -23,14 +23,13 @@ const {
 
 const isEngineDisabled = computed(() => gameStore.gamePhase === 'FAIRPLAY')
 
-// Current best score formatted
 const bestScore = computed(() => {
   if (!isAnalysisActive.value) return 'OFF'
   if (analysisLines.value.length === 0) return '...'
-  
+
   const line = analysisLines.value[0]
   if (!line) return '...'
-  
+
   if (line.score.type === 'cp') {
     const val = line.score.value / 100
     return (val > 0 ? '+' : '') + val.toFixed(2)
@@ -39,20 +38,32 @@ const bestScore = computed(() => {
 })
 
 const bestScoreClass = computed(() => {
-  if (!isAnalysisActive.value) return 'is-off'
-  if (analysisLines.value.length === 0) return 'is-loading'
-  
+  if (!isAnalysisActive.value) {
+    return 'bg-elevated/30 text-text-disabled border-border'
+  }
+  if (analysisLines.value.length === 0) {
+    return 'bg-elevated/80 text-text-secondary border-border-hover'
+  }
+
   const line = analysisLines.value[0]
-  if (!line) return 'is-neutral'
-  
+  if (!line) {
+    return 'bg-elevated/80 text-text-primary border-border-hover'
+  }
+
   const val = line.score.value
   if (line.score.type === 'mate') {
-    return val > 0 ? 'is-white-winning' : 'is-black-winning'
+    return val > 0
+      ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/35'
+      : 'bg-danger/15 text-danger border-danger/35'
   }
-  
-  if (val > 50) return 'is-white-better'
-  if (val < -50) return 'is-black-better'
-  return 'is-neutral'
+
+  if (val > 50) {
+    return 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/35'
+  }
+  if (val < -50) {
+    return 'bg-danger/15 text-danger border-danger/35'
+  }
+  return 'bg-elevated/80 text-text-primary border-border-hover'
 })
 
 const engineDepth = computed(() => {
@@ -82,21 +93,20 @@ const handleEngineVersionChange = (value: 'lite' | 'full') => {
   analysisStore.setEngineVersion(value)
 }
 
-// Search Time slider helper
 const sliderSearchTime = computed({
   get() {
     return searchTime.value === 99 ? 35 : searchTime.value
   },
   set(val: number) {
     analysisStore.setSearchTime(val === 35 ? 99 : val)
-  }
+  },
 })
 
 const searchTimeMarks = {
   5: '5s',
   15: '15s',
   25: '25s',
-  35: '∞'
+  35: '∞',
 }
 
 const formatSearchTimeTooltip = (value: number) => {
@@ -106,47 +116,65 @@ const formatSearchTimeTooltip = (value: number) => {
 </script>
 
 <template>
-  <div class="engine-evaluation-header glass-panel">
+  <div class="flex flex-col gap-3 border-b border-border bg-surface px-3.5 py-3">
     <!-- Header Control Bar -->
-    <div class="header-control-row">
-      <div class="engine-info">
-        <div class="engine-toggle-block">
-          <n-switch 
-            :value="isAnalysisActive" 
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <n-switch
+            :value="isAnalysisActive"
             :disabled="isEngineDisabled"
-            @update:value="handleToggle" 
+            @update:value="handleToggle"
             size="medium"
-            class="neon-switch"
           />
-          <span class="engine-label">Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}</span>
+          <span class="text-[0.9rem] font-bold tracking-[0.5px] text-text-primary">
+            Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}
+          </span>
         </div>
-        <div v-if="isAnalysisActive" class="engine-depth-badge">
+        <div
+          v-if="isAnalysisActive"
+          class="rounded border border-border bg-elevated/60 px-1.5 py-0.5 font-condensed text-xs"
+        >
           <n-text depth="3">d: {{ engineDepth }}</n-text>
         </div>
       </div>
 
       <!-- Evaluation Pill & Settings -->
-      <div class="eval-and-settings">
-        <div :class="['eval-pill', bestScoreClass]">
+      <div class="flex items-center gap-2">
+        <div
+          class="min-w-[58px] rounded-md border px-2.5 py-1 text-center font-condensed text-[0.95rem] font-extrabold transition-all duration-200 select-none"
+          :class="bestScoreClass"
+        >
           {{ bestScore }}
         </div>
 
-        <n-popover trigger="click" placement="bottom-end" class="glass popup-settings">
+        <n-popover trigger="click" placement="bottom-end" class="glass">
           <template #trigger>
-            <n-button quaternary circle class="settings-btn">
+            <n-button
+              quaternary
+              circle
+              class="text-text-secondary hover:bg-elevated/60 hover:text-text-primary"
+            >
               <template #icon>
                 <n-icon><SettingsOutline /></n-icon>
               </template>
             </n-button>
           </template>
-          
-          <div class="settings-content">
-            <n-text strong class="settings-title">{{ t('features.analysis.engineSettings') }}</n-text>
+
+          <div class="flex min-w-[220px] flex-col gap-4 px-2 py-3">
+            <n-text
+              strong
+              class="mb-1 border-b border-border pb-1.5 text-[0.85rem] text-text-primary"
+            >
+              {{ t('features.analysis.engineSettings') }}
+            </n-text>
 
             <!-- Engine Version Select -->
-            <div class="settings-field">
-              <div class="field-label-row">
-                <span class="field-label">{{ t('features.analysis.engineVersion') }}</span>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-text-secondary">
+                  {{ t('features.analysis.engineVersion') }}
+                </span>
               </div>
               <n-select
                 :value="engineVersion"
@@ -155,28 +183,34 @@ const formatSearchTimeTooltip = (value: number) => {
                 @update:value="handleEngineVersionChange"
               />
             </div>
-            
+
             <!-- MultiPV Slider -->
-            <div class="settings-field">
-              <div class="field-label-row">
-                <span class="field-label">MultiPV</span>
-                <span class="field-value">{{ t('features.analysis.lines', { count: multiPv }) }}</span>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-text-secondary">MultiPV</span>
+                <span class="font-condensed text-xs font-bold text-neon-cyan">
+                  {{ t('features.analysis.lines', { count: multiPv }) }}
+                </span>
               </div>
               <n-slider
                 v-model:value="multiPv"
                 :min="1"
                 :max="5"
                 :step="1"
-                class="settings-slider"
+                class="pt-1 pb-4"
                 @update:value="handlePvChange"
               />
             </div>
 
             <!-- Search Time Slider -->
-            <div class="settings-field">
-              <div class="field-label-row">
-                <span class="field-label">{{ t('features.analysis.searchTime') }}</span>
-                <span class="field-value">{{ searchTime === 99 ? t('features.analysis.unlimited') : `${searchTime}s` }}</span>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-text-secondary">
+                  {{ t('features.analysis.searchTime') }}
+                </span>
+                <span class="font-condensed text-xs font-bold text-neon-cyan">
+                  {{ searchTime === 99 ? t('features.analysis.unlimited') : `${searchTime}s` }}
+                </span>
               </div>
               <n-slider
                 v-model:value="sliderSearchTime"
@@ -185,16 +219,13 @@ const formatSearchTimeTooltip = (value: number) => {
                 :step="5"
                 :marks="searchTimeMarks"
                 :format-tooltip="formatSearchTimeTooltip"
-                class="settings-slider"
+                class="pt-1 pb-4"
               />
             </div>
 
             <!-- Show Arrows Checkbox -->
-            <div class="settings-field checkbox-field">
-              <n-checkbox
-                :checked="showArrows"
-                @update:checked="handleShowArrowsChange"
-              >
+            <div class="flex flex-col gap-2 border-t border-dashed border-border pt-1.5">
+              <n-checkbox :checked="showArrows" @update:checked="handleShowArrowsChange">
                 {{ t('features.analysis.showArrows') }}
               </n-checkbox>
             </div>
@@ -204,178 +235,8 @@ const formatSearchTimeTooltip = (value: number) => {
     </div>
 
     <!-- PV lines preview -->
-    <div v-show="isAnalysisActive" class="pv-lines-container">
+    <div v-show="isAnalysisActive" class="mt-1 border-t border-dashed border-border pt-2.5">
       <EngineLines />
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.engine-evaluation-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-1);
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.header-control-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.engine-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.engine-toggle-block {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.engine-label {
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  color: #fff;
-}
-
-.engine-depth-badge {
-  font-family: monospace;
-  font-size: 0.8rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.eval-and-settings {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.eval-pill {
-  font-family: 'Fira Code', monospace;
-  font-weight: 800;
-  font-size: 0.95rem;
-  padding: 4px 10px;
-  border-radius: 8px;
-  min-width: 58px;
-  text-align: center;
-  transition: all 0.25s ease;
-  user-select: none;
-  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.05);
-}
-
-/* Dynamic Eval Pill Colors based on position evaluation */
-.eval-pill.is-off {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-disabled);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.eval-pill.is-loading {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.eval-pill.is-white-winning,
-.eval-pill.is-white-better {
-  background: rgba(0, 229, 255, 0.15);
-  color: var(--color-primary);
-  border: 1px solid rgba(0, 229, 255, 0.35);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
-}
-
-.eval-pill.is-black-winning,
-.eval-pill.is-black-better {
-  background: rgba(255, 7, 58, 0.15);
-  color: var(--color-error);
-  border: 1px solid rgba(255, 7, 58, 0.35);
-  box-shadow: 0 0 10px rgba(255, 7, 58, 0.15);
-}
-
-.eval-pill.is-neutral {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.settings-btn {
-  color: var(--text-secondary);
-  &:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.06);
-  }
-}
-
-.popup-settings {
-  background: var(--glass-bg, #0b0d17) !important;
-  border: 1px solid var(--glass-border) !important;
-  backdrop-filter: var(--glass-blur);
-  border-radius: 8px;
-}
-
-.settings-content {
-  padding: 12px 8px;
-  min-width: 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.settings-title {
-  font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  color: #fff;
-}
-
-.settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.field-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.field-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary, #a1a1aa);
-}
-
-.field-value {
-  font-size: 0.8rem;
-  font-family: monospace;
-  color: var(--neon-cyan, #1890ff);
-  font-weight: 700;
-}
-
-.settings-slider {
-  padding: 4px 0 16px; /* give room for marks */
-}
-
-.checkbox-field {
-  padding-top: 6px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.05);
-}
-
-.pv-lines-container {
-  margin-top: 4px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.05);
-  padding-top: 10px;
-}
-</style>

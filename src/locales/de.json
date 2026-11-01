@@ -199,37 +199,37 @@
       }
     },
     "modules": {
-      "puzzlePlay": {
-        "title": "PUZZLE PLAY — Taktik & Endspiele",
-        "text": "Vier hochspezialisierte Trainingswelten für zielgerichtetes Lernen. Alle Aufgaben sind in die drei Schwierigkeitsgrade **Novice, Pro und Master** unterteilt. Ein intelligenter **Coach-Sidebar** auf der rechten Seite gibt visuelle Hinweise, verhindert grobe Fehler (Blunder) und kann für Anfänger dauerhaft aktiviert werden.\n\n• **Theoretical Endgames**: Klassische Endspiel-Positionen wie aus dem Lehrbuch. Verinnere den exakten Gewinn- oder Remisweg.\n• **FinishHim**: Verwerte einen erspielten Vorteil gegen spezialisierte neuronale Netze (Maia, Bad Gyal, T1000) in 19 der häufigsten praktischen Themen.\n• **Practical Endgames**: 20 Themen aus echten Partien. Trainiere die saubere Realisierung unter praxisnahen Bedingungen.\n• **Tactics**: Die populärsten Lichess-Taktiken, klassifiziert nach 20 verschiedenen Motiven."
+      "trainingCenter": {
+        "title": "TRAINING CENTER — 7 / 30-Tage-Kurssystem",
+        "text": "Strukturierte Trainingskurse in vier Kerndisziplinen (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) auf drei Leistungsstufen (**Novice, Pro, Master**).\n\n• **Dual-Gate-Zulassung**: Der Aufstieg in die nächste Stufe erfordert das Erfüllen der Kursquote sowie das Erreichen der Glicko-2-Wertungsschwelle in allen Pflichtbereichen.\n• **Intelligenter Coach-Sidebar**: Echtzeit-Zugbewertung, visuelle strategische Pläne und Schutz vor groben Patzern.\n• **Neuronales Ausspielen**: In Endspielen und Finish Him wird die Stellung nach der forcierten Variante gegen menschenähnliche neuronale Netze (Maia, Bad Gyal, T1000) zu Ende gespielt."
       },
-      "taskToday": {
-        "title": "TASK TODAY — Personalisierter Daily-Trainer",
-        "text": "Das ultimative Instrument für tägliches Training. Trainingspläne werden in den drei Schwierigkeitsgraden (Novice, Pro, Master) basierend auf drei Strategien generiert:\n\n• 💡 **Discovery**: Neue Themen lernen und Wissenslücken schließen.\n• 🔥 **Hardcore**: Beseitige deine größten Schwachstellen (wo du oft geschlagen wirst).\n• ⚡ **Warmup**: Festige dein Wissen mit deinen stärksten Themen.\n\nGelöst wird mit Stoppuhr und Progress-Recorder. Am Ende liefert ein detaillierter Bericht Übersicht über deine Performance. Alle Ergebnisse werden im Backend gespeichert und bilden das Fundament für zukünftige Pläne."
+      "warmup": {
+        "title": "TARGETED WARMUP — Gezielte Kalibrierungs-Arena",
+        "text": "Freie Trainingsarena für schnelles Aufwärmen und die gezielte Beseitigung von Schwachstellen unabhängig vom Kursplan.\n\n• 🎯 **Präzise Fokus-Konturen**: Filtern Sie nach Kampfmotiv-Kontur, konkretem Taktikmotiv, Partiephase, Rechentiefe, Endspiel-Domäne oder Materialklasse.\n• 📊 **Kalibrierung blinder Flecken**: Reduzieren Sie gezielt die Wertungsabweichung (RD) und heben Sie rückständige Themen über die Stufenschwelle.\n• ⚡ **Volle Synchronisation**: Jeder Versuch aktualisiert Ihr Glicko-2-Profil und die Kabinett-Analytik in Echtzeit."
       },
-      "sparring": {
-        "title": "SPARRING — Spielpraxis & Analyse",
-        "text": "Spiele freie Partien ab der Startstellung oder aus beliebigen Positionen, mit oder ohne Endspieldatenbank (Tablebase) und grafischen Hinweisen. \n\n• **Coach-Sidebar**: Auf der rechten Seite mit strategischen Informationen und Analyse-Tab.\n• **Opening Explorer**: Basiert auf Lichess-Partien von Spielern mit Rating 2000+ auf der linken Seite. Farbliche Markierungen erleichtern das Verständnis.\n• **Wikibooks-Integration**: Umfangreiche Hintergrundinformationen zu jeder gespielten Eröffnung zum Nachschlagen.\n• **KI-Trainer**: Das Modul wird weiterentwickelt und in Kürze mit einem persönlichen KI-Trainer aufgerüstet."
+      "woodpecker": {
+        "title": "WOODPECKER METHOD — 24h Pause · 3× Serie",
+        "text": "Automatisierter Spaced-Repetition-Kreislauf nach der klassischen Specht-Methode.\n\n• ⏳ **24-Stunden-Sperre**: Jede fehlerhaft gelöste Aufgabe wandert automatisch für 24 Stunden in den Specht-Tresor, um das Kurzzeitgedächtnis zurückzusetzen.\n• 🔥 **3× Fehlerfreie Serie**: Damit eine Aufgabe dauerhaft als gemeistert gilt, muss sie dreimal hintereinander im Abstand von jeweils mindestens 24 Stunden fehlerfrei gelöst werden.\n• 🧠 **Turnier-Reflexe**: Verwandelt frühere taktische und technische Schwächen in sofort abrufbare Muster."
       },
       "userCabinet": {
-        "title": "USER CABINET — Deine Schach-DNA",
-        "text": "Die visuelle Kommandozentrale zur Darstellung deiner Trainingsergebnisse. Analysiere deine schachliche Entwicklung über alle Themen hinweg, erkenne deine Stärken und Schwachstellen präzise und behalte deine Performance-Daten im Blick."
+        "title": "USER CABINET 2.0 — Deine Schach-DNA",
+        "text": "Visuelle Kommandozentrale für Langzeitfortschritt und automatische Diagnose.\n\n• 📈 **12-Monats-Meisterschaftsverlauf**: Rollierendes 52-Wochen-Fenster für Glicko-2-Wertung und EMA-Präzision.\n• 🧭 **Taktik-Radar & Endspiel-Karte**: Detaillierte Aufschlüsselung nach Motiv, Domäne, Materialklasse und Rechenhorizont (Kurz 1-2Z vs. Tief 3+Z).\n• 🚀 **Ein-Klick-Training**: Erkennt automatisch Ihre Top-Stärke, Ihren Stufen-Blocker und blinde Flecken mit direktem Start ins passende WarmUp."
       }
     },
     "techStack": {
-      "title": "Moderner Tech-Stack",
+      "title": "Moderner Tech-Stack v2.0",
       "frontend": "Frontend: ",
-      "frontendStack": "Vue 3.5 (Composition API), Vite, Pinia, Naive UI",
-      "backend": "Orchestrierung: ",
-      "backendStack": "NestJS (Node.js) & FastAPI (Python) verteilte Architektur",
+      "frontendStack": "Vue 3.5 (Composition API), TypeScript, Vite, Tailwind CSS v4, Pinia, Naive UI",
+      "backend": "Kern & Orchestrierung: ",
+      "backendStack": "Go Training Engine v2.0 (Glicko-2 / Woodpecker) + Fastify (Node.js) + SQLite mmap & PostgreSQL",
       "chessLogic": "Kern-Logik: ",
       "chessLogicStack": "Chessops & Chessground Hochleistungs-Engines",
       "boardRendering": "Datenvisualisierung: ",
-      "boardRenderingStack": "Apache ECharts für komplexe Analysen",
-      "chessEngine": "Analyse-Cluster: ",
-      "chessEngineStack": "Stockfish 19, LCZero (Neural Network Hub), n8n Workflow-Kern",
+      "boardRenderingStack": "Apache ECharts für 12-Monats-Analysen & Taktik-Radare",
+      "chessEngine": "Analyse- & Sparring-Cluster: ",
+      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia, Bad Gyal, T1000 Neural Hub)",
       "api": "Protokolle: ",
-      "apiStack": "Lichess REST API & OAuth2"
+      "apiStack": "Lichess REST API & OAuth 2.0"
     },
     "contributing": "Wir freuen uns über jeden Beitrag, um EXTRAPAWN zum ultimativen Trainingstool zu machen! Wenn du Ideen hast oder einen Fehler gefunden hast, erstelle bitte ein Issue oder einen PR auf GitHub.",
     "licenseAndAcknowledgements": {
@@ -822,105 +822,6 @@
         "days21": "Letzte 21 Tage"
       }
     },
-    "taskToday": {
-      "title": "Tagesaufgabe",
-      "modes": {
-        "tactics": "TAKTIK",
-        "finish_him": "FINISHING",
-        "practical_chess": "PRAXIS",
-        "theory_endings": "THEORIE"
-      },
-      "helpDone": "Fertig & Nochmals versuchen",
-      "setupTitle": "Aufgabeneinrichtung",
-      "readyToStart": "Bist du bereit, die Aufgabe zu starten? Der Timer beginnt sofort.",
-      "startBtn": "Aufgabe starten",
-      "subtitle": "Absolviere dein tägliches personalisiertes Schachtraining",
-      "chooseDifficulty": "1. Schwierigkeit wählen",
-      "completedStatus": "Beendet",
-      "insufficientCoinsBadge": "Zu wenig PC",
-      "trainingStrategy": "2. Trainings-Strategie",
-      "preview": "Plan-Vorschau",
-      "previewTasks": "0 Aufgaben | 1 Aufgabe | {count} Aufgaben",
-      "previewChooseStrategy": "Wähle eine Strategie für die Vorschau aus.",
-      "history": "Historie",
-      "runningTraining": "Laufendes Training",
-      "resumeActiveBtn": "Weitermachen",
-      "cancelActiveBtn": "Canceln",
-      "noPastPlans": "Keine vergangenen Pläne gefunden.",
-      "startTrainingBtn": "🚀 TRAINING STARTEN",
-      "strategies": {
-        "discovery": {
-          "title": "💡 Discovery",
-          "desc": "Lerne neue Themen kennen und fülle Wissenslücken."
-        },
-        "hardcore": {
-          "title": "🔥 Hardcore",
-          "desc": "Attackiere gezielt deine größten Schwächen."
-        },
-        "warmup": {
-          "title": "⚡ Warmup",
-          "desc": "Festige dein Wissen mit deinen stärksten Themen."
-        }
-      },
-      "feedback": {
-        "resumeSuccess": "Training wird fortgesetzt!",
-        "resumeError": "Fehler beim Fortsetzen des Trainings.",
-        "cancelSuccess": "Trainingsplan erfolgreich abgebrochen!",
-        "cancelError": "Fehler beim Abbrechen des Trainingsplans.",
-        "startSuccess": "Täglicher Trainingsplan gestartet!",
-        "startError": "Plan konnte nicht generiert werden.",
-        "replaySuccess": "Replay gestartet!",
-        "replayError": "Fehler beim Laden des Replays."
-      },
-      "completed": {
-        "title": "Training erfolgreich beendet!",
-        "puzzles": "Puzzles",
-        "breakdownTitle": "Dein Report",
-        "puzzlesCountShort": "Aufgaben",
-        "analyze": "Analyse",
-        "backToReport": "Zurück zum Bericht",
-        "backToStart": "Zurück zur Startseite",
-        "startAnother": "Anderen Plan starten",
-        "duration": {
-          "hour": "Stunde",
-          "hours": "Stunden",
-          "minute": "Minute",
-          "minutes": "Minuten",
-          "second": "Sekunde",
-          "seconds": "Sekunden"
-        },
-        "stats": {
-          "accuracy": "Genauigkeit",
-          "totalAttempts": "Versuche gesamt",
-          "totalFailed": "Fehler",
-          "avgTime": "Ø Zeit / Aufgabe",
-          "avgRating": "Ø Rating"
-        },
-        "details": {
-          "category": "Kategorie",
-          "solved": "Gelöst",
-          "failed": "Fehler",
-          "avgTime": "Ø Zeit",
-          "rating": "Rating"
-        },
-        "modes": {
-          "tactics": "TAKTIK",
-          "finish_him": "FINISHING",
-          "practical_chess": "PRAXIS",
-          "theory_endings": "THEORIE"
-        }
-      },
-      "sidebar": {
-        "trainingCompleted": "TRAINING BEENDET",
-        "noPlan": "Kein aktiver Trainingsplan",
-        "goToDashboard": "Zum Dashboard gehen",
-        "left": "{count} übrig",
-        "puzzleQueue": "Aufgaben-Warteschlange",
-        "puzzlesCount": "{count} Aufgaben",
-        "solvedAttempts": "Gelöst: {solved} / {attempts} Versuche",
-        "restartPuzzle": "Aufgabe neu starten"
-      }
-    },
     "settings": {
       "title": "Einstellungen",
       "selectBoard": "Schachbrett",
@@ -929,6 +830,8 @@
       "crashtestDelay": "Crashtest-Verzögerung",
       "botThinkingDelay": "Bot-Bedenkzeit",
       "devCrashtest": "Entwickler-Crashtest",
+      "devCrashtestEngine": "Crashtest-Engine",
+      "devCrashtestSpeed": "Crashtest-Zugverzögerung",
       "gameplayBotDelays": "Gameplay- & Bot-Verzögerungen",
       "initialBotDelay": "Erste Bot-Verzögerung",
       "nextPuzzleDelay": "Verzögerung bis zum nächsten Puzzle",
@@ -964,23 +867,6 @@
       "select": "Sparringspartner wählen"
     },
     "profile": {},
-    "puzzle": {
-      "next": "Weiter",
-      "selectLessonPrompt": "Wähle eine Lektion aus, um das Training zu starten",
-      "autoNextTooltip": "Automatisch zur nächsten Aufgabe nach Lösung",
-      "feedback": {
-        "loadFailed": "Laden der Aufgabe fehlgeschlagen.",
-        "loss": "Verloren!",
-        "pressNext": "Drücke 'Spielen' zum Starten.",
-        "win": "Gewonnen!",
-        "yourTurn": "Du bist dran! Finde die richtige Fortsetzung."
-      },
-      "header": {
-        "rating": "Rating",
-        "style": "Stil",
-        "motifs": "Motive"
-      }
-    },
     "gameplay": {
       "confirmExit": {
         "title": "Spiel verlassen?",
@@ -1169,7 +1055,9 @@
         "attemptSolved": "Aufgabe korrekt gelöst!",
         "attemptFailed": "Fehler! Für 24h in die Specht-Warteschlange eingereiht",
         "solvedShort": "GELÖST",
-        "failedShort": "FEHLER"
+        "failedShort": "FEHLER",
+        "playoutStart": "Forcierte Variante abgeschlossen! Spielen Sie die Stellung gegen den Sparrings-Bot zu Ende.",
+        "playoutDeviation": "Abweichung von der Hauptvariante. Beweisen Sie Ihre Bewertung gegen den Sparrings-Bot!"
       },
       "sidebar": {
         "queueTitle": "Sitzungs-Warteschlange",

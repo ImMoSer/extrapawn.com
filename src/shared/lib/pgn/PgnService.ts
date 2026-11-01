@@ -94,7 +94,25 @@ export class PgnTreeController {
     this.reset(initialFen)
   }
 
+  private disposeTree(root: PgnNode | undefined): void {
+    if (!root) return
+    const stack: PgnNode[] = [root]
+    while (stack.length > 0) {
+      const node = stack.pop()
+      if (!node) continue
+      for (const child of node.children) {
+        stack.push(child)
+      }
+      node.children.length = 0
+      node.parent = undefined
+      node.shapes = undefined
+      node.metadata = undefined
+    }
+  }
+
   public reset(fen: string): void {
+    this.disposeTree(this.rootNode)
+
     let normalizedFen = fen
     try {
       const setup: ChessopsSetup = parseFen(fen).unwrap()

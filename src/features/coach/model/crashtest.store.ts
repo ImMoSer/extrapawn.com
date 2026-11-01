@@ -1,11 +1,12 @@
-import { useBoardStore, useGameStore } from '@/entities/game'
+import { enginePlayService, useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore, usePreferencesStore } from '@/entities/user'
-import { useCoachStore } from './coach.store'
 import logger from '@/shared/lib/logger'
+import type { CrashtestEngineId } from '@/shared/types/api.types'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import { useCoachStore } from './coach.store'
 
 export const useCrashtestStore = defineStore('crashtest', () => {
   const authStore = useAuthStore()
@@ -20,6 +21,12 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     get: () => preferencesStore.preferences.gameplay.global_crashtest,
     set: (val: boolean) =>
       preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } }),
+  })
+
+  const crashtestEngine = computed<CrashtestEngineId>({
+    get: () => preferencesStore.preferences.gameplay.crashtestEngine,
+    set: (val: CrashtestEngineId) =>
+      preferencesStore.updatePreferences({ gameplay: { crashtestEngine: val } }),
   })
 
   let currentCycleToken = 0
@@ -51,6 +58,12 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     }
   }
 
+  function resetCycleState() {
+    cancelPendingCycle()
+    lastExecutedFen.value = null
+    plannedPromotionRole.value = null
+  }
+
   watch(
     () => boardStore.promotionState,
     (promoState) => {
@@ -68,15 +81,37 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     if (gameStore.gamePhase !== 'PLAYING') return false
     if (gameStore.isMoveProcessing) return false
     if (boardStore.turn !== boardStore.orientation) return false
-    if (coachStore.isAnalyzing) return false
-
-    const topMove = coachStore.topMoves[0]?.uci
-    if (!topMove || topMove.length < 4) return false
-
     if (lastExecutedFen.value === boardStore.fen) return false
+
+    if (crashtestEngine.value === 'stockfish') {
+      if (coachStore.isAnalyzing) return false
+      if (coachStore.lastFetchedFen !== boardStore.fen) return false
+      const topMove = coachStore.topMoves[0]?.uci
+      if (!topMove || topMove.length < 4) return false
+    }
 
     return true
   })
+
+  async function resolveBestMoveForCrashtest(
+    token: number,
+    targetFen: string,
+    engineId: CrashtestEngineId,
+  ): Promise<string | null> {
+    if (engineId === 'stockfish') {
+      if (coachStore.lastFetchedFen !== targetFen) return null
+      return coachStore.topMoves[0]?.uci ?? null
+    }
+
+    try {
+      const move = await enginePlayService.getBestMove(engineId, targetFen)
+      if (token !== currentCycleToken) return null
+      return move
+    } catch (err) {
+      logger.error(`[Crashtest] Neural engine "${engineId}" move fetch failed:`, err)
+      return null
+    }
+  }
 
   async function executeMove(token: number, targetFen: string) {
     if (token !== currentCycleToken) {
@@ -96,9 +131,21 @@ export const useCrashtestStore = defineStore('crashtest', () => {
       return
     }
 
-    const bestMoveUci = coachStore.topMoves[0]?.uci
+    const activeEngine = crashtestEngine.value
+    const bestMoveUci = await resolveBestMoveForCrashtest(token, targetFen, activeEngine)
+
+    if (
+      token !== currentCycleToken ||
+      boardStore.fen !== targetFen ||
+      gameStore.gamePhase !== 'PLAYING' ||
+      gameStore.isMoveProcessing ||
+      !isCrashtestEnabled.value
+    ) {
+      return
+    }
+
     if (!bestMoveUci || bestMoveUci.length < 4) {
-      logger.warn('[Crashtest] Execution aborted: topMoves empty after delay.')
+      logger.warn(`[Crashtest] Execution aborted: empty move from "${activeEngine}".`)
       return
     }
 
@@ -109,7 +156,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     plannedPromotionRole.value = promoChar ? getPromotionRole(promoChar) : null
     lastExecutedFen.value = targetFen
 
-    logger.info(`[Crashtest] Dispatching 1st line move: ${bestMoveUci} for FEN: ${targetFen}`)
+    logger.info(
+      `[Crashtest] Dispatching move (${activeEngine}): ${bestMoveUci} for FEN: ${targetFen}`,
+    )
 
     try {
       await gameStore.handleUserMove(orig, dest)
@@ -130,7 +179,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     const delay = preferencesStore.preferences.delays.crashtestDelayMs
 
     logger.info(
-      `[Crashtest] Scheduling move for FEN: ${targetFen} with delay: ${delay}ms (token: ${token})`,
+      `[Crashtest] Scheduling move (${crashtestEngine.value}) for FEN: ${targetFen} with delay: ${delay}ms (token: ${token})`,
     )
 
     if (delay <= 0) {
@@ -152,19 +201,20 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     logger.info('[CrashtestStore] Initializing deterministic crashtest engine.')
 
     watch(
-      [isReadyForCrashtestMove, () => boardStore.fen],
-      ([ready, currentFen]) => {
+      [isReadyForCrashtestMove, () => boardStore.fen, crashtestEngine],
+      ([ready, currentFen, engine]) => {
         if (ready && lastExecutedFen.value !== currentFen) {
           scheduleMove(currentFen)
         } else if (!ready) {
           cancelPendingCycle()
           if (
+            engine === 'stockfish' &&
             isMo3ep.value &&
             isCrashtestEnabled.value &&
             gameStore.gamePhase === 'PLAYING' &&
             boardStore.turn === boardStore.orientation &&
             !coachStore.isAnalyzing &&
-            coachStore.topMoves.length === 0 &&
+            (coachStore.topMoves.length === 0 || coachStore.lastFetchedFen !== currentFen) &&
             currentFen
           ) {
             void coachStore.runAnalysis(currentFen)
@@ -175,12 +225,16 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     )
 
     watch(
-      [isCrashtestEnabled, () => gameStore.gamePhase],
+      [isCrashtestEnabled, () => gameStore.gamePhase, () => gameStore.currentStrategy],
       ([enabled, phase]) => {
         if (!enabled || phase !== 'PLAYING') {
-          cancelPendingCycle()
-          lastExecutedFen.value = null
-          plannedPromotionRole.value = null
+          resetCycleState()
+        } else {
+          // Strategy swapped while staying in PLAYING phase (e.g. next puzzle)
+          resetCycleState()
+          if (isReadyForCrashtestMove.value && boardStore.fen) {
+            scheduleMove(boardStore.fen)
+          }
         }
       },
     )
@@ -189,7 +243,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   return {
     isMo3ep,
     isCrashtestEnabled,
+    crashtestEngine,
     init,
   }
 })
-

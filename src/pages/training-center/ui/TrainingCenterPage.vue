@@ -54,3 +54,4 @@ onUnmounted(() => {
     </template>
   </GameLayout>
 </template>
+

@@ -1,5 +1,5 @@
 import logger from '@/shared/lib/logger'
-import type { UserSessionProfile, UserStatsUpdate } from '@/shared/types/api.types'
+import type { UserSessionProfile } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
@@ -113,22 +113,6 @@ export const useAuthStore = defineStore('auth', () => {
     window.location.href = `${BACKEND_API_URL}/auth/lichess/logout`
   }
 
-  function updateUserStats(statsUpdate: UserStatsUpdate) {
-    if (!userProfile.value) return
-    const currentUserId = userProfile.value.id
-    if (statsUpdate.id && statsUpdate.id.toLowerCase() !== currentUserId.toLowerCase()) {
-      logger.error(
-        `[AuthStore] updateUserStats ID mismatch! Profile: ${currentUserId}, Update: ${statsUpdate.id}`,
-      )
-      return
-    }
-    userProfile.value = {
-      ...userProfile.value,
-      ...statsUpdate,
-    }
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(userProfile.value))
-  }
-
   return {
     userProfile,
     isAuthenticated,
@@ -145,7 +129,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     checkSession,
-    updateUserStats,
     clearAuthDataLocal,
   }
 })

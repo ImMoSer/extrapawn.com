@@ -52,35 +52,52 @@ const freeFeatures = [
 </script>
 
 <template>
-  <n-layout class="pricing-layout">
+  <n-layout class="!bg-transparent">
     <n-layout-content
-      class="pricing-content"
-      :content-style="isMobile ? 'padding: 12px;' : 'padding: 32px; max-width: 1000px; margin: 0 auto;'"
+      class="!bg-transparent"
+      :content-style="
+        isMobile ? 'padding: 12px;' : 'padding: 32px; max-width: 1000px; margin: 0 auto;'
+      "
     >
       <n-space vertical :size="isMobile ? 24 : 36">
         <!-- Header -->
-        <div class="header-section text-center">
-          <n-h1 class="page-title">
-            <span class="gradient-text">{{ t('pages.pricing.title') }}</span>
+        <div class="text-center">
+          <n-h1 class="!mb-2 font-display text-[1.8rem] font-extrabold tracking-[1px] sm:text-[2.4rem]">
+            <span
+              class="bg-gradient-to-br from-neon-cyan to-neon-purple bg-clip-text text-transparent"
+            >
+              {{ t('pages.pricing.title') }}
+            </span>
           </n-h1>
-          <n-text depth="2" class="subtitle">
+          <n-text depth="2" class="mx-auto block max-w-[650px] text-[1.15rem]">
             {{ t('pages.pricing.subtitle') }}
           </n-text>
         </div>
 
         <!-- Free Features Card -->
-        <n-card class="glass-card main-card" :bordered="false">
-          <div class="card-inner">
-            <div class="badge-free">{{ t('pages.pricing.freeBadge') }}</div>
-            <n-h2 class="card-title">{{ t('pages.pricing.unlockedTitle') }}</n-h2>
-            <p class="card-desc">
+        <n-card
+          class="glass relative overflow-hidden !border-neon-cyan/25"
+          :bordered="false"
+        >
+          <div>
+            <div
+              class="mb-3 inline-block rounded-full border border-success/30 bg-success/15 px-3 py-1 font-condensed text-xs font-extrabold tracking-[1.5px] text-success"
+            >
+              {{ t('pages.pricing.freeBadge') }}
+            </div>
+            <n-h2 class="!mb-2 font-display text-[1.4rem] font-bold sm:text-[1.8rem]">
+              {{ t('pages.pricing.unlockedTitle') }}
+            </n-h2>
+            <p class="mb-6 max-w-[700px] text-[1.05rem] text-text-secondary">
               {{ t('pages.pricing.unlockedDesc') }}
             </p>
 
-            <n-grid :cols="isMobile ? 1 : 2" :x-gap="16" :y-gap="14" class="features-grid">
+            <n-grid :cols="isMobile ? 1 : 2" :x-gap="16" :y-gap="14" class="mt-4">
               <n-gi v-for="(feat, idx) in freeFeatures" :key="idx">
-                <div class="feature-item">
-                  <n-icon size="20" color="var(--neon-green)">
+                <div
+                  class="flex items-center gap-2.5 rounded-lg border border-border bg-elevated/40 px-3.5 py-2.5"
+                >
+                  <n-icon size="20" color="var(--color-success)">
                     <CheckmarkCircleOutline />
                   </n-icon>
                   <n-text strong>{{ t(feat) }}</n-text>
@@ -91,21 +108,25 @@ const freeFeatures = [
         </n-card>
 
         <!-- Support / Buy Me a Coffee Card -->
-        <n-card class="glass-card support-card" :bordered="false">
-          <n-space vertical align="center" :size="16" class="text-center py-4">
-            <div class="heart-icon-wrapper">
-              <n-icon size="36" color="#ff4d4f">
+        <n-card class="glass overflow-hidden" :bordered="false">
+          <n-space vertical align="center" :size="16" class="py-4 text-center">
+            <div
+              class="mb-1 flex h-16 w-16 items-center justify-center rounded-full bg-danger/10"
+            >
+              <n-icon size="36" color="var(--color-danger)">
                 <HeartOutline />
               </n-icon>
             </div>
-            
-            <n-h2 class="support-title">{{ t('pages.pricing.supportTitle') }}</n-h2>
-            
-            <n-text depth="2" style="max-width: 580px; font-size: 1.05rem; line-height: 1.6;">
+
+            <n-h2 class="!mb-0 font-display text-[1.6rem] font-bold">
+              {{ t('pages.pricing.supportTitle') }}
+            </n-h2>
+
+            <n-text depth="2" class="max-w-[580px] text-[1.05rem] leading-relaxed">
               {{ t('pages.pricing.supportDesc') }}
             </n-text>
 
-            <div class="support-actions">
+            <div class="mt-3 flex flex-wrap justify-center gap-4">
               <n-button
                 type="warning"
                 size="large"
@@ -113,7 +134,7 @@ const freeFeatures = [
                 tag="a"
                 href="https://coff.ee/chessboard.fun"
                 target="_blank"
-                class="coffee-btn"
+                class="px-7 font-bold"
               >
                 <template #icon>
                   <n-icon><CafeOutline /></n-icon>
@@ -122,13 +143,7 @@ const freeFeatures = [
               </n-button>
 
               <router-link to="/club-player" custom v-slot="{ navigate }">
-                <n-button
-                  secondary
-                  size="large"
-                  round
-                  class="club-btn"
-                  @click="navigate"
-                >
+                <n-button secondary size="large" round class="px-6 font-bold" @click="navigate">
                   <template #icon>
                     <n-icon><TrophyOutline /></n-icon>
                   </template>
@@ -142,133 +157,3 @@ const freeFeatures = [
     </n-layout-content>
   </n-layout>
 </template>
-
-<style scoped>
-.pricing-layout,
-.pricing-content {
-  background-color: transparent !important;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.page-title {
-  font-size: 2.4rem;
-  font-weight: 800;
-  margin-bottom: 8px !important;
-  letter-spacing: 1px;
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  font-size: 1.15rem;
-  display: block;
-  max-width: 650px;
-  margin: 0 auto;
-}
-
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--panel-border-radius);
-  overflow: hidden;
-}
-
-.main-card {
-  position: relative;
-  border: 1px solid rgba(0, 229, 255, 0.25);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-}
-
-.badge-free {
-  display: inline-block;
-  padding: 4px 12px;
-  background: rgba(0, 255, 128, 0.15);
-  color: var(--neon-green);
-  border: 1px solid rgba(0, 255, 128, 0.3);
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  margin-bottom: 12px;
-}
-
-.card-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 8px !important;
-}
-
-.card-desc {
-  color: var(--text-color-2);
-  font-size: 1.05rem;
-  margin-bottom: 24px;
-  max-width: 700px;
-}
-
-.features-grid {
-  margin-top: 16px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
-.heart-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  background: rgba(255, 77, 79, 0.1);
-  border-radius: 50%;
-  margin-bottom: 4px;
-}
-
-.support-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 0 !important;
-}
-
-.support-actions {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.coffee-btn {
-  font-weight: 700;
-  padding: 0 28px;
-  box-shadow: 0 4px 16px rgba(245, 166, 35, 0.3);
-}
-
-.club-btn {
-  font-weight: 700;
-  padding: 0 24px;
-}
-
-@media (max-width: 600px) {
-  .page-title {
-    font-size: 1.8rem;
-  }
-  .card-title {
-    font-size: 1.4rem;
-  }
-}
-</style>

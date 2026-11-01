@@ -1,23 +1,22 @@
-<!-- src/App.vue -->
+<!-- src/app/App.vue -->
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
-import { SettingsMenu, LanguageInitModal } from '@/features/settings'
+import { LanguageInitModal, SettingsMenu } from '@/features/settings'
+import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
+import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
 import GalaxyBackground from '@/shared/ui/visuals/GalaxyBackground.vue'
 import { NavMenu } from '@/widgets/nav-menu'
-import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
-import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { MenuOutline } from '@vicons/ionicons5'
 import { darkTheme } from 'naive-ui'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'
-import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
+import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
 
 const route = useRoute()
 const { t, locale } = useI18n()
 
-// Update SEO when locale changes
 watch(locale, () => {
   updateSeoWithRoute(route.meta as RouteMetaWithSeo, t)
 })
@@ -32,7 +31,6 @@ const openDrawer = () => {
   isDrawerOpen.value = true
 }
 
-// Обработчик для перезагрузки/закрытия страницы
 const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
   const gameStore = useGameStore()
   if (gameStore.isGameActive) {
@@ -46,7 +44,7 @@ const updateLandscape = () => (isLandscape.value = mediaQuery.matches)
 
 onMounted(() => {
   mediaQuery.addEventListener('change', updateLandscape)
-  updateLandscape() // Initial check
+  updateLandscape()
   window.addEventListener('beforeunload', beforeUnloadHandler)
 })
 
@@ -75,25 +73,25 @@ onUnmounted(() => {
             @expand="isSidebarCollapsed = false"
           >
             <!-- Top Action Bar (Settings) -->
-            <div class="sider-top-bar">
+            <div class="py-2 flex items-center justify-center border-b border-border">
               <SettingsMenu />
             </div>
 
-            <div class="sider-header">
-              <RouterLink to="/" class="logo-link">
+            <div class="py-2 px-4 flex items-center justify-center min-h-[50px]">
+              <RouterLink to="/" class="flex items-center justify-center no-underline">
                 <img
                   v-if="isSidebarCollapsed"
                   src="/webp/extra_pawn_black.webp"
                   alt="Logo"
-                  class="logo-collapsed"
+                  class="w-8 h-8 object-contain"
                 />
-                <div v-else class="brand-wrapper-sidebar">
+                <div v-else class="flex items-center gap-2 w-full">
                   <img
                     src="/webp/extra_pawn_black.webp"
                     alt="EXTRAPAWN"
-                    class="sidebar-logo-icon"
+                    class="h-9 w-auto object-contain"
                   />
-                  <span class="brand-text sidebar-brand-name">EXTRAPAWN</span>
+                  <span class="brand-text text-2xl tracking-wider m-0">EXTRAPAWN</span>
                 </div>
               </RouterLink>
             </div>
@@ -112,9 +110,17 @@ onUnmounted(() => {
                 </template>
               </n-button>
 
-              <RouterLink v-if="route.path !== '/'" to="/" class="mobile-logo">
-                <img src="/webp/extra_pawn_black.webp" alt="EXTRAPAWN" class="mobile-logo-icon" />
-                <span class="brand-text mobile-brand-name">EXTRAPAWN</span>
+              <RouterLink
+                v-if="route.path !== '/'"
+                to="/"
+                class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 no-underline"
+              >
+                <img
+                  src="/webp/extra_pawn_black.webp"
+                  alt="EXTRAPAWN"
+                  class="h-[26px] w-auto object-contain"
+                />
+                <span class="brand-text text-lg tracking-wider m-0 whitespace-nowrap">EXTRAPAWN</span>
               </RouterLink>
 
               <SettingsMenu />
@@ -132,28 +138,21 @@ onUnmounted(() => {
             placement="left"
             :width="280"
             class="app-drawer"
-            style="
-              backdrop-filter: blur(16px);
-              -webkit-backdrop-filter: blur(16px);
-              border-right: 1px solid var(--glass-border);
-            "
           >
             <n-drawer-content closable class="mobile-drawer-content">
               <template #header>
                 <RouterLink
                   to="/"
-                  class="logo-link"
-                  style="text-decoration: none"
+                  class="flex items-center justify-center no-underline"
                   @click="isDrawerOpen = false"
                 >
                   <n-space align="center" :wrap="false">
-                    <img src="/webp/extra_pawn_black.webp" alt="Logo" class="sidebar-logo-icon" />
-                    <n-text
-                      strong
-                      class="brand-text sidebar-brand-name"
-                      style="font-size: 1.2rem !important"
-                      >EXTRAPAWN</n-text
-                    >
+                    <img
+                      src="/webp/extra_pawn_black.webp"
+                      alt="Logo"
+                      class="h-9 w-auto object-contain"
+                    />
+                    <n-text strong class="brand-text text-xl tracking-wider">EXTRAPAWN</n-text>
                   </n-space>
                 </RouterLink>
               </template>
@@ -172,13 +171,9 @@ onUnmounted(() => {
 </template>
 
 <style>
-/* Global Layout Fixes */
-.root-layout {
-  height: 100vh;
-  background-color: transparent !important;
-}
-
+.root-layout,
 .main-layout-container {
+  height: 100vh;
   background-color: transparent !important;
 }
 
@@ -194,60 +189,12 @@ onUnmounted(() => {
   background-color: transparent !important;
 }
 
-.mobile-drawer-content :deep(.n-drawer-body-content-wrapper) {
+.mobile-drawer-content .n-drawer-body-content-wrapper {
   padding: 0;
 }
 
-.sider-top-bar {
-  padding: 8px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.sider-header {
-  padding: 8px 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50px;
-}
-
-.logo-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-full {
-  max-width: 150px;
-  height: auto;
-}
-
-.logo-collapsed {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.brand-wrapper-sidebar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.mobile-drawer-content .n-drawer-header__main {
   width: 100%;
-}
-
-.sidebar-logo-icon {
-  height: 36px;
-  width: auto;
-  object-fit: contain;
-}
-
-.sidebar-brand-name {
-  font-size: 1.5rem;
-  letter-spacing: 0.05em;
-  margin: 0;
 }
 
 .mobile-header {
@@ -260,34 +207,6 @@ onUnmounted(() => {
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border) !important;
   position: relative;
-}
-
-.mobile-logo {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-}
-
-.mobile-logo-icon {
-  height: 26px;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0 6px rgba(0, 242, 255, 0.3));
-}
-
-.mobile-brand-name {
-  font-size: 1.1rem;
-  letter-spacing: 0.08em;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.mobile-drawer-content :deep(.n-drawer-header__main) {
-  width: 100%;
 }
 
 .page-content {

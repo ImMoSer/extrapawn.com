@@ -11,7 +11,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    BaseSelectionLayout: typeof import('./src/shared/ui/BaseSelectionLayout.vue')['default']
     ConfirmationModal: typeof import('./src/shared/ui/ConfirmationModal.vue')['default']
     GalaxyBackground: typeof import('./src/shared/ui/visuals/GalaxyBackground.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
@@ -32,6 +31,5 @@ declare module 'vue' {
     NText: typeof import('naive-ui')['NText']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    VisualRadioGroup: typeof import('./src/shared/ui/VisualRadioGroup.vue')['default']
   }
 }

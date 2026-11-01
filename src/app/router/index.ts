@@ -32,14 +32,14 @@ const router = createRouter({
     {
       path: '/training',
       name: 'training-center',
-      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
+      component: () => import('@/pages/training-center').then((m) => m.TrainingCenterPage),
       props: { mode: 'course' },
       meta: { isGame: true, requiresAuth: true, game: 'training-center' },
     },
     {
       path: '/warmup',
       name: 'warmup',
-      component: () => import('@/pages/task-today').then((m) => m.TaskTodayPage),
+      component: () => import('@/pages/training-center').then((m) => m.TrainingCenterPage),
       props: { mode: 'warmup' },
       meta: { isGame: true, requiresAuth: true, game: 'warmup' },
     },

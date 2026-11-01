@@ -483,16 +483,23 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
       if (activePlayToken !== playToken) return
 
-      viewState.value = 'awaiting_next'
-
-      if (preferencesStore.preferences.puzzle.autoNext) {
-        const delayMs = preferencesStore.preferences.delays.nextPuzzleDelayMs
-        autoNextTimeoutId = setTimeout(() => {
-          autoNextTimeoutId = null
-          if (activePlayToken === playToken && viewState.value === 'awaiting_next') {
-            advanceAfterAttempt()
-          }
-        }, delayMs)
+      const isCrashtestActive = preferencesStore.preferences.gameplay.global_crashtest
+      if (solved || isCrashtestActive) {
+        const delayMs = isCrashtestActive
+          ? preferencesStore.preferences.delays.crashtestDelayMs
+          : preferencesStore.preferences.delays.nextPuzzleDelayMs
+        if (delayMs <= 0) {
+          advanceAfterAttempt()
+        } else {
+          autoNextTimeoutId = setTimeout(() => {
+            autoNextTimeoutId = null
+            if (activePlayToken === playToken) {
+              advanceAfterAttempt()
+            }
+          }, delayMs)
+        }
+      } else {
+        viewState.value = 'awaiting_next'
       }
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to submit puzzle attempt')

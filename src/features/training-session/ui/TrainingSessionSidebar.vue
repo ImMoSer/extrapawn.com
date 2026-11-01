@@ -119,9 +119,9 @@ function handleItemClick(item: HydratedSessionItem): void {
       </div>
     </div>
 
-    <!-- Post-Attempt Feedback Banner -->
+    <!-- Post-Attempt Feedback Banner (Error / Inspection State Only) -->
     <div
-      v-if="store.isAwaitingNext && store.lastAttemptResult"
+      v-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved"
       class="p-3 rounded-md border flex flex-col gap-2 shrink-0"
       :class="
         store.lastAttemptResult.solved

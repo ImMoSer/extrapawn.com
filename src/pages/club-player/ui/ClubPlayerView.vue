@@ -80,7 +80,12 @@ const renderUsername = (row: ClubPlayer) => {
         {
           size: 'small',
           bordered: false,
-          style: { fontWeight: 'bold', padding: '0 2px', color: '#ff5500', marginRight: '4px' },
+          style: {
+            fontWeight: 'bold',
+            padding: '0 2px',
+            color: 'var(--color-orange)',
+            marginRight: '4px',
+          },
         },
         { default: () => row.title },
       ),
@@ -93,7 +98,7 @@ const renderUsername = (row: ClubPlayer) => {
       {
         href: `https://lichess.org/@/${row.lichess_id}`,
         target: '_blank',
-        style: { color: 'var(--neon-cyan)', textDecoration: 'none', fontWeight: '800' },
+        style: { color: 'var(--color-neon-cyan)', textDecoration: 'none', fontWeight: '800' },
       },
       row.username,
     ),
@@ -125,7 +130,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       key: 'rank',
       width: isMobile.value ? 30 : 55,
       render: (_: ClubPlayer, index: number) =>
-        h('span', { style: { color: 'var(--text-color-3)', fontWeight: 'bold' } }, index + 1),
+        h('span', { style: { color: 'var(--color-text-secondary)', fontWeight: 'bold' } }, index + 1),
     },
     {
       title: t('pages.bonus.table.player'),
@@ -139,7 +144,11 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       align: 'right' as const,
       width: numericWidth,
       render: (row: ClubPlayer) =>
-        h('span', { style: { fontWeight: '900', color: 'var(--neon-purple)' } }, row.vector),
+        h(
+          'span',
+          { style: { fontWeight: '900', color: 'var(--color-neon-purple)' } },
+          row.vector,
+        ),
     },
     {
       title: t('pages.bonus.table.performance'),
@@ -179,23 +188,36 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
 </script>
 
 <template>
-  <n-layout class="club-player-page-layout">
+  <n-layout class="!bg-transparent">
     <n-layout-content
-      class="club-player-content"
+      class="!bg-transparent"
       :content-style="
         isMobile ? 'padding: 10px;' : 'padding: 20px; max-width: 1200px; margin: 0 auto;'
       "
     >
       <n-space vertical :size="isMobile ? 'medium' : 'large'">
-        <n-h1 align-text class="page-title">
-          <n-text style="color: var(--neon-cyan)">ExtraPawn Club Top 20</n-text>
+        <n-h1
+          align-text
+          class="!mb-6 text-center font-display font-extrabold tracking-[2px] uppercase"
+        >
+          <n-text class="!text-neon-cyan">ExtraPawn Club Top 20</n-text>
         </n-h1>
 
-        <n-card class="info-card" :content-style="isMobile ? { padding: '14px' } : { padding: '20px' }">
+        <n-card
+          class="glass"
+          :content-style="isMobile ? { padding: '14px' } : { padding: '20px' }"
+        >
           <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
             {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 Leaderboard' }}
           </n-h2>
-          <n-text depth="2" :style="{ fontSize: isMobile ? '0.9rem' : '1rem', display: 'block', marginBottom: '12px' }">
+          <n-text
+            depth="2"
+            :style="{
+              fontSize: isMobile ? '0.9rem' : '1rem',
+              display: 'block',
+              marginBottom: '12px',
+            }"
+          >
             {{ t('pages.pricing.bonusInfo.p1') }}
           </n-text>
 
@@ -206,7 +228,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
             type="primary"
             ghost
             :size="isMobile ? 'medium' : 'large'"
-            style="margin-top: 8px"
+            class="mt-2"
           >
             {{ t('pages.pricing.bonusInfo.homepageLink') || 'ExtraPawn Club Home' }}
             <template #icon>
@@ -215,7 +237,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
           </n-button>
         </n-card>
 
-        <div class="table-wrapper">
+        <div class="glass overflow-hidden">
           <n-data-table
             :columns="columns"
             :data="leaderboard"
@@ -223,55 +245,9 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
             :bordered="false"
             :single-line="false"
             size="small"
-            class="club-table"
           />
         </div>
       </n-space>
     </n-layout-content>
   </n-layout>
 </template>
-
-<style scoped>
-.club-player-page-layout,
-.club-player-content {
-  background-color: transparent !important;
-}
-
-.page-title {
-  margin-bottom: 24px !important;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.info-card {
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--panel-border-radius);
-}
-
-.table-wrapper {
-  background-color: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--panel-border-radius);
-  overflow: hidden;
-}
-
-:deep(.club-table .n-data-table-th) {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  font-weight: 700;
-  color: var(--text-color-2);
-}
-
-:deep(.club-table .n-data-table-td) {
-  background-color: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-:deep(.club-table .n-data-table-tr:hover .n-data-table-td) {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-}
-</style>

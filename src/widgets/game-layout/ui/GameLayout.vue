@@ -1,4 +1,3 @@
-<!-- src/widgets/game-layout/GameLayout.vue -->
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
@@ -19,7 +18,7 @@ const props = withDefaults(
     boardLocked: false,
     hideEngineSelector: false,
     hideEvalBar: false,
-  }
+  },
 )
 
 const preferencesStore = usePreferencesStore()
@@ -235,7 +234,7 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   width: 100%;
   aspect-ratio: 1 / 1;
   position: relative;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--color-void);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -273,7 +272,6 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   height: 100%;
 }
 
-/* Hide scrollbars */
 .left-panel::-webkit-scrollbar,
 .right-panel::-webkit-scrollbar {
   display: none;
@@ -362,41 +360,6 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
     width: 100%;
     height: 48px;
     flex: 0 0 48px;
-  }
-}
-
-/* Coach Quality Badge Styles */
-.coach-badge-container {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  box-sizing: border-box;
-}
-
-.coach-board-badge {
-  width: 32%;
-  height: 32%;
-  min-width: 18px;
-  min-height: 18px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7);
-  border: 1.8px solid #ffffff;
-  user-select: none;
-  z-index: 6;
-  container-type: size; /* Establish container context for responsive child elements */
-}
-
-@media (max-width: 768px) {
-  .coach-board-badge {
-    min-width: 16px;
-    min-height: 16px;
-    border-width: 1.5px;
   }
 }
 </style>

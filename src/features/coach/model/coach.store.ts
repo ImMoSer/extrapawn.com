@@ -48,7 +48,12 @@ export const useCoachStore = defineStore('coach', () => {
   // 2. Settings (Coach Spy, Auto Takeback & Delay) persisted in unified PreferencesStore
   const preferencesStore = usePreferencesStore()
   const coachSpy = computed(() => preferencesStore.preferences.coach.coachSpy)
-  const isCoachSpyActive = computed(() => coachSpy.value || preferencesStore.preferences.gameplay.global_crashtest)
+  const isCoachSpyActive = computed(
+    () =>
+      coachSpy.value ||
+      (preferencesStore.preferences.gameplay.global_crashtest &&
+        preferencesStore.preferences.gameplay.crashtestEngine === 'stockfish'),
+  )
   const autoTakeback = computed(() => preferencesStore.preferences.coach.autoTakeback)
   const autoTakebackDelay = computed(() => preferencesStore.preferences.coach.autoTakebackDelay)
 
@@ -62,6 +67,18 @@ export const useCoachStore = defineStore('coach', () => {
   const latestAnalysisToken = ref(0)
   let inFlightAnalysisPromise: Promise<CoachExplanation | null> | null = null
   let inFlightAnalysisKey: string | null = null
+  let activeAbortController: AbortController | null = null
+
+  function abortInFlightAnalysis() {
+    latestAnalysisToken.value++
+    if (activeAbortController) {
+      activeAbortController.abort()
+      activeAbortController = null
+    }
+    inFlightAnalysisPromise = null
+    inFlightAnalysisKey = null
+    isAnalyzing.value = false
+  }
 
   // Visuals State
   const showVisuals = computed(() => preferencesStore.preferences.coach.showVisuals)
@@ -71,11 +88,12 @@ export const useCoachStore = defineStore('coach', () => {
     const next = !coachSpy.value
     void preferencesStore.updatePreferences({ coach: { coachSpy: next } })
     if (!next) {
+      abortInFlightAnalysis()
       boardStore.setCoachShapes([])
       posExplanation.value = null
       cancelPendingDecision()
     } else if (boardStore.fen) {
-      runAnalysis(boardStore.fen, true)
+      void runAnalysis(boardStore.fen, true)
     }
   }
 
@@ -174,7 +192,9 @@ export const useCoachStore = defineStore('coach', () => {
   function setCoachEnabled(enabled: boolean) {
     isCoachEnabled.value = enabled
     if (!enabled) {
+      abortInFlightAnalysis()
       boardStore.setCoachShapes([])
+      posExplanation.value = null
       cancelPendingDecision()
       gameStore.unregisterMoveInspector(coachInspector)
     } else {
@@ -427,9 +447,35 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (gameStore.gamePhase === 'FAIRPLAY') return
+      if (
+        gameStore.gamePhase !== 'PLAYING' &&
+        gameStore.gamePhase !== 'ANALYSIS'
+      ) {
+        return
+      }
       if (isCoachEnabled.value && isCoachSpyActive.value && newFen) {
-        runAnalysis(newFen)
+        void runAnalysis(newFen)
+      }
+    },
+  )
+
+  // Reset coach state when switching between puzzle strategies
+  watch(
+    () => gameStore.currentStrategy,
+    () => {
+      abortInFlightAnalysis()
+      cancelPendingDecision()
+      boardStore.setCoachShapes([])
+      posExplanation.value = null
+      lastFetchedFen.value = ''
+      lastFetchedUci.value = null
+      if (
+        (gameStore.gamePhase === 'PLAYING' || gameStore.gamePhase === 'ANALYSIS') &&
+        boardStore.fen &&
+        isCoachEnabled.value &&
+        isCoachSpyActive.value
+      ) {
+        void runAnalysis(boardStore.fen)
       }
     },
   )
@@ -438,23 +484,24 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => gameStore.gamePhase,
     (phase) => {
-      if (phase === 'FAIRPLAY') {
+      if (phase === 'FAIRPLAY' || phase === 'IDLE') {
+        abortInFlightAnalysis()
         cancelPendingDecision()
         boardStore.setCoachShapes([])
         posExplanation.value = null
-        isAnalyzing.value = false
+        lastFetchedFen.value = ''
+        lastFetchedUci.value = null
       } else if (phase === 'PLAYING' || phase === 'ANALYSIS') {
-        if (boardStore.fen) {
-          runAnalysis(boardStore.fen, true)
+        if (boardStore.fen && isCoachEnabled.value && isCoachSpyActive.value) {
+          void runAnalysis(boardStore.fen)
         }
       } else if (phase === 'GAMEOVER') {
+        abortInFlightAnalysis()
         cancelPendingDecision()
         const status = gameStore.getGameStatus()
         if (status.outcome?.winner === gameStore.playerColor) {
           coachMood.value = 'celebrating'
         }
-      } else if (phase === 'IDLE') {
-        cancelPendingDecision()
       }
     },
   )
@@ -466,7 +513,7 @@ export const useCoachStore = defineStore('coach', () => {
     overrideLastMoveUci?: string | null,
     _overrideFenBefore?: string | null,
   ): Promise<CoachExplanation | null> {
-    if (gameStore.gamePhase === 'FAIRPLAY') {
+    if (gameStore.gamePhase === 'FAIRPLAY' || gameStore.gamePhase === 'IDLE') {
       isAnalyzing.value = false
       posExplanation.value = null
       return null
@@ -491,6 +538,11 @@ export const useCoachStore = defineStore('coach', () => {
       return posExplanation.value
     }
 
+    abortInFlightAnalysis()
+
+    const abortController = new AbortController()
+    activeAbortController = abortController
+
     lastFetchedFen.value = currentFen
     lastFetchedUci.value = payloadKeyUci
     const analysisToken = ++latestAnalysisToken.value
@@ -514,6 +566,7 @@ export const useCoachStore = defineStore('coach', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          signal: abortController.signal,
         })
 
         if (!response.ok) {
@@ -558,14 +611,22 @@ export const useCoachStore = defineStore('coach', () => {
         logger.info(`[CoachStore] Analysis loaded for FEN: ${currentFen}`)
         return data
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return null
+        }
         logger.warn('[CoachStore] Server-driven analysis request failed:', err)
         return null
       } finally {
         if (analysisToken === latestAnalysisToken.value) {
           isAnalyzing.value = false
         }
-        inFlightAnalysisPromise = null
-        inFlightAnalysisKey = null
+        if (activeAbortController === abortController) {
+          activeAbortController = null
+        }
+        if (inFlightAnalysisKey === requestKey) {
+          inFlightAnalysisPromise = null
+          inFlightAnalysisKey = null
+        }
       }
     })()
 
@@ -602,6 +663,7 @@ export const useCoachStore = defineStore('coach', () => {
     cancelPendingDecision,
     inspectUserMove,
     posExplanation,
+    lastFetchedFen,
     isAnalyzing,
     selectedMoveIndex,
     topMoves,

@@ -4,7 +4,12 @@ import { apiClient } from '@/shared/api/client'
 import { changeLang } from '@/shared/config/i18n'
 import logger from '@/shared/lib/logger'
 import { registerVolumeProvider } from '@/shared/lib/sound'
-import { AVAILABLE_ENGINES, type EngineId } from '@/shared/types/api.types'
+import {
+  AVAILABLE_ENGINES,
+  CRASHTEST_ENGINES,
+  type CrashtestEngineId,
+  type EngineId,
+} from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
@@ -31,6 +36,7 @@ export interface GameplayPreferences {
   language: 'en' | 'de' | 'ru'
   botEngine: string
   global_crashtest: boolean
+  crashtestEngine: CrashtestEngineId
 }
 
 export interface DelayPreferences {
@@ -81,7 +87,9 @@ export interface BackendUserPreferencesDto {
   theme: ThemePreferences
   engine: EnginePreferences
   audio: AudioPreferences
-  gameplay: Omit<GameplayPreferences, 'global_crashtest'> & { global_autoplay?: boolean }
+  gameplay: Omit<GameplayPreferences, 'global_crashtest' | 'crashtestEngine'> & {
+    global_autoplay?: boolean
+  }
   delays: Omit<DelayPreferences, 'crashtestDelayMs'> & { autoPlayDelayMs?: number }
   puzzle?: PuzzlePreferences
   analysis?: AnalysisPreferences
@@ -109,16 +117,17 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     language: 'en',
     botEngine: 'maia-1500',
     global_crashtest: false,
+    crashtestEngine: 'stockfish',
   },
   delays: {
     initialBotDelayMs: 500,
     botDelayMs: 250,
-    nextPuzzleDelayMs: 2000,
+    nextPuzzleDelayMs: 100,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
   },
   puzzle: {
-    autoNext: false,
+    autoNext: true,
   },
   analysis: {
     multiPv: 3,
@@ -169,7 +178,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
           delays: {
             initialBotDelayMs: 500,
             botDelayMs: rawPreferences.value.delays.botDelayMs,
-            nextPuzzleDelayMs: 500,
+            nextPuzzleDelayMs: 100,
             restartDelayMs: 500,
             crashtestDelayMs: 100,
           },
@@ -212,6 +221,10 @@ export const usePreferencesStore = defineStore('preferences', () => {
         const parsed = JSON.parse(backup)
         merged = deepMerge(merged, parsed)
       }
+      if (!CRASHTEST_ENGINES.includes(merged.gameplay.crashtestEngine)) {
+        merged.gameplay.crashtestEngine = 'stockfish'
+      }
+      merged.delays.nextPuzzleDelayMs = DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs
       // Migrate legacy coach settings if present
       const legacyCoach = localStorage.getItem(LEGACY_COACH_STORAGE_KEY)
       if (legacyCoach) {
@@ -259,9 +272,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             DEFAULT_USER_PREFERENCES.delays.initialBotDelayMs,
           botDelayMs:
             rawBackendPrefs.delays?.botDelayMs ?? DEFAULT_USER_PREFERENCES.delays.botDelayMs,
-          nextPuzzleDelayMs:
-            rawBackendPrefs.delays?.nextPuzzleDelayMs ??
-            DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
+          nextPuzzleDelayMs: DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs,
           restartDelayMs:
             rawBackendPrefs.delays?.restartDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
