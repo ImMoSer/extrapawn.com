@@ -32,7 +32,9 @@ async function boot() {
   await preferencesStore.initialize()
 
   // Branch A: User not logged in -> Show minimal Login Screen (except on public shareable routes)
-  const isPublicShareRoute = /^\/kursdiplom\/[^/]+/.test(window.location.pathname)
+  const isPublicShareRoute =
+    /^\/kursdiplom\/[^/]+/.test(window.location.pathname) ||
+    /^\/user-cabinet\/mo3ep\/?$/i.test(window.location.pathname)
   if (!authStore.isAuthenticated && !isPublicShareRoute) {
     // Save the current path to redirect back after login
     if (window.location.pathname !== '/' && window.location.pathname !== '/login') {

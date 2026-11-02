@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { NAlert, NButton, NIcon, NResult, NSpin } from 'naive-ui'
@@ -34,10 +34,25 @@ import {
 } from '@/features/profile'
 
 const { t, locale } = useI18n()
+const route = useRoute()
 const router = useRouter()
 
 const authStore = useAuthStore()
 const { userProfile, isAuthenticated } = storeToRefs(authStore)
+
+const isPublicMo3epCabinet = computed<boolean>(() => {
+  const rawId = typeof route.params.id === 'string' ? route.params.id.trim().toLowerCase() : ''
+  return rawId === 'mo3ep'
+})
+
+const canViewCabinet = computed<boolean>(() => {
+  return isPublicMo3epCabinet.value || (isAuthenticated.value && Boolean(userProfile.value))
+})
+
+const displayedUsername = computed<string>(() => {
+  if (isPublicMo3epCabinet.value) return 'MO3EP'
+  return userProfile.value?.username ?? ''
+})
 
 const cabinetData = ref<CabinetDTO | null>(null)
 const isLoading = ref(false)
@@ -46,11 +61,13 @@ const selectedDiscipline = ref<TrainingDiscipline>('tactics')
 const copiedCourseId = ref<string | null>(null)
 
 async function loadCabinet(): Promise<void> {
-  if (!isAuthenticated.value) return
+  if (!canViewCabinet.value) return
   isLoading.value = true
   errorMessage.value = null
   try {
-    cabinetData.value = await trainingApi.getCabinet()
+    cabinetData.value = isPublicMo3epCabinet.value
+      ? await trainingApi.getPublicCabinet('mo3ep')
+      : await trainingApi.getCabinet()
   } catch (err: unknown) {
     errorMessage.value = err instanceof Error ? err.message : String(err)
   } finally {
@@ -59,13 +76,13 @@ async function loadCabinet(): Promise<void> {
 }
 
 onMounted(() => {
-  if (isAuthenticated.value) {
+  if (canViewCabinet.value) {
     void loadCabinet()
   }
 })
 
-watch(isAuthenticated, (authed) => {
-  if (authed) {
+watch([canViewCabinet, isPublicMo3epCabinet], ([allowed]) => {
+  if (allowed) {
     void loadCabinet()
   } else {
     cabinetData.value = null
@@ -178,7 +195,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
   <div class="mx-auto my-6 max-w-6xl px-4 max-md:my-3 max-md:px-2">
     <!-- Unauthenticated State -->
     <div
-      v-if="!isAuthenticated || !userProfile"
+      v-if="!canViewCabinet"
       class="rounded-xl border border-border bg-surface py-16 shadow-md"
     >
       <NResult
@@ -194,7 +211,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
       </NResult>
     </div>
 
-    <!-- Authenticated State -->
+    <!-- Authenticated / Public Showcase State -->
     <div v-else class="space-y-6">
       <NAlert v-if="errorMessage" type="error" closable @close="errorMessage = null">
         <div class="flex items-center justify-between gap-4">
@@ -220,7 +237,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
         <CabinetMacroPulse
           :cabinet="cabinetData"
           :selected-discipline="selectedDiscipline"
-          :username="userProfile.username"
+          :username="displayedUsername"
           @select-discipline="(disc) => (selectedDiscipline = disc)"
           @open-training-hub="handleOpenTrainingHub"
         />

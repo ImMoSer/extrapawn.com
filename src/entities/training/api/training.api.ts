@@ -87,6 +87,12 @@ export const trainingApi = {
     return assertCabinetDTO(raw)
   },
 
+  async getPublicCabinet(userId: string): Promise<CabinetDTO> {
+    const id = assertNonEmptyId('userId', userId)
+    const raw = await apiClient<unknown>(`/training/cabinet/public/${encodeURIComponent(id)}`)
+    return assertCabinetDTO(raw)
+  },
+
   startCourse(payload: StartCourseRequest): Promise<CourseDTO> {
     return apiClient<CourseDTO>('/training/courses', {
       method: 'POST',

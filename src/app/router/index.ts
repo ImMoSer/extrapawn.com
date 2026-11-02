@@ -176,7 +176,11 @@ router.beforeEach(async (to, from) => {
     })
   }
 
-  const requiresAuth = to.meta.requiresAuth
+  const isPublicDeveloperCabinet =
+    to.name === 'user-cabinet' &&
+    typeof to.params.id === 'string' &&
+    to.params.id.trim().toLowerCase() === 'mo3ep'
+  const requiresAuth = Boolean(to.meta.requiresAuth) && !isPublicDeveloperCabinet
   const isAuthenticated = authStore.isAuthenticated
 
   if (requiresAuth && !isAuthenticated) {
