@@ -323,7 +323,7 @@ const techStackItems = [
                 secondary
                 round
                 tag="a"
-                href="https://coff.ee/chessboard.fun"
+                href="https://buymeacoffee.com/extrapawn.com"
                 target="_blank"
               >
                 {{ t('about.author.supportButtonText') }}

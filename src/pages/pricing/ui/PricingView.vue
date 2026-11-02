@@ -132,7 +132,7 @@ const freeFeatures = [
                 size="large"
                 round
                 tag="a"
-                href="https://coff.ee/chessboard.fun"
+                href="https://buymeacoffee.com/extrapawn.com"
                 target="_blank"
                 class="px-7 font-bold"
               >
