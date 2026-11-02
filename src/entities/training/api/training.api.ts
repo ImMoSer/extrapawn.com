@@ -196,10 +196,13 @@ export const trainingApi = {
   getChallengeState(
     discipline: TrainingDiscipline,
     puzzleId: string,
+    edition?: string,
   ): Promise<ChallengeStateDTO> {
     const id = assertNonEmptyId('puzzleId', puzzleId)
+    const trimmedEdition = edition?.trim() ?? ''
+    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
     return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`,
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}${query}`,
     )
   },
 
@@ -207,6 +210,7 @@ export const trainingApi = {
     discipline: TrainingDiscipline,
     puzzleId: string,
     payload: ChallengeAttemptRequest,
+    edition?: string,
   ): Promise<ChallengeStateDTO> {
     const id = assertNonEmptyId('puzzleId', puzzleId)
     if (payload.time_ms < 0 || !Number.isFinite(payload.time_ms)) {
@@ -214,13 +218,17 @@ export const trainingApi = {
         `[trainingApi] Invalid challenge attempt time_ms (${String(payload.time_ms)}) for puzzle ${id}. Fail-Fast!`,
       )
     }
+    const trimmedEdition = edition?.trim() ?? ''
+    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
+    const pgnMoves = payload.pgn_moves?.trim()
     return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/attempt`,
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/attempt${query}`,
       {
         method: 'POST',
         body: JSON.stringify({
           solved: payload.solved,
           time_ms: Math.round(payload.time_ms),
+          ...(pgnMoves ? { pgn_moves: pgnMoves } : {}),
         }),
       },
     )
@@ -229,10 +237,13 @@ export const trainingApi = {
   surrenderChallenge(
     discipline: TrainingDiscipline,
     puzzleId: string,
+    edition?: string,
   ): Promise<ChallengeStateDTO> {
     const id = assertNonEmptyId('puzzleId', puzzleId)
+    const trimmedEdition = edition?.trim() ?? ''
+    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
     return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/surrender`,
+      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/surrender${query}`,
       {
         method: 'POST',
       },

@@ -613,6 +613,7 @@ export interface ChallengeParticipantDTO {
 export interface ChallengeStateDTO {
   discipline: TrainingDiscipline
   puzzle_id: string
+  edition?: string
   difficulty: TrainingDifficulty
   bot_engine: BotLadderEngineId
   tactical?: TacticalPuzzleV2
@@ -624,6 +625,7 @@ export interface ChallengeStateDTO {
 export interface ChallengeAttemptRequest {
   solved: boolean
   time_ms: number
+  pgn_moves?: string
 }
 
 export interface ChallengeRecordEntryDTO {

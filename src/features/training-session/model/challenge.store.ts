@@ -280,10 +280,19 @@ export const useChallengeStore = defineStore('challenge', () => {
     }
 
     try {
-      const updated = await trainingApi.submitChallengeAttempt(state.discipline, state.puzzle_id, {
-        solved,
-        time_ms: elapsedMs,
-      })
+      const pgnMoves = solved
+        ? pgnService.getCurrentPgnString().replace(/\s+/g, ' ').trim()
+        : undefined
+      const updated = await trainingApi.submitChallengeAttempt(
+        state.discipline,
+        state.puzzle_id,
+        {
+          solved,
+          time_ms: elapsedMs,
+          ...(pgnMoves ? { pgn_moves: pgnMoves } : {}),
+        },
+        state.edition,
+      )
       challengeState.value = updated
 
       if (activePlayToken !== playToken) return
@@ -311,6 +320,7 @@ export const useChallengeStore = defineStore('challenge', () => {
   async function loadChallenge(
     discipline: TrainingDiscipline,
     puzzleId: string,
+    edition?: string,
   ): Promise<ChallengeStateDTO> {
     stopTimer()
     activePlayToken++
@@ -319,7 +329,7 @@ export const useChallengeStore = defineStore('challenge', () => {
     feedbackMessage.value = null
 
     try {
-      const dto = await trainingApi.getChallengeState(discipline, puzzleId)
+      const dto = await trainingApi.getChallengeState(discipline, puzzleId, edition)
       challengeState.value = dto
       syncBotLadder(dto)
 
@@ -353,7 +363,11 @@ export const useChallengeStore = defineStore('challenge', () => {
     error.value = null
 
     try {
-      const updated = await trainingApi.surrenderChallenge(state.discipline, state.puzzle_id)
+      const updated = await trainingApi.surrenderChallenge(
+        state.discipline,
+        state.puzzle_id,
+        state.edition,
+      )
       challengeState.value = updated
       enterAnalysis(false)
     } catch (err) {

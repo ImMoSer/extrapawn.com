@@ -19,6 +19,7 @@ const store = useChallengeStore()
 
 const rawDiscipline = computed(() => String(route.params.discipline ?? '').trim())
 const rawPuzzleId = computed(() => String(route.params.puzzleId ?? '').trim())
+const rawEdition = computed(() => String(route.params.edition ?? '').trim())
 
 const isBoardLocked = computed(() => {
   return store.viewState !== 'playing' && store.viewState !== 'analyzing'
@@ -27,19 +28,20 @@ const isBoardLocked = computed(() => {
 async function initFromRoute(): Promise<void> {
   const disc = rawDiscipline.value
   const pid = rawPuzzleId.value
+  const edition = rawEdition.value
   if (!isValidTrainingDiscipline(disc) || !pid) {
     store.viewState = 'error'
     store.error = t('features.trainingCenter.challenge.notFoundError')
     return
   }
-  await store.loadChallenge(disc as TrainingDiscipline, pid)
+  await store.loadChallenge(disc as TrainingDiscipline, pid, edition)
 }
 
 onMounted(() => {
   void initFromRoute()
 })
 
-watch([rawDiscipline, rawPuzzleId], () => {
+watch([rawDiscipline, rawPuzzleId, rawEdition], () => {
   void initFromRoute()
 })
 
