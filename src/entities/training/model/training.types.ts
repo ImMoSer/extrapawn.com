@@ -141,10 +141,10 @@ export const PRACTICAL_DOMAIN_CLASSES: Readonly<Record<EndgameDomain, readonly s
 export const TACTICS_PHASES = ['opening', 'middlegame', 'endgame'] as const
 export type TacticsPhase = (typeof TACTICS_PHASES)[number]
 
-export const TACTICS_LENGTHS = ['oneMove', 'short', 'long', 'veryLong'] as const
+export const TACTICS_LENGTHS = ['short', 'long', 'veryLong'] as const
 export type TacticsLength = (typeof TACTICS_LENGTHS)[number]
 
-export const TACTICS_GOALS = ['mate', 'crushing', 'advantage', 'equality'] as const
+export const TACTICS_GOALS = ['mate', 'crushing', 'advantage'] as const
 export type TacticsGoal = (typeof TACTICS_GOALS)[number]
 
 export const TACTICS_COGNITIVE_PROFILES = [
