@@ -1024,7 +1024,7 @@
       "gate": {
         "title": "Допуск к уровню {tier}",
         "conditionQuota": "1. Закрыть квоту курса ({days} дн.)",
-        "conditionScopes": "2. Рейтинг ≥ {rating} во всех обязательных темах",
+        "conditionScopes": "2. Средний рейтинг дисциплины ≥ {rating}",
         "done": "Выполнено",
         "pending": "В процессе",
         "laggingScopesLabel": "Отстающие темы ({count})",

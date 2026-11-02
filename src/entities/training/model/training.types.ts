@@ -427,6 +427,8 @@ export interface TierGateProgressDTO {
   target_tier: TrainingDifficulty
   course_completed: boolean
   rating_threshold: number
+  current_rating: number
+  rating_qualified: boolean
   qualified_scopes: number
   total_scopes: number
   lagging_scopes: ScopeStatDTO[]

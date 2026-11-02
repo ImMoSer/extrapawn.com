@@ -1024,7 +1024,7 @@
       "gate": {
         "title": "Zulassung für Stufe {tier}",
         "conditionQuota": "1. Kursquote erfüllen ({days}T)",
-        "conditionScopes": "2. Wertung ≥ {rating} in allen Pflichtbereichen",
+        "conditionScopes": "2. Gesamtwertung der Disziplin ≥ {rating}",
         "done": "Erfüllt",
         "pending": "Offen",
         "laggingScopesLabel": "Rückständige Bereiche ({count})",

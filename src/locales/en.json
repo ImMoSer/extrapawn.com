@@ -1024,7 +1024,7 @@
       "gate": {
         "title": "Next Tier Gate: {tier}",
         "conditionQuota": "1. Complete Course Quota ({days}d)",
-        "conditionScopes": "2. Reach Rating ≥ {rating} Across All Required Scopes",
+        "conditionScopes": "2. Overall Discipline Rating ≥ {rating}",
         "done": "Done",
         "pending": "Pending",
         "laggingScopesLabel": "Lagging Scopes ({count})",

@@ -130,12 +130,26 @@ const activeCoursePercent = computed(() => {
   )
 })
 
+const gateCurrentRating = computed(() => {
+  if (!nextTierGate.value) return 1000
+  return nextTierGate.value.current_rating ?? discOverview.value?.global_rating ?? 1000
+})
+
+const gateRatingQualified = computed(() => {
+  if (!nextTierGate.value) return false
+  if (typeof nextTierGate.value.rating_qualified === 'boolean') {
+    return nextTierGate.value.rating_qualified
+  }
+  return gateCurrentRating.value >= nextTierGate.value.rating_threshold
+})
+
 const gateScopesPercent = computed(() => {
-  if (!nextTierGate.value || nextTierGate.value.total_scopes <= 0) return 0
-  return Math.min(
-    100,
-    Math.round((nextTierGate.value.qualified_scopes / nextTierGate.value.total_scopes) * 100),
-  )
+  if (!nextTierGate.value) return 0
+  if (gateRatingQualified.value) return 100
+  const threshold = nextTierGate.value.rating_threshold
+  const baseRating = Math.max(600, threshold - 500)
+  const span = Math.max(100, threshold - baseRating)
+  return Math.min(100, Math.max(0, Math.round(((gateCurrentRating.value - baseRating) / span) * 100)))
 })
 
 // WarmUp Focus Group & Key Options
@@ -879,7 +893,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                     </span>
                   </div>
 
-                  <!-- Condition 2: All Scopes >= Threshold -->
+                  <!-- Condition 2: Overall Discipline Rating >= Threshold -->
                   <div class="p-2 rounded-sm bg-surface border border-border flex flex-col gap-1.5">
                     <div class="flex items-center justify-between">
                       <span class="text-text-secondary">
@@ -889,13 +903,20 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                           })
                         }}
                       </span>
-                      <span class="font-condensed font-bold text-neon-cyan">
-                        {{ nextTierGate.qualified_scopes }} / {{ nextTierGate.total_scopes }}
+                      <span
+                        class="font-condensed font-bold flex items-center gap-1"
+                        :class="gateRatingQualified ? 'text-success' : 'text-neon-cyan'"
+                      >
+                        <NIcon v-if="gateRatingQualified" size="14">
+                          <CheckmarkCircleOutline />
+                        </NIcon>
+                        {{ Math.round(gateCurrentRating) }} / {{ Math.round(nextTierGate.rating_threshold) }}
                       </span>
                     </div>
                     <div class="w-full h-1.5 rounded-sm bg-elevated overflow-hidden">
                       <div
-                        class="h-full bg-neon-cyan transition-all duration-300"
+                        class="h-full transition-all duration-300"
+                        :class="gateRatingQualified ? 'bg-success' : 'bg-neon-cyan'"
                         :style="{ width: `${gateScopesPercent}%` }"
                       />
                     </div>
