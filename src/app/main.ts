@@ -31,8 +31,9 @@ async function boot() {
   const preferencesStore = usePreferencesStore(pinia)
   await preferencesStore.initialize()
 
-  // Branch A: User not logged in -> Show minimal Login Screen
-  if (!authStore.isAuthenticated) {
+  // Branch A: User not logged in -> Show minimal Login Screen (except on public shareable routes)
+  const isPublicShareRoute = /^\/kursdiplom\/[^/]+/.test(window.location.pathname)
+  if (!authStore.isAuthenticated && !isPublicShareRoute) {
     // Save the current path to redirect back after login
     if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
       localStorage.setItem(
@@ -72,11 +73,13 @@ async function boot() {
 
   // Handle post-login redirects
   await router.isReady()
-  const redirectPath = localStorage.getItem('redirect_after_login')
-  if (redirectPath) {
-    localStorage.removeItem('redirect_after_login')
-    if (redirectPath !== router.currentRoute.value.fullPath) {
-      await router.push(redirectPath)
+  if (authStore.isAuthenticated) {
+    const redirectPath = localStorage.getItem('redirect_after_login')
+    if (redirectPath) {
+      localStorage.removeItem('redirect_after_login')
+      if (redirectPath !== router.currentRoute.value.fullPath) {
+        await router.push(redirectPath)
+      }
     }
   }
 
