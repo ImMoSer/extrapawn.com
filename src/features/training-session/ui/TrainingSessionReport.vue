@@ -13,6 +13,7 @@ import {
   CloseCircleOutline,
   EyeOutline,
   PlayOutline,
+  RibbonOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
@@ -31,6 +32,11 @@ const activeCourse = computed(() => {
   const disc = report.value?.discipline
   if (!disc || !store.overview) return null
   return store.overview.disciplines[disc]?.active_course ?? null
+})
+
+const completedCourseInSession = computed(() => {
+  const c = store.lastAttemptResult?.course
+  return c?.status === 'completed' ? c : null
 })
 
 const courseProgressPercent = computed(() => {
@@ -94,6 +100,34 @@ function handleGoToCabinet(): void {
 
 <template>
   <div v-if="report" class="w-full max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 text-text-primary">
+    <!-- Course Completed Diploma Celebration Banner -->
+    <div
+      v-if="completedCourseInSession"
+      class="p-4 rounded-lg bg-success/15 border border-success flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+    >
+      <div class="flex items-center gap-3">
+        <NIcon size="28" class="text-success"><RibbonOutline /></NIcon>
+        <div>
+          <div class="font-display font-bold text-base text-text-primary">
+            {{ t('features.trainingCenter.diploma.bannerCompletedTitle') }}
+          </div>
+          <div class="text-xs text-text-secondary">
+            {{ t('features.trainingCenter.diploma.bannerCompletedSubtitle') }}
+          </div>
+        </div>
+      </div>
+      <NButton
+        type="primary"
+        size="small"
+        @click="router.push(`/kursdiplom/${completedCourseInSession.id}`)"
+      >
+        <template #icon>
+          <NIcon><RibbonOutline /></NIcon>
+        </template>
+        {{ t('features.trainingCenter.diploma.openDiplomaBtn') }}
+      </NButton>
+    </div>
+
     <!-- Promotion Celebration Banner -->
     <div
       v-if="store.promotionBannerTier"

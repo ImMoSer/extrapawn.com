@@ -69,3 +69,17 @@ export function formatRemainingDuration(seconds: number, t: TranslateFn): string
   return `${hours}${t('features.trainingCenter.units.hourShort')} ${minutes}${t('features.trainingCenter.units.minShort')}`
 }
 
+export function formatElapsedDuration(seconds: number, t: TranslateFn): string {
+  const safeSec = Math.max(0, Math.round(seconds))
+  const days = Math.floor(safeSec / 86400)
+  const hours = Math.floor((safeSec % 86400) / 3600)
+  const minutes = Math.max(1, Math.floor((safeSec % 3600) / 60))
+  if (days > 0) {
+    return `${days}${t('features.trainingCenter.units.dayShort')} ${hours}${t('features.trainingCenter.units.hourShort')}`
+  }
+  if (hours > 0) {
+    return `${hours}${t('features.trainingCenter.units.hourShort')} ${minutes}${t('features.trainingCenter.units.minShort')}`
+  }
+  return `${minutes}${t('features.trainingCenter.units.minShort')}`
+}
+

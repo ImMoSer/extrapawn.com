@@ -8,6 +8,7 @@ import type {
   ChallengeAttemptRequest,
   ChallengeRecordEntryDTO,
   ChallengeStateDTO,
+  CourseDiplomaDTO,
   CourseDTO,
   CourseHistoryResponseDTO,
   CourseSessionRequest,
@@ -109,6 +110,11 @@ export const trainingApi = {
       `/training/courses/history?limit=${encodeURIComponent(String(limit))}`,
     )
     return res.courses
+  },
+
+  getCourseDiploma(courseId: string): Promise<CourseDiplomaDTO> {
+    const id = assertNonEmptyId('courseId', courseId)
+    return apiClient<CourseDiplomaDTO>(`/training/courses/${encodeURIComponent(id)}/diploma`)
   },
 
   composeCourseSession(payload: CourseSessionRequest): Promise<HydratedSessionDTO> {

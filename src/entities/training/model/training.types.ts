@@ -57,7 +57,7 @@ export type TrainingObjective = (typeof TRAINING_OBJECTIVES)[number]
 
 export type TrainingSessionMode = 'course' | 'warmup'
 export type CourseDurationDays = 7 | 30
-export type CourseStatus = 'active' | 'completed' | 'expired' | 'aborted'
+export type CourseStatus = 'active' | 'completed' | 'incomplete' | 'expired' | 'aborted'
 export type SessionItemStatus = 'pending' | 'solved' | 'failed'
 export type AttemptFailStage = '' | 'none' | 'scenario' | 'playout'
 export type WoodpeckerAction = 'none' | 'queued' | 'progressed' | 'reset' | 'graduated'
@@ -308,6 +308,28 @@ export interface ScopeStatDTO {
   last_played_at?: string
 }
 
+export interface CourseScopeSummaryDTO {
+  group: string
+  key: string
+  solved_count: number
+  failed_count: number
+  total_time_ms: number
+}
+
+export interface CourseSummaryDTO {
+  has_detailed_telemetry: boolean
+  rating_start?: number
+  rating_end?: number
+  rating_delta?: number
+  total_time_ms?: number
+  first_move_fails?: number
+  scenario_fails?: number
+  playout_fails?: number
+  woodpecker_queued?: number
+  woodpecker_graduated?: number
+  scopes?: CourseScopeSummaryDTO[]
+}
+
 export interface CourseDTO {
   id: string
   discipline: TrainingDiscipline
@@ -322,6 +344,18 @@ export interface CourseDTO {
   expires_at: string
   completed_at?: string
   remaining_seconds: number
+  summary?: CourseSummaryDTO
+}
+
+export interface CourseDiplomaDTO {
+  course: CourseDTO
+  user_id: string
+  username: string
+  accuracy_percent: number
+  total_attempts: number
+  elapsed_duration_sec: number
+  current_global_rating: number
+  summary: CourseSummaryDTO
 }
 
 export interface StartCourseRequest {
