@@ -444,7 +444,7 @@
         "improve": "Verbessern",
         "noData": "Keine Daten für den Zeitraum.",
         "success": "Erfolg",
-        "title": "",
+        "title": "Statistiken",
         "makeTaskToday": "Tagesaufgabe starten",
         "modes": {
           "all": "Modus",
@@ -542,6 +542,8 @@
     },
     "bonus": {
       "mostValuablePlayersTitle": "Club Top 20 & Bonus Status",
+      "description": "Die Top 20 der aktivsten Spieler des ExtraPawn-Clubs auf Lichess in den letzten 30 Tagen.",
+      "homepageLink": "ExtraPawn Club-Startseite",
       "table": {
         "player": "Spieler",
         "vector": "Vector",
@@ -759,7 +761,7 @@
         "spyPausedDesc": "Live-Positionsbewertung und Patzer-Erkennung sind derzeit inaktiv.",
         "enableSpy": "Coach Spy aktivieren",
         "fairPlayTitle": "Fairplay-Modus",
-        "fairPlayDesc": "Der Coach ist während des Aufgabenplans deaktiviert. Sie haben 3 Versuche, die Aufgabe selbstständig zu lösen, bevor der Coach hilft."
+        "fairPlayDesc": "Coach-Hinweise und Positionsbewertung sind während des Lösens einer Aufgabe deaktiviert. Die vollständige Analyse wird im Analysemodus freigeschaltet."
       },
       "confirmation": {
         "blunderDetected": "Grober Patzer erkannt",
@@ -983,7 +985,13 @@
         "queued24h": "Im Specht eingereiht (24h)",
         "graduated": "Heute gemeistert (3/3)",
         "mastered": "Dauerhaft gemeistert",
-        "masteredShort": "gemeistert"
+        "masteredShort": "gemeistert",
+        "actions": {
+          "queued": "Eingereiht (24h · {streak}/3)",
+          "progressed": "Serie {streak}/3 (24h)",
+          "reset": "Serie zurückgesetzt ({streak}/3 · 24h)",
+          "graduated": "Gemeistert! (3/3)"
+        }
       },
       "session": {
         "unfinishedBadge": "OFFENE SITZUNG",
@@ -1008,6 +1016,7 @@
         "status": {
           "active": "Aktiv",
           "completed": "Abgeschlossen",
+          "expired": "Abgelaufen",
           "incomplete": "Unvollständig",
           "aborted": "Abgebrochen"
         }
@@ -1314,6 +1323,9 @@
     },
     "actions": {
       "retry": "Wiederholen"
+    },
+    "auth": {
+      "requiredForAction": "Anmeldung erforderlich"
     }
   }
 }

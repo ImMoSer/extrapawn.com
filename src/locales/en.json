@@ -444,7 +444,7 @@
         "improve": "Improve",
         "noData": "No data for the selected period.",
         "success": "Success",
-        "title": "",
+        "title": "Statistics",
         "makeTaskToday": "Start Daily Task",
         "modes": {
           "all": "Mode",
@@ -542,6 +542,8 @@
     },
     "bonus": {
       "mostValuablePlayersTitle": "Club Top 20 & Bonus Status",
+      "description": "Top 20 active ExtraPawn Club players over the last 30 days on Lichess.",
+      "homepageLink": "ExtraPawn Club Home",
       "table": {
         "player": "Player",
         "vector": "Vector",
@@ -759,7 +761,7 @@
         "spyPausedDesc": "Live position evaluation and blunder detection are currently inactive.",
         "enableSpy": "Enable Coach Spy",
         "fairPlayTitle": "Fair Play Mode",
-        "fairPlayDesc": "Coach is disabled during Task Today. You are given 3 attempts to solve the puzzle independently before the coach starts assisting."
+        "fairPlayDesc": "Coach hints and position evaluation are disabled while solving a puzzle. Full analysis unlocks in Analysis mode."
       },
       "confirmation": {
         "blunderDetected": "Blunder Detected",
@@ -983,7 +985,13 @@
         "queued24h": "Queued in Woodpecker (24h)",
         "graduated": "Graduated Today (3/3)",
         "mastered": "Mastered Forever",
-        "masteredShort": "mastered"
+        "masteredShort": "mastered",
+        "actions": {
+          "queued": "Queued (24h · {streak}/3)",
+          "progressed": "Streak {streak}/3 (24h)",
+          "reset": "Streak reset ({streak}/3 · 24h)",
+          "graduated": "Graduated! (3/3)"
+        }
       },
       "session": {
         "unfinishedBadge": "UNFINISHED SESSION",
@@ -1008,6 +1016,7 @@
         "status": {
           "active": "Active",
           "completed": "Completed",
+          "expired": "Expired",
           "incomplete": "Incomplete",
           "aborted": "Aborted"
         }
@@ -1314,6 +1323,9 @@
     },
     "actions": {
       "retry": "Retry"
+    },
+    "auth": {
+      "requiredForAction": "Authentication Required"
     }
   }
 }

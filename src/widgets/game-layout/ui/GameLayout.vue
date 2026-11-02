@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
+import { useAnalysisStore } from '@/features/analysis'
 import { EvalBar, useCoachStore, useCrashtestStore } from '@/features/coach'
 import { EngineSelector } from '@/features/engine'
+import { useSidebarStore } from '../model/sidebar.store'
 import ControlCenter from './ControlCenter.vue'
 import RightSidebarSlot from './RightSidebarSlot.vue'
 import type { Key } from '@lichess-org/chessground/types'
@@ -24,8 +26,10 @@ const props = withDefaults(
 const preferencesStore = usePreferencesStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
+const analysisStore = useAnalysisStore()
 const coachStore = useCoachStore()
 const crashtestStore = useCrashtestStore()
+const sidebarStore = useSidebarStore()
 
 onMounted(() => {
   crashtestStore.init()
@@ -40,8 +44,40 @@ const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.d
 
 const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS')
 
+const activeEvalCp = computed<number | null>(() => {
+  if (coachStore.isFairPlayLocked) return 0
+  if (sidebarStore.activeMode === 'explorer' && analysisStore.isAnalysisActive) {
+    const topLine = analysisStore.analysisLines[0]
+    if (!topLine || topLine.score.type !== 'cp') return null
+    return topLine.score.value
+  }
+  return coachStore.evalCp
+})
+
+const activeEvalMate = computed<number | null>(() => {
+  if (coachStore.isFairPlayLocked) return null
+  if (sidebarStore.activeMode === 'explorer' && analysisStore.isAnalysisActive) {
+    const topLine = analysisStore.analysisLines[0]
+    if (!topLine || topLine.score.type !== 'mate') return null
+    return topLine.score.value
+  }
+  return coachStore.evalMate
+})
+
+const activeEvalLoading = computed<boolean>(() => {
+  if (coachStore.isFairPlayLocked) return false
+  if (sidebarStore.activeMode === 'explorer') {
+    return analysisStore.isAnalysisActive && analysisStore.analysisLines.length === 0
+  }
+  return coachStore.topMovesLoading
+})
+
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   await gameStore.handleUserMove(orig, dest)
+}
+
+const handleWheelNavigate = (direction: 'up' | 'down') => {
+  gameStore.navigatePgn(direction === 'up' ? 'backward' : 'forward')
 }
 </script>
 
@@ -72,10 +108,10 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
           <div v-if="!props.hideEvalBar" class="eval-bar-container">
             <slot name="eval-bar">
               <EvalBar
-                :eval-cp="coachStore.evalCp"
-                :mate="coachStore.evalMate"
+                :eval-cp="activeEvalCp"
+                :mate="activeEvalMate"
                 :result="coachStore.gameResult"
-                :loading="coachStore.topMovesLoading"
+                :loading="activeEvalLoading"
                 :orientation="boardStore.orientation"
               />
             </slot>
@@ -100,6 +136,7 @@ const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
                   @user-move="handleUserMove"
                   @complete-promotion="boardStore.completePromotion"
                   @shapes-change="boardStore.setDrawableShapes"
+                  @wheel-navigate="handleWheelNavigate"
                 />
               </slot>
 

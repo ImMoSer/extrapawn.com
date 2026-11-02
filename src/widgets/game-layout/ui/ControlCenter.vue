@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGameStore, useBoardStore } from '@/entities/game'
+import { useCoachStore } from '@/features/coach'
 import { useSidebarStore } from '../model/sidebar.store'
 import { useI18n } from 'vue-i18n'
 import { NIcon } from 'naive-ui'
@@ -14,6 +15,7 @@ import {
 const { t } = useI18n()
 const gameStore = useGameStore()
 const boardStore = useBoardStore()
+const coachStore = useCoachStore()
 const sidebarStore = useSidebarStore()
 </script>
 
@@ -22,17 +24,17 @@ const sidebarStore = useSidebarStore()
     <!-- Left: Sidebar Mode Toggles (EXP - COACH) -->
     <div class="flex items-center gap-1.5">
       <button
-        v-if="gameStore.gamePhase !== 'FAIRPLAY'"
+        v-if="!coachStore.isFairPlayLocked"
         @click="sidebarStore.setMode('explorer')"
         :title="t('shared.board.pgn.modeExplorer')"
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
         :class="
           sidebarStore.activeMode === 'explorer'
-            ? 'bg-success/15 text-success border-success/40 shadow-[0_0_10px_rgba(0,255,85,0.2)]'
+            ? 'bg-success/15 text-success border-success/40 shadow-[0_0_10px_color-mix(in_srgb,var(--color-success)_20%,transparent)]'
             : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
         "
       >
-        EXP
+        STOCKFISH
       </button>
 
       <button
@@ -41,7 +43,7 @@ const sidebarStore = useSidebarStore()
         class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
         :class="
           sidebarStore.activeMode === 'coach'
-            ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 shadow-[0_0_10px_rgba(0,229,255,0.2)]'
+            ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40 shadow-[0_0_10px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)]'
             : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
         "
       >

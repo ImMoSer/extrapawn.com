@@ -741,11 +741,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     populateCanonicalSolutionOnBoard(adapted)
   }
 
-  function loadCanonicalSolutionIntoAnalysis(): void {
-    if (!analysisPuzzle.value) return
-    populateCanonicalSolutionOnBoard(analysisPuzzle.value)
-  }
-
   function exitPuzzleAnalysis(): void {
     analysisPuzzle.value = null
     if (analysisReturnState.value === 'report') {
@@ -846,7 +841,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     resumeDisciplineSession,
     advanceAfterAttempt,
     enterPuzzleAnalysis,
-    loadCanonicalSolutionIntoAnalysis,
     exitPuzzleAnalysis,
     pauseToHub,
     dismissActiveSession,

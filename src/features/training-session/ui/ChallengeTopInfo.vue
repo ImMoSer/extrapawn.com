@@ -6,7 +6,6 @@ import {
   CloseCircleOutline,
   EyeOutline,
   RefreshOutline,
-  SparklesOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
 import { computed } from 'vue'
@@ -44,8 +43,6 @@ const showBotBadge = computed(() => {
 })
 
 const botLabel = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
-
-const hasCanonicalSolution = computed(() => Boolean(activePuzzle.value?.tactical_solution))
 
 async function handleGiveUpAndAnalyze(): Promise<void> {
   const confirmed = await uiStore.showConfirmation(
@@ -193,25 +190,13 @@ function handleBackAction(): void {
         <NButton
           v-if="!store.isAnalysisMode"
           size="tiny"
-          secondary
+          type="primary"
           @click="store.enterAnalysis(false)"
         >
           <template #icon>
             <NIcon><EyeOutline /></NIcon>
           </template>
           {{ t('features.trainingCenter.actions.analyze') }}
-        </NButton>
-
-        <NButton
-          v-if="hasCanonicalSolution"
-          size="tiny"
-          type="primary"
-          @click="store.showCanonicalSolution()"
-        >
-          <template #icon>
-            <NIcon><SparklesOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.showSolution') }}
         </NButton>
       </template>
 

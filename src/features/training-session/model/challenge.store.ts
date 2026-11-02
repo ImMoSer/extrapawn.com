@@ -389,13 +389,6 @@ export const useChallengeStore = defineStore('challenge', () => {
     populateCanonicalSolutionOnBoard(puzzle)
   }
 
-  function showCanonicalSolution(): void {
-    const puzzle = currentPuzzle.value
-    if (!puzzle) return
-    viewState.value = 'analyzing'
-    populateCanonicalSolutionOnBoard(puzzle)
-  }
-
   function stopChallenge(): void {
     stopTimer()
     activePlayToken++
@@ -433,7 +426,6 @@ export const useChallengeStore = defineStore('challenge', () => {
     retryChallenge,
     surrenderAndAnalyze,
     enterAnalysis,
-    showCanonicalSolution,
     stopChallenge,
     formatDurationMs,
   }

@@ -11,10 +11,10 @@ import { ref, computed } from 'vue'
 import { pgnService, NAG_MAPPING, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import type { Outcome as ChessopsOutcome } from 'chessops'
 
-import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo, IUserMoveInspector } from './strategy.types'
+import type { IGameCoreApi, IGameplayStrategy, GameStatusInfo } from './strategy.types'
 import { GameAudioEngine } from './GameAudioEngine'
 
-export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS' | 'FAIRPLAY'
+export type GamePhase = 'IDLE' | 'LOADING' | 'PLAYING' | 'GAMEOVER' | 'ANALYSIS'
 
 export const FIDE_DRAW_REASONS = [
   'stalemate',
@@ -45,19 +45,8 @@ export const useGameStore = defineStore('game', () => {
   const isMoveProcessing = ref(false)
   const botEngineId = ref<EngineId>('maia-1500')
   const currentStrategy = ref<IGameplayStrategy | null>(null)
-  const moveInspector = ref<IUserMoveInspector | null>(null)
   const playerColor = computed<ChessgroundColor>(() => boardStore.orientation)
   let gameSessionToken = 0
-
-  function registerMoveInspector(inspector: IUserMoveInspector) {
-    moveInspector.value = inspector
-  }
-
-  function unregisterMoveInspector(inspector?: IUserMoveInspector) {
-    if (!inspector || moveInspector.value === inspector) {
-      moveInspector.value = null
-    }
-  }
 
   const stopHandlers = new Set<() => void>()
 
@@ -166,7 +155,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function _checkAndHandleGameOver(): boolean {
-    if (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY') {
+    if (gamePhase.value !== 'PLAYING') {
       return true
     }
 
@@ -188,7 +177,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handleGameResignation() {
-    if (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY') return
+    if (gamePhase.value !== 'PLAYING') return
     logger.warn('[GameStore] Game resigned by user action.')
 
     const status: GameStatusInfo = {
@@ -277,13 +266,13 @@ export const useGameStore = defineStore('game', () => {
       if (
         tokenAtRequest !== gameSessionToken ||
         boardStore.fen !== fenAtRequest ||
-        (gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY')
+        gamePhase.value !== 'PLAYING'
       ) {
         logger.warn('[GameStore] Bot move discarded due to position, token, or phase change (race condition protected).')
         return
       }
 
-      if (uci && (gamePhase.value === 'PLAYING' || gamePhase.value === 'FAIRPLAY')) {
+      if (uci && gamePhase.value === 'PLAYING') {
         const fenBefore = boardStore.fen
         // Apply the bot move in PGN
         const chessopsMove = parseUci(uci)
@@ -422,7 +411,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function handleUserMove(orig: Key, dest: Key) {
-    if ((gamePhase.value !== 'PLAYING' && gamePhase.value !== 'FAIRPLAY' && gamePhase.value !== 'ANALYSIS') || isMoveProcessing.value) {
+    if ((gamePhase.value !== 'PLAYING' && gamePhase.value !== 'ANALYSIS') || isMoveProcessing.value) {
       if (isMoveProcessing.value) {
         logger.warn('[GameStore] Rejected handleUserMove: move transaction already in progress.')
       }
@@ -439,7 +428,7 @@ export const useGameStore = defineStore('game', () => {
 
       const isAnalysis = gamePhase.value === 'ANALYSIS'
 
-      // Pre-validate move with Strategy (only during PLAYING or FAIRPLAY, not in ANALYSIS)
+      // Pre-validate move with Strategy (only during PLAYING, not in ANALYSIS)
       if (!isAnalysis && currentStrategy.value && currentStrategy.value.validateUserMove) {
         const isLegalForStrategy = await currentStrategy.value.validateUserMove(
           intendedUci,
@@ -481,21 +470,9 @@ export const useGameStore = defineStore('game', () => {
         await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
       }
 
-      let isGameOver = _checkAndHandleGameOver()
+      const isGameOver = _checkAndHandleGameOver()
 
-      // Playout Mode Coach Inspection (only when game is active, in playout mode, and inspector is registered)
-      const isPlayout = strategyAtStart?.isPlayout ?? false
-      if (!isGameOver && isPlayout && moveInspector.value && gamePhase.value === 'PLAYING') {
-        const decision = await moveInspector.value.inspectUserMove(intendedUci, boardStore.fen)
-        if (decision === 'takeback') {
-          undoLastUserMove()
-          return
-        }
-      }
-
-      isGameOver = _checkAndHandleGameOver()
-
-      if (!isGameOver && (gamePhase.value === 'PLAYING' || gamePhase.value === 'FAIRPLAY') && boardStore.turn !== playerColor.value) {
+      if (!isGameOver && gamePhase.value === 'PLAYING' && boardStore.turn !== playerColor.value) {
         await triggerBotMove()
       }
     } finally {
@@ -572,8 +549,6 @@ export const useGameStore = defineStore('game', () => {
     setBotEngineId,
     triggerBotMove,
     registerStopHandler,
-    registerMoveInspector,
-    unregisterMoveInspector,
     getGameStatus,
     syncPgnVisualCuesToBoard,
   }

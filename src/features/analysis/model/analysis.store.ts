@@ -50,15 +50,15 @@ export const useAnalysisStore = defineStore('analysis', () => {
     },
   )
 
-  // Reset when gamePhase becomes IDLE or FAIRPLAY
+  // Reset when gamePhase leaves ANALYSIS
   watch(
     () => gameStore.gamePhase,
     (phase) => {
-      if ((phase === 'IDLE' || phase === 'FAIRPLAY') && isAnalysisActive.value) {
+      if (phase !== 'ANALYSIS' && isAnalysisActive.value) {
         logger.info(`[AnalysisStore] Auto-resetting because gamePhase became ${phase}`)
         void stopAnalysis()
       }
-      if (phase === 'FAIRPLAY') {
+      if (phase !== 'ANALYSIS') {
         boardStore.setAnalysisShapes([])
       }
     },
@@ -109,7 +109,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
-    if (gameStore.gamePhase === 'FAIRPLAY') {
+    if (gameStore.gamePhase !== 'ANALYSIS') {
       boardStore.setAnalysisShapes([])
       return
     }
@@ -207,13 +207,16 @@ export const useAnalysisStore = defineStore('analysis', () => {
     fen: string,
     onLinesUpdate?: (lines: EvaluatedLineWithSan[]) => void,
   ) {
-    if (gameStore.gamePhase === 'FAIRPLAY') {
-      logger.warn('[AnalysisStore] startAnalysis blocked: cannot analyze during FAIRPLAY phase')
+    if (gameStore.gamePhase !== 'ANALYSIS') {
+      logger.warn('[AnalysisStore] startAnalysis blocked: only allowed in ANALYSIS phase')
       return
     }
 
     analysisVersion++
     const currentVersion = analysisVersion
+    isAnalysisActive.value = true
+    lastArrowsSignature = ''
+    lastRenderedDepth = 0
 
     await analysisService.stopAnalysis()
 
@@ -245,7 +248,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
       return
     }
 
-    isAnalysisActive.value = true
     logger.info(`[AnalysisStore] Started for FEN: ${fen}`)
   }
 
@@ -265,8 +267,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   async function toggleAnalysis() {
-    if (gameStore.gamePhase === 'FAIRPLAY') {
-      logger.warn('[AnalysisStore] toggleAnalysis blocked in FAIRPLAY phase')
+    if (gameStore.gamePhase !== 'ANALYSIS') {
+      logger.warn('[AnalysisStore] toggleAnalysis blocked outside ANALYSIS phase')
       return
     }
 

@@ -298,7 +298,7 @@ watch(
 </script>
 
 <template>
-  <div class="absolute h-full w-full touch-none" @wheel.passive="handleWheel">
+  <div class="absolute h-full w-full touch-none" @wheel.prevent="handleWheel">
     <div ref="chessboardRef" class="h-full w-full"></div>
 
     <!-- Custom overlays slot -->

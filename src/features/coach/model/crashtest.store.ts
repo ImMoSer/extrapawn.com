@@ -192,52 +192,54 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     }
   }
 
-  let isInitialized = false
+  function evaluateCrashtestCycle() {
+    const currentFen = boardStore.fen
+    const ready = isReadyForCrashtestMove.value
+    const engine = crashtestEngine.value
+
+    if (ready && currentFen && lastExecutedFen.value !== currentFen) {
+      scheduleMove(currentFen)
+    } else if (!ready) {
+      cancelPendingCycle()
+      if (
+        engine === 'stockfish' &&
+        isMo3ep.value &&
+        isCrashtestEnabled.value &&
+        gameStore.gamePhase === 'PLAYING' &&
+        boardStore.turn === boardStore.orientation &&
+        !coachStore.isAnalyzing &&
+        (coachStore.topMoves.length === 0 || coachStore.lastFetchedFen !== currentFen) &&
+        currentFen
+      ) {
+        void coachStore.runAnalysis(currentFen)
+      }
+    }
+  }
+
+  watch(
+    [isReadyForCrashtestMove, () => boardStore.fen, crashtestEngine],
+    () => {
+      evaluateCrashtestCycle()
+    },
+    { immediate: true },
+  )
+
+  watch(
+    [isCrashtestEnabled, () => gameStore.gamePhase, () => gameStore.currentStrategy],
+    ([enabled, phase]) => {
+      resetCycleState()
+      if (enabled && phase === 'PLAYING') {
+        evaluateCrashtestCycle()
+      }
+    },
+  )
 
   function init() {
-    if (isInitialized) return
-    isInitialized = true
-
-    logger.info('[CrashtestStore] Initializing deterministic crashtest engine.')
-
-    watch(
-      [isReadyForCrashtestMove, () => boardStore.fen, crashtestEngine],
-      ([ready, currentFen, engine]) => {
-        if (ready && lastExecutedFen.value !== currentFen) {
-          scheduleMove(currentFen)
-        } else if (!ready) {
-          cancelPendingCycle()
-          if (
-            engine === 'stockfish' &&
-            isMo3ep.value &&
-            isCrashtestEnabled.value &&
-            gameStore.gamePhase === 'PLAYING' &&
-            boardStore.turn === boardStore.orientation &&
-            !coachStore.isAnalyzing &&
-            (coachStore.topMoves.length === 0 || coachStore.lastFetchedFen !== currentFen) &&
-            currentFen
-          ) {
-            void coachStore.runAnalysis(currentFen)
-          }
-        }
-      },
-      { immediate: true },
-    )
-
-    watch(
-      [isCrashtestEnabled, () => gameStore.gamePhase, () => gameStore.currentStrategy],
-      ([enabled, phase]) => {
-        if (!enabled || phase !== 'PLAYING') {
-          resetCycleState()
-        } else {
-          // Strategy swapped while staying in PLAYING phase (e.g. next puzzle)
-          resetCycleState()
-          if (isReadyForCrashtestMove.value && boardStore.fen) {
-            scheduleMove(boardStore.fen)
-          }
-        }
-      },
-    )
+    logger.info('[CrashtestStore] Synchronizing deterministic crashtest engine.')
+    resetCycleState()
+    if (isCrashtestEnabled.value && gameStore.gamePhase === 'PLAYING') {
+      evaluateCrashtestCycle()
+    }
   }
 
   return {

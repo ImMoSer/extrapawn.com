@@ -3,11 +3,10 @@ import { ref, computed, watch } from 'vue'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 
-import { useBoardStore, useGameStore, type IUserMoveInspector, type MoveInspectionDecision } from '@/entities/game'
+import { useBoardStore, useGameStore } from '@/entities/game'
 import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import { parseVisualCommands } from '@/shared/lib/engine/coach/visualizer'
 import logger from '@/shared/lib/logger'
-import { soundService } from '@/shared/lib/sound'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { CoachExplanation, CoachLastMoveAnalysis, CoachTopMove } from '@/shared/lib/engine/coach/coach.types'
 
@@ -19,16 +18,7 @@ export interface CoachVisualLayers {
 
 export type CoachMood = 'neutral' | 'proud' | 'shocked' | 'thoughtful' | 'warning' | 'relieved' | 'celebrating'
 
-export interface CoachPendingDecision {
-  moveUci: string
-  quality: 'mistake' | 'blunder'
-  resolve: (decision: MoveInspectionDecision) => void
-}
-
 export interface CoachSettingsDto {
-  coachSpy: boolean
-  autoTakeback: boolean
-  autoTakebackDelay: number
   showVisuals: boolean
   visualLayers: CoachVisualLayers
 }
@@ -39,27 +29,34 @@ export const useCoachStore = defineStore('coach', () => {
   const authStore = useAuthStore()
 
   // 1. Core State
-  const isCoachEnabled = ref(true)
+  const isCoachEnabled = ref(false)
   const isAnalyzing = ref(false)
   const selectedMoveIndex = ref<number | null>(0)
   const posExplanation = ref<CoachExplanation | null>(null)
   const coachMood = ref<CoachMood>('neutral')
 
-  // 2. Settings (Coach Spy, Auto Takeback & Delay) persisted in unified PreferencesStore
+  // 2. Settings & Mode State
   const preferencesStore = usePreferencesStore()
-  const coachSpy = computed(() => preferencesStore.preferences.coach.coachSpy)
-  const isCoachSpyActive = computed(
-    () =>
-      coachSpy.value ||
-      (preferencesStore.preferences.gameplay.global_crashtest &&
-        preferencesStore.preferences.gameplay.crashtestEngine === 'stockfish'),
+  const isCrashtestActive = computed(
+    () => authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest,
   )
-  const autoTakeback = computed(() => preferencesStore.preferences.coach.autoTakeback)
-  const autoTakebackDelay = computed(() => preferencesStore.preferences.coach.autoTakebackDelay)
-
-  // 3. Interactive Decision State (when autoTakeback is false)
-  const pendingDecision = ref<CoachPendingDecision | null>(null)
-  let takebackTimer: number | null = null
+  const isFairPlayLocked = computed(
+    () => gameStore.gamePhase !== 'ANALYSIS' && !isCrashtestActive.value,
+  )
+  const isStockfishCrashtestActive = computed(
+    () =>
+      isCrashtestActive.value &&
+      gameStore.gamePhase === 'PLAYING' &&
+      preferencesStore.preferences.gameplay.crashtestEngine === 'stockfish',
+  )
+  const isCoachSpyActive = computed(() => {
+    if (isFairPlayLocked.value) return false
+    if (isStockfishCrashtestActive.value) return true
+    if (gameStore.gamePhase === 'ANALYSIS') {
+      return isCoachEnabled.value
+    }
+    return false
+  })
 
   // Cache FEN & UCI & in-flight analysis deduplication
   const lastFetchedFen = ref('')
@@ -84,127 +81,15 @@ export const useCoachStore = defineStore('coach', () => {
   const showVisuals = computed(() => preferencesStore.preferences.coach.showVisuals)
   const visualLayers = computed(() => preferencesStore.preferences.coach.visualLayers)
 
-  function toggleCoachSpy() {
-    const next = !coachSpy.value
-    void preferencesStore.updatePreferences({ coach: { coachSpy: next } })
-    if (!next) {
-      abortInFlightAnalysis()
-      boardStore.setCoachShapes([])
-      posExplanation.value = null
-      cancelPendingDecision()
-    } else if (boardStore.fen) {
-      void runAnalysis(boardStore.fen, true)
-    }
-  }
-
-  function toggleAutoTakeback() {
-    void preferencesStore.updatePreferences({ coach: { autoTakeback: !autoTakeback.value } })
-  }
-
-  function setAutoTakebackDelay(delay: number) {
-    const clamped = Math.min(3000, Math.max(100, Math.round(delay)))
-    void preferencesStore.updatePreferences({ coach: { autoTakebackDelay: clamped } })
-  }
-
-  function cancelPendingDecision() {
-    if (takebackTimer !== null) {
-      clearTimeout(takebackTimer)
-      takebackTimer = null
-    }
-    if (pendingDecision.value) {
-      const cb = pendingDecision.value.resolve
-      pendingDecision.value = null
-      cb('proceed')
-    }
-  }
-
-  function confirmTakeback() {
-    if (pendingDecision.value) {
-      const cb = pendingDecision.value.resolve
-      pendingDecision.value = null
-      soundService.play('chpock')
-      cb('takeback')
-    }
-  }
-
-  function confirmPlayOn() {
-    if (pendingDecision.value) {
-      const cb = pendingDecision.value.resolve
-      pendingDecision.value = null
-      cb('proceed')
-    }
-  }
-
-  // 4. Move Inspector implementation for GameStore
-  async function inspectUserMove(uci: string, fen: string): Promise<MoveInspectionDecision> {
-    if (
-      gameStore.gamePhase === 'FAIRPLAY' ||
-      !isCoachEnabled.value ||
-      !coachSpy.value ||
-      preferencesStore.preferences.gameplay.global_crashtest
-    ) {
-      return 'proceed'
-    }
-
-    cancelPendingDecision()
-
-    const explanation = await runAnalysis(fen, false, uci)
-    if (!explanation) {
-      return 'proceed'
-    }
-
-    const quality = explanation.last_move_analysis?.quality
-    const isMistakeOrBlunder = quality === 'mistake' || quality === 'blunder'
-
-    if (!isMistakeOrBlunder) {
-      return 'proceed'
-    }
-
-    logger.info(`[CoachStore] Move ${uci} flagged as ${quality}. Takeback initiated.`)
-    soundService.play('tactics_error')
-
-    if (autoTakeback.value) {
-      return new Promise<MoveInspectionDecision>((resolve) => {
-        takebackTimer = window.setTimeout(() => {
-          takebackTimer = null
-          soundService.play('chpock')
-          resolve('takeback')
-        }, autoTakebackDelay.value)
-      })
-    } else {
-      return new Promise<MoveInspectionDecision>((resolve) => {
-        pendingDecision.value = {
-          moveUci: uci,
-          quality: quality as 'mistake' | 'blunder',
-          resolve: (decision) => {
-            pendingDecision.value = null
-            resolve(decision)
-          },
-        }
-      })
-    }
-  }
-
-  const coachInspector: IUserMoveInspector = {
-    inspectUserMove,
-  }
-
   function setCoachEnabled(enabled: boolean) {
     isCoachEnabled.value = enabled
     if (!enabled) {
       abortInFlightAnalysis()
       boardStore.setCoachShapes([])
-      posExplanation.value = null
-      cancelPendingDecision()
-      gameStore.unregisterMoveInspector(coachInspector)
-    } else {
-      gameStore.registerMoveInspector(coachInspector)
+    } else if (!isFairPlayLocked.value && boardStore.fen) {
+      boardStore.setCoachShapes(drawableShapes.value)
+      void runAnalysis(boardStore.fen)
     }
-  }
-
-  // Register move inspector if coach is enabled
-  if (isCoachEnabled.value) {
-    gameStore.registerMoveInspector(coachInspector)
   }
 
   function toggleVisualLayer(layer: keyof CoachVisualLayers) {
@@ -306,7 +191,7 @@ export const useCoachStore = defineStore('coach', () => {
 
   // EvalBar integration getters
   const evalCp = computed<number | null>(() => {
-    if (gameStore.gamePhase === 'FAIRPLAY') return 0
+    if (isFairPlayLocked.value) return 0
     if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || top.isMate) return null
@@ -314,7 +199,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const evalMate = computed<number | null>(() => {
-    if (gameStore.gamePhase === 'FAIRPLAY') return null
+    if (isFairPlayLocked.value) return null
     if (!isCoachSpyActive.value) return null
     const top = topMoves.value[0]
     if (!top || !top.isMate) return null
@@ -415,7 +300,7 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const drawableShapes = computed<DrawShape[]>(() => {
-    if (gameStore.gamePhase === 'FAIRPLAY') return []
+    if (isFairPlayLocked.value) return []
     if (!isCoachSpyActive.value) return []
     const shapes: DrawShape[] = []
     if (lastMoveNagShape.value) {
@@ -436,24 +321,23 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     drawableShapes,
     (shapes) => {
-      if (isCoachEnabled.value) {
+      if (isCoachSpyActive.value) {
         boardStore.setCoachShapes(shapes)
+      } else {
+        boardStore.setCoachShapes([])
       }
     },
     { immediate: true },
   )
 
-  // Reactive Board FEN Listener: Coach automatically analyzes board when coachSpy is enabled
+  // Reactive Board FEN Listener: Coach automatically analyzes board when active
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (
-        gameStore.gamePhase !== 'PLAYING' &&
-        gameStore.gamePhase !== 'ANALYSIS'
-      ) {
+      if (isFairPlayLocked.value) {
         return
       }
-      if (isCoachEnabled.value && isCoachSpyActive.value && newFen) {
+      if (isCoachSpyActive.value && newFen) {
         void runAnalysis(newFen)
       }
     },
@@ -464,40 +348,34 @@ export const useCoachStore = defineStore('coach', () => {
     () => gameStore.currentStrategy,
     () => {
       abortInFlightAnalysis()
-      cancelPendingDecision()
       boardStore.setCoachShapes([])
       posExplanation.value = null
       lastFetchedFen.value = ''
       lastFetchedUci.value = null
-      if (
-        (gameStore.gamePhase === 'PLAYING' || gameStore.gamePhase === 'ANALYSIS') &&
-        boardStore.fen &&
-        isCoachEnabled.value &&
-        isCoachSpyActive.value
-      ) {
+      if (!isFairPlayLocked.value && boardStore.fen && isCoachSpyActive.value) {
         void runAnalysis(boardStore.fen)
       }
     },
   )
 
-  // Watch for game phase changes (reset/cancel on gameOver or idle, celebrate on win, analyze on PLAYING/ANALYSIS)
+  // Watch for game phase and Fair Play lock changes
   watch(
-    () => gameStore.gamePhase,
-    (phase) => {
-      if (phase === 'FAIRPLAY' || phase === 'IDLE') {
+    [() => gameStore.gamePhase, isFairPlayLocked, isCoachSpyActive],
+    ([phase, fairPlayLocked, spyActive]) => {
+      if (fairPlayLocked || phase === 'IDLE' || !spyActive) {
         abortInFlightAnalysis()
-        cancelPendingDecision()
         boardStore.setCoachShapes([])
-        posExplanation.value = null
-        lastFetchedFen.value = ''
-        lastFetchedUci.value = null
+        if (fairPlayLocked || phase === 'IDLE') {
+          posExplanation.value = null
+          lastFetchedFen.value = ''
+          lastFetchedUci.value = null
+        }
       } else if (phase === 'PLAYING' || phase === 'ANALYSIS') {
-        if (boardStore.fen && isCoachEnabled.value && isCoachSpyActive.value) {
+        if (boardStore.fen && spyActive) {
           void runAnalysis(boardStore.fen)
         }
       } else if (phase === 'GAMEOVER') {
         abortInFlightAnalysis()
-        cancelPendingDecision()
         const status = gameStore.getGameStatus()
         if (status.outcome?.winner === gameStore.playerColor) {
           coachMood.value = 'celebrating'
@@ -513,12 +391,12 @@ export const useCoachStore = defineStore('coach', () => {
     overrideLastMoveUci?: string | null,
     _overrideFenBefore?: string | null,
   ): Promise<CoachExplanation | null> {
-    if (gameStore.gamePhase === 'FAIRPLAY' || gameStore.gamePhase === 'IDLE') {
+    if (isFairPlayLocked.value || gameStore.gamePhase === 'IDLE') {
       isAnalyzing.value = false
       posExplanation.value = null
       return null
     }
-    if (!currentFen || !isCoachEnabled.value || !isCoachSpyActive.value) return null
+    if (!currentFen || !isCoachSpyActive.value) return null
 
     if (_overrideFenBefore) {
       logger.info(`[CoachStore] Analysis called with overrideFenBefore: ${_overrideFenBefore}`)
@@ -535,6 +413,7 @@ export const useCoachStore = defineStore('coach', () => {
     }
 
     if (!force && currentFen === lastFetchedFen.value && payloadKeyUci === lastFetchedUci.value && posExplanation.value) {
+      boardStore.setCoachShapes(drawableShapes.value)
       return posExplanation.value
     }
 
@@ -643,25 +522,15 @@ export const useCoachStore = defineStore('coach', () => {
   }
 
   function handleSettingsChange() {
-    if (lastFetchedFen.value) {
-      runAnalysis(lastFetchedFen.value, true)
+    if (isCoachSpyActive.value) {
+      boardStore.setCoachShapes(drawableShapes.value)
     }
   }
 
   return {
     isCoachEnabled,
     setCoachEnabled,
-    coachSpy,
-    toggleCoachSpy,
-    autoTakeback,
-    toggleAutoTakeback,
-    autoTakebackDelay,
-    setAutoTakebackDelay,
-    pendingDecision,
-    confirmTakeback,
-    confirmPlayOn,
-    cancelPendingDecision,
-    inspectUserMove,
+    isFairPlayLocked,
     posExplanation,
     lastFetchedFen,
     isAnalyzing,

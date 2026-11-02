@@ -2,13 +2,11 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NSwitch, NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NSelect } from 'naive-ui'
+import { NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NSelect } from 'naive-ui'
 import { SettingsOutline } from '@vicons/ionicons5'
-import { useGameStore } from '@/entities/game'
 import { useAnalysisStore } from '../model/analysis.store'
 import EngineLines from './EngineLines.vue'
 
-const gameStore = useGameStore()
 const analysisStore = useAnalysisStore()
 const { t } = useI18n()
 
@@ -21,11 +19,8 @@ const {
   engineVersion,
 } = storeToRefs(analysisStore)
 
-const isEngineDisabled = computed(() => gameStore.gamePhase === 'FAIRPLAY')
-
 const bestScore = computed(() => {
-  if (!isAnalysisActive.value) return 'OFF'
-  if (analysisLines.value.length === 0) return '...'
+  if (!isAnalysisActive.value || analysisLines.value.length === 0) return '...'
 
   const line = analysisLines.value[0]
   if (!line) return '...'
@@ -71,11 +66,6 @@ const engineDepth = computed(() => {
   return analysisLines.value[0]?.depth || 0
 })
 
-const handleToggle = () => {
-  if (isEngineDisabled.value) return
-  analysisStore.toggleAnalysis()
-}
-
 const handlePvChange = (value: number) => {
   analysisStore.setMultiPv(value)
 }
@@ -120,17 +110,9 @@ const formatSearchTimeTooltip = (value: number) => {
     <!-- Header Control Bar -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2">
-          <n-switch
-            :value="isAnalysisActive"
-            :disabled="isEngineDisabled"
-            @update:value="handleToggle"
-            size="medium"
-          />
-          <span class="text-[0.9rem] font-bold tracking-[0.5px] text-text-primary">
-            Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}
-          </span>
-        </div>
+        <span class="text-[0.9rem] font-bold tracking-[0.5px] text-text-primary">
+          Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}
+        </span>
         <div
           v-if="isAnalysisActive"
           class="rounded border border-border bg-elevated/60 px-1.5 py-0.5 font-condensed text-xs"

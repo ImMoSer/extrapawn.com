@@ -35,7 +35,7 @@ export const soundDefinitions: Record<SoundEffect, string | string[]> = {
 }
 
 export class SoundServiceController {
-  private audioTemplates: Map<string, HTMLAudioElement> = new Map()
+  private audioPool: Map<string, HTMLAudioElement[]> = new Map()
   private activeSounds: Set<HTMLAudioElement> = new Set()
 
   public get volume(): number {
@@ -50,14 +50,27 @@ export class SoundServiceController {
     })
   }
 
-  private _getTemplate(path: string): HTMLAudioElement | null {
+  private _acquireAudio(path: string): HTMLAudioElement | null {
     if (typeof Audio === 'undefined') return null
-    if (this.audioTemplates.has(path)) {
-      return this.audioTemplates.get(path)!
+    let pool = this.audioPool.get(path)
+    if (!pool) {
+      pool = []
+      this.audioPool.set(path, pool)
     }
+
+    const idleAudio = pool.find((el) => !this.activeSounds.has(el) && (el.paused || el.ended))
+    if (idleAudio) {
+      try {
+        idleAudio.currentTime = 0
+      } catch {
+        // Ignore if metadata is not yet loaded
+      }
+      return idleAudio
+    }
+
     const audio = new Audio(path)
     audio.preload = 'auto'
-    this.audioTemplates.set(path, audio)
+    pool.push(audio)
     return audio
   }
 
@@ -83,15 +96,13 @@ export class SoundServiceController {
     }
 
     return new Promise((resolve) => {
-      const template = this._getTemplate(path)
-      if (!template) {
+      const audio = this._acquireAudio(path)
+      if (!audio) {
         resolve()
         return
       }
 
-      const audio = template.cloneNode(true) as HTMLAudioElement
       audio.volume = this.volume
-      audio.currentTime = 0
 
       const cleanup = () => {
         this.activeSounds.delete(audio)

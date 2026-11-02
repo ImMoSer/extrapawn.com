@@ -1,6 +1,22 @@
 <script setup lang="ts">
-import { PgnMoveHistory } from '@/entities/game'
-import { EngineEvaluationHeader } from '@/features/analysis'
+import { onMounted, onUnmounted } from 'vue'
+import { PgnMoveHistory, useBoardStore } from '@/entities/game'
+import { EngineEvaluationHeader, useAnalysisStore } from '@/features/analysis'
+
+const analysisStore = useAnalysisStore()
+const boardStore = useBoardStore()
+
+onMounted(async () => {
+  await analysisStore.initialize()
+  await analysisStore.startNewGame()
+  if (boardStore.fen) {
+    await analysisStore.startAnalysis(boardStore.fen)
+  }
+})
+
+onUnmounted(() => {
+  void analysisStore.stopAnalysis()
+})
 </script>
 
 <template>

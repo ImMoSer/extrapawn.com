@@ -82,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       logger.error('[AuthStore] Error checking web session:', err)
       clearAuthDataLocal()
-      error.value = 'features.errors.backendConnectionFailed'
+      error.value = 'shared.errors.backendConnectionFailed'
     }
   }
 

@@ -65,9 +65,6 @@ export interface CoachVisualLayersPreferences {
 }
 
 export interface CoachPreferences {
-  coachSpy: boolean
-  autoTakeback: boolean
-  autoTakebackDelay: number
   showVisuals: boolean
   visualLayers: CoachVisualLayersPreferences
 }
@@ -136,9 +133,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     engineVersion: 'lite',
   },
   coach: {
-    coachSpy: true,
-    autoTakeback: true,
-    autoTakebackDelay: 1000,
     showVisuals: true,
     visualLayers: {
       lastMoveNag: true,

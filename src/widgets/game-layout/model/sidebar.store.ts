@@ -1,15 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { useGameStore } from '@/entities/game'
+import { useCoachStore } from '@/features/coach'
 
 export type SidebarMode = 'explorer' | 'coach'
 
 export const useSidebarStore = defineStore('sidebar', () => {
-  const gameStore = useGameStore()
+  const coachStore = useCoachStore()
   const activeMode = ref<SidebarMode>('coach')
 
   function setMode(mode: SidebarMode) {
-    if (mode === 'explorer' && gameStore.gamePhase === 'FAIRPLAY') {
+    if (mode === 'explorer' && coachStore.isFairPlayLocked) {
       return
     }
     activeMode.value = mode
@@ -21,12 +21,11 @@ export const useSidebarStore = defineStore('sidebar', () => {
   }
 
   watch(
-    () => gameStore.gamePhase,
-    (phase) => {
-      if (phase === 'FAIRPLAY' && activeMode.value === 'explorer') {
-        activeMode.value = 'coach'
-      }
+    () => coachStore.isFairPlayLocked,
+    (locked) => {
+      activeMode.value = locked ? 'coach' : 'explorer'
     },
+    { immediate: true },
   )
 
   return {

@@ -13,7 +13,6 @@ import {
   EyeOutline,
   FlagOutline,
   RefreshOutline,
-  SparklesOutline,
   TimeOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
@@ -53,8 +52,6 @@ const showBotInfo = computed(() => state.value && state.value.discipline !== 'ta
 const solvedParticipantsCount = computed(
   () => store.leaderboard.filter((p) => p.solved).length,
 )
-
-const hasCanonicalSolution = computed(() => Boolean(puzzle.value?.tactical_solution))
 
 async function handleGiveUpAndAnalyze(): Promise<void> {
   const confirmed = await uiStore.showConfirmation(
@@ -126,27 +123,17 @@ function goToChallengeRecords(): void {
         </span>
       </div>
 
-      <div class="grid grid-cols-2 gap-2 pt-1">
+      <div class="pt-1">
         <NButton
+          block
           size="small"
-          secondary
+          type="primary"
           @click="store.enterAnalysis(false)"
         >
           <template #icon>
             <NIcon><EyeOutline /></NIcon>
           </template>
           {{ t('features.trainingCenter.actions.analyze') }}
-        </NButton>
-        <NButton
-          v-if="hasCanonicalSolution"
-          size="small"
-          type="primary"
-          @click="store.showCanonicalSolution()"
-        >
-          <template #icon>
-            <NIcon><SparklesOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.showSolution') }}
         </NButton>
       </div>
     </div>
@@ -165,27 +152,17 @@ function goToChallengeRecords(): void {
         </span>
       </div>
 
-      <div class="grid grid-cols-2 gap-2 pt-1">
+      <div class="pt-1">
         <NButton
+          block
           size="small"
-          secondary
+          type="primary"
           @click="store.enterAnalysis(false)"
         >
           <template #icon>
             <NIcon><EyeOutline /></NIcon>
           </template>
           {{ t('features.trainingCenter.actions.analyze') }}
-        </NButton>
-        <NButton
-          v-if="hasCanonicalSolution"
-          size="small"
-          type="primary"
-          @click="store.showCanonicalSolution()"
-        >
-          <template #icon>
-            <NIcon><SparklesOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.showSolution') }}
         </NButton>
       </div>
     </div>

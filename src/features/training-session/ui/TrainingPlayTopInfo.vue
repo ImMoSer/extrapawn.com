@@ -5,7 +5,6 @@ import {
   ArrowForwardOutline,
   CloseCircleOutline,
   EyeOutline,
-  SparklesOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
 import { computed } from 'vue'
@@ -38,8 +37,6 @@ const showBotBadge = computed(() => {
 })
 
 const botLabel = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
-
-const hasCanonicalSolution = computed(() => Boolean(activePuzzle.value?.tactical_solution))
 
 const deltaText = computed(() => {
   const res = store.lastAttemptResult
@@ -180,18 +177,6 @@ function handleBackAction(): void {
       </template>
 
       <template v-else-if="store.isAnalysisMode">
-        <NButton
-          v-if="hasCanonicalSolution"
-          size="tiny"
-          secondary
-          @click="store.loadCanonicalSolutionIntoAnalysis()"
-        >
-          <template #icon>
-            <NIcon><SparklesOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.showSolution') }}
-        </NButton>
-
         <NButton size="tiny" type="primary" @click="store.exitPuzzleAnalysis()">
           <template #icon>
             <NIcon><ArrowForwardOutline /></NIcon>

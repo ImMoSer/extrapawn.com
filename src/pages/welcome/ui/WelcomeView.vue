@@ -6,11 +6,33 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { LogInOutline } from '@vicons/ionicons5'
 import { GAME_MODES } from '@/shared/config/gameModes.config'
+import {
+  getRandomChessQuote,
+  loadChessQuotes,
+  type ChessQuote,
+} from '../model/quotes.service'
 
 const authStore = useAuthStore()
 const { t, locale } = useI18n()
 
 const { isAuthenticated, isLoading, error } = storeToRefs(authStore)
+
+const quotesList = ref<ChessQuote[]>([])
+const currentQuote = ref<ChessQuote | null>(null)
+
+const localizedQuoteText = computed(() => {
+  if (!currentQuote.value) {
+    return ''
+  }
+  return locale.value === 'ru' ? currentQuote.value.translation_ru : currentQuote.value.text
+})
+
+const selectNextRandomQuote = () => {
+  if (quotesList.value.length === 0) {
+    return
+  }
+  currentQuote.value = getRandomChessQuote(quotesList.value, currentQuote.value?.id)
+}
 
 const handleLogin = async () => {
   if (isLoading.value) {
@@ -26,6 +48,7 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 const menuItems = [
   GAME_MODES.training_center,
   GAME_MODES.warmup,
+  GAME_MODES.club_player,
   GAME_MODES.user_cabinet,
 ]
 
@@ -34,9 +57,12 @@ const updateMobile = () => {
   isMobile.value = window.innerWidth <= 768
 }
 
-onMounted(() => {
+onMounted(async () => {
   updateMobile()
   window.addEventListener('resize', updateMobile)
+  const loadedQuotes = await loadChessQuotes()
+  quotesList.value = loadedQuotes
+  currentQuote.value = getRandomChessQuote(loadedQuotes)
 })
 
 onUnmounted(() => {
@@ -63,15 +89,26 @@ const filteredMenuItems = computed(() => {
             alt="EXTRAPAWN"
             class="h-20 w-auto drop-shadow-[0_0_15px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)] md:h-[clamp(100px,25vh,500px)]"
           />
-          <div class="flex flex-col items-center gap-1 md:gap-[5px]">
+          <div class="flex flex-col items-center gap-1.5 md:gap-2">
             <h1 class="brand-text m-0 text-[2rem] leading-none md:text-[clamp(2rem,6vw,4.5rem)]">
               EXTRAPAWN
             </h1>
-            <p
-              class="m-0 text-center text-xs font-normal tracking-[0.15rem] text-text-secondary uppercase opacity-70 md:text-[clamp(0.7rem,1.5vw,1.2rem)] md:tracking-[0.25rem]"
+            <blockquote
+              v-if="currentQuote"
+              class="m-0 flex max-w-[680px] cursor-pointer flex-col items-center gap-1 px-2 text-center transition-opacity duration-200 select-none hover:opacity-100"
+              @click="selectNextRandomQuote"
             >
-              {{ t('pages.welcome.slogan') }}
-            </p>
+              <p
+                class="m-0 text-xs leading-relaxed font-normal text-text-secondary italic md:text-[clamp(0.8rem,1.2vw,1.05rem)]"
+              >
+                "{{ localizedQuoteText }}"
+              </p>
+              <footer
+                class="text-[0.7rem] font-medium tracking-[0.08rem] text-neon-cyan/80 md:text-[0.85rem]"
+              >
+                - {{ currentQuote.author }} -
+              </footer>
+            </blockquote>
           </div>
         </div>
 
@@ -99,8 +136,7 @@ const filteredMenuItems = computed(() => {
       <n-grid
         :x-gap="isMobile ? 10 : 20"
         :y-gap="isMobile ? 10 : 20"
-        cols="2 s:3 m:3 l:3"
-        responsive="screen"
+        :cols="2"
         class="flex max-h-none w-full grow content-center justify-center md:max-h-[60vh]"
       >
         <n-grid-item v-for="item in filteredMenuItems" :key="item.path">

@@ -218,7 +218,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
               marginBottom: '12px',
             }"
           >
-            {{ t('pages.pricing.bonusInfo.p1') }}
+            {{ t('pages.bonus.description') }}
           </n-text>
 
           <n-button
@@ -230,7 +230,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
             :size="isMobile ? 'medium' : 'large'"
             class="mt-2"
           >
-            {{ t('pages.pricing.bonusInfo.homepageLink') || 'ExtraPawn Club Home' }}
+            {{ t('pages.bonus.homepageLink') }}
             <template #icon>
               <n-icon><ArrowForwardOutline /></n-icon>
             </template>

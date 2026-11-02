@@ -10,7 +10,6 @@ export { AnalysisPanel, QualityIcon, EvalBar, FenInput, SettingsPanel, PgnMoveHi
 export {
   useCoachStore,
   type CoachMood,
-  type CoachPendingDecision,
   type CoachSettingsDto,
   type CoachVisualLayers,
 } from './model/coach.store'

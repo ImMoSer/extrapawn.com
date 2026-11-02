@@ -14,12 +14,6 @@ export interface IGameCoreApi {
   // Сюда в будущем можем добавлять методы ядра, к которым нужен доступ из Стратегии
 }
 
-export type MoveInspectionDecision = 'proceed' | 'takeback'
-
-export interface IUserMoveInspector {
-  inspectUserMove: (uciMove: string, fen: string) => Promise<MoveInspectionDecision>
-}
-
 export type GameplayStrategyConfig = NonNullable<IGameplayStrategy['config']>
 
 export interface IGameplayStrategy {
