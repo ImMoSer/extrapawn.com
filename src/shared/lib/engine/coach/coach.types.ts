@@ -1,14 +1,14 @@
 export const QUALITY_COLOR: Record<string, string> = {
-  brilliant: '#22d3ee',
-  great: '#34d399',
-  best: '#4ade80',
-  excellent: '#86efac',
-  good: '#a7f3d0',
-  neutral: '#a1a1aa',
-  inaccuracy: '#fbbf24',
-  mistake: '#fb923c',
-  blunder: '#ef4444',
-  missed_mate: '#dc2626',
+  brilliant: 'var(--color-neon-cyan)',
+  great: 'var(--color-success)',
+  best: 'var(--color-success)',
+  excellent: 'var(--color-success)',
+  good: 'var(--color-info)',
+  neutral: 'var(--color-text-secondary)',
+  inaccuracy: 'var(--color-warning)',
+  mistake: 'var(--color-orange)',
+  blunder: 'var(--color-danger)',
+  missed_mate: 'var(--color-danger)',
 }
 
 export const QUALITY_LABEL: Record<string, string> = {
@@ -26,7 +26,7 @@ export const QUALITY_LABEL: Record<string, string> = {
 
 export interface CoachTheme {
   id: string
-  side: 'white' | 'black'
+  side: 'white' | 'black' | 'both' | string
   strength: number
   description: string
 }
@@ -34,6 +34,9 @@ export interface CoachTheme {
 export interface OpeningInfo {
   name: string
   eco: string
+  wiki_path?: string | null
+  transposition?: boolean | null
+  played_path?: string | null
   theoretical_fen?: string | null
   theoretical_string?: string | null
   wikibooks_url?: string | null
@@ -194,8 +197,10 @@ export interface CoachExplanation {
     light_complex_weak?: string
     dark_complex_weak?: string
   }
-  themes: CoachTheme[]
-  principal_plan: {
+  themes?: CoachTheme[]
+  strategic_themes?: CoachTheme[]
+  opening_info?: OpeningInfo | null
+  principal_plan?: {
     eval_cp: number
     eval_mate: number | null
     depth: number

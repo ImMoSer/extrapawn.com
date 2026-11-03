@@ -190,6 +190,11 @@ function getPlanBrief(move: CoachTopMove): string | null {
   const found = (candidates as CoachTopMove[]).find((em) => em.uci === moveUci)
   return found?.plan_brief || null
 }
+
+function getStrategicThemes() {
+  const raw = props.posExplanation?.strategic_themes || props.posExplanation?.themes || []
+  return raw.filter((th) => th && th.description && th.strength >= 30).slice(0, 3)
+}
 </script>
 
 <template>
@@ -236,22 +241,35 @@ function getPlanBrief(move: CoachTopMove): string | null {
     <template v-else>
 
     <!-- Compact status line -->
-    <div class="flex items-center gap-2 px-3 py-2 border-b border-border text-[11px] text-text-secondary">
-      <span
-        class="w-2 h-2 rounded-full border shrink-0"
-        :class="sideToMove === 'w' ? 'bg-text-primary border-text-primary' : 'bg-surface border-border-hover'"
-      />
-      <span class="text-text-primary font-medium">
-        {{ sideToMove === 'w' ? 'White' : 'Black' }} to move
-      </span>
-      <span class="text-text-disabled">·</span>
-      <span class="capitalize">{{ phase || 'Middlegame' }}</span>
-      <template v-if="materialDelta && Math.abs(materialDelta) >= 0.1">
-        <span class="text-text-disabled">·</span>
-        <span class="font-mono text-success">
-          {{ materialDelta > 0 ? 'White' : 'Black' }} +{{ Math.abs(materialDelta).toFixed(1) }}
+    <div class="flex flex-col border-b border-border px-3 py-2 gap-1 text-[11px] text-text-secondary">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span
+          class="w-2 h-2 rounded-full border shrink-0"
+          :class="sideToMove === 'w' ? 'bg-text-primary border-text-primary' : 'bg-surface border-border-hover'"
+        />
+        <span class="text-text-primary font-medium">
+          {{ sideToMove === 'w' ? 'White' : 'Black' }} to move
         </span>
-      </template>
+        <span class="text-text-disabled">·</span>
+        <span class="capitalize">{{ phase || 'Middlegame' }}</span>
+        <template v-if="materialDelta && Math.abs(materialDelta) >= 0.1">
+          <span class="text-text-disabled">·</span>
+          <span class="font-mono text-success">
+            {{ materialDelta > 0 ? 'White' : 'Black' }} +{{ Math.abs(materialDelta).toFixed(1) }}
+          </span>
+        </template>
+      </div>
+      <div v-if="openingName" class="text-[10px] text-warning font-medium truncate flex items-center gap-1" :title="openingName">
+        <span>📖</span>
+        <span class="truncate">{{ openingName }}</span>
+        <span
+          v-if="posExplanation?.opening_info?.transposition"
+          class="ml-auto px-1.5 py-0.2 rounded bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 text-[9px] uppercase tracking-wider shrink-0"
+          :title="`Transposed to canonical path: ${posExplanation?.opening_info?.wiki_path || ''}`"
+        >
+          Transposition
+        </span>
+      </div>
     </div>
 
     <!-- Last move card -->
@@ -278,8 +296,8 @@ function getPlanBrief(move: CoachTopMove): string | null {
           class="text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full"
           :style="{
             color: getQualityColor(lastMoveAnalysis.quality),
-            backgroundColor: `${getQualityColor(lastMoveAnalysis.quality)}1F`,
-            border: `1px solid ${getQualityColor(lastMoveAnalysis.quality)}55`,
+            backgroundColor: `color-mix(in srgb, ${getQualityColor(lastMoveAnalysis.quality)} 12%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${getQualityColor(lastMoveAnalysis.quality)} 35%, transparent)`,
           }"
         >
           {{ getQualityLabel(lastMoveAnalysis.quality) }}
@@ -299,10 +317,33 @@ function getPlanBrief(move: CoachTopMove): string | null {
         class="mt-1.5 pt-1.5 border-t border-border text-[11px] text-text-primary leading-relaxed"
       >
         <span class="text-text-disabled text-[9px] uppercase tracking-widest font-bold mr-1.5">
-          Consequence
+          {{ lastMoveAnalysis.consequence ? 'Consequence' : 'Key Factor' }}
         </span>
         {{ lastMoveConsequence }}
       </div>
+    </div>
+
+    <!-- Key Positional Factors (when more themes exist) -->
+    <div
+      v-if="getStrategicThemes().length > 0"
+      class="px-3 py-2 border-b border-border bg-elevated/20"
+    >
+      <div class="text-[9px] uppercase tracking-widest font-bold text-text-secondary mb-1">
+        Key Positional Factors
+      </div>
+      <ul class="space-y-0.5">
+        <li
+          v-for="th in getStrategicThemes()"
+          :key="`${th.id}-${th.side}`"
+          class="text-[11px] text-text-secondary leading-snug flex items-baseline gap-1.5"
+        >
+          <span
+            class="w-1.5 h-1.5 rounded-full shrink-0 translate-y-[-1px]"
+            :class="th.strength >= 80 ? 'bg-warning' : 'bg-neon-cyan'"
+          />
+          <span>{{ th.description }}</span>
+        </li>
+      </ul>
     </div>
 
     <!-- Top Moves Section -->
@@ -385,7 +426,7 @@ function getPlanBrief(move: CoachTopMove): string | null {
             :style="{
               color: characterColor(getCharacter(move)!),
               borderColor: characterBorder(getCharacter(move)!),
-              backgroundColor: `${characterColor(getCharacter(move)!)}15`
+              backgroundColor: `color-mix(in srgb, ${characterColor(getCharacter(move)!)} 10%, transparent)`
             }"
           >
             {{ getCharacter(move) }}
@@ -443,10 +484,10 @@ function getPlanBrief(move: CoachTopMove): string | null {
 
           <!-- Plan Brief -->
           <div
-            v-if="getPlanBrief(move)"
+            v-if="getPlanBrief(move) && getPlanBrief(move) !== move.tagline && (selectedMoveIndex !== idx || getPlanBrief(move) !== move.explanation?.details)"
             class="text-[11px] text-text-secondary leading-relaxed"
           >
-            <span class="text-text-secondary font-semibold">Plan:</span>
+            <span class="text-text-secondary font-semibold">Idea:</span>
             {{ getPlanBrief(move) }}
           </div>
         </div>

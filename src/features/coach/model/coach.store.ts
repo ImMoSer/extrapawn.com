@@ -179,14 +179,26 @@ export const useCoachStore = defineStore('coach', () => {
   })
 
   const openingName = computed<string | null>(() => {
-    return posExplanation.value?.opening_name || null
+    const exp = posExplanation.value
+    if (!exp) return null
+    if (exp.opening_info?.name) {
+      const eco = exp.opening_info.eco && exp.opening_info.eco !== '-' ? `${exp.opening_info.eco} · ` : ''
+      return `${eco}${exp.opening_info.name}`
+    }
+    if (exp.opening_name) {
+      const eco = exp.opening_eco && exp.opening_eco !== '-' ? `${exp.opening_eco} · ` : ''
+      return `${eco}${exp.opening_name}`
+    }
+    return null
   })
 
   const lastMoveConsequence = computed<string | null>(() => {
     const exp = posExplanation.value
     if (!exp) return null
     const lma = exp.last_move_analysis
-    return lma?.consequence || exp.strategic_summary || exp.key_imbalance || null
+    if (lma?.consequence) return lma.consequence
+    const topTheme = exp.strategic_themes?.[0]?.description || exp.themes?.[0]?.description
+    return topTheme || exp.strategic_summary || exp.key_imbalance || null
   })
 
   // EvalBar integration getters
