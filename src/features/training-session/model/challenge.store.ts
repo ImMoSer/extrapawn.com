@@ -58,6 +58,7 @@ export const useChallengeStore = defineStore('challenge', () => {
   const error = ref<string | null>(null)
   const feedbackMessage = ref<string | null>(null)
   const lastTelemetry = ref<PuzzleAttemptTelemetry | null>(null)
+  const selectedUserId = ref<string | null>(null)
 
   const currentTimeMs = ref<number>(0)
   let timerStartedAt = 0
@@ -147,6 +148,11 @@ export const useChallengeStore = defineStore('challenge', () => {
     () => challengeState.value?.leaderboard ?? [],
   )
 
+  const selectedParticipant = computed<ChallengeParticipantDTO | null>(() => {
+    if (!selectedUserId.value) return null
+    return leaderboard.value.find((p) => p.user_id === selectedUserId.value && p.solved) ?? null
+  })
+
   const activeBotEngine = computed<BotLadderEngineId>(() => {
     if (challengeState.value) {
       return validateBotLadderEngine(challengeState.value.bot_engine)
@@ -177,14 +183,15 @@ export const useChallengeStore = defineStore('challenge', () => {
     return serverBot
   }
 
-  function populateCanonicalSolutionOnBoard(puzzle: PuzzlePuzzle): void {
+  function populateMovesOnBoard(puzzle: PuzzlePuzzle, uciMovesStr: string): void {
     const humanColor = determineHumanColor(puzzle)
     gameStore.enterAnalysisMode()
     boardStore.setupPosition(puzzle.initial_fen, humanColor)
     pgnService.reset(puzzle.initial_fen)
 
-    if (puzzle.tactical_solution) {
-      const moves = puzzle.tactical_solution.trim().split(/\s+/).filter(Boolean)
+    const trimmed = uciMovesStr.trim()
+    if (trimmed) {
+      const moves = trimmed.split(/\s+/).filter(Boolean)
       for (const uci of moves) {
         const posBefore = boardStore.chessPosition.clone()
         const parsed = parseUci(uci)
@@ -202,6 +209,43 @@ export const useChallengeStore = defineStore('challenge', () => {
     }
 
     gameStore.syncPgnVisualCuesToBoard()
+  }
+
+  function populateCanonicalSolutionOnBoard(puzzle: PuzzlePuzzle): void {
+    populateMovesOnBoard(puzzle, puzzle.tactical_solution ?? '')
+  }
+
+  function selectParticipantSolution(targetUserId: string): boolean {
+    if (!isFinalized.value) return false
+    const puzzle = currentPuzzle.value
+    if (!puzzle) return false
+
+    const normalized = targetUserId.trim().toLowerCase()
+    if (!normalized) return false
+
+    const target = leaderboard.value.find(
+      (p) =>
+        p.solved &&
+        (p.user_id.toLowerCase() === normalized || p.username.toLowerCase() === normalized),
+    )
+    if (!target) return false
+
+    stopTimer()
+    selectedUserId.value = target.user_id
+    viewState.value = 'analyzing'
+    const movesToReplay = target.uci_moves?.trim() || puzzle.tactical_solution?.trim() || ''
+    populateMovesOnBoard(puzzle, movesToReplay)
+    return true
+  }
+
+  function showCanonicalSolution(): void {
+    if (!isFinalized.value) return
+    const puzzle = currentPuzzle.value
+    if (!puzzle) return
+    stopTimer()
+    selectedUserId.value = null
+    viewState.value = 'analyzing'
+    populateCanonicalSolutionOnBoard(puzzle)
   }
 
   function launchAttempt(): void {
@@ -280,6 +324,7 @@ export const useChallengeStore = defineStore('challenge', () => {
     }
 
     try {
+      const uciMoves = solved ? pgnService.getCurrentUciPath().join(' ').trim() : undefined
       const pgnMoves = solved
         ? pgnService.getCurrentPgnString().replace(/\s+/g, ' ').trim()
         : undefined
@@ -289,6 +334,7 @@ export const useChallengeStore = defineStore('challenge', () => {
         {
           solved,
           time_ms: elapsedMs,
+          ...(uciMoves ? { uci_moves: uciMoves } : {}),
           ...(pgnMoves ? { pgn_moves: pgnMoves } : {}),
         },
         state.edition,
@@ -298,6 +344,7 @@ export const useChallengeStore = defineStore('challenge', () => {
       if (activePlayToken !== playToken) return
 
       if (solved) {
+        selectedUserId.value = updated.my_entry?.user_id ?? null
         viewState.value = 'solved'
       } else {
         viewState.value = 'attempt_failed'
@@ -321,12 +368,14 @@ export const useChallengeStore = defineStore('challenge', () => {
     discipline: TrainingDiscipline,
     puzzleId: string,
     edition?: string,
+    requestedUserId?: string,
   ): Promise<ChallengeStateDTO> {
     stopTimer()
     activePlayToken++
     viewState.value = 'loading'
     error.value = null
     feedbackMessage.value = null
+    selectedUserId.value = null
 
     try {
       const dto = await trainingApi.getChallengeState(discipline, puzzleId, edition)
@@ -334,6 +383,13 @@ export const useChallengeStore = defineStore('challenge', () => {
       syncBotLadder(dto)
 
       if (dto.my_entry?.status === 'solved' || dto.my_entry?.status === 'surrendered') {
+        const trimmedTarget = requestedUserId?.trim() ?? ''
+        if (trimmedTarget && selectParticipantSolution(trimmedTarget)) {
+          return dto
+        }
+        if (dto.my_entry.status === 'solved' && selectParticipantSolution(dto.my_entry.user_id)) {
+          return dto
+        }
         enterAnalysis(true)
       } else {
         launchAttempt()
@@ -400,6 +456,13 @@ export const useChallengeStore = defineStore('challenge', () => {
       return
     }
 
+    if (!loadCanonicalSolution && myEntry.value?.status === 'solved' && myEntry.value.uci_moves) {
+      selectedUserId.value = myEntry.value.user_id
+      populateMovesOnBoard(puzzle, myEntry.value.uci_moves)
+      return
+    }
+
+    selectedUserId.value = null
     populateCanonicalSolutionOnBoard(puzzle)
   }
 
@@ -429,6 +492,8 @@ export const useChallengeStore = defineStore('challenge', () => {
     currentPuzzle,
     myEntry,
     leaderboard,
+    selectedUserId,
+    selectedParticipant,
     activeBotEngine,
     isPlaying,
     isAttemptFailed,
@@ -440,6 +505,8 @@ export const useChallengeStore = defineStore('challenge', () => {
     retryChallenge,
     surrenderAndAnalyze,
     enterAnalysis,
+    selectParticipantSolution,
+    showCanonicalSolution,
     stopChallenge,
     formatDurationMs,
   }

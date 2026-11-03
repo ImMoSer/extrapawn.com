@@ -3,6 +3,7 @@ import {
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
+  type ChallengeParticipantDTO,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
@@ -12,6 +13,7 @@ import {
   CloseCircleOutline,
   EyeOutline,
   FlagOutline,
+  PlayCircleOutline,
   RefreshOutline,
   TimeOutline,
   TrophyOutline,
@@ -19,10 +21,11 @@ import {
 import { NButton, NIcon, NScrollbar } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useChallengeStore } from '../model/challenge.store'
 
 const { t, te } = useI18n()
+const route = useRoute()
 const router = useRouter()
 const store = useChallengeStore()
 const authStore = useAuthStore()
@@ -77,6 +80,22 @@ function goToTrainingCenter(): void {
 function goToChallengeRecords(): void {
   store.stopChallenge()
   void router.push('/challenge/records')
+}
+
+function canInspectParticipant(row: ChallengeParticipantDTO): boolean {
+  return store.isFinalized && row.solved
+}
+
+function handleSelectParticipant(row: ChallengeParticipantDTO): void {
+  if (!canInspectParticipant(row) || !state.value) return
+  const selected = store.selectParticipantSolution(row.user_id)
+  if (!selected) return
+
+  const editionSegment =
+    state.value.edition || String(route.params.edition ?? '').trim() || 'default'
+  void router.replace(
+    `/challenge/${state.value.discipline}/${state.value.puzzle_id}/${editionSegment}/${row.user_id}`,
+  )
 }
 </script>
 
@@ -226,21 +245,39 @@ function goToChallengeRecords(): void {
 
     <!-- Challenge Leaderboard List -->
     <div class="flex-1 flex flex-col min-h-0 border border-border rounded-md bg-elevated/30 overflow-hidden">
-      <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex items-center justify-between">
-        <div class="flex items-center gap-1.5">
-          <NIcon size="14" class="text-warning"><TrophyOutline /></NIcon>
-          <span class="font-display font-bold text-[11px] uppercase tracking-wider text-text-secondary">
-            {{ t('features.trainingCenter.challenge.leaderboardTitle') }}
+      <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <NIcon size="14" class="text-warning"><TrophyOutline /></NIcon>
+            <span class="font-display font-bold text-[11px] uppercase tracking-wider text-text-secondary">
+              {{ t('features.trainingCenter.challenge.leaderboardTitle') }}
+            </span>
+          </div>
+          <span class="font-condensed text-xs text-text-secondary">
+            {{
+              t('features.trainingCenter.challenge.solvedParticipantsRatio', {
+                solved: solvedParticipantsCount,
+                total: store.leaderboard.length,
+              })
+            }}
           </span>
         </div>
-        <span class="font-condensed text-xs text-text-secondary">
-          {{
-            t('features.trainingCenter.challenge.solvedParticipantsRatio', {
-              solved: solvedParticipantsCount,
-              total: store.leaderboard.length,
-            })
-          }}
-        </span>
+
+        <div
+          v-if="store.isFinalized && store.selectedParticipant"
+          class="flex items-center justify-between text-[11px] text-neon-cyan pt-0.5 border-t border-border/50"
+        >
+          <span class="truncate">
+            {{
+              t('features.trainingCenter.challenge.viewingSolutionOf', {
+                username: store.selectedParticipant.username,
+              })
+            }}
+          </span>
+          <span class="text-[10px] text-text-secondary shrink-0 ml-2">
+            {{ t('features.trainingCenter.challenge.clickPlayerHint') }}
+          </span>
+        </div>
       </div>
 
       <NScrollbar class="flex-1">
@@ -257,12 +294,16 @@ function goToChallengeRecords(): void {
             :key="row.user_id"
             class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
             :class="[
-              row.user_id === authStore.userProfile?.id
-                ? 'bg-neon-cyan/10 border-l-2 border-l-neon-cyan'
-                : row.solved
-                  ? 'bg-success/5 border-l-2 border-l-success'
-                  : 'bg-danger/5 border-l-2 border-l-danger',
+              canInspectParticipant(row) ? 'cursor-pointer hover:bg-elevated/70' : '',
+              store.isFinalized && store.selectedUserId === row.user_id
+                ? 'bg-neon-cyan/15 border-l-2 border-l-neon-cyan'
+                : row.user_id === authStore.userProfile?.id
+                  ? 'bg-neon-cyan/8 border-l-2 border-l-neon-cyan/60'
+                  : row.solved
+                    ? 'bg-success/5 border-l-2 border-l-success'
+                    : 'bg-danger/5 border-l-2 border-l-danger',
             ]"
+            @click="handleSelectParticipant(row)"
           >
             <!-- Left: Rank + Player Name + Status Badge -->
             <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -284,6 +325,17 @@ function goToChallengeRecords(): void {
                   <span class="truncate text-text-primary font-medium">
                     {{ row.username }}
                   </span>
+                  <NIcon
+                    v-if="canInspectParticipant(row)"
+                    size="13"
+                    :class="
+                      store.selectedUserId === row.user_id
+                        ? 'text-neon-cyan shrink-0'
+                        : 'text-text-secondary/70 shrink-0'
+                    "
+                  >
+                    <PlayCircleOutline />
+                  </NIcon>
                   <span
                     v-if="row.user_id === authStore.userProfile?.id"
                     class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 shrink-0"

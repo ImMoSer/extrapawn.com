@@ -1236,7 +1236,9 @@
         "secondsBarLabel": "Solve Time",
         "ptsUnit": "pts",
         "userSolvedStats": "{solved}/{puzzles} solved · {attempts} attempts",
-        "refreshBtn": "Refresh"
+        "refreshBtn": "Refresh",
+        "viewingSolutionOf": "Game: {username}",
+        "clickPlayerHint": "Click player to replay"
       },
       "diploma": {
         "badge": "COURSE DIPLOMA",

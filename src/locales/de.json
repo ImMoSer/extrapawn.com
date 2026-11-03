@@ -1236,7 +1236,9 @@
         "secondsBarLabel": "Gesamtzeit",
         "ptsUnit": "Pkt.",
         "userSolvedStats": "{solved}/{puzzles} gelöst · {attempts} Versuche",
-        "refreshBtn": "Aktualisieren"
+        "refreshBtn": "Aktualisieren",
+        "viewingSolutionOf": "Partie: {username}",
+        "clickPlayerHint": "Spieler anklicken"
       },
       "diploma": {
         "badge": "KURS-DIPLOM",

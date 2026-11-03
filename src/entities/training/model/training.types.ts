@@ -606,6 +606,8 @@ export interface ChallengeParticipantDTO {
   attempts: number
   score_text: string
   solved_time_ms?: number
+  uci_moves?: string
+  pgn_moves?: string
   updated_at: string
   completed_at?: string
 }
@@ -625,6 +627,7 @@ export interface ChallengeStateDTO {
 export interface ChallengeAttemptRequest {
   solved: boolean
   time_ms: number
+  uci_moves?: string
   pgn_moves?: string
 }
 

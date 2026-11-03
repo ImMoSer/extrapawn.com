@@ -54,7 +54,7 @@ const router = createRouter({
       component: () => import('@/pages/course-diploma').then((m) => m.CourseDiplomaPage),
     },
     {
-      path: '/challenge/:discipline/:puzzleId/:edition?',
+      path: '/challenge/:discipline/:puzzleId/:edition?/:userId?',
       name: 'challenge',
       component: () => import('@/pages/challenge').then((m) => m.ChallengePage),
       meta: { isGame: true, requiresAuth: true, game: 'challenge' },

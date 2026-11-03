@@ -226,6 +226,7 @@ export const trainingApi = {
     }
     const trimmedEdition = edition?.trim() ?? ''
     const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
+    const uciMoves = payload.uci_moves?.trim()
     const pgnMoves = payload.pgn_moves?.trim()
     return apiClient<ChallengeStateDTO>(
       `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/attempt${query}`,
@@ -234,6 +235,7 @@ export const trainingApi = {
         body: JSON.stringify({
           solved: payload.solved,
           time_ms: Math.round(payload.time_ms),
+          ...(uciMoves ? { uci_moves: uciMoves } : {}),
           ...(pgnMoves ? { pgn_moves: pgnMoves } : {}),
         }),
       },

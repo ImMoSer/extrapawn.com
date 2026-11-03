@@ -20,6 +20,7 @@ const store = useChallengeStore()
 const rawDiscipline = computed(() => String(route.params.discipline ?? '').trim())
 const rawPuzzleId = computed(() => String(route.params.puzzleId ?? '').trim())
 const rawEdition = computed(() => String(route.params.edition ?? '').trim())
+const rawUserId = computed(() => String(route.params.userId ?? '').trim())
 
 const isBoardLocked = computed(() => {
   return store.viewState !== 'playing' && store.viewState !== 'analyzing'
@@ -29,12 +30,25 @@ async function initFromRoute(): Promise<void> {
   const disc = rawDiscipline.value
   const pid = rawPuzzleId.value
   const edition = rawEdition.value
+  const targetUserId = rawUserId.value
   if (!isValidTrainingDiscipline(disc) || !pid) {
     store.viewState = 'error'
     store.error = t('features.trainingCenter.challenge.notFoundError')
     return
   }
-  await store.loadChallenge(disc as TrainingDiscipline, pid, edition)
+  const dto = await store.loadChallenge(disc as TrainingDiscipline, pid, edition, targetUserId)
+
+  // If current user has NOT finalized this challenge yet, strip /:userId from URL (anti-spoiler)
+  if (
+    targetUserId &&
+    dto.my_entry?.status !== 'solved' &&
+    dto.my_entry?.status !== 'surrendered'
+  ) {
+    const cleanPath = edition
+      ? `/challenge/${disc}/${pid}/${edition}`
+      : `/challenge/${disc}/${pid}`
+    void router.replace(cleanPath)
+  }
 }
 
 onMounted(() => {
@@ -43,6 +57,13 @@ onMounted(() => {
 
 watch([rawDiscipline, rawPuzzleId, rawEdition], () => {
   void initFromRoute()
+})
+
+watch(rawUserId, (newUserId) => {
+  if (!newUserId || !store.isFinalized) return
+  if (store.selectedUserId?.toLowerCase() !== newUserId.toLowerCase()) {
+    store.selectParticipantSolution(newUserId)
+  }
 })
 
 onUnmounted(() => {

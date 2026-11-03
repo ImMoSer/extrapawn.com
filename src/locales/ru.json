@@ -1236,7 +1236,9 @@
         "secondsBarLabel": "Сумма секунд",
         "ptsUnit": "очк.",
         "userSolvedStats": "Решено: {solved}/{puzzles} · Попыток: {attempts}",
-        "refreshBtn": "Обновить"
+        "refreshBtn": "Обновить",
+        "viewingSolutionOf": "Партия: {username}",
+        "clickPlayerHint": "Кликни для просмотра"
       },
       "diploma": {
         "badge": "ДИПЛОМ КУРСА",
