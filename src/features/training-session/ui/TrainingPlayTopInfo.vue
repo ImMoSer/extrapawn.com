@@ -1,24 +1,44 @@
 <script setup lang="ts">
 import { resolveDisciplineLabel, resolveScopeLabel } from '@/entities/training'
+import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
   CloseCircleOutline,
   EyeOutline,
+  FlagOutline,
 } from '@vicons/ionicons5'
-import { NButton, NIcon } from 'naive-ui'
-import { computed } from 'vue'
+import { NButton, NIcon, NInput, NPopover } from 'naive-ui'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 
 const { t, te } = useI18n()
+const authStore = useAuthStore()
 const store = useTrainingSessionStore()
+
+const showFlagPopover = ref<boolean>(false)
+const flagComment = ref<string>('')
 
 const activePuzzle = computed(() => store.analysisPuzzle ?? store.currentPuzzle)
 
 const formattedTimer = computed(() => store.formatDurationMs(store.currentTimeMs))
 
+const isTacticsCourse = computed(() => {
+  const disc = store.activeSessionSummary?.discipline ?? store.activeDiscipline
+  return disc === 'tactics_course' || activePuzzle.value?.puzzle_type === 'tactics_course'
+})
+
+const isExamPuzzle = computed(() => {
+  const p = activePuzzle.value
+  return Boolean(p?.is_exam || p?.domain === 'EXAMS')
+})
+
 const disciplineTitle = computed(() => {
+  const p = activePuzzle.value
+  if (isTacticsCourse.value && p?.batch_id) {
+    return `Батч #${p.batch_id}`
+  }
   const disc = store.activeSessionSummary?.discipline ?? store.activeDiscipline
   return resolveDisciplineLabel(disc, t)
 })
@@ -26,10 +46,24 @@ const disciplineTitle = computed(() => {
 const categoryTitle = computed(() => {
   const p = activePuzzle.value
   if (!p) return ''
+  if (isExamPuzzle.value && !store.isAnalysisMode) {
+    return 'Как бы вы сыграли?'
+  }
+  if (isTacticsCourse.value && p.batch_title) {
+    return p.batch_title
+  }
   return resolveScopeLabel('scopes', p.category, t, te)
 })
 
 const isHoldDraw = computed(() => activePuzzle.value?.objective === 'hold_draw')
+
+async function handleFlagSubmit(preset?: string): Promise<void> {
+  if (!authStore.isMo3ep) return
+  const reason = preset ?? flagComment.value.trim()
+  showFlagPopover.value = false
+  flagComment.value = ''
+  await store.flagCurrentCoursePuzzle(reason || 'Помечено при проверке курса')
+}
 
 const showBotBadge = computed(() => {
   const disc = store.activeSessionSummary?.discipline
@@ -104,6 +138,14 @@ function handleBackAction(): void {
         {{ t('features.trainingCenter.badges.analysis') }}
       </span>
 
+      <!-- Exam Mode Badge (No Theme or Objective Spoilers) -->
+      <span
+        v-else-if="isExamPuzzle"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40"
+      >
+        ЭКЗАМЕН · НАЙДИТЕ СИЛЬНЕЙШЕЕ ПРОДОЛЖЕНИЕ
+      </span>
+
       <!-- Objective Badge: Hold Draw (FIDE) vs Win -->
       <span
         v-else-if="isHoldDraw"
@@ -147,8 +189,73 @@ function handleBackAction(): void {
       </span>
     </div>
 
-    <!-- Right: Post-Attempt Actions / Analysis Controls -->
+    <!-- Right: Post-Attempt Actions / Analysis Controls / Flag Button -->
     <div class="flex items-center gap-1.5 shrink-0">
+      <NPopover
+        v-if="authStore.isMo3ep && isTacticsCourse && !store.isAnalysisMode"
+        v-model:show="showFlagPopover"
+        trigger="click"
+        placement="bottom-end"
+      >
+        <template #trigger>
+          <NButton
+            size="tiny"
+            quaternary
+            type="warning"
+            :loading="store.isFlaggingPuzzle"
+            title="Пожаловаться на задачу и перейти к следующей"
+          >
+            <template #icon>
+              <NIcon><FlagOutline /></NIcon>
+            </template>
+            Флаг
+          </NButton>
+        </template>
+        <div class="w-64 p-1 flex flex-col gap-2 text-xs">
+          <div class="font-display font-bold text-text-primary">
+            Отправить задачу #{{ activePuzzle.puzzle_id }} в доработку
+          </div>
+          <div class="flex flex-wrap gap-1">
+            <NButton
+              size="tiny"
+              secondary
+              @click="handleFlagSubmit('Неоднозначное решение / дуаль')"
+            >
+              Дуаль
+            </NButton>
+            <NButton
+              size="tiny"
+              secondary
+              @click="handleFlagSubmit('Слишком короткое / странное решение')"
+            >
+              Странная линия
+            </NButton>
+            <NButton
+              size="tiny"
+              secondary
+              @click="handleFlagSubmit('Неверная тема / классификация')"
+            >
+              Не та тема
+            </NButton>
+          </div>
+          <NInput
+            v-model:value="flagComment"
+            size="small"
+            placeholder="Комментарий (опционально)..."
+            @keyup.enter="handleFlagSubmit()"
+          />
+          <NButton
+            size="small"
+            type="warning"
+            block
+            :loading="store.isFlaggingPuzzle"
+            @click="handleFlagSubmit()"
+          >
+            В блокнот и далее →
+          </NButton>
+        </div>
+      </NPopover>
+
       <template v-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved">
         <span
           class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm font-condensed font-bold text-xs border"

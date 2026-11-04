@@ -45,11 +45,18 @@ const progressPercent = computed(() => {
 
 function itemRating(item: HydratedSessionItem): number {
   if (item.tactical) return item.tactical.rating
+  if (item.course_puzzle) return item.course_puzzle.rating
   if (item.endgame) return item.endgame.effective_rating
   return 1500
 }
 
 function itemCategoryLabel(item: HydratedSessionItem): string {
+  if (item.course_puzzle) {
+    if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') {
+      return `Экзамен · Батч #${item.course_puzzle.batch_id}`
+    }
+    return resolveScopeLabel('scopes', item.course_puzzle.class, t, te)
+  }
   if (item.tactical) {
     const firstMotif =
       item.tactical.geometry_motifs[0] ??
@@ -66,6 +73,12 @@ function itemCategoryLabel(item: HydratedSessionItem): string {
 }
 
 function itemObjective(item: HydratedSessionItem): 'win' | 'hold_draw' {
+  if (item.course_puzzle) {
+    if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') {
+      return 'win'
+    }
+    return item.course_puzzle.objective
+  }
   return item.endgame?.objective ?? 'win'
 }
 

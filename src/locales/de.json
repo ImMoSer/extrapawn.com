@@ -940,6 +940,7 @@
       "subtitle": "Vereintes Glicko-2-Kurssystem, Specht-Methode (24h / 3×) & gezieltes WarmUp",
       "disciplines": {
         "tactics": "Taktik",
+        "tactics_course": "Klassischer Taktikkurs",
         "theoretical_endgames": "Theoretische Endspiele",
         "practical_chess": "Praktische Endspiele",
         "finishhim": "Finish Him"

@@ -18,9 +18,11 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   const isMo3ep = computed(() => authStore.isMo3ep)
 
   const isCrashtestEnabled = computed({
-    get: () => preferencesStore.preferences.gameplay.global_crashtest,
-    set: (val: boolean) =>
-      preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } }),
+    get: () => isMo3ep.value && preferencesStore.preferences.gameplay.global_crashtest,
+    set: (val: boolean) => {
+      if (!isMo3ep.value) return
+      void preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } })
+    },
   })
 
   const crashtestEngine = computed<CrashtestEngineId>({

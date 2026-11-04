@@ -6,6 +6,7 @@ import type { EngineId } from '@/shared/types/api.types'
 
 export const TRAINING_DISCIPLINES = [
   'tactics',
+  'tactics_course',
   'theoretical_endgames',
   'practical_chess',
   'finishhim',
@@ -15,6 +16,28 @@ export type TrainingDiscipline = (typeof TRAINING_DISCIPLINES)[number]
 
 export function isValidTrainingDiscipline(value: string): value is TrainingDiscipline {
   return (TRAINING_DISCIPLINES as readonly string[]).includes(value)
+}
+
+/**
+ * Disciplines/courses currently in developer preview (visible and accessible ONLY to `mo3ep`).
+ * Add any new in-development discipline here to hide it from regular users in production,
+ * and remove it from this array when ready for public release.
+ */
+export const DEV_ONLY_TRAINING_DISCIPLINES: readonly TrainingDiscipline[] = ['tactics_course']
+
+export function isDisciplineVisibleForUser(
+  discipline: TrainingDiscipline,
+  isDeveloper: boolean,
+): boolean {
+  if (isDeveloper) return true
+  return !DEV_ONLY_TRAINING_DISCIPLINES.includes(discipline)
+}
+
+export function getVisibleTrainingDisciplines(
+  isDeveloper: boolean,
+): readonly TrainingDiscipline[] {
+  if (isDeveloper) return TRAINING_DISCIPLINES
+  return TRAINING_DISCIPLINES.filter((d) => !DEV_ONLY_TRAINING_DISCIPLINES.includes(d))
 }
 
 export const TRAINING_DIFFICULTIES = ['Novice', 'Pro', 'Master'] as const
@@ -55,8 +78,8 @@ export function validateBotLadderEngine(engineId: string): BotLadderEngineId {
 export const TRAINING_OBJECTIVES = ['win', 'hold_draw'] as const
 export type TrainingObjective = (typeof TRAINING_OBJECTIVES)[number]
 
-export type TrainingSessionMode = 'course' | 'warmup'
-export type CourseDurationDays = 7 | 30
+export type TrainingSessionMode = 'course' | 'warmup' | 'crashtest'
+export type CourseDurationDays = 7 | 30 | 42
 export type CourseStatus = 'active' | 'completed' | 'incomplete' | 'expired' | 'aborted'
 export type SessionItemStatus = 'pending' | 'solved' | 'failed'
 export type AttemptFailStage = '' | 'none' | 'scenario' | 'playout'
@@ -207,11 +230,44 @@ export interface CatalogManifestDTO {
   built_at: string
   files_signature: string
   tactics_count: number
+  tactics_course_count?: number
   practical_count: number
   finishhim_count: number
   theoretical_count: number
   theoretical_skipped_extra: number
   total_count: number
+}
+
+export interface CoursePuzzleV2 {
+  puzzle_id: string
+  base_id: string
+  discipline: 'tactics_course'
+  batch_id: number
+  batch_slug?: string
+  batch_title: string
+  week_number: number
+  schedule_day?: string
+  order_in_batch?: number
+  domain: string
+  class: string
+  sub_class?: string
+  objective: TrainingObjective
+  strategy: 'scenarioOnly' | 'scenarioPlus'
+  first_move: 'bot' | 'user'
+  user_color: 'white' | 'black'
+  difficulty: TrainingDifficulty
+  rating: number
+  pieces_count: number
+  plies_count: number
+  phase?: string
+  length?: string
+  geometry_motifs?: string[]
+  operator_motifs?: string[]
+  concept_motifs?: string[]
+  trigger_motifs?: string[]
+  meta_themes?: string[]
+  tactical_fen: string
+  tactical_solution: string
 }
 
 export interface TacticalPuzzleV2 {
@@ -412,6 +468,7 @@ export interface HydratedSessionItem {
   rating_delta?: number
   tactical?: TacticalPuzzleV2
   endgame?: EndgamePuzzleV2
+  course_puzzle?: CoursePuzzleV2
 }
 
 export interface HydratedSessionDTO {
@@ -586,6 +643,7 @@ export interface CabinetDTO {
   theoretical: EndgameCabinetMapDTO
   practical: EndgameCabinetMapDTO
   finishhim: EndgameCabinetMapDTO
+  tactics_course?: EndgameCabinetMapDTO
   weekly_timeline: WeeklyPointDTO[]
   daily_activity: DailyActivityPointDTO[]
   recent_courses: CourseDTO[]
@@ -646,6 +704,82 @@ export interface ChallengeRecordEntryDTO {
   attempted_puzzles: number
   total_attempts: number
 }
+
+// ============================================================================
+// Classical Tactics Course (24 Batches, 12 Woodpecker Days & Crash-Test)
+// ============================================================================
+
+export type ClassicalCourseStepType = 'batch' | 'woodpecker' | 'completed'
+
+export interface CourseBatchStatusDTO {
+  batch_id: number
+  batch_slug?: string
+  batch_title: string
+  week: number
+  schedule_day?: string
+  domain: string
+  class?: string
+  is_exam: boolean
+  total_puzzles: number
+  solved_count: number
+  failed_count: number
+  is_completed: boolean
+  is_unlocked: boolean
+  is_current: boolean
+}
+
+export interface WoodpeckerCheckpointDTO {
+  checkpoint_id: number
+  after_batch_id: number
+  week: number
+  schedule_day?: string
+  title?: string
+  batch_ids?: number[]
+  due_count: number
+  is_completed: boolean
+  is_unlocked?: boolean
+  is_active: boolean
+}
+
+export interface CourseFlagDTO {
+  puzzle_id: string
+  batch_id: number
+  order_in_batch?: number
+  comment: string
+  tactical_fen?: string
+  tactical_solution?: string
+  created_at: string
+}
+
+export interface TacticsCourseCurriculumDTO {
+  active_course?: CourseDTO
+  total_puzzles: number
+  solved_total: number
+  failed_total: number
+  current_step_type: ClassicalCourseStepType
+  current_batch_id: number
+  current_woodpecker_id: number
+  batches: CourseBatchStatusDTO[]
+  woodpecker_days: WoodpeckerCheckpointDTO[]
+  crash_test_active: boolean
+  crash_test_index: number
+  crash_test_solved: number
+  crash_test_failed: number
+  crashtest_session?: SessionSummaryDTO
+  flagged_puzzles: CourseFlagDTO[]
+}
+
+export interface CrashTestSessionRequest {
+  force_restart?: boolean
+  jump_to_index?: number
+}
+
+export interface FlagCoursePuzzleRequest {
+  puzzle_id: string
+  comment: string
+  session_id?: string
+}
+
 
 
 

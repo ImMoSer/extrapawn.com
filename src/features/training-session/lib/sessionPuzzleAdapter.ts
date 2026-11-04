@@ -3,6 +3,7 @@ import {
   isValidTrainingDifficulty,
   isValidTrainingDiscipline,
   type ChallengeStateDTO,
+  type CoursePuzzleV2,
   type EndgamePuzzleV2,
   type HydratedSessionItem,
   type TacticalPuzzleV2,
@@ -100,6 +101,74 @@ export function adaptTacticalPuzzleV2(
   }
 
   // Enforce FEN + first_move + user_color invariant immediately upon adaptation
+  determineHumanColor(mapped)
+  return mapped
+}
+
+export function adaptCoursePuzzleV2(
+  cp: CoursePuzzleV2,
+  wpMeta: WoodpeckerAdapterMeta = { isWoodpecker: false, woodpeckerStreak: 0 },
+): PuzzlePuzzle {
+  if (!cp.puzzle_id || cp.discipline !== 'tactics_course') {
+    throw new Error(
+      `[sessionPuzzleAdapter] Expected discipline="tactics_course" for course puzzle "${cp.puzzle_id}". Fail-Fast!`,
+    )
+  }
+  if (!isValidTrainingDifficulty(cp.difficulty)) {
+    throw new Error(
+      `[sessionPuzzleAdapter] Invalid difficulty "${String(cp.difficulty)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
+    )
+  }
+  if (cp.strategy !== 'scenarioOnly' && cp.strategy !== 'scenarioPlus') {
+    throw new Error(
+      `[sessionPuzzleAdapter] Invalid strategy "${String(cp.strategy)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
+    )
+  }
+  if (!cp.tactical_fen?.trim() || !cp.tactical_solution?.trim()) {
+    throw new Error(
+      `[sessionPuzzleAdapter] Missing tactical_fen or tactical_solution on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
+    )
+  }
+
+  const objective = assertValidObjective(cp.puzzle_id, cp.objective)
+  const firstMove = assertValidFirstMove(cp.puzzle_id, cp.first_move)
+  const userColor = assertValidUserColor(cp.puzzle_id, cp.user_color)
+  const isExam = cp.domain === 'EXAMS'
+  const secondaryThemes = [
+    ...(cp.geometry_motifs ?? []),
+    ...(cp.operator_motifs ?? []),
+    ...(cp.concept_motifs ?? []),
+    ...(cp.trigger_motifs ?? []),
+    ...(cp.meta_themes ?? []),
+  ]
+
+  const mapped: PuzzlePuzzle = {
+    puzzle_id: cp.puzzle_id,
+    puzzle_type: 'tactics_course',
+    category: isExam ? 'mixedExam' : cp.class,
+    category_comby: isExam
+      ? []
+      : [cp.class, ...(cp.sub_class ? [cp.sub_class] : []), ...secondaryThemes],
+    motifs_pg: isExam ? [] : secondaryThemes,
+    sub_category: cp.domain,
+    domain: cp.domain,
+    batch_id: cp.batch_id,
+    batch_title: cp.batch_title,
+    week: cp.week_number,
+    is_exam: isExam,
+    difficulty: cp.difficulty,
+    rating: cp.rating,
+    strategy: cp.strategy,
+    first_move: firstMove,
+    user_color: userColor,
+    objective,
+    is_woodpecker: wpMeta.isWoodpecker,
+    woodpecker_streak: wpMeta.woodpeckerStreak,
+    initial_fen: cp.tactical_fen,
+    tactical_solution: cp.tactical_solution,
+    puzzle_fen: cp.tactical_fen,
+  }
+
   determineHumanColor(mapped)
   return mapped
 }
@@ -236,6 +305,20 @@ export function adaptSessionItemToPuzzle(
       )
     }
     return adaptTacticalPuzzleV2(item.tactical, wpMeta)
+  }
+
+  if (discipline === 'tactics_course') {
+    if (!item.course_puzzle) {
+      throw new Error(
+        `[sessionPuzzleAdapter] Missing hydrated course_puzzle payload for puzzle ${item.puzzle_id}. Fail-Fast!`,
+      )
+    }
+    if (item.course_puzzle.puzzle_id !== item.puzzle_id) {
+      throw new Error(
+        `[sessionPuzzleAdapter] Hydrated course_puzzle puzzle_id mismatch: item="${item.puzzle_id}" vs payload="${item.course_puzzle.puzzle_id}". Fail-Fast!`,
+      )
+    }
+    return adaptCoursePuzzleV2(item.course_puzzle, wpMeta)
   }
 
   if (!item.endgame) {

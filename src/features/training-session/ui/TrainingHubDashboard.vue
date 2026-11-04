@@ -2,6 +2,8 @@
 import {
   BOT_ENGINE_BY_DIFFICULTY,
   formatRemainingDuration,
+  getVisibleTrainingDisciplines,
+  isDisciplineVisibleForUser,
   isValidTrainingDifficulty,
   isValidTrainingDiscipline,
   PRACTICAL_AND_FINISHHIM_DOMAINS,
@@ -21,12 +23,12 @@ import {
   THEORETICAL_DOMAIN_CLASSES,
   THEORETICAL_DOMAINS,
   TRAINING_DIFFICULTIES,
-  TRAINING_DISCIPLINES,
   type CourseDurationDays,
   type TrainingDifficulty,
   type TrainingDiscipline,
   type TrainingObjective,
 } from '@/entities/training'
+import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import {
@@ -45,6 +47,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
+import TacticsCourseCurriculumView from './TacticsCourseCurriculumView.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -58,6 +61,7 @@ const props = withDefaults(
 const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const uiStore = useUiStore()
 const store = useTrainingSessionStore()
 
@@ -85,6 +89,8 @@ const ALL_TACTICS_MOTIFS = [
   ...TACTICS_CONCEPT_MOTIFS,
   ...TACTICS_TRIGGER_MOTIFS,
 ]
+
+const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.isMo3ep))
 
 const discOverview = computed(() => store.activeDisciplineOverview)
 
@@ -119,7 +125,11 @@ const warmupAllowedSizes = computed<number[]>(() => {
 })
 
 const activeCourse = computed(() => discOverview.value?.active_course ?? null)
-const activeSession = computed(() => discOverview.value?.active_session ?? null)
+const activeSession = computed(() => {
+  const s = discOverview.value?.active_session ?? null
+  if (s?.mode === 'crashtest' && !authStore.isMo3ep) return null
+  return s
+})
 const nextTierGate = computed(() => discOverview.value?.next_tier_gate ?? null)
 
 const activeCoursePercent = computed(() => {
@@ -272,7 +282,11 @@ function syncDefaultsForDiscipline(disc: TrainingDiscipline): void {
 
 function applyRouteQueryOverrides(): void {
   const qDisc = typeof route.query.discipline === 'string' ? route.query.discipline : ''
-  if (qDisc && isValidTrainingDiscipline(qDisc)) {
+  if (
+    qDisc &&
+    isValidTrainingDiscipline(qDisc) &&
+    isDisciplineVisibleForUser(qDisc, authStore.isMo3ep)
+  ) {
     store.selectDiscipline(qDisc)
     syncDefaultsForDiscipline(qDisc)
   }
@@ -503,10 +517,13 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       {{ store.error }}
     </NAlert>
 
-    <!-- 4 Discipline Tabs ([D7]) — Monochrome Studio Tabs -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- Discipline Tabs ([D7]) — Monochrome Studio Tabs -->
+    <div
+      class="grid grid-cols-2 gap-3"
+      :class="visibleDisciplines.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+    >
       <button
-        v-for="disc in TRAINING_DISCIPLINES"
+        v-for="disc in visibleDisciplines"
         :key="disc"
         type="button"
         class="p-4 rounded-lg border text-left transition-colors cursor-pointer flex flex-col gap-2"
@@ -632,10 +649,15 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       </div>
     </div>
 
-    <!-- Main Content Card: Either Course Mode (/training) OR WarmUp Mode (/warmup) -->
+    <!-- Main Content Card: Classical Course, Course Mode (/training) OR WarmUp Mode (/warmup) -->
     <div class="rounded-lg bg-surface border border-border overflow-hidden">
+      <!-- CLASSICAL TACTICS COURSE (24 Batches, 12 Woodpecker Days & Crash-Test 3822) -->
+      <div v-if="store.activeDiscipline === 'tactics_course' && authStore.isMo3ep" class="p-6">
+        <TacticsCourseCurriculumView />
+      </div>
+
       <!-- COURSE MODE (/training) ([D7, D8, D9, D10, D12]) -->
-      <div v-if="props.mode === 'course'" class="p-6 flex flex-col gap-6">
+      <div v-else-if="props.mode === 'course'" class="p-6 flex flex-col gap-6">
         <!-- Active Course HUD -->
         <template v-if="activeCourse">
           <div class="p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-4">

@@ -940,6 +940,7 @@
       "subtitle": "Unified Glicko-2 Courses, Woodpecker Method (24h / 3×) & Targeted WarmUp",
       "disciplines": {
         "tactics": "Tactics",
+        "tactics_course": "Classical Tactics Course",
         "theoretical_endgames": "Theoretical Endgames",
         "practical_chess": "Practical Endgames",
         "finishhim": "Finish Him"

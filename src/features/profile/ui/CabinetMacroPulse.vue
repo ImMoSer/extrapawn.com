@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import {
   formatRemainingDuration,
+  getVisibleTrainingDisciplines,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
-  TRAINING_DISCIPLINES,
   type CabinetDTO,
   type TrainingDiscipline,
 } from '@/entities/training'
+import { useAuthStore } from '@/entities/user'
 import { tokens } from '@/shared/theme/tokens'
 import { FlashOutline, PersonCircleOutline, TrendingUpOutline } from '@vicons/ionicons5'
 import { LineChart } from 'echarts/charts'
@@ -32,6 +33,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const authStore = useAuthStore()
+const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.isMo3ep))
 
 const disciplineTimeline = computed(() => {
   return props.cabinet.weekly_timeline.filter(
@@ -225,10 +228,13 @@ const chartOption = computed(() => {
       </div>
     </div>
 
-    <!-- 4 Discipline Selector Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- Discipline Selector Cards -->
+    <div
+      class="grid grid-cols-2 gap-3"
+      :class="visibleDisciplines.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+    >
       <button
-        v-for="disc in TRAINING_DISCIPLINES"
+        v-for="disc in visibleDisciplines"
         :key="disc"
         type="button"
         class="p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col gap-2"

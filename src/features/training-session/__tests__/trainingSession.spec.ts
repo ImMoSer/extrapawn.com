@@ -1,5 +1,5 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
-import { usePreferencesStore } from '@/entities/user'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import { CRASHTEST_ENGINES } from '@/shared/types/api.types'
 import {
   resolveBotEngineForDifficulty,
@@ -244,6 +244,18 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           course_batch_sizes: [25, 50, 100],
           default_course_batch: 50,
         },
+        tactics_course: {
+          discipline: 'tactics_course',
+          unlocked_tier: 'Novice',
+          global_rating: 1500,
+          global_rd: 350,
+          ema_accuracy: 0.5,
+          solved_total: 0,
+          failed_total: 0,
+          warmup_allowed_sizes: [25, 50, 100],
+          course_batch_sizes: [150, 3822],
+          default_course_batch: 150,
+        },
         theoretical_endgames: {
           discipline: 'theoretical_endgames',
           unlocked_tier: 'Pro',
@@ -287,6 +299,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         mastered_total: 4,
         by_discipline: {
           tactics: { due_now: 0, on_cooldown: 0 },
+          tactics_course: { due_now: 0, on_cooldown: 0 },
           theoretical_endgames: { due_now: 1, on_cooldown: 0 },
           practical_chess: { due_now: 0, on_cooldown: 0 },
           finishhim: { due_now: 0, on_cooldown: 0 },
@@ -545,6 +558,18 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
             course_batch_sizes: [25, 50, 100],
             default_course_batch: 50,
           },
+          tactics_course: {
+            discipline: 'tactics_course',
+            unlocked_tier: 'Novice',
+            global_rating: 1500,
+            global_rd: 350,
+            ema_accuracy: 0.5,
+            solved_total: 0,
+            failed_total: 0,
+            warmup_allowed_sizes: [25, 50, 100],
+            course_batch_sizes: [150, 3822],
+            default_course_batch: 150,
+          },
           theoretical_endgames: {
             discipline: 'theoretical_endgames',
             unlocked_tier: 'Pro',
@@ -588,6 +613,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           mastered_total: 4,
           by_discipline: {
             tactics: { due_now: 0, on_cooldown: 0 },
+            tactics_course: { due_now: 0, on_cooldown: 0 },
             theoretical_endgames: { due_now: 1, on_cooldown: 0 },
             practical_chess: { due_now: 0, on_cooldown: 0 },
             finishhim: { due_now: 0, on_cooldown: 0 },
@@ -645,15 +671,38 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(store.currentItemIndex).toBe(2)
       expect(store.currentPuzzle?.puzzle_id).toBe('TAC-3')
 
-      // 3. Enable Developer Crashtest with Bad Gyal neural network and fail TAC-3 -> should auto-advance to Report without awaiting_next flash
+      // 3. Verify non-developer cannot enable global_crashtest or start Crash-Test session,
+      //    but CAN configure unified nextPuzzleDelayMs across [0, 100, 500, 1000, 2000, 3000]
+      const authStore = useAuthStore()
+      authStore.userProfile = {
+        id: 'other_user',
+        username: 'OtherUser',
+        base_puzzle_rating: 1500,
+      }
       preferencesStore.preferences.gameplay.global_crashtest = true
-      preferencesStore.preferences.gameplay.crashtestEngine = 'badgyal'
-      preferencesStore.preferences.delays.crashtestDelayMs = 400
+      expect(preferencesStore.preferences.gameplay.global_crashtest).toBe(false)
+      await preferencesStore.updatePreferences({ delays: { nextPuzzleDelayMs: 500 } })
+      expect(preferencesStore.preferences.delays.nextPuzzleDelayMs).toBe(500)
+      await expect(store.startCrashTestSession(false)).rejects.toThrow(/restricted to developer/)
+
+      // 4. Enable Developer Crashtest (as developer mo3ep) with Bad Gyal neural network and fail TAC-3 ->
+      //    should auto-advance to Report after the unified nextPuzzleDelayMs (500ms), NOT crashtestDelayMs
+      authStore.userProfile = {
+        id: 'mo3ep',
+        username: 'MO3EP',
+        base_puzzle_rating: 2000,
+      }
+      await preferencesStore.updatePreferences({
+        gameplay: { global_crashtest: true, crashtestEngine: 'badgyal' },
+        delays: { crashtestDelayMs: 100, nextPuzzleDelayMs: 500 },
+      })
 
       await gameStore.handleUserMove('e1', 'e2')
       expect(store.viewState).toBe('playing')
       expect(store.isAwaitingNext).toBe(false)
-      vi.advanceTimersByTime(400)
+      vi.advanceTimersByTime(499)
+      expect(store.viewState).toBe('playing')
+      vi.advanceTimersByTime(1)
       expect(store.viewState).toBe('report')
     } finally {
       vi.useRealTimers()

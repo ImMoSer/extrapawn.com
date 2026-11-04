@@ -11,12 +11,17 @@ import type {
   CourseDiplomaDTO,
   CourseDTO,
   CourseHistoryResponseDTO,
+  CoursePuzzleV2,
   CourseSessionRequest,
+  CrashTestSessionRequest,
   EndgamePuzzleV2,
+  FlagCoursePuzzleRequest,
   HubOverviewDTO,
   HydratedSessionDTO,
+  SessionSummaryDTO,
   StartCourseRequest,
   TacticalPuzzleV2,
+  TacticsCourseCurriculumDTO,
   TrainingDiscipline,
   WarmUpSessionRequest,
 } from '../model/training.types'
@@ -70,6 +75,26 @@ function assertCabinetDTO(raw: unknown): CabinetDTO {
     )
   }
   return raw as CabinetDTO
+}
+
+function assertTacticsCourseCurriculumDTO(raw: unknown): TacticsCourseCurriculumDTO {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error(
+      '[trainingApi] Invalid TacticsCourseCurriculumDTO: expected non-null object. Fail-Fast!',
+    )
+  }
+  const obj = raw as Record<string, unknown>
+  if (
+    !Array.isArray(obj.batches) ||
+    !Array.isArray(obj.woodpecker_days) ||
+    !Array.isArray(obj.flagged_puzzles) ||
+    typeof obj.current_step_type !== 'string'
+  ) {
+    throw new Error(
+      '[trainingApi] Invalid TacticsCourseCurriculumDTO payload from server (missing batches/woodpecker_days/flagged_puzzles). Ensure Go training-engine v3.0 is running on port 5001. Fail-Fast!',
+    )
+  }
+  return raw as TacticsCourseCurriculumDTO
 }
 
 export const trainingApi = {
@@ -187,6 +212,44 @@ export const trainingApi = {
   getTacticalPuzzleById(puzzleId: string): Promise<TacticalPuzzleV2> {
     const id = assertNonEmptyId('puzzleId', puzzleId)
     return apiClient<TacticalPuzzleV2>(`/training/puzzle/tactics/${encodeURIComponent(id)}`)
+  },
+
+  getCoursePuzzleById(puzzleId: string): Promise<CoursePuzzleV2> {
+    const id = assertNonEmptyId('puzzleId', puzzleId)
+    return apiClient<CoursePuzzleV2>(`/training/puzzle/tactics_course/${encodeURIComponent(id)}`)
+  },
+
+  async getTacticsCourseCurriculum(): Promise<TacticsCourseCurriculumDTO> {
+    const raw = await apiClient<unknown>('/training/tactics-course/curriculum')
+    return assertTacticsCourseCurriculumDTO(raw)
+  },
+
+  composeCrashTestSession(payload: CrashTestSessionRequest = {}): Promise<HydratedSessionDTO> {
+    const body: Record<string, unknown> = {
+      force_restart: payload.force_restart ?? false,
+    }
+    if (typeof payload.jump_to_index === 'number') {
+      body.jump_to_index = payload.jump_to_index
+    }
+    return apiClient<HydratedSessionDTO>('/training/tactics-course/crashtest', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  },
+
+  flagCoursePuzzle(payload: FlagCoursePuzzleRequest): Promise<SessionSummaryDTO | null> {
+    const id = assertNonEmptyId('puzzle_id', payload.puzzle_id)
+    const body: Record<string, unknown> = {
+      puzzle_id: id,
+      comment: payload.comment.trim(),
+    }
+    if (payload.session_id) {
+      body.session_id = payload.session_id.trim()
+    }
+    return apiClient<SessionSummaryDTO | null>('/training/tactics-course/flag', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   },
 
   getEndgamePuzzleById(

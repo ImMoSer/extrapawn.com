@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from '@/entities/user'
 import {
   formatElapsedDuration,
+  isDisciplineVisibleForUser,
   trainingApi,
   resolveDisciplineLabel,
   resolveDifficultyLabel,
@@ -93,6 +94,9 @@ const activeDiagnosticStrip = computed<DiagnosticStripDTO | null>(() => {
   const data = cabinetData.value
   if (!data) return null
   if (selectedDiscipline.value === 'tactics') return data.tactics.diagnostics
+  if (selectedDiscipline.value === 'tactics_course') {
+    return data.tactics_course?.diagnostics ?? null
+  }
   if (selectedDiscipline.value === 'theoretical_endgames') return data.theoretical.diagnostics
   if (selectedDiscipline.value === 'practical_chess') return data.practical.diagnostics
   return data.finishhim.diagnostics
@@ -101,6 +105,9 @@ const activeDiagnosticStrip = computed<DiagnosticStripDTO | null>(() => {
 const activeEndgameMap = computed<EndgameCabinetMapDTO | null>(() => {
   const data = cabinetData.value
   if (!data || selectedDiscipline.value === 'tactics') return null
+  if (selectedDiscipline.value === 'tactics_course') {
+    return data.tactics_course ?? null
+  }
   if (selectedDiscipline.value === 'theoretical_endgames') return data.theoretical
   if (selectedDiscipline.value === 'practical_chess') return data.practical
   return data.finishhim
@@ -111,6 +118,11 @@ const activeGateThreshold = computed<number>(() => {
   if (!data) return 1500
   const discOverview = data.overview.disciplines[selectedDiscipline.value]
   return discOverview.next_tier_gate?.rating_threshold ?? 2000
+})
+
+const visibleRecentCourses = computed<CourseDTO[]>(() => {
+  const courses = cabinetData.value?.recent_courses ?? []
+  return courses.filter((c) => isDisciplineVisibleForUser(c.discipline, authStore.isMo3ep))
 })
 
 function handleOpenTrainingHub(discipline: TrainingDiscipline): void {
@@ -269,7 +281,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
 
         <!-- Recent Courses History Strip -->
         <section
-          v-if="cabinetData.recent_courses.length > 0"
+          v-if="visibleRecentCourses.length > 0"
           class="rounded-xl border border-border bg-surface p-5 shadow-md"
         >
           <div class="flex items-center gap-2 border-b border-border pb-3">
@@ -281,7 +293,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
 
           <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div
-              v-for="course in cabinetData.recent_courses"
+              v-for="course in visibleRecentCourses"
               :key="course.id"
               class="flex flex-col justify-between rounded-lg border bg-canvas p-4 transition-all"
               :class="

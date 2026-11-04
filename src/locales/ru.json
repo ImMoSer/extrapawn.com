@@ -940,6 +940,7 @@
       "subtitle": "Единая система курсов Glicko-2, Метод Дятла (24ч / 3×) и целевая разминка",
       "disciplines": {
         "tactics": "Тактика",
+        "tactics_course": "Классический курс тактики",
         "theoretical_endgames": "Теория эндшпиля",
         "practical_chess": "Практический эндшпиль",
         "finishhim": "Добивание (Finish Him)"

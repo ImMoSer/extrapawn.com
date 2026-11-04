@@ -53,6 +53,9 @@ function formatDelta(val: number): string {
 }
 
 function itemCategory(item: HydratedSessionItem): string {
+  if (item.course_puzzle) {
+    return resolveScopeLabel('scopes', item.course_puzzle.class, t, te)
+  }
   if (item.tactical) {
     const motif =
       item.tactical.geometry_motifs[0] ??
@@ -70,6 +73,7 @@ function itemCategory(item: HydratedSessionItem): string {
 
 function itemRating(item: HydratedSessionItem): number {
   if (item.tactical) return item.tactical.rating
+  if (item.course_puzzle) return item.course_puzzle.rating
   if (item.endgame) return item.endgame.effective_rating
   return 1500
 }

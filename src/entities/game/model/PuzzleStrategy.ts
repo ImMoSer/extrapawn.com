@@ -36,6 +36,10 @@ export interface PuzzlePuzzle {
   user_color?: 'white' | 'black'
   objective?: PuzzleObjective
   domain?: string
+  batch_id?: number
+  batch_title?: string
+  week?: number
+  is_exam?: boolean
   is_woodpecker?: boolean
   woodpecker_streak?: number
   initial_fen: string
@@ -169,7 +173,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       initialBotDelayMs: this.callbacks?.delays?.initialBotDelayMs ?? 500,
       botDelayMs: this.callbacks?.delays?.botDelayMs ?? 250,
       playGameStatusSounds: false,
-      nextPuzzleDelayMs: this.callbacks?.delays?.nextPuzzleDelayMs ?? 2000,
+      nextPuzzleDelayMs: this.callbacks?.delays?.nextPuzzleDelayMs ?? 100,
       restartDelayMs: this.callbacks?.delays?.restartDelayMs ?? 500,
     }
   }
@@ -342,7 +346,10 @@ export class PuzzleStrategy implements IGameplayStrategy {
       if (isCheckmate || this.scenarioIndex >= this.scenarioMoves.length) {
         logger.info('[PuzzleStrategy] Scenario completed successfully.')
 
-        if (isCheckmate || this.puzzle.strategy === 'scenarioOnly') {
+        const isTacticsCourse =
+          this.submode === 'tactics_course' || this.puzzle.puzzle_type === 'tactics_course'
+
+        if (isCheckmate || this.puzzle.strategy === 'scenarioOnly' || isTacticsCourse) {
           await this.triggerSuccess(isCheckmate ? 'checkmate' : 'scenario_complete')
         } else if (this.puzzle.strategy === 'scenarioPlus') {
           this.isPlayoutMode = true
@@ -387,7 +394,13 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   async onBotMoveExecuted(): Promise<void> {
     if (!this.isPlayoutMode && this.scenarioIndex >= this.scenarioMoves.length) {
-      if (this.puzzle.strategy === 'scenarioOnly' || this.submode === 'tactics') {
+      const isTacticsCourse =
+        this.submode === 'tactics_course' || this.puzzle.puzzle_type === 'tactics_course'
+      if (
+        this.puzzle.strategy === 'scenarioOnly' ||
+        this.submode === 'tactics' ||
+        isTacticsCourse
+      ) {
         await this.triggerSuccess('scenario_complete')
       } else if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true

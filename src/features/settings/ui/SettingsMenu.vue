@@ -2,6 +2,8 @@
 import {
   AVAILABLE_BOARDS,
   AVAILABLE_PIECE_SETS,
+  NEXT_PUZZLE_DELAY_STEPS,
+  normalizeNextPuzzleDelayMs,
   useAuthStore,
   usePreferencesStore,
   type UserPreferencesDto,
@@ -80,6 +82,23 @@ watch(isOpen, (newVal) => {
 const handleCrashtestEngineChange = (val: CrashtestEngineId) => {
   draftPreferences.value.gameplay.crashtestEngine = val
 }
+
+const nextPuzzleDelayStepIndex = computed<number>({
+  get: () => {
+    const normalized = normalizeNextPuzzleDelayMs(draftPreferences.value.delays.nextPuzzleDelayMs)
+    const idx = NEXT_PUZZLE_DELAY_STEPS.indexOf(normalized)
+    return idx >= 0 ? idx : 1
+  },
+  set: (idx: number) => {
+    const step = NEXT_PUZZLE_DELAY_STEPS[idx]
+    if (step !== undefined) {
+      draftPreferences.value.delays.nextPuzzleDelayMs = step
+    }
+  },
+})
+
+const formatNextPuzzleDelayTooltip = (idx: number): string =>
+  `${NEXT_PUZZLE_DELAY_STEPS[idx] ?? 0}ms`
 
 const handleSave = async () => {
   changeLang(draftPreferences.value.gameplay.language)
@@ -241,6 +260,41 @@ const handleAuthAction = () => {
                 <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
                   {{ draftPreferences.delays.botDelayMs }}ms
                 </span>
+              </div>
+            </div>
+
+            <!-- Next Puzzle Delay (Unified across all modes: 0, 100, 500, 1000, 2000, 3000 ms) -->
+            <div>
+              <div class="text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary mb-2">
+                {{ t('features.settings.nextPuzzleDelay') }}
+              </div>
+              <div class="flex items-center gap-3.5 mb-2">
+                <NSlider
+                  v-model:value="nextPuzzleDelayStepIndex"
+                  :min="0"
+                  :max="NEXT_PUZZLE_DELAY_STEPS.length - 1"
+                  :step="1"
+                  :format-tooltip="formatNextPuzzleDelayTooltip"
+                />
+                <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
+                  {{ draftPreferences.delays.nextPuzzleDelayMs }}ms
+                </span>
+              </div>
+              <div class="grid grid-cols-6 gap-1 p-1 rounded-md bg-canvas border border-border">
+                <button
+                  v-for="stepMs in NEXT_PUZZLE_DELAY_STEPS"
+                  :key="stepMs"
+                  type="button"
+                  class="py-1 px-1 rounded-sm font-condensed font-bold text-[11px] transition-colors cursor-pointer border text-center"
+                  :class="
+                    draftPreferences.delays.nextPuzzleDelayMs === stepMs
+                      ? 'bg-surface text-text-primary border-border-hover shadow-xs'
+                      : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary'
+                  "
+                  @click="draftPreferences.delays.nextPuzzleDelayMs = stepMs"
+                >
+                  {{ stepMs }}
+                </button>
               </div>
             </div>
 

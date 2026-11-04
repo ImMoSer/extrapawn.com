@@ -8,6 +8,7 @@ import {
   type PuzzlePuzzle,
 } from '@/entities/game'
 import {
+  isDisciplineVisibleForUser,
   resolveBotEngineForDifficulty,
   trainingApi,
   validateBotLadderEngine,
@@ -21,11 +22,13 @@ import {
   type HydratedSessionItem,
   type SessionSummaryDTO,
   type StartCourseRequest,
+  type TacticsCourseCurriculumDTO,
   type TrainingDifficulty,
   type TrainingDiscipline,
+  type TrainingSessionMode,
   type WarmUpSessionRequest,
 } from '@/entities/training'
-import { usePreferencesStore } from '@/entities/user'
+import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { makeSan } from 'chessops/san'
@@ -39,7 +42,7 @@ export type TrainingViewState = 'hub' | 'playing' | 'awaiting_next' | 'analyzing
 export interface SessionReportSummary {
   sessionId: string
   discipline: TrainingDiscipline
-  mode: 'course' | 'warmup'
+  mode: TrainingSessionMode
   difficulty: TrainingDifficulty
   botEngine: BotLadderEngineId
   focusGroup: string
@@ -69,6 +72,7 @@ function extractErrorText(err: unknown, fallback: string): string {
 }
 
 export const useTrainingSessionStore = defineStore('trainingSession', () => {
+  const authStore = useAuthStore()
   const gameStore = useGameStore()
   const boardStore = useBoardStore()
   const preferencesStore = usePreferencesStore()
@@ -79,6 +83,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
   const overview = ref<HubOverviewDTO | null>(null)
   const courseHistory = ref<CourseDTO[]>([])
+  const tacticsCourseCurriculum = ref<TacticsCourseCurriculumDTO | null>(null)
   const activeDiscipline = ref<TrainingDiscipline>('tactics')
   const viewState = ref<TrainingViewState>('hub')
 
@@ -86,8 +91,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const currentItemIndex = ref<number>(0)
 
   const isLoadingOverview = ref<boolean>(false)
+  const isLoadingCurriculum = ref<boolean>(false)
   const isStartingSession = ref<boolean>(false)
   const isSubmittingAttempt = ref<boolean>(false)
+  const isFlaggingPuzzle = ref<boolean>(false)
   const error = ref<string | null>(null)
   const feedbackMessage = ref<string | null>(null)
 
@@ -441,6 +448,8 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       GameAudioEngine.playFeatureError()
     }
 
+    const attemptStartedAt = Date.now()
+
     try {
       const result = await trainingApi.submitAttempt(sessionId, {
         puzzle_id: puzzleId,
@@ -483,12 +492,13 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
       if (activePlayToken !== playToken) return
 
-      const isCrashtestActive = preferencesStore.preferences.gameplay.global_crashtest
+      const isCrashtestActive =
+        authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest
       if (solved || isCrashtestActive) {
-        const delayMs = isCrashtestActive
-          ? preferencesStore.preferences.delays.crashtestDelayMs
-          : preferencesStore.preferences.delays.nextPuzzleDelayMs
-        if (delayMs <= 0) {
+        const configuredDelayMs = preferencesStore.preferences.delays.nextPuzzleDelayMs
+        const elapsedSinceSubmitMs = Math.max(0, Date.now() - attemptStartedAt)
+        const remainingDelayMs = Math.max(0, configuredDelayMs - elapsedSinceSubmitMs)
+        if (remainingDelayMs <= 0) {
           advanceAfterAttempt()
         } else {
           autoNextTimeoutId = setTimeout(() => {
@@ -496,7 +506,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
             if (activePlayToken === playToken) {
               advanceAfterAttempt()
             }
-          }, delayMs)
+          }, remainingDelayMs)
         }
       } else {
         viewState.value = 'awaiting_next'
@@ -522,6 +532,12 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     try {
       const data = await trainingApi.getOverview()
       overview.value = data
+      if (!isDisciplineVisibleForUser(activeDiscipline.value, authStore.isMo3ep)) {
+        activeDiscipline.value = 'tactics'
+      }
+      if (activeDiscipline.value === 'tactics_course') {
+        void fetchTacticsCourseCurriculum()
+      }
       return data
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to load Training Center overview')
@@ -530,6 +546,20 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       throw err
     } finally {
       isLoadingOverview.value = false
+    }
+  }
+
+  async function fetchTacticsCourseCurriculum(): Promise<TacticsCourseCurriculumDTO> {
+    isLoadingCurriculum.value = true
+    try {
+      const data = await trainingApi.getTacticsCourseCurriculum()
+      tacticsCourseCurriculum.value = data
+      return data
+    } catch (err) {
+      logger.error('[TrainingSessionStore] fetchTacticsCourseCurriculum failed:', err)
+      throw err
+    } finally {
+      isLoadingCurriculum.value = false
     }
   }
 
@@ -548,7 +578,13 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   }
 
   function selectDiscipline(discipline: TrainingDiscipline): void {
-    activeDiscipline.value = discipline
+    const safeDiscipline = isDisciplineVisibleForUser(discipline, authStore.isMo3ep)
+      ? discipline
+      : 'tactics'
+    activeDiscipline.value = safeDiscipline
+    if (safeDiscipline === 'tactics_course') {
+      void fetchTacticsCourseCurriculum()
+    }
   }
 
   function dismissPromotionBanner(): void {
@@ -614,6 +650,101 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       throw err
     } finally {
       isStartingSession.value = false
+    }
+  }
+
+  async function startTacticsCourseBatch(
+    batchId: number = 0,
+    forceNew: boolean = false,
+  ): Promise<HydratedSessionDTO> {
+    isStartingSession.value = true
+    error.value = null
+    try {
+      const dto = await trainingApi.composeCourseSession({
+        discipline: 'tactics_course',
+        batch_size: batchId,
+        force_new: forceNew,
+      })
+      applyHydratedSessionAndLaunch(dto)
+      void fetchOverview()
+      void fetchTacticsCourseCurriculum()
+      return dto
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to start Classical Course batch')
+      error.value = msg
+      logger.error('[TrainingSessionStore] startTacticsCourseBatch failed:', err)
+      throw err
+    } finally {
+      isStartingSession.value = false
+    }
+  }
+
+  async function startCrashTestSession(
+    forceRestart: boolean = false,
+    jumpToIndex?: number,
+  ): Promise<HydratedSessionDTO> {
+    if (!authStore.isMo3ep) {
+      throw new Error(
+        '[TrainingSessionStore] Crash-Test mode is restricted to developer (mo3ep). Fail-Fast!',
+      )
+    }
+    isStartingSession.value = true
+    error.value = null
+    try {
+      const dto = await trainingApi.composeCrashTestSession({
+        force_restart: forceRestart,
+        jump_to_index: jumpToIndex,
+      })
+      applyHydratedSessionAndLaunch(dto)
+      void fetchOverview()
+      void fetchTacticsCourseCurriculum()
+      return dto
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to start Crash-Test (3822) session')
+      error.value = msg
+      logger.error('[TrainingSessionStore] startCrashTestSession failed:', err)
+      throw err
+    } finally {
+      isStartingSession.value = false
+    }
+  }
+
+  async function flagCurrentCoursePuzzle(comment: string): Promise<void> {
+    if (!authStore.isMo3ep) {
+      throw new Error(
+        '[TrainingSessionStore] Course QA flagging is restricted to developer (mo3ep). Fail-Fast!',
+      )
+    }
+    const sess = hydratedSession.value
+    const item = currentItem.value
+    if (!sess || !item) return
+
+    isFlaggingPuzzle.value = true
+    error.value = null
+    try {
+      const updatedSession = await trainingApi.flagCoursePuzzle({
+        puzzle_id: item.puzzle_id,
+        comment: comment.trim() || 'Помечено во время прохождения',
+        session_id: sess.session.id,
+      })
+
+      if (item.status === 'pending') {
+        consumeElapsedTimeMs()
+        item.status = 'failed'
+      }
+      if (updatedSession) {
+        sess.session = updatedSession
+      }
+
+      void fetchTacticsCourseCurriculum()
+      advanceAfterAttempt()
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to flag puzzle')
+      error.value = msg
+      logger.error('[TrainingSessionStore] flagCurrentCoursePuzzle failed:', err)
+      throw err
+    } finally {
+      isFlaggingPuzzle.value = false
     }
   }
 
@@ -800,14 +931,17 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     // State
     overview,
     courseHistory,
+    tacticsCourseCurriculum,
     activeDiscipline,
     viewState,
     hydratedSession,
     currentItemIndex,
     currentTimeMs,
     isLoadingOverview,
+    isLoadingCurriculum,
     isStartingSession,
     isSubmittingAttempt,
+    isFlaggingPuzzle,
     error,
     feedbackMessage,
     lastAttemptResult,
@@ -831,12 +965,16 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     // Actions
     fetchOverview,
+    fetchTacticsCourseCurriculum,
     fetchCourseHistory,
     selectDiscipline,
     dismissPromotionBanner,
     startCourse,
     abortCourse,
     startOrResumeCourseBatch,
+    startTacticsCourseBatch,
+    startCrashTestSession,
+    flagCurrentCoursePuzzle,
     startWarmupSession,
     resumeDisciplineSession,
     advanceAfterAttempt,
