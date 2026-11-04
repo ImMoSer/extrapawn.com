@@ -87,6 +87,9 @@ const filteredMenuItems = computed(() => {
           <img
             src="/webp/extra_pawn_black.webp"
             alt="EXTRAPAWN"
+            width="256"
+            height="256"
+            fetchpriority="high"
             class="h-20 w-auto md:h-[clamp(100px,25vh,500px)]"
           />
           <div class="flex flex-col items-center gap-1.5 md:gap-2">

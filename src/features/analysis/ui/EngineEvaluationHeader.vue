@@ -135,6 +135,8 @@ const formatSearchTimeTooltip = (value: number) => {
             <n-button
               quaternary
               circle
+              :title="t('features.analysis.engineSettings')"
+              :aria-label="t('features.analysis.engineSettings')"
               class="text-text-secondary hover:bg-elevated/60 hover:text-text-primary"
             >
               <template #icon>

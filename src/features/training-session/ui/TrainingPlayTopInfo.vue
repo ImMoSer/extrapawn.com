@@ -71,6 +71,11 @@ function handleBackAction(): void {
             ? t('features.trainingCenter.actions.exitAnalysis')
             : t('features.trainingCenter.actions.pauseToHub')
         "
+        :aria-label="
+          store.isAnalysisMode
+            ? t('features.trainingCenter.actions.exitAnalysis')
+            : t('features.trainingCenter.actions.pauseToHub')
+        "
         @click="handleBackAction"
       >
         <template #icon>

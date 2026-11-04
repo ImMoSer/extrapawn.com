@@ -22,6 +22,9 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
         <img
           src="/webp/extra_pawn_black.webp"
           alt="Logo"
+          width="144"
+          height="144"
+          fetchpriority="high"
           class="w-36 h-auto mb-4 object-contain"
         />
         <h1 class="brand-text text-2xl m-0">

@@ -18,14 +18,14 @@ html[data-theme='dark'] {
   --theme-border: #2e2e2e;
   --theme-border-hover: #3e3e3e;
   --theme-text-primary: #ededed;
-  --theme-text-secondary: #9a9a9a;
-  --theme-text-disabled: #525252;
+  --theme-text-secondary: #a1a1aa;
+  --theme-text-disabled: #71717a;
 
   /* Brand & Interactive Accents */
   --theme-brand: #3ecf8e;
   --theme-brand-deep: #24b47e;
   --theme-on-brand: #171717;
-  --theme-accent: #a78bfa;
+  --theme-accent: #b49bff;
   --theme-accent-deep: #8b5cf6;
 
   /* Chess Semantics & Status */
@@ -33,7 +33,7 @@ html[data-theme='dark'] {
   --theme-success-deep: #24b47e;
   --theme-warning: #f4bd50;
   --theme-warning-deep: #d99b26;
-  --theme-danger: #f66061;
+  --theme-danger: #f87171;
   --theme-danger-deep: #e11d48;
   --theme-info: #38bdf8;
   --theme-info-deep: #0284c7;
@@ -64,25 +64,25 @@ html[data-theme='light'] {
   --theme-border: #e4e4e7;
   --theme-border-hover: #d4d4d8;
   --theme-text-primary: #171717;
-  --theme-text-secondary: #64646b;
-  --theme-text-disabled: #a1a1aa;
+  --theme-text-secondary: #52525b;
+  --theme-text-disabled: #71717a;
 
   /* Brand & Interactive Accents */
-  --theme-brand: #10b981;
-  --theme-brand-deep: #059669;
+  --theme-brand: #047857;
+  --theme-brand-deep: #065f46;
   --theme-on-brand: #ffffff;
-  --theme-accent: #7c3aed;
-  --theme-accent-deep: #6d28d9;
+  --theme-accent: #6d28d9;
+  --theme-accent-deep: #5b21b6;
 
   /* Chess Semantics & Status */
-  --theme-success: #16a34a;
-  --theme-success-deep: #15803d;
-  --theme-warning: #d97706;
-  --theme-warning-deep: #b45309;
-  --theme-danger: #dc2626;
-  --theme-danger-deep: #b91c1c;
-  --theme-info: #0284c7;
-  --theme-info-deep: #0369a1;
+  --theme-success: #15803d;
+  --theme-success-deep: #166534;
+  --theme-warning: #b45309;
+  --theme-warning-deep: #92400e;
+  --theme-danger: #b91c1c;
+  --theme-danger-deep: #991b1b;
+  --theme-info: #0369a1;
+  --theme-info-deep: #075985;
   --theme-highlight: #db2777;
   --theme-highlight-light: #ec4899;
 
@@ -195,6 +195,16 @@ body {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Ensure Naive UI close icons meet WCAG 2.2 AA target-size (>= 24x24px) */
+.n-base-close {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.n-alert.n-alert--closable .n-alert-body {
+  padding-right: 48px;
 }
 
 /* Subtle Scrollbar */

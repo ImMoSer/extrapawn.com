@@ -155,7 +155,7 @@ onMounted(() => {
           href="/challenge/records.json"
           target="_blank"
           rel="noopener noreferrer"
-          class="no-underline"
+          class="inline-flex no-underline"
         >
           <NButton size="small" secondary>
             <template #icon>

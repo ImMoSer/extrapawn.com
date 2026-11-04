@@ -5,15 +5,7 @@ import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/entities/user'
-
-import { AboutPage } from '@/pages/about'
-import { LegalPage } from '@/pages/legal'
-import { PricingPage } from '@/pages/pricing'
-import { WelcomePage } from '@/pages/welcome'
-import { ClubPlayerPage } from '@/pages/club-player'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
-
-import { UserCabinetPage } from '@/pages/user-cabinet'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,7 +13,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'welcome',
-      component: WelcomePage,
+      component: () => import('@/pages/welcome').then((m) => m.WelcomePage),
       meta: {
         seo: {
           titleKey: 'seo.welcome.title',
@@ -101,7 +93,7 @@ const router = createRouter({
     {
       path: '/user-cabinet/:id?',
       name: 'user-cabinet',
-      component: UserCabinetPage,
+      component: () => import('@/pages/user-cabinet').then((m) => m.UserCabinetPage),
       meta: {
         requiresAuth: true,
         seo: {
@@ -113,7 +105,7 @@ const router = createRouter({
     {
       path: '/about',
       name: 'about',
-      component: AboutPage,
+      component: () => import('@/pages/about').then((m) => m.AboutPage),
       meta: {
         seo: {
           titleKey: 'seo.about.title',
@@ -124,12 +116,12 @@ const router = createRouter({
     {
       path: '/legal',
       name: 'legal',
-      component: LegalPage,
+      component: () => import('@/pages/legal').then((m) => m.LegalPage),
     },
     {
       path: '/pricing',
       name: 'pricing',
-      component: PricingPage,
+      component: () => import('@/pages/pricing').then((m) => m.PricingPage),
       meta: {
         seo: {
           titleKey: 'seo.pricing.title',
@@ -140,7 +132,7 @@ const router = createRouter({
     {
       path: '/club-player',
       name: 'club-player',
-      component: ClubPlayerPage,
+      component: () => import('@/pages/club-player').then((m) => m.ClubPlayerPage),
     },
     {
       path: '/bonus',

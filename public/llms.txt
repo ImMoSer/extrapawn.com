@@ -1,0 +1,17 @@
+# EXTRAPAWN — Professional Chess Training Ecosystem
+
+> EXTRAPAWN is a high-precision chess training and analytics platform built around structured 7-day and 30-day courses, Woodpecker repetition cycles, FIDE endgame simulators against human-like Maia neural network bots, and deep Stockfish 19 + Coach positional explanations.
+
+## Core Platform Sections
+
+- [Welcome & Mode Overview](https://extrapawn.com/): Main entry point to the EXTRAPAWN chess training ecosystem.
+- [Training Center (7/30-Day Courses)](https://extrapawn.com/training): Structured multi-day chess training courses across Tactics, Finish Him, Practical Chess, and Theoretical Endgames with Woodpecker error-correction loops.
+- [Targeted WarmUp Arena](https://extrapawn.com/warmup): Customizable calibration sessions filtered by tactical motif, endgame piece configuration, or strategic theme.
+- [Challenge Leaderboard & Records](https://extrapawn.com/challenge/records): Public competitive puzzle and endgame challenge records with machine-readable JSON export.
+- [Challenge Records JSON Feed](https://extrapawn.com/challenge/records.json): Direct JSON endpoint for verified challenge records and leaderboards.
+- [User Cabinet & Chess DNA Analytics](https://extrapawn.com/user-cabinet/mo3ep): Comprehensive Lichess player telemetry, Glicko-2 training progression, and endgame mastery heatmaps.
+- [Club Top 20 & Tornado Analytics](https://extrapawn.com/club-player): Lichess team leaderboards and tournament performance tracking.
+- [Pricing & Membership Tiers](https://extrapawn.com/pricing): Overview of Free, Club Member, and Pro training capabilities.
+- [About EXTRAPAWN & Methodology](https://extrapawn.com/about): Detailed documentation of the Bot Ladder (Maia 1500, Maia 2200, T-1000 Stockfish), Glicko-2 rating engine, and training architecture.
+- [Legal & Privacy Information](https://extrapawn.com/legal): Imprint, terms of service, and privacy policy.
+

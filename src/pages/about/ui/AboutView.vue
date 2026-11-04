@@ -80,11 +80,13 @@ const techStackItems = [
           <n-gi v-for="key in conceptKeys" :key="key">
             <n-card
               class="glass relative h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover"
-              :title="t(`about.concept.${key}.title`)"
             >
               <div
                 class="absolute top-0 left-0 h-[2px] w-full bg-brand"
               ></div>
+              <h2 class="m-0 mb-3 font-display text-lg font-bold text-text-primary">
+                {{ t(`about.concept.${key}.title`) }}
+              </h2>
               <n-text class="text-[1.05rem] leading-relaxed">
                 <span
                   v-html="
@@ -115,23 +117,21 @@ const techStackItems = [
                 '--hover-border-color': moduleVisuals[mod].color,
               }"
             >
-              <template #header>
-                <div class="flex items-center gap-4">
-                  <div
-                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-elevated/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-                    :style="{
-                      color: moduleVisuals[mod].color,
-                      boxShadow: 'inset 0 0 10px ' + moduleVisuals[mod].glow,
-                      border: '1px solid ' + moduleVisuals[mod].color,
-                    }"
-                  >
-                    <span class="text-2xl">{{ moduleVisuals[mod].icon }}</span>
-                  </div>
-                  <span class="font-display text-xl font-extrabold tracking-[0.5px] text-text-primary">
-                    {{ t(`about.modules.${mod}.title`) }}
-                  </span>
+              <div class="flex items-center gap-4 pb-3 border-b border-border/60">
+                <div
+                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-elevated/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                  :style="{
+                    color: moduleVisuals[mod].color,
+                    boxShadow: 'inset 0 0 10px ' + moduleVisuals[mod].glow,
+                    border: '1px solid ' + moduleVisuals[mod].color,
+                  }"
+                >
+                  <span class="text-2xl">{{ moduleVisuals[mod].icon }}</span>
                 </div>
-              </template>
+                <h3 class="m-0 font-display text-xl font-extrabold tracking-[0.5px] text-text-primary">
+                  {{ t(`about.modules.${mod}.title`) }}
+                </h3>
+              </div>
               <div class="pt-3">
                 <n-text depth="3" class="text-[0.95rem] leading-[1.7] whitespace-pre-wrap text-text-secondary">
                   <span
@@ -199,9 +199,9 @@ const techStackItems = [
               size="small"
               class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
             >
-              <template #header>
-                <n-text strong>{{ t('about.licenseAndAcknowledgements.stockfish.title') }}</n-text>
-              </template>
+              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+                {{ t('about.licenseAndAcknowledgements.stockfish.title') }}
+              </h3>
               <n-text depth="3">
                 {{ t('about.licenseAndAcknowledgements.stockfish.text1') }}
                 <strong>Stockfish</strong>
@@ -224,11 +224,9 @@ const techStackItems = [
               size="small"
               class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
             >
-              <template #header>
-                <n-text strong>{{
-                  t('about.licenseAndAcknowledgements.neuralNetworks.title')
-                }}</n-text>
-              </template>
+              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+                {{ t('about.licenseAndAcknowledgements.neuralNetworks.title') }}
+              </h3>
               <n-text depth="3">
                 <span
                   v-html="
@@ -248,9 +246,9 @@ const techStackItems = [
               size="small"
               class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
             >
-              <template #header>
-                <n-text strong>{{ t('about.licenseAndAcknowledgements.lcZero.title') }}</n-text>
-              </template>
+              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+                {{ t('about.licenseAndAcknowledgements.lcZero.title') }}
+              </h3>
               <n-text depth="3">
                 <span
                   v-html="
@@ -270,9 +268,9 @@ const techStackItems = [
               size="small"
               class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
             >
-              <template #header>
-                <n-text strong>Chessground & Chessops</n-text>
-              </template>
+              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+                Chessground & Chessops
+              </h3>
               <n-text depth="3">
                 {{ t('about.licenseAndAcknowledgements.chessground.text1') }}
                 <strong>Chessground</strong> & <strong>Chessops</strong>.

@@ -1,0 +1,41 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "EXTRAPAWN",
+    "identifier": "did:web:extrapawn.com",
+    "documentationUrl": "https://extrapawn.com/about",
+    "logoUrl": "https://extrapawn.com/png/logo_512x512.png"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:extrapawn:chess:training-ecosystem",
+      "displayName": "EXTRAPAWN Chess Training & Analytics Guide",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://extrapawn.com/llms.txt",
+      "description": "Structured chess training ecosystem with 7/30-day Woodpecker courses, FIDE endgame playout simulators against Maia neural bots, Stockfish 19 + Coach analysis, and Lichess player analytics.",
+      "tags": [
+        "chess",
+        "tactics",
+        "endgames",
+        "stockfish",
+        "lichess",
+        "training"
+      ],
+      "capabilities": [
+        "ChessTrainingCourses",
+        "TacticalWoodpeckerEngine",
+        "EndgameBotSparring",
+        "StockfishCoachAnalysis",
+        "ChallengeRecordsFeed"
+      ],
+      "representativeQueries": [
+        "Train chess tactics and Woodpecker method courses on EXTRAPAWN",
+        "Practice theoretical and practical chess endgames against Maia neural bots",
+        "Inspect EXTRAPAWN chess challenge records and Lichess player analytics"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "2026-11-04T12:00:00Z"
+    }
+  ]
+}
+

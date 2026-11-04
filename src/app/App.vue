@@ -80,6 +80,7 @@ onUnmounted(() => {
                 type="button"
                 class="p-2 rounded-md flex items-center justify-center bg-transparent border border-transparent text-text-secondary hover:text-text-primary hover:bg-elevated hover:border-border cursor-pointer transition-colors"
                 :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+                :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                 @click="toggleColorMode"
               >
                 <n-icon class="text-[1.25rem]">
@@ -95,12 +96,16 @@ onUnmounted(() => {
                   v-if="isSidebarCollapsed"
                   src="/webp/extra_pawn_black.webp"
                   alt="Logo"
+                  width="28"
+                  height="28"
                   class="w-7 h-7 object-contain"
                 />
                 <div v-else class="flex items-center gap-2.5 w-full">
                   <img
                     src="/webp/extra_pawn_black.webp"
                     alt="EXTRAPAWN"
+                    width="32"
+                    height="32"
                     class="h-8 w-auto object-contain"
                   />
                   <span class="brand-text text-xl m-0">EXTRAPAWN</span>
@@ -118,7 +123,13 @@ onUnmounted(() => {
               bordered
               class="h-14 px-4 flex items-center justify-between bg-surface border-b border-border relative"
             >
-              <n-button quaternary circle @click="openDrawer">
+              <n-button
+                quaternary
+                circle
+                title="Open navigation menu"
+                aria-label="Open navigation menu"
+                @click="openDrawer"
+              >
                 <template #icon>
                   <n-icon>
                     <MenuOutline />
@@ -134,6 +145,8 @@ onUnmounted(() => {
                 <img
                   src="/webp/extra_pawn_black.webp"
                   alt="EXTRAPAWN"
+                  width="24"
+                  height="24"
                   class="h-6 w-auto object-contain"
                 />
                 <span class="brand-text text-base m-0 whitespace-nowrap">EXTRAPAWN</span>
@@ -144,6 +157,7 @@ onUnmounted(() => {
                   type="button"
                   class="p-2 rounded-md flex items-center justify-center bg-transparent border border-transparent text-text-secondary hover:text-text-primary hover:bg-elevated cursor-pointer transition-colors"
                   :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+                  :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                   @click="toggleColorMode"
                 >
                   <n-icon class="text-[1.25rem]">

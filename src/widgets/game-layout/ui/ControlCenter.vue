@@ -58,6 +58,7 @@ const sidebarStore = useSidebarStore()
       <button
         type="button"
         :title="t('shared.board.pgn.startOfGame')"
+        :aria-label="t('shared.board.pgn.startOfGame')"
         class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
         @click="gameStore.navigatePgn('start')"
       >
@@ -66,6 +67,7 @@ const sidebarStore = useSidebarStore()
       <button
         type="button"
         :title="t('shared.board.pgn.moveBack')"
+        :aria-label="t('shared.board.pgn.moveBack')"
         class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
         @click="gameStore.navigatePgn('backward')"
       >
@@ -74,6 +76,7 @@ const sidebarStore = useSidebarStore()
       <button
         type="button"
         :title="t('shared.board.pgn.moveForward')"
+        :aria-label="t('shared.board.pgn.moveForward')"
         class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
         @click="gameStore.navigatePgn('forward')"
       >
@@ -82,6 +85,7 @@ const sidebarStore = useSidebarStore()
       <button
         type="button"
         :title="t('shared.board.pgn.endOfGame')"
+        :aria-label="t('shared.board.pgn.endOfGame')"
         class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
         @click="gameStore.navigatePgn('end')"
       >
@@ -93,6 +97,7 @@ const sidebarStore = useSidebarStore()
       <button
         type="button"
         :title="t('shared.board.pgn.flipBoard')"
+        :aria-label="t('shared.board.pgn.flipBoard')"
         class="p-1.5 rounded-sm text-text-secondary hover:text-brand hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
         @click="boardStore.flipBoard()"
       >

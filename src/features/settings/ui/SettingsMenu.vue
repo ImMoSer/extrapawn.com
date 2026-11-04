@@ -103,6 +103,7 @@ const handleAuthAction = () => {
       type="button"
       class="p-2 rounded-md flex items-center justify-center bg-transparent border border-transparent text-text-secondary hover:text-text-primary hover:bg-elevated hover:border-border cursor-pointer transition-colors"
       :title="t('features.settings.title')"
+      :aria-label="t('features.settings.title')"
       @click="isOpen = true"
     >
       <NIcon class="text-[1.25rem]">

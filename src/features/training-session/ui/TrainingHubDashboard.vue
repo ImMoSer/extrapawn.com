@@ -572,7 +572,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
             <span class="w-1.5 h-1.5 rounded-full bg-warning" />
             {{ t('features.trainingCenter.session.unfinishedBadge') }}
           </span>
-          <span v-else class="text-[11px] text-text-disabled">
+          <span v-else class="text-[11px] text-text-secondary">
             {{ t('features.trainingCenter.course.noActiveCourseShort') }}
           </span>
         </div>

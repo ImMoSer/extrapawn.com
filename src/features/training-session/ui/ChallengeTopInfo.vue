@@ -79,6 +79,7 @@ function handleBackAction(): void {
         size="small"
         type="error"
         :title="t('features.trainingCenter.actions.backToHub')"
+        :aria-label="t('features.trainingCenter.actions.backToHub')"
         @click="handleBackAction"
       >
         <template #icon>
