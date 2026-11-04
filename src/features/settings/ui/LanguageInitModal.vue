@@ -46,49 +46,47 @@ const handleSelectLanguage = async (lang: 'ru' | 'de' | 'en') => {
   <Teleport to="body">
     <div
       v-if="shouldShow"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-void/80 p-4 backdrop-blur-md"
+      class="fixed inset-0 z-9999 flex items-center justify-center bg-canvas/85 p-4"
     >
       <div
-        class="relative flex w-full max-w-md flex-col items-center rounded-2xl border border-neon-cyan/30 bg-surface p-6 text-center text-text-primary sm:p-8"
+        class="relative flex w-full max-w-md flex-col items-center rounded-xl border border-border bg-surface p-6 text-center text-text-primary shadow-lg sm:p-8"
       >
         <!-- Top Icon Badge -->
         <div
-          class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-neon-cyan/30 bg-neon-cyan/10 text-neon-cyan"
+          class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-elevated text-brand"
         >
-          <NIcon size="32">
+          <NIcon size="26">
             <GlobeOutline />
           </NIcon>
         </div>
 
         <!-- Header -->
-        <h2
-          class="mb-2 bg-gradient-to-br from-neon-cyan to-info-deep bg-clip-text font-display text-2xl font-bold text-transparent"
-        >
+        <h2 class="mb-2 font-display text-xl font-semibold text-text-primary">
           Выберите ваш язык / Select Language
         </h2>
         <p class="mb-6 text-sm leading-relaxed text-text-secondary">
-          Пожалуйста, выберите язык для интерфейса и общения с ИИ-тренером<br />
+          Пожалуйста, выберите язык для интерфейса и аналитики<br />
           <span class="text-xs text-text-secondary">Choose your language / Wähle deine Sprache</span>
         </p>
 
         <!-- Language Buttons Grid -->
-        <div class="flex w-full flex-col gap-3">
+        <div class="flex w-full flex-col gap-2.5">
           <button
             type="button"
             :disabled="isSaving"
-            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-xl border border-border/60 bg-surface px-5 py-3.5 text-base font-semibold text-text-primary transition-all hover:border-neon-cyan hover:bg-neon-cyan/10 disabled:opacity-50"
+            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-elevated/40 px-4 py-3 text-base font-medium text-text-primary transition-colors hover:border-brand hover:bg-elevated disabled:opacity-50"
             @click="handleSelectLanguage('ru')"
           >
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🇷🇺</span>
+              <span class="text-xl">🇷🇺</span>
               <div class="flex flex-col items-start">
-                <span class="text-sm font-bold text-text-primary group-hover:text-neon-cyan">
+                <span class="text-sm font-semibold text-text-primary">
                   Русский
                 </span>
                 <span class="text-xs text-text-secondary">Russian</span>
               </div>
             </div>
-            <NIcon size="20" class="text-text-secondary group-hover:text-neon-cyan">
+            <NIcon size="20" class="text-text-secondary group-hover:text-brand">
               <CheckmarkCircleOutline />
             </NIcon>
           </button>
@@ -96,19 +94,19 @@ const handleSelectLanguage = async (lang: 'ru' | 'de' | 'en') => {
           <button
             type="button"
             :disabled="isSaving"
-            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-xl border border-border/60 bg-surface px-5 py-3.5 text-base font-semibold text-text-primary transition-all hover:border-neon-cyan hover:bg-neon-cyan/10 disabled:opacity-50"
+            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-elevated/40 px-4 py-3 text-base font-medium text-text-primary transition-colors hover:border-brand hover:bg-elevated disabled:opacity-50"
             @click="handleSelectLanguage('de')"
           >
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🇩🇪</span>
+              <span class="text-xl">🇩🇪</span>
               <div class="flex flex-col items-start">
-                <span class="text-sm font-bold text-text-primary group-hover:text-neon-cyan">
+                <span class="text-sm font-semibold text-text-primary">
                   Deutsch
                 </span>
                 <span class="text-xs text-text-secondary">German</span>
               </div>
             </div>
-            <NIcon size="20" class="text-text-secondary group-hover:text-neon-cyan">
+            <NIcon size="20" class="text-text-secondary group-hover:text-brand">
               <CheckmarkCircleOutline />
             </NIcon>
           </button>
@@ -116,19 +114,19 @@ const handleSelectLanguage = async (lang: 'ru' | 'de' | 'en') => {
           <button
             type="button"
             :disabled="isSaving"
-            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-xl border border-border/60 bg-surface px-5 py-3.5 text-base font-semibold text-text-primary transition-all hover:border-neon-cyan hover:bg-neon-cyan/10 disabled:opacity-50"
+            class="group box-border flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-elevated/40 px-4 py-3 text-base font-medium text-text-primary transition-colors hover:border-brand hover:bg-elevated disabled:opacity-50"
             @click="handleSelectLanguage('en')"
           >
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🇬🇧</span>
+              <span class="text-xl">🇬🇧</span>
               <div class="flex flex-col items-start">
-                <span class="text-sm font-bold text-text-primary group-hover:text-neon-cyan">
+                <span class="text-sm font-semibold text-text-primary">
                   English
                 </span>
                 <span class="text-xs text-text-secondary">English</span>
               </div>
             </div>
-            <NIcon size="20" class="text-text-secondary group-hover:text-neon-cyan">
+            <NIcon size="20" class="text-text-secondary group-hover:text-brand">
               <CheckmarkCircleOutline />
             </NIcon>
           </button>

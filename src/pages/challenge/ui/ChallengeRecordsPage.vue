@@ -39,26 +39,26 @@ const DISCIPLINE_SEGMENTS: readonly DisciplineSegmentConfig[] = [
   {
     discipline: 'tactics',
     field: 'tactics_points',
-    barClass: 'bg-neon-cyan',
-    dotClass: 'bg-neon-cyan',
-    textClass: 'text-neon-cyan',
-    badgeClass: 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40',
+    barClass: 'bg-brand',
+    dotClass: 'bg-brand',
+    textClass: 'text-brand',
+    badgeClass: 'bg-brand/15 text-brand border-brand/40',
   },
   {
     discipline: 'finishhim',
     field: 'finishhim_points',
-    barClass: 'bg-neon-purple',
-    dotClass: 'bg-neon-purple',
-    textClass: 'text-neon-purple',
-    badgeClass: 'bg-neon-purple/15 text-neon-purple border-neon-purple/40',
+    barClass: 'bg-accent',
+    dotClass: 'bg-accent',
+    textClass: 'text-accent',
+    badgeClass: 'bg-accent/15 text-accent border-accent/40',
   },
   {
     discipline: 'practical_chess',
     field: 'practical_points',
-    barClass: 'bg-success',
-    dotClass: 'bg-success',
-    textClass: 'text-success',
-    badgeClass: 'bg-success/15 text-success border-success/40',
+    barClass: 'bg-info',
+    dotClass: 'bg-info',
+    textClass: 'text-info',
+    badgeClass: 'bg-info/15 text-info border-info/40',
   },
   {
     discipline: 'theoretical_endgames',
@@ -174,7 +174,7 @@ onMounted(() => {
     </div>
 
     <!-- Main Leaderboard Card -->
-    <div class="rounded-lg border border-border bg-surface/90 backdrop-blur-md overflow-hidden shadow-lg">
+    <div class="rounded-lg border border-border bg-surface overflow-hidden shadow-lg">
       <!-- Table Top Header + Discipline Color Legend -->
       <div class="p-4 bg-elevated/80 border-b border-border flex flex-col gap-3">
         <div class="flex items-center justify-between flex-wrap gap-2">
@@ -251,7 +251,7 @@ onMounted(() => {
           class="p-3.5 sm:px-5 sm:py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-6 transition-colors"
           :class="
             row.user_id === authStore.userProfile?.id
-              ? 'bg-neon-cyan/8 border-l-3 border-l-neon-cyan'
+              ? 'bg-elevated/60 border-l-3 border-l-brand'
               : 'hover:bg-elevated/40'
           "
         >
@@ -263,7 +263,7 @@ onMounted(() => {
                 row.rank === 1 && row.total_points > 0
                   ? 'bg-warning/20 text-warning border-warning/50'
                   : row.rank === 2 && row.total_points > 0
-                    ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40'
+                    ? 'bg-info/15 text-info border-info/40'
                     : row.rank === 3 && row.total_points > 0
                       ? 'bg-orange/15 text-orange border-orange/40'
                       : 'bg-elevated text-text-secondary border-border',
@@ -279,7 +279,7 @@ onMounted(() => {
                 </span>
                 <span
                   v-if="row.user_id === authStore.userProfile?.id"
-                  class="px-1.5 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 shrink-0"
+                  class="px-1.5 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40 shrink-0"
                 >
                   {{ t('features.leaderboards.sidebar.currentUser') }}
                 </span>

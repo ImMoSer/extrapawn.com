@@ -292,22 +292,14 @@ function handleOpenTrainingCenter(): void {
 
       <!-- Certificate Frame -->
       <article
-        class="relative overflow-hidden rounded-xl border-2 border-neon-cyan/50 bg-surface p-6 shadow-xl sm:p-8"
+        class="relative overflow-hidden rounded-xl border border-border-hover bg-surface p-6 shadow-md sm:p-8"
       >
-        <!-- Decorative Corner Glows -->
-        <div
-          class="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-neon-cyan/10 blur-3xl"
-        />
-        <div
-          class="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-neon-purple/10 blur-3xl"
-        />
-
         <!-- Certificate Header -->
         <header
           class="relative flex flex-col items-start justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center"
         >
           <div class="space-y-1.5">
-            <div class="inline-flex items-center gap-2 rounded border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1 font-condensed text-xs font-bold tracking-widest text-neon-cyan uppercase">
+            <div class="inline-flex items-center gap-2 rounded border border-brand/40 bg-brand/10 px-3 py-1 font-condensed text-xs font-bold tracking-widest text-brand uppercase">
               <NIcon :component="RibbonOutline" class="text-sm" />
               {{ t('features.trainingCenter.diploma.badge') }} · EXTRAPAWN
             </div>
@@ -333,7 +325,7 @@ function handleOpenTrainingCenter(): void {
 
         <!-- Recipient & Course Identity Strip -->
         <section
-          class="relative mt-6 grid grid-cols-1 gap-4 rounded-lg border border-border bg-void/70 p-5 sm:grid-cols-2 lg:grid-cols-4"
+          class="relative mt-6 grid grid-cols-1 gap-4 rounded-lg border border-border bg-canvas p-5 sm:grid-cols-2 lg:grid-cols-4"
         >
           <!-- Player -->
           <div class="flex flex-col justify-between">
@@ -341,7 +333,7 @@ function handleOpenTrainingCenter(): void {
               {{ t('features.trainingCenter.diploma.awardedTo') }}
             </span>
             <div class="mt-1 flex items-baseline gap-2">
-              <span class="font-display text-xl font-bold text-neon-cyan truncate">
+              <span class="font-display text-xl font-bold text-text-primary truncate">
                 @{{ diploma.username }}
               </span>
             </div>
@@ -349,7 +341,7 @@ function handleOpenTrainingCenter(): void {
               :href="`https://lichess.org/@/${encodeURIComponent(diploma.username)}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-1 inline-block font-condensed text-xs text-text-secondary hover:text-neon-cyan transition-colors"
+              class="mt-1 inline-block font-condensed text-xs text-text-secondary hover:text-brand transition-colors"
             >
               {{ t('features.trainingCenter.diploma.lichessProfileLink') }}
             </a>
@@ -363,7 +355,7 @@ function handleOpenTrainingCenter(): void {
             <div class="mt-1 font-display text-lg font-bold text-text-primary">
               {{ resolveDisciplineLabel(diploma.course.discipline, t) }}
             </div>
-            <span class="mt-1 font-condensed text-xs text-neon-purple">
+            <span class="mt-1 font-condensed text-xs text-accent">
               {{
                 t('features.trainingCenter.course.quotaTarget', {
                   count: diploma.course.target_puzzles,
@@ -436,9 +428,9 @@ function handleOpenTrainingCenter(): void {
           <div class="rounded-lg border border-border bg-elevated p-4 flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-text-secondary uppercase font-condensed">
               <span>{{ t('features.trainingCenter.diploma.kpiAccuracyTitle') }}</span>
-              <NIcon :component="SparklesOutline" class="text-neon-cyan text-base" />
+              <NIcon :component="SparklesOutline" class="text-brand text-base" />
             </div>
-            <div class="mt-2 font-condensed text-2xl font-bold text-neon-cyan">
+            <div class="mt-2 font-condensed text-2xl font-bold text-text-primary">
               {{ diploma.accuracy_percent }}%
             </div>
             <div class="mt-1 font-condensed text-xs text-text-secondary">
@@ -473,7 +465,7 @@ function handleOpenTrainingCenter(): void {
           <div class="rounded-lg border border-border bg-elevated p-4 flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-text-secondary uppercase font-condensed">
               <span>{{ t('features.trainingCenter.diploma.kpiRatingTitle') }}</span>
-              <NIcon :component="FlashOutline" class="text-neon-purple text-base" />
+              <NIcon :component="FlashOutline" class="text-accent text-base" />
             </div>
             <template
               v-if="
@@ -520,7 +512,7 @@ function handleOpenTrainingCenter(): void {
           v-if="diploma.summary.has_detailed_telemetry && (diploma.summary.total_time_ms ?? 0) > 0"
           class="mt-3.5 grid grid-cols-1 gap-3.5 sm:grid-cols-2"
         >
-          <div class="rounded-lg border border-border bg-void/60 p-4 flex items-center justify-between">
+          <div class="rounded-lg border border-border bg-canvas p-4 flex items-center justify-between">
             <div>
               <div class="text-xs font-condensed uppercase text-text-secondary">
                 {{ t('features.trainingCenter.diploma.kpiBoardTimeTitle') }}
@@ -533,12 +525,12 @@ function handleOpenTrainingCenter(): void {
                 }}
               </div>
             </div>
-            <div class="font-condensed text-xl font-bold text-neon-cyan">
+            <div class="font-condensed text-xl font-bold text-text-primary">
               {{ formatBoardTimeMs(diploma.summary.total_time_ms) }}
             </div>
           </div>
 
-          <div class="rounded-lg border border-border bg-void/60 p-4 flex items-center justify-between">
+          <div class="rounded-lg border border-border bg-canvas p-4 flex items-center justify-between">
             <div>
               <div class="text-xs font-condensed uppercase text-text-secondary">
                 {{ t('features.trainingCenter.diploma.kpiWoodpeckerTitle') }}
@@ -552,7 +544,7 @@ function handleOpenTrainingCenter(): void {
                 }}
               </div>
             </div>
-            <div class="font-condensed text-xl font-bold text-neon-purple">
+            <div class="font-condensed text-xl font-bold text-accent">
               3/3: {{ diploma.summary.woodpecker_graduated ?? 0 }}
             </div>
           </div>
@@ -561,7 +553,7 @@ function handleOpenTrainingCenter(): void {
         <!-- Detailed Scope Breakdown (when present in summary_json) -->
         <section
           v-if="scopeSections.length > 0"
-          class="mt-6 rounded-lg border border-border bg-void/50 p-5 space-y-5"
+          class="mt-6 rounded-lg border border-border bg-canvas p-5 space-y-5"
         >
           <h2 class="font-display text-sm font-bold tracking-wider text-text-primary uppercase border-b border-border pb-2.5">
             {{ t('features.trainingCenter.diploma.scopesSectionTitle') }}
@@ -572,7 +564,7 @@ function handleOpenTrainingCenter(): void {
             :key="section.id"
             class="space-y-2.5"
           >
-            <h3 class="font-condensed text-xs font-bold tracking-wider text-neon-cyan uppercase">
+            <h3 class="font-condensed text-xs font-bold tracking-wider text-text-secondary uppercase">
               {{ section.title }}
             </h3>
 
@@ -603,7 +595,7 @@ function handleOpenTrainingCenter(): void {
                       item.accuracyPct >= 85
                         ? 'bg-success'
                         : item.accuracyPct >= 65
-                          ? 'bg-neon-cyan'
+                          ? 'bg-brand'
                           : 'bg-warning'
                     "
                     :style="{ width: `${item.accuracyPct}%` }"
@@ -620,7 +612,7 @@ function handleOpenTrainingCenter(): void {
         >
           <div class="flex flex-wrap items-center gap-5 font-condensed text-xs text-text-secondary">
             <div class="flex items-center gap-1.5">
-              <NIcon :component="CalendarOutline" class="text-neon-cyan" />
+              <NIcon :component="CalendarOutline" class="text-text-secondary" />
               <span>{{ t('features.trainingCenter.diploma.timelineStart') }}:</span>
               <strong class="text-text-primary">{{ formatDateTime(diploma.course.started_at) }}</strong>
             </div>
@@ -631,7 +623,7 @@ function handleOpenTrainingCenter(): void {
             </div>
           </div>
 
-          <div class="font-condensed text-[11px] font-bold tracking-widest text-neon-purple uppercase">
+          <div class="font-condensed text-[11px] font-bold tracking-widest text-accent uppercase">
             {{ t('features.trainingCenter.diploma.verifiedStamp') }}
           </div>
         </footer>

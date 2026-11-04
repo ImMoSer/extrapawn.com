@@ -98,7 +98,7 @@ const renderUsername = (row: ClubPlayer) => {
       {
         href: `https://lichess.org/@/${row.lichess_id}`,
         target: '_blank',
-        style: { color: 'var(--color-neon-cyan)', textDecoration: 'none', fontWeight: '800' },
+        style: { color: 'var(--color-brand)', textDecoration: 'none', fontWeight: '800' },
       },
       row.username,
     ),
@@ -146,7 +146,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
       render: (row: ClubPlayer) =>
         h(
           'span',
-          { style: { fontWeight: '900', color: 'var(--color-neon-purple)' } },
+          { style: { fontWeight: '900', color: 'var(--color-accent)' } },
           row.vector,
         ),
     },
@@ -200,7 +200,7 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
           align-text
           class="!mb-6 text-center font-display font-extrabold tracking-[2px] uppercase"
         >
-          <n-text class="!text-neon-cyan">ExtraPawn Club Top 20</n-text>
+          <n-text class="text-text-primary">ExtraPawn Club Top 20</n-text>
         </n-h1>
 
         <n-card

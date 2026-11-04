@@ -20,74 +20,81 @@ const sidebarStore = useSidebarStore()
 </script>
 
 <template>
-  <div class="h-12 w-full px-4 bg-surface/80 backdrop-blur-md border border-border rounded-xl shadow-flat flex items-center justify-between gap-3 select-none">
+  <div class="h-12 w-full px-3.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-3 select-none">
     <!-- Left: Sidebar Mode Toggles (EXP - COACH) -->
     <div class="flex items-center gap-1.5">
       <button
         v-if="!coachStore.isFairPlayLocked"
-        @click="sidebarStore.setMode('explorer')"
+        type="button"
         :title="t('shared.board.pgn.modeExplorer')"
-        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
+        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-colors cursor-pointer"
         :class="
           sidebarStore.activeMode === 'explorer'
-            ? 'bg-success/15 text-success border-success/40 shadow-[0_0_10px_color-mix(in_srgb,var(--color-success)_20%,transparent)]'
-            : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
+            ? 'bg-elevated text-text-primary border-border-hover'
+            : 'bg-transparent text-text-secondary border-transparent hover:border-border hover:text-text-primary hover:bg-elevated/60'
         "
+        @click="sidebarStore.setMode('explorer')"
       >
         STOCKFISH
       </button>
 
       <button
-        @click="sidebarStore.setMode('coach')"
+        type="button"
         :title="t('shared.board.pgn.modeCoach')"
-        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-all duration-150 cursor-pointer"
+        class="px-2.5 py-1 rounded-md text-[11px] font-condensed font-bold border transition-colors cursor-pointer"
         :class="
           sidebarStore.activeMode === 'coach'
-            ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/40 shadow-[0_0_10px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)]'
-            : 'bg-elevated/60 text-text-secondary border-border hover:border-border-hover hover:text-text-primary hover:bg-elevated'
+            ? 'bg-elevated text-brand border-brand/40'
+            : 'bg-transparent text-text-secondary border-transparent hover:border-border hover:text-text-primary hover:bg-elevated/60'
         "
+        @click="sidebarStore.setMode('coach')"
       >
         COACH
       </button>
     </div>
 
     <!-- Center: Controls (PGN Navigation + Board Flip) -->
-    <div class="flex items-center gap-1 bg-elevated/80 border border-border p-1 rounded-lg shadow-inner">
+    <div class="flex items-center gap-1 bg-elevated border border-border p-1 rounded-md">
       <button
-        @click="gameStore.navigatePgn('start')"
+        type="button"
         :title="t('shared.board.pgn.startOfGame')"
-        class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
+        class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        @click="gameStore.navigatePgn('start')"
       >
         <n-icon size="16"><PlaySkipBackOutline /></n-icon>
       </button>
       <button
-        @click="gameStore.navigatePgn('backward')"
+        type="button"
         :title="t('shared.board.pgn.moveBack')"
-        class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
+        class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        @click="gameStore.navigatePgn('backward')"
       >
         <n-icon size="16"><ChevronBackOutline /></n-icon>
       </button>
       <button
-        @click="gameStore.navigatePgn('forward')"
+        type="button"
         :title="t('shared.board.pgn.moveForward')"
-        class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
+        class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        @click="gameStore.navigatePgn('forward')"
       >
         <n-icon size="16"><ChevronForwardOutline /></n-icon>
       </button>
       <button
-        @click="gameStore.navigatePgn('end')"
+        type="button"
         :title="t('shared.board.pgn.endOfGame')"
-        class="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
+        class="p-1.5 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        @click="gameStore.navigatePgn('end')"
       >
         <n-icon size="16"><PlaySkipForwardOutline /></n-icon>
       </button>
 
-      <div class="h-4 w-[1px] bg-border mx-0.5" />
+      <div class="h-4 w-px bg-border mx-0.5" />
 
       <button
-        @click="boardStore.flipBoard()"
+        type="button"
         :title="t('shared.board.pgn.flipBoard')"
-        class="p-1.5 rounded-md text-text-secondary hover:text-neon-cyan hover:bg-surface/80 transition-colors cursor-pointer flex items-center justify-center"
+        class="p-1.5 rounded-sm text-text-secondary hover:text-brand hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        @click="boardStore.flipBoard()"
       >
         <n-icon size="16"><SwapVerticalOutline /></n-icon>
       </button>

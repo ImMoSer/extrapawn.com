@@ -68,13 +68,13 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
   <div class="flex w-full flex-col gap-2">
     <div
       v-if="isAnalysisActive"
-      class="min-h-[90px] overflow-hidden rounded-md border border-border bg-void/60 p-1 backdrop-blur-md"
+      class="min-h-[90px] overflow-hidden rounded-md border border-border bg-canvas p-1"
     >
       <div v-if="formattedLines.length > 0" class="flex flex-col gap-1">
         <div
           v-for="line in formattedLines"
           :key="line.id"
-          class="flex items-center gap-2 rounded bg-surface/50 px-1.5 py-0.5 font-condensed"
+          class="flex items-center gap-2 rounded bg-surface px-1.5 py-0.5 font-condensed"
         >
           <n-text class="min-w-[20px] text-right font-condensed text-xs" depth="3">{{
             line.depth
@@ -91,7 +91,7 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
           <n-tooltip trigger="hover">
             <template #trigger>
               <n-text
-                class="cursor-pointer overflow-hidden font-condensed text-sm text-ellipsis whitespace-nowrap hover:text-neon-cyan"
+                class="cursor-pointer overflow-hidden font-condensed text-sm text-ellipsis whitespace-nowrap hover:text-brand"
                 @click="handleLineClick(line)"
               >
                 {{ line.formattedPv }}

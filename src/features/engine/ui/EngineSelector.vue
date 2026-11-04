@@ -70,13 +70,14 @@ onUnmounted(() => {
     @click="handleEngineSelectorClick"
   >
     <button
-      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-border bg-elevated px-2.5 py-2 text-xs font-bold whitespace-nowrap text-text-primary transition-colors hover:enabled:border-neon-cyan disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5 sm:text-sm"
+      type="button"
+      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-text-primary transition-colors hover:enabled:border-border-hover hover:enabled:bg-elevated disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
       :disabled="!isAuthenticated"
       :title="!isAuthenticated ? t('shared.auth.requiredForAction') : t('features.engine.select')"
     >
       {{ ENGINE_NAMES[selectedEngine] }}
       <span
-        class="text-xs transition-transform duration-200"
+        class="text-[10px] text-text-secondary transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
       >
         ▼
@@ -84,16 +85,17 @@ onUnmounted(() => {
     </button>
     <div
       v-if="isOpen && isAuthenticated"
-      class="absolute top-[calc(100%+5px)] right-0 z-[1010] flex max-h-[60vh] w-max min-w-full flex-col overflow-y-auto rounded-xl border border-border-hover bg-surface"
+      class="absolute top-[calc(100%+4px)] right-0 z-1010 flex max-h-[60vh] w-max min-w-full flex-col overflow-y-auto rounded-lg border border-border bg-overlay p-1 shadow-lg"
     >
       <button
         v-for="engine in availableEngines"
         :key="engine"
-        class="w-full cursor-pointer border-none px-3.5 py-2 text-left text-xs whitespace-nowrap transition-colors sm:py-2.5 sm:text-sm"
+        type="button"
+        class="w-full cursor-pointer rounded-sm border-none px-3 py-1.5 text-left text-xs whitespace-nowrap transition-colors sm:py-2 sm:text-sm"
         :class="
           engine === selectedEngine
-            ? 'bg-neon-cyan font-bold text-void'
-            : 'bg-transparent text-text-primary hover:bg-border-hover'
+            ? 'bg-elevated font-semibold text-brand'
+            : 'bg-transparent text-text-primary hover:bg-elevated/60'
         "
         @click.stop="selectEngine(engine)"
       >

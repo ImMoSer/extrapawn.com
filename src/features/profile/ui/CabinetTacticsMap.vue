@@ -137,7 +137,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     <div class="flex flex-col justify-between gap-4 border-b border-border pb-4 md:flex-row md:items-center">
       <div>
         <div class="flex items-center gap-2">
-          <NIcon :component="LayersOutline" class="text-lg text-neon-cyan" />
+          <NIcon :component="LayersOutline" class="text-lg text-text-secondary" />
           <h2 class="font-display text-lg font-bold tracking-wider text-text-primary uppercase">
             {{ t('pages.userCabinet.map.tacticsTitle') }}
           </h2>
@@ -154,8 +154,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'weakest'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'weakest'"
         >
@@ -166,8 +166,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'blind_spots'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'blind_spots'"
         >
@@ -178,8 +178,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'strongest'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'strongest'"
         >
@@ -191,10 +191,10 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     <!-- Main 2-Column Split: Left Structural Compass + Right 4 Motif Contours -->
     <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-12">
       <!-- Left Column: Structural Compass (Phases, Lengths, Goals, Cognitive, Master Game) -->
-      <div class="space-y-4 rounded-xl border border-border bg-void/40 p-4 lg:col-span-5">
+      <div class="space-y-4 rounded-xl border border-border bg-canvas p-4 lg:col-span-5">
         <div class="flex items-center justify-between border-b border-border pb-2.5">
           <div class="flex items-center gap-2">
-            <NIcon :component="CompassOutline" class="text-base text-neon-purple" />
+            <NIcon :component="CompassOutline" class="text-base text-accent" />
             <span class="text-xs font-bold tracking-wider text-text-primary uppercase">
               {{ t('pages.userCabinet.map.structuralCompass') }}
             </span>
@@ -234,7 +234,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                   </span>
                   <button
                     type="button"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded border border-border bg-elevated px-2 py-0.5 text-[11px] font-semibold text-neon-cyan transition-colors hover:border-neon-cyan/50 hover:bg-neon-cyan/10"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded border border-border bg-elevated px-2 py-0.5 text-[11px] font-semibold text-brand transition-colors hover:border-brand/50 hover:bg-brand/10"
                     :title="t('pages.userCabinet.diagnostics.trainWarmup')"
                     @click="
                       emit('trainScope', {
@@ -249,7 +249,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
               </div>
 
               <!-- Horizontal Bullet-Bar -->
-              <div class="relative mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-void">
+              <div class="relative mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-elevated">
                 <div
                   class="h-full rounded-full transition-all duration-300"
                   :class="resolveStatusSemanticClass(stat).barClass"
@@ -266,7 +266,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Right Column: 4 Combat Motif Contour Tabs -->
-      <div class="rounded-xl border border-border bg-void/40 p-4 lg:col-span-7">
+      <div class="rounded-xl border border-border bg-canvas p-4 lg:col-span-7">
         <!-- 4 Contour Selector Tabs -->
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <button
@@ -276,7 +276,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
             class="cursor-pointer rounded-lg border px-3 py-2 text-left transition-all"
             :class="
               activeContour === contour
-                ? 'border-neon-cyan bg-neon-cyan/10 text-neon-cyan shadow-sm'
+                ? 'border-border-hover bg-elevated text-text-primary shadow-sm'
                 : 'border-border bg-surface text-text-secondary hover:border-border-hover hover:text-text-primary'
             "
             @click="activeContour = contour"
@@ -324,7 +324,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 
                 <button
                   type="button"
-                  class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-neon-cyan/40 bg-neon-cyan/10 px-2.5 py-1 text-xs font-bold text-neon-cyan transition-colors hover:bg-neon-cyan/20"
+                  class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
                   @click="
                     emit('trainScope', {
                       focusGroup: activeContour,
@@ -339,7 +339,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
             </div>
 
             <!-- Horizontal Bullet-Bar -->
-            <div class="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-void">
+            <div class="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-elevated">
               <div
                 class="h-full rounded-full transition-all duration-300"
                 :class="resolveStatusSemanticClass(item.motif).barClass"

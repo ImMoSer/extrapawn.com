@@ -131,10 +131,10 @@ function handleGoToCabinet(): void {
     <!-- Promotion Celebration Banner -->
     <div
       v-if="store.promotionBannerTier"
-      class="p-4 rounded-lg bg-neon-purple/15 border border-neon-purple flex items-center justify-between gap-4"
+      class="p-4 rounded-lg bg-accent/15 border border-accent flex items-center justify-between gap-4"
     >
       <div class="flex items-center gap-3">
-        <NIcon size="28" class="text-neon-purple"><TrophyOutline /></NIcon>
+        <NIcon size="28" class="text-accent"><TrophyOutline /></NIcon>
         <div>
           <div class="font-display font-bold text-base text-text-primary">
             {{
@@ -157,7 +157,7 @@ function handleGoToCabinet(): void {
     <div class="p-6 rounded-lg bg-surface border border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40">
+          <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
             {{
               report.mode === 'course'
                 ? t('features.trainingCenter.modes.courseBadge')
@@ -213,7 +213,7 @@ function handleGoToCabinet(): void {
         <span class="text-xs text-text-secondary uppercase">
           {{ t('features.trainingCenter.report.accuracy') }}
         </span>
-        <span class="font-condensed font-bold text-2xl text-neon-cyan">
+        <span class="font-condensed font-bold text-2xl text-text-primary">
           {{ report.accuracyPercent }}%
         </span>
       </div>
@@ -244,7 +244,7 @@ function handleGoToCabinet(): void {
           {{ t('features.trainingCenter.woodpecker.title') }}
         </span>
         <div class="flex items-center gap-3 font-condensed font-bold text-lg">
-          <span class="text-neon-purple" :title="t('features.trainingCenter.woodpecker.graduated')">
+          <span class="text-accent" :title="t('features.trainingCenter.woodpecker.graduated')">
             3/3: {{ report.woodpeckerGraduatedCount }}
           </span>
           <span class="text-text-secondary">·</span>
@@ -268,7 +268,7 @@ function handleGoToCabinet(): void {
             })
           }}
         </span>
-        <span class="font-condensed font-bold text-sm text-neon-cyan">
+        <span class="font-condensed font-bold text-sm text-brand">
           {{ activeCourse.solved_puzzles }} / {{ activeCourse.target_puzzles }} ({{
             courseProgressPercent
           }}%) · {{ formatRemainingDuration(activeCourse.remaining_seconds, t) }}
@@ -276,7 +276,7 @@ function handleGoToCabinet(): void {
       </div>
       <div class="w-full h-2 rounded-sm bg-elevated overflow-hidden border border-border">
         <div
-          class="h-full bg-neon-cyan transition-all duration-300"
+          class="h-full bg-brand transition-all duration-300"
           :style="{ width: `${courseProgressPercent}%` }"
         />
       </div>
@@ -325,7 +325,7 @@ function handleGoToCabinet(): void {
 
             <span
               v-if="item.is_woodpecker"
-              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-neon-purple/15 text-neon-purple border border-neon-purple/40"
+              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40"
             >
               WP {{ item.woodpecker_streak }}/3
             </span>

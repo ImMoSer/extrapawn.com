@@ -37,7 +37,7 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
         :title="t('features.coach.settings.buttonTitle')"
         :aria-label="t('features.coach.settings.buttonAriaLabel')"
         class="icon-btn p-1.5 rounded-md border text-xs cursor-pointer flex items-center justify-center transition-colors"
-        :class="showPopover ? 'bg-border-hover text-text-primary border-neon-cyan' : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'"
+        :class="showPopover ? 'bg-border-hover text-text-primary border-border-hover' : 'bg-elevated text-text-secondary border-border hover:border-border-hover hover:text-text-primary'"
       >
         <NIcon size="14">
           <SettingsOutline />
@@ -77,10 +77,10 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
             </div>
             <div
               class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
-              :class="coachStore.visualLayers.lastMoveNag ? 'bg-neon-cyan' : 'bg-border'"
+              :class="coachStore.visualLayers.lastMoveNag ? 'bg-brand' : 'bg-border'"
             >
               <div
-                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                class="w-3 h-3 rounded-full bg-on-brand shadow-md transform transition-transform duration-200 ease-in-out"
                 :class="coachStore.visualLayers.lastMoveNag ? 'translate-x-4' : 'translate-x-0'"
               />
             </div>
@@ -97,10 +97,10 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
             </div>
             <div
               class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
-              :class="coachStore.visualLayers.candidateArrow ? 'bg-neon-cyan' : 'bg-border'"
+              :class="coachStore.visualLayers.candidateArrow ? 'bg-brand' : 'bg-border'"
             >
               <div
-                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                class="w-3 h-3 rounded-full bg-on-brand shadow-md transform transition-transform duration-200 ease-in-out"
                 :class="coachStore.visualLayers.candidateArrow ? 'translate-x-4' : 'translate-x-0'"
               />
             </div>
@@ -117,10 +117,10 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
             </div>
             <div
               class="w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out shrink-0"
-              :class="coachStore.visualLayers.tacticalPlans ? 'bg-neon-cyan' : 'bg-border'"
+              :class="coachStore.visualLayers.tacticalPlans ? 'bg-brand' : 'bg-border'"
             >
               <div
-                class="w-3 h-3 rounded-full bg-void shadow-md transform transition-transform duration-200 ease-in-out"
+                class="w-3 h-3 rounded-full bg-on-brand shadow-md transform transition-transform duration-200 ease-in-out"
                 :class="coachStore.visualLayers.tacticalPlans ? 'translate-x-4' : 'translate-x-0'"
               />
             </div>
@@ -132,7 +132,7 @@ function toggleLayer(layer: keyof CoachVisualLayers) {
       <div class="flex gap-1.5 justify-end pt-2 border-t border-border">
         <button
           @click="close"
-          class="px-3 py-1 text-[10px] font-bold bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 rounded-md cursor-pointer hover:bg-neon-cyan/25 transition-colors"
+          class="px-3 py-1 text-[10px] font-bold bg-elevated text-text-primary border border-border hover:border-border-hover rounded-md cursor-pointer transition-colors"
         >
           {{ t('shared.buttons.close') }}
         </button>

@@ -48,12 +48,12 @@ const bestScoreClass = computed(() => {
   const val = line.score.value
   if (line.score.type === 'mate') {
     return val > 0
-      ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/35'
+      ? 'bg-success/15 text-success border-success/35'
       : 'bg-danger/15 text-danger border-danger/35'
   }
 
   if (val > 50) {
-    return 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/35'
+    return 'bg-success/15 text-success border-success/35'
   }
   if (val < -50) {
     return 'bg-danger/15 text-danger border-danger/35'
@@ -170,7 +170,7 @@ const formatSearchTimeTooltip = (value: number) => {
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-text-secondary">MultiPV</span>
-                <span class="font-condensed text-xs font-bold text-neon-cyan">
+                <span class="font-condensed text-xs font-bold text-brand">
                   {{ t('features.analysis.lines', { count: multiPv }) }}
                 </span>
               </div>
@@ -190,7 +190,7 @@ const formatSearchTimeTooltip = (value: number) => {
                 <span class="text-xs font-semibold text-text-secondary">
                   {{ t('features.analysis.searchTime') }}
                 </span>
-                <span class="font-condensed text-xs font-bold text-neon-cyan">
+                <span class="font-condensed text-xs font-bold text-brand">
                   {{ searchTime === 99 ? t('features.analysis.unlimited') : `${searchTime}s` }}
                 </span>
               </div>

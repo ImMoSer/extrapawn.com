@@ -76,7 +76,7 @@ const showPrecedenceNotice = computed(() => {
 <template>
   <div class="mx-auto my-2.5 max-w-[900px] px-2.5 sm:my-10 sm:px-5">
     <n-card class="glass text-text-primary" :bordered="false">
-      <n-h1 align-text class="!mb-7.5 text-center font-display tracking-[2px] !text-neon-cyan uppercase">
+      <n-h1 align-text class="!mb-7.5 text-center font-display tracking-[2px] text-text-primary uppercase">
         {{ t('legal.title') }}
       </n-h1>
 
@@ -84,7 +84,7 @@ const showPrecedenceNotice = computed(() => {
       <n-alert
         v-if="showPrecedenceNotice"
         type="info"
-        class="mb-7.5 !bg-neon-cyan/5 text-[0.95rem] leading-normal text-text-secondary italic"
+        class="mb-7.5 bg-elevated text-[0.95rem] leading-normal text-text-secondary italic"
         :bordered="false"
       >
         {{ t('legal.precedence') }}
@@ -99,13 +99,13 @@ const showPrecedenceNotice = computed(() => {
         <!-- IMPRESSUM -->
         <n-tab-pane name="imprint" :tab="t('legal.tabs.imprint')">
           <div class="px-2.5 py-5 leading-relaxed">
-            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+            <n-h2 class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary">
               {{ t('legal.imprint.title') }}
             </n-h2>
             <n-text depth="3">{{ t('legal.imprint.subtitle') }}</n-text>
 
             <n-p
-              class="mt-2.5 !mb-4 rounded-lg border-l-4 border-neon-cyan bg-elevated/50 p-3.5 !text-text-secondary"
+              class="mt-2.5 !mb-4 rounded-lg border-l-4 border-brand bg-elevated/50 p-3.5 !text-text-secondary"
             >
               <strong class="text-text-primary">{{ t('legal.imprint.name') }}</strong><br />
               <template
@@ -116,7 +116,7 @@ const showPrecedenceNotice = computed(() => {
               </template>
             </n-p>
 
-            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+            <n-h2 class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary">
               {{ t('legal.imprint.contact') }}
             </n-h2>
             <n-p class="!mb-4 !text-text-secondary">
@@ -130,7 +130,7 @@ const showPrecedenceNotice = computed(() => {
 
             <n-divider />
 
-            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+            <n-h2 class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary">
               {{ t('legal.imprint.dispute') }}
             </n-h2>
             <n-p class="!mb-4 !text-text-secondary">
@@ -139,7 +139,7 @@ const showPrecedenceNotice = computed(() => {
                 :href="t('legal.imprint.disputeLink')"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="break-all text-neon-cyan underline transition-opacity hover:opacity-80"
+                class="break-all text-brand underline transition-opacity hover:opacity-80"
               >
                 {{ t('legal.imprint.disputeLink') }}
               </a>
@@ -148,7 +148,7 @@ const showPrecedenceNotice = computed(() => {
 
             <n-divider />
 
-            <n-h2 class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan">
+            <n-h2 class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary">
               {{ t('legal.imprint.legalNotice') }}
             </n-h2>
             <n-p class="!mb-2 !text-text-secondary">
@@ -170,7 +170,7 @@ const showPrecedenceNotice = computed(() => {
 
             <div v-for="key in orderedPrivacyKeys" :key="key" class="mb-10">
               <n-h2
-                class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan"
+                class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary"
               >
                 {{ t(`legal.privacy.sections.${key}Title`) }}
               </n-h2>
@@ -189,7 +189,7 @@ const showPrecedenceNotice = computed(() => {
                   :href="t('legal.privacy.sections.paymentLink')"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="break-all text-neon-cyan underline transition-opacity hover:opacity-80"
+                  class="break-all text-brand underline transition-opacity hover:opacity-80"
                 >
                   {{ t('legal.privacy.sections.paymentLink') }}
                 </a>
@@ -205,7 +205,7 @@ const showPrecedenceNotice = computed(() => {
 
             <div v-for="key in orderedTermsKeys" :key="key" class="mb-10">
               <n-h2
-                class="!mt-6 !mb-3 border-b border-neon-cyan/15 pb-1.5 text-[1.3rem] !text-neon-cyan"
+                class="!mt-6 !mb-3 border-b border-border pb-1.5 text-[1.3rem] text-text-primary"
               >
                 {{ t(`legal.terms.sections.${key}Title`) }}
               </n-h2>

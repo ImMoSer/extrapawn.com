@@ -17,7 +17,7 @@ const props = withDefaults(
     result: null,
     loading: false,
     showLabel: false,
-  }
+  },
 )
 
 const isMate = computed(() => props.mate !== null && props.mate !== undefined && props.mate !== 0)
@@ -71,35 +71,33 @@ const labelOnDark = computed(() => labelAtTop.value)
 
 <template>
   <div
-    class="w-full h-full bg-void border border-border rounded relative overflow-hidden flex shadow-inner"
+    class="w-full h-full bg-eval-black border border-border rounded-xs relative overflow-hidden flex"
     :class="orientation === 'black' ? 'flex-col-reverse' : 'flex-col'"
   >
     <!-- Black portion (top) -->
     <div
-      class="transition-[flex] duration-350 ease-out bg-elevated"
+      class="transition-[flex] duration-350 ease-out bg-eval-black"
       :style="{ flex: `${100 - percentage} 0 0` }"
     />
     <!-- White portion (bottom) -->
     <div
-      class="transition-[flex] duration-350 ease-out bg-text-primary"
+      class="transition-[flex] duration-350 ease-out bg-eval-white"
       :style="{ flex: `${percentage} 0 0` }"
     />
 
     <!-- Mid-rank tick: 0 line -->
     <div
-      class="absolute top-1/2 left-[8%] right-[8%] h-[1px] pointer-events-none"
-      :class="percentage >= 50 ? 'bg-black/20' : 'bg-white/20'"
+      class="absolute top-1/2 left-[8%] right-[8%] h-px pointer-events-none bg-brand/50"
     />
 
     <!-- Numeric label inside the bar (optional) -->
     <div
       v-if="showLabel"
-      class="absolute left-0 right-0 text-center text-[12px] font-black font-mono tracking-tight pointer-events-none select-none"
+      class="absolute left-0 right-0 text-center text-[11px] font-bold font-condensed tracking-tight pointer-events-none select-none"
       :style="{
         top: labelAtTop ? '8px' : 'auto',
         bottom: !labelAtTop ? '8px' : 'auto',
-        color: labelOnDark ? 'var(--color-text-primary)' : 'var(--color-void)',
-        textShadow: labelOnDark ? '0 1px 1px rgba(0,0,0,0.6)' : '0 1px 0 rgba(255,255,255,0.5)',
+        color: labelOnDark ? 'var(--color-eval-white)' : 'var(--color-eval-black)',
       }"
     >
       {{ label }}

@@ -128,8 +128,8 @@ const chartOption = computed(() => {
         yAxisIndex: 0,
         smooth: true,
         symbolSize: 6,
-        itemStyle: { color: tokens.neonCyan },
-        lineStyle: { width: 2.5, color: tokens.neonCyan },
+        itemStyle: { color: tokens.brand },
+        lineStyle: { width: 2.5, color: tokens.brand },
         data: ratings,
       },
       {
@@ -138,8 +138,8 @@ const chartOption = computed(() => {
         yAxisIndex: 1,
         smooth: true,
         symbolSize: 5,
-        itemStyle: { color: tokens.mint },
-        lineStyle: { width: 2, type: 'dashed', color: tokens.mint },
+        itemStyle: { color: tokens.accent },
+        lineStyle: { width: 2, type: 'dashed', color: tokens.accent },
         data: accuracies,
       },
     ],
@@ -154,7 +154,7 @@ const chartOption = computed(() => {
       <!-- Player Identity Card -->
       <div class="lg:col-span-2 p-5 rounded-lg bg-surface border border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-3.5">
-          <div class="w-12 h-12 rounded-md bg-elevated border border-neon-cyan/40 flex items-center justify-center text-neon-cyan shrink-0">
+          <div class="w-12 h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0">
             <NIcon size="28"><PersonCircleOutline /></NIcon>
           </div>
           <div class="flex flex-col">
@@ -162,7 +162,7 @@ const chartOption = computed(() => {
               <h1 class="font-display font-bold text-2xl text-text-primary tracking-wide">
                 {{ username }}
               </h1>
-              <span class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40">
+              <span class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border">
                 HUD 2.0
               </span>
             </div>
@@ -188,7 +188,7 @@ const chartOption = computed(() => {
       <!-- Woodpecker Vault Card ([D3]) -->
       <div class="p-5 rounded-lg bg-surface border border-border flex flex-col justify-between gap-3">
         <div class="flex items-center justify-between">
-          <span class="font-display font-bold text-xs uppercase tracking-wider text-neon-purple">
+          <span class="font-display font-bold text-xs uppercase tracking-wider text-accent">
             {{ t('features.trainingCenter.woodpecker.vaultTitle') }}
           </span>
           <span class="font-condensed text-xs text-text-secondary">
@@ -234,7 +234,7 @@ const chartOption = computed(() => {
         class="p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col gap-2"
         :class="
           selectedDiscipline === disc
-            ? 'bg-elevated border-neon-cyan'
+            ? 'bg-elevated border-border-hover shadow-sm'
             : 'bg-surface border-border hover:border-border-hover hover:bg-elevated/50'
         "
         @click="emit('selectDiscipline', disc)"
@@ -242,7 +242,7 @@ const chartOption = computed(() => {
         <div class="flex items-center justify-between gap-2">
           <span
             class="font-display font-bold text-sm uppercase tracking-wider truncate"
-            :class="selectedDiscipline === disc ? 'text-neon-cyan' : 'text-text-primary'"
+            :class="selectedDiscipline === disc ? 'text-text-primary' : 'text-text-secondary'"
           >
             {{ resolveDisciplineLabel(disc, t) }}
           </span>
@@ -279,7 +279,7 @@ const chartOption = computed(() => {
           </span>
           <span
             v-if="cabinet.overview.disciplines[disc].active_course"
-            class="text-neon-cyan"
+            class="text-brand"
           >
             {{ cabinet.overview.disciplines[disc].active_course?.solved_puzzles }}/{{
               cabinet.overview.disciplines[disc].active_course?.target_puzzles
@@ -300,7 +300,7 @@ const chartOption = computed(() => {
     <div class="p-5 rounded-lg bg-surface border border-border flex flex-col gap-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <NIcon size="18" class="text-neon-cyan"><TrendingUpOutline /></NIcon>
+          <NIcon size="18" class="text-brand"><TrendingUpOutline /></NIcon>
           <h2 class="font-display font-bold text-sm uppercase tracking-wider text-text-primary">
             {{
               t('pages.userCabinet.macro.timelineTitle', {

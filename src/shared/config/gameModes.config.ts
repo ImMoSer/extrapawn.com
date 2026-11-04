@@ -22,14 +22,14 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     path: '/training',
     icon: FlashOutline,
     labelKey: 'shared.nav.trainingCenter',
-    color: 'var(--color-neon-cyan)',
+    color: 'var(--color-brand)',
   },
   warmup: {
     key: 'warmup',
     path: '/warmup',
     icon: FlameOutline,
     labelKey: 'shared.nav.warmup',
-    color: 'var(--color-neon-purple)',
+    color: 'var(--color-accent)',
   },
   user_cabinet: {
     key: 'user_cabinet',
@@ -43,6 +43,6 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     path: '/club-player',
     icon: TrophyOutline,
     labelKey: 'pages.pricing.clubBtn',
-    color: 'var(--color-danger-deep)',
+    color: 'var(--color-warning)',
   },
 }

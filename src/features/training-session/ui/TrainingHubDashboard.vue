@@ -417,12 +417,12 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
         <div class="flex items-center gap-2">
           <NIcon
             size="22"
-            :class="props.mode === 'warmup' ? 'text-neon-purple' : 'text-neon-cyan'"
+            :class="props.mode === 'warmup' ? 'text-accent' : 'text-brand'"
           >
             <FlameOutline v-if="props.mode === 'warmup'" />
             <FlashOutline v-else />
           </NIcon>
-          <h1 class="font-display font-bold text-2xl text-text-primary tracking-wide">
+          <h1 class="font-display font-semibold text-2xl text-text-primary tracking-tight">
             {{
               props.mode === 'warmup'
                 ? t('features.trainingCenter.warmupPage.title')
@@ -443,9 +443,9 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
         <!-- Woodpecker Vault Pill -->
         <div
           v-if="store.overview?.woodpecker"
-          class="flex items-center gap-3 px-3.5 py-2 rounded-md bg-elevated border border-border text-xs"
+          class="flex items-center gap-3 px-3.5 py-2 rounded-md bg-elevated/60 border border-border text-xs"
         >
-          <span class="font-display font-bold uppercase tracking-wider text-neon-purple">
+          <span class="font-display font-semibold uppercase tracking-wider text-text-secondary">
             {{ t('features.trainingCenter.woodpecker.vaultTitle') }}
           </span>
           <div class="flex items-center gap-2 font-condensed text-sm">
@@ -503,31 +503,25 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       {{ store.error }}
     </NAlert>
 
-    <!-- 4 Discipline Tabs ([D7]) -->
+    <!-- 4 Discipline Tabs ([D7]) — Monochrome Studio Tabs -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <button
         v-for="disc in TRAINING_DISCIPLINES"
         :key="disc"
         type="button"
-        class="p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col gap-2"
+        class="p-4 rounded-lg border text-left transition-colors cursor-pointer flex flex-col gap-2"
         :class="
           store.activeDiscipline === disc
-            ? props.mode === 'warmup'
-              ? 'bg-elevated border-neon-purple'
-              : 'bg-elevated border-neon-cyan'
+            ? 'bg-elevated border-border-hover shadow-xs'
             : 'bg-surface border-border hover:border-border-hover hover:bg-elevated/50'
         "
         @click="handleDisciplineSelect(disc)"
       >
         <div class="flex items-center justify-between gap-2">
           <span
-            class="font-display font-bold text-sm uppercase tracking-wider truncate"
+            class="font-display font-semibold text-sm uppercase tracking-wider truncate"
             :class="
-              store.activeDiscipline === disc
-                ? props.mode === 'warmup'
-                  ? 'text-neon-purple'
-                  : 'text-neon-cyan'
-                : 'text-text-primary'
+              store.activeDiscipline === disc ? 'text-text-primary' : 'text-text-secondary'
             "
           >
             {{ resolveDisciplineLabel(disc, t) }}
@@ -559,9 +553,9 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
         <div class="min-h-5 flex items-center">
           <span
             v-if="store.overview?.disciplines?.[disc]?.active_course"
-            class="inline-flex items-center gap-1.5 text-[11px] font-condensed text-neon-cyan"
+            class="inline-flex items-center gap-1.5 text-[11px] font-condensed text-brand"
           >
-            <span class="w-1.5 h-1.5 rounded-full bg-neon-cyan" />
+            <span class="w-1.5 h-1.5 rounded-full bg-brand" />
             {{ store.overview.disciplines[disc].active_course?.solved_puzzles }} /
             {{ store.overview.disciplines[disc].active_course?.target_puzzles }} ·
             {{
@@ -588,7 +582,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
     <!-- Unfinished Session Resume Banner -->
     <div
       v-if="activeSession"
-      class="p-4 rounded-md bg-elevated border border-warning/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
     >
       <div class="flex flex-col gap-0.5">
         <div class="flex items-center gap-2">
@@ -599,7 +593,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                 : t('features.trainingCenter.modes.warmupBadge')
             }}
           </span>
-          <span class="font-display font-bold text-sm text-text-primary">
+          <span class="font-display font-semibold text-sm text-text-primary">
             {{ t('features.trainingCenter.session.activeTitle') }}
           </span>
         </div>
@@ -644,10 +638,10 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       <div v-if="props.mode === 'course'" class="p-6 flex flex-col gap-6">
         <!-- Active Course HUD -->
         <template v-if="activeCourse">
-          <div class="p-5 rounded-md bg-elevated border border-border flex flex-col gap-4">
+          <div class="p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40">
+                <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-surface text-text-primary border border-border">
                   {{ resolveDifficultyLabel(activeCourse.difficulty, t) }}
                 </span>
                 <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
@@ -672,22 +666,22 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 
             <div class="flex flex-col gap-1.5">
               <div class="flex items-baseline justify-between">
-                <span class="text-xs text-text-secondary uppercase font-display font-bold">
+                <span class="text-xs text-text-secondary uppercase font-display font-semibold">
                   {{
                     t('features.trainingCenter.course.activeProgressTitle', {
                       days: activeCourse.duration_days,
                     })
                   }}
                 </span>
-                <span class="font-condensed font-bold text-lg text-neon-cyan">
+                <span class="font-condensed font-bold text-lg text-text-primary">
                   {{ activeCourse.solved_puzzles }} / {{ activeCourse.target_puzzles }} ({{
                     activeCoursePercent
                   }}%)
                 </span>
               </div>
-              <div class="w-full h-2.5 rounded-sm bg-surface overflow-hidden border border-border">
+              <div class="w-full h-2 rounded-xs bg-surface overflow-hidden border border-border">
                 <div
-                  class="h-full bg-neon-cyan transition-all duration-300"
+                  class="h-full bg-brand transition-all duration-300"
                   :style="{ width: `${activeCoursePercent}%` }"
                 />
               </div>
@@ -707,8 +701,8 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                     class="px-3 py-1 rounded-sm font-condensed font-bold text-xs border transition-colors cursor-pointer"
                     :class="
                       selectedBatchSize === size
-                        ? 'bg-neon-cyan text-void border-neon-cyan'
-                        : 'bg-surface text-text-secondary border-border hover:border-border-hover'
+                        ? 'bg-elevated text-text-primary border-border-hover'
+                        : 'bg-surface text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
                     "
                     @click="selectedBatchSize = size"
                   >
@@ -743,7 +737,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
             <div class="flex flex-col gap-5">
               <!-- Step 1: Rank Tier -->
               <div class="flex flex-col gap-2">
-                <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+                <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                   {{ t('features.trainingCenter.course.selectTierLabel') }}
                 </label>
                 <div class="grid grid-cols-3 gap-2.5">
@@ -752,18 +746,18 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                     :key="tier"
                     type="button"
                     :disabled="!isCourseTierUnlocked(tier)"
-                    class="p-3 rounded-md border flex flex-col items-start gap-1 transition-all"
+                    class="p-3 rounded-md border flex flex-col items-start gap-1 transition-colors"
                     :class="[
                       !isCourseTierUnlocked(tier)
                         ? 'bg-surface/40 border-border text-text-disabled cursor-not-allowed opacity-60'
                         : selectedCourseTier === tier
-                          ? 'bg-elevated border-neon-cyan text-text-primary cursor-pointer'
-                          : 'bg-elevated/40 border-border text-text-secondary hover:border-border-hover cursor-pointer',
+                          ? 'bg-elevated border-border-hover text-text-primary cursor-pointer'
+                          : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary cursor-pointer',
                     ]"
                     @click="isCourseTierUnlocked(tier) && (selectedCourseTier = tier)"
                   >
                     <div class="w-full flex items-center justify-between">
-                      <span class="font-display font-bold text-sm">
+                      <span class="font-display font-semibold text-sm">
                         {{ resolveDifficultyLabel(tier, t) }}
                       </span>
                       <NIcon v-if="!isCourseTierUnlocked(tier)" size="14">
@@ -779,7 +773,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 
               <!-- Step 2: Course Duration (7d vs 30d) -->
               <div class="flex flex-col gap-2">
-                <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+                <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                   {{ t('features.trainingCenter.course.selectDurationLabel') }}
                 </label>
                 <div class="grid grid-cols-2 gap-3">
@@ -787,18 +781,18 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                     v-for="days in [7, 30] as CourseDurationDays[]"
                     :key="days"
                     type="button"
-                    class="p-3.5 rounded-md border flex flex-col items-start gap-1 transition-all cursor-pointer"
+                    class="p-3.5 rounded-md border flex flex-col items-start gap-1 transition-colors cursor-pointer"
                     :class="
                       selectedCourseDuration === days
-                        ? 'bg-elevated border-neon-cyan text-text-primary'
-                        : 'bg-elevated/40 border-border text-text-secondary hover:border-border-hover'
+                        ? 'bg-elevated border-border-hover text-text-primary'
+                        : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
                     "
                     @click="selectedCourseDuration = days"
                   >
-                    <span class="font-display font-bold text-sm">
+                    <span class="font-display font-semibold text-sm">
                       {{ t('features.trainingCenter.course.durationDays', { days }) }}
                     </span>
-                    <span class="font-condensed text-xs text-neon-cyan">
+                    <span class="font-condensed text-xs text-text-secondary">
                       {{
                         t('features.trainingCenter.course.quotaTarget', {
                           count: getCourseTargetQuota(store.activeDiscipline, days),
@@ -820,11 +814,11 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       v-for="size in courseBatchSizes"
                       :key="size"
                       type="button"
-                      class="px-2.5 py-1 rounded-sm font-condensed font-bold text-xs border cursor-pointer"
+                      class="px-2.5 py-1 rounded-sm font-condensed font-bold text-xs border cursor-pointer transition-colors"
                       :class="
                         selectedBatchSize === size
-                          ? 'bg-neon-cyan text-void border-neon-cyan'
-                          : 'bg-elevated text-text-secondary border-border'
+                          ? 'bg-elevated text-text-primary border-border-hover'
+                          : 'bg-surface text-text-secondary border-border hover:border-border-hover hover:text-text-primary'
                       "
                       @click="selectedBatchSize = size"
                     >
@@ -853,17 +847,17 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
             </div>
 
             <!-- Right: Next Tier Unlock Gate Checklist ([D10]) -->
-            <div class="p-4 rounded-md bg-elevated/60 border border-border flex flex-col gap-3">
+            <div class="p-4 rounded-lg bg-elevated/40 border border-border flex flex-col gap-3">
               <template v-if="nextTierGate">
                 <div class="flex items-center justify-between">
-                  <span class="font-display font-bold text-xs uppercase tracking-wider text-text-primary">
+                  <span class="font-display font-semibold text-xs uppercase tracking-wider text-text-primary">
                     {{
                       t('features.trainingCenter.gate.title', {
                         tier: resolveDifficultyLabel(nextTierGate.target_tier, t),
                       })
                     }}
                   </span>
-                  <span class="font-condensed font-bold text-xs text-neon-purple">
+                  <span class="font-condensed font-bold text-xs text-text-secondary">
                     ≥ {{ Math.round(nextTierGate.rating_threshold) }} Glicko-2
                   </span>
                 </div>
@@ -905,7 +899,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       </span>
                       <span
                         class="font-condensed font-bold flex items-center gap-1"
-                        :class="gateRatingQualified ? 'text-success' : 'text-neon-cyan'"
+                        :class="gateRatingQualified ? 'text-success' : 'text-text-primary'"
                       >
                         <NIcon v-if="gateRatingQualified" size="14">
                           <CheckmarkCircleOutline />
@@ -913,10 +907,10 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                         {{ Math.round(gateCurrentRating) }} / {{ Math.round(nextTierGate.rating_threshold) }}
                       </span>
                     </div>
-                    <div class="w-full h-1.5 rounded-sm bg-elevated overflow-hidden">
+                    <div class="w-full h-1.5 rounded-xs bg-elevated overflow-hidden">
                       <div
                         class="h-full transition-all duration-300"
-                        :class="gateRatingQualified ? 'bg-success' : 'bg-neon-cyan'"
+                        :class="gateRatingQualified ? 'bg-success' : 'bg-brand'"
                         :style="{ width: `${gateScopesPercent}%` }"
                       />
                     </div>
@@ -928,7 +922,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                   v-if="nextTierGate.lagging_scopes.length > 0"
                   class="flex flex-col gap-1.5 mt-1"
                 >
-                  <span class="text-[11px] text-text-secondary uppercase font-display font-bold">
+                  <span class="text-[11px] text-text-secondary uppercase font-display font-semibold">
                     {{
                       t('features.trainingCenter.gate.laggingScopesLabel', {
                         count: nextTierGate.lagging_scopes.length,
@@ -940,7 +934,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       v-for="lag in nextTierGate.lagging_scopes.slice(0, 6)"
                       :key="`${lag.group}:${lag.key}`"
                       type="button"
-                      class="px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-surface border border-border text-text-secondary hover:border-neon-purple hover:text-text-primary transition-colors cursor-pointer"
+                      class="px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-surface border border-border text-text-secondary hover:border-border-hover hover:text-text-primary transition-colors cursor-pointer"
                       :title="t('pages.userCabinet.diagnostics.warmupAction')"
                       @click="handleOpenLaggingScopeInWarmup(lag.group, lag.key)"
                     >
@@ -954,7 +948,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
               <template v-else>
                 <div class="h-full flex flex-col items-center justify-center text-center gap-2 py-6">
                   <NIcon size="28" class="text-success"><TrophyOutline /></NIcon>
-                  <div class="font-display font-bold text-sm text-text-primary">
+                  <div class="font-display font-semibold text-sm text-text-primary">
                     {{ t('features.trainingCenter.gate.masterUnlockedTitle') }}
                   </div>
                   <div class="text-xs text-text-secondary max-w-xs">
@@ -974,7 +968,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
           <div class="flex flex-col gap-5">
             <!-- Free Rank Selector -->
             <div class="flex flex-col gap-2">
-              <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                 {{ t('features.trainingCenter.warmup.selectTierLabel') }}
               </label>
               <div class="grid grid-cols-3 gap-2.5">
@@ -982,15 +976,15 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                   v-for="tier in TRAINING_DIFFICULTIES"
                   :key="tier"
                   type="button"
-                  class="p-3 rounded-md border flex flex-col items-start gap-1 transition-all cursor-pointer"
+                  class="p-3 rounded-md border flex flex-col items-start gap-1 transition-colors cursor-pointer"
                   :class="
                     selectedWarmupTier === tier
-                      ? 'bg-elevated border-neon-purple text-text-primary'
-                      : 'bg-elevated/40 border-border text-text-secondary hover:border-border-hover'
+                      ? 'bg-elevated border-border-hover text-text-primary'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
                   "
                   @click="selectedWarmupTier = tier"
                 >
-                  <span class="font-display font-bold text-sm">
+                  <span class="font-display font-semibold text-sm">
                     {{ resolveDifficultyLabel(tier, t) }}
                   </span>
                   <span class="font-condensed text-[11px] text-text-secondary">
@@ -1002,7 +996,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 
             <!-- WarmUp Count Selector -->
             <div class="flex flex-col gap-2">
-              <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                 {{ t('features.trainingCenter.warmup.selectCountLabel') }}
               </label>
               <div class="grid grid-cols-3 gap-2.5">
@@ -1010,11 +1004,11 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                   v-for="cnt in warmupAllowedSizes"
                   :key="cnt"
                   type="button"
-                  class="py-2.5 px-3 rounded-md border font-condensed font-bold text-sm transition-all cursor-pointer"
+                  class="py-2.5 px-3 rounded-md border font-condensed font-bold text-sm transition-colors cursor-pointer"
                   :class="
                     selectedWarmupCount === cnt
-                      ? 'bg-elevated border-neon-purple text-neon-purple'
-                      : 'bg-elevated/40 border-border text-text-secondary hover:border-border-hover'
+                      ? 'bg-elevated border-border-hover text-text-primary'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
                   "
                   @click="selectedWarmupCount = cnt"
                 >
@@ -1027,14 +1021,14 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
           <!-- Right: Focus Group, Focus Key & Objective -->
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1.5">
-              <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                 {{ t('features.trainingCenter.warmup.focusGroupLabel') }}
               </label>
               <NSelect v-model:value="selectedFocusGroup" :options="focusGroupOptions" />
             </div>
 
             <div v-if="selectedFocusGroup !== 'all'" class="flex flex-col gap-1.5">
-              <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                 {{ t('features.trainingCenter.warmup.focusKeyLabel') }}
               </label>
               <NSelect
@@ -1052,17 +1046,17 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
               "
               class="flex flex-col gap-1.5"
             >
-              <label class="font-display font-bold text-xs uppercase tracking-wider text-text-secondary">
+              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
                 {{ t('features.trainingCenter.warmup.objectiveFilterLabel') }}
               </label>
               <div class="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer"
+                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
                   :class="
                     selectedObjective === ''
-                      ? 'bg-elevated border-neon-cyan text-neon-cyan'
-                      : 'bg-surface border-border text-text-secondary'
+                      ? 'bg-elevated border-border-hover text-text-primary'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
                   "
                   @click="selectedObjective = ''"
                 >
@@ -1070,11 +1064,11 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                 </button>
                 <button
                   type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer"
+                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
                   :class="
                     selectedObjective === 'win'
-                      ? 'bg-elevated border-neon-cyan text-neon-cyan'
-                      : 'bg-surface border-border text-text-secondary'
+                      ? 'bg-elevated border-border-hover text-text-primary'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
                   "
                   @click="selectedObjective = 'win'"
                 >
@@ -1082,11 +1076,11 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                 </button>
                 <button
                   type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer"
+                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
                   :class="
                     selectedObjective === 'hold_draw'
-                      ? 'bg-elevated border-warning text-warning'
-                      : 'bg-surface border-border text-text-secondary'
+                      ? 'bg-elevated border-warning/50 text-warning'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
                   "
                   @click="selectedObjective = 'hold_draw'"
                 >

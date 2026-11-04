@@ -1,319 +1,121 @@
-# DESIGN.md — Cyber Neon / Zen Dark
+# DESIGN.md — ExtraPawn Studio (Supabase × Lichess Hybrid)
 
 ## Overview
 
-This app lives in two modes at once: a **calm, near-black "Zen" canvas** for long analysis sessions (reading engine lines, reading coaching reports), and **neon accents** that carry meaning — status, semantics, chart series, board annotations. The dark surface is intentionally quiet so that when a neon color appears, it means something. Tailwind v4's CSS-first `@theme` config is the single source of truth for tokens; Naive UI and ECharts read the same hex values so the whole app — board, panels, charts, dialogs — speaks one color language.
+**ExtraPawn Studio** pairs developer-grade analytical interfaces (inspired by **Supabase Studio** and **Linear**) with the ergonomic board-first clarity of **Lichess**. Built for deep calculation, 30-day training courses, and multi-dimensional Glicko-2 diagnostics, the design system eliminates decorative neon noise, glass blurs, and glowing shadows in favor of **quiet technical precision**: matte neutral surfaces, `1px solid` structural hairlines, monochrome navigation chrome, a single signature **Supabase Emerald** primary CTA accent, and a calibrated chess semantic palette across both **Dark Mode** and **Light Mode**.
 
-**Stack context:** Vue 3 + Vite + Tailwind v4 for layout/utility styling, Naive UI for complex components (forms, modals, tables), Chessground for the board, ECharts for analysis/coaching visualizations. Tailwind owns layout and one-off styling; Naive UI and ECharts get their colors _from_ Tailwind's tokens rather than defining their own palette.
+**Stack context:** Vue 3 + Vite + Tailwind CSS v4 (`@theme` mapped to polarized CSS variables for zero-duplication Dark/Light switching), Naive UI for complex components, Chessground for the chessboard, and ECharts for diagnostic visualizations.
 
-## Colors
+---
 
-### Neutral Palette (Zen Dark surface)
+## 1. Dual-Theme Color System (Dark & Light)
 
-The source palette is neon-only (accents), so a calm neutral scale is proposed here to host it. Cool-tinted near-blacks, not pure gray, so the neons don't clash with a warm undertone.
+All tokens are semantic and automatically flip polarity via `html[data-theme="dark"]` (default) and `html[data-theme="light"]`. Never hardcode hex values in `.vue` or `.ts` files outside `src/assets/main.css` and `src/shared/theme/tokens.ts`.
 
-| Token                  | Hex       | Usage                                                              |
-| ---------------------- | --------- | ------------------------------------------------------------------ |
-| `color-void`           | `#05060a` | App background, outer canvas                                       |
-| `color-surface`        | `#0d0f16` | Cards, panels, sidebar                                             |
-| `color-elevated`       | `#151822` | Modals, popovers, dropdowns                                        |
-| `color-border`         | `#232838` | Dividers, card outlines                                            |
-| `color-border-hover`   | `#333a4f` | Hover/focus border state                                           |
-| `color-text-primary`   | `#e8ecf5` | Body text (not pure white — easier on the eyes over long sessions) |
-| `color-text-secondary` | `#8b93a8` | Metadata, timestamps, captions                                     |
-| `color-text-disabled`  | `#4a5169` | Disabled states                                                    |
+### 1.1. Neutral Surfaces & Typography Ladder
 
-### Primary Palette (from your neon set)
+Neutral carbon greys in Dark Mode and soft stone/paper neutrals in Light Mode ensure zero chromatic clash with wooden, green, or stone chessboards.
 
-Two colors are promoted to **primary/brand** — everything else is reserved for semantics or charts, so the UI doesn't turn into rainbow soup.
+| Token | Tailwind Utility | Dark Mode (Carbon) | Light Mode (Daylight) | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| `--color-canvas` | `bg-canvas` | `#121212` | `#F4F4F5` | Outer app background (matte, non-blinding in daylight) |
+| `--color-surface` | `bg-surface` | `#1C1C1C` | `#FFFFFF` | Cards, panels, sidebar, data tables |
+| `--color-elevated` | `bg-elevated` | `#242424` | `#ECECEE` | Nested containers, active tabs, row hover, inputs |
+| `--color-overlay` | `bg-overlay` | `#2E2E2E` | `#FFFFFF` | Modals, dropdown menus, popovers, tooltips |
+| `--color-border` | `border-border` | `#2E2E2E` | `#E4E4E7` | `1px solid` structural hairlines and dividers |
+| `--color-border-hover` | `border-border-hover` | `#3E3E3E` | `#D4D4D8` | Hover, focus, or selected structural border |
+| `--color-text-primary` | `text-text-primary` | `#EDEDED` | `#171717` | Primary text, headings, ratings, key metrics |
+| `--color-text-secondary` | `text-text-secondary` | `#9A9A9A` | `#64646B` | Secondary copy, labels, captions, inactive tabs |
+| `--color-text-disabled` | `text-text-disabled` | `#525252` | `#A1A1AA` | Disabled controls, subtle separators, placeholders |
 
-| Token               | Hex       | Usage                                                                          |
-| ------------------- | --------- | ------------------------------------------------------------------------------ |
-| `color-neon-cyan`   | `#00e5ff` | Primary interactive color — links, primary buttons, active states, focus rings |
-| `color-cyan-deep`   | `#00b8cc` | Primary hover/pressed state                                                    |
-| `color-neon-purple` | `#b000ff` | Brand accent — headers, logo mark, selected/emphasis states                    |
-| `color-purple-deep` | `#7a00cc` | Purple hover/pressed state                                                     |
+### 1.2. Brand & Interactive Accent Tokens
 
-### Semantic Colors
+To prevent visual confusion between UI chrome and chess evaluation signals:
+- **Navigation, tabs, and discipline selectors stay monochrome** (`bg-elevated`, `text-text-primary`, `border-border-hover`).
+- **Brand Emerald (`--color-brand`)** is reserved for primary CTA buttons, active course progress bars, and small status dots.
 
-| Token                   | Hex                       | Usage                                      |
-| ----------------------- | ------------------------- | ------------------------------------------ |
-| `color-success`         | `#00ff55` (neon-lime)     | Success toasts, correct-move confirmation  |
-| `color-success-deep`    | `#00cc44` (lime-deep)     | Success hover/pressed                      |
-| `color-warning`         | `#ffe600` (neon-yellow)   | Warnings, inaccuracy flags                 |
-| `color-warning-deep`    | `#ccb800` (yellow-deep)   | Warning hover/pressed                      |
-| `color-danger`          | `#ff073a` (neon-red)      | Errors, blunder flags, destructive actions |
-| `color-danger-deep`     | `#d9004c` (neon-bordeaux) | Danger hover/pressed                       |
-| `color-info`            | `#0055ff` (neon-blue)     | Informational banners, tooltips            |
-| `color-info-deep`       | `#3d8bff` (blue-light)    | Info hover/pressed                         |
-| `color-highlight`       | `#ff007a` (neon-pink)     | @mentions, badges, unread indicators       |
-| `color-highlight-light` | `#ff4da6` (pink-light)    | Highlight hover/muted variant              |
+| Token | Tailwind Utility | Dark Mode | Light Mode | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| `--color-brand` | `bg-brand`, `text-brand`, `border-brand` | `#3ECF8E` | `#10B981` | Primary CTA fill, active course indicator |
+| `--color-brand-deep` | `bg-brand-deep` | `#24B47E` | `#059669` | Primary CTA hover/pressed state |
+| `--color-on-brand` | `text-on-brand` | `#171717` | `#FFFFFF` | Text on filled `--color-brand` buttons (near-black on bright emerald in Dark Mode) |
+| `--color-accent` | `bg-accent`, `text-accent`, `border-accent` | `#A78BFA` | `#7C3AED` | Secondary accent (WarmUp mode, piece maneuver routes) |
+| `--color-accent-deep` | `bg-accent-deep` | `#8B5CF6` | `#6D28D9` | Secondary accent hover/pressed state |
 
-### Data-Viz Reserve (ECharts categorical set)
+### 1.3. Chess Semantics & Data-Viz Palette (NAGs, Board Shapes, ECharts)
 
-These stay **out of UI chrome** entirely and are reserved for chart series, so a chart's color always means "a different data series," never "the same color as a button elsewhere."
+Calibrated for prolonged reading without eye strain in both Dark and Light themes:
 
-| Token                                | Hex                   | Pair      |
-| ------------------------------------ | --------------------- | --------- |
-| `color-orange` / `color-orange-warm` | `#ff5500` / `#ff8800` | twin pair |
-| `color-mint`                         | `#00ffcc`             | single    |
-| `color-magenta`                      | `#ff00c8`             | single    |
-| `color-amber`                        | `#ff9900`             | single    |
-| `color-acid-green`                   | `#39ff14`             | single    |
+| Token | Tailwind Utility | Dark Mode | Light Mode | Chess & UI Semantics |
+| :--- | :--- | :--- | :--- | :--- |
+| `--color-mint` | `text-mint`, `bg-mint` | `#2DD4BF` | `#0D9488` | Brilliant move (`!!`), novelty, ECharts series |
+| `--color-success` | `text-success`, `bg-success` | `#3ECF8E` | `#16A34A` | Best move (`!`), solved puzzle, win, `EMA >= 85%` |
+| `--color-success-deep` | `text-success-deep` | `#24B47E` | `#15803D` | Success hover/border emphasis |
+| `--color-info` | `text-info`, `bg-info` | `#38BDF8` | `#0284C7` | Interesting move (`!?`), suggested plan `[arrow:]`, info banner |
+| `--color-info-deep` | `text-info-deep` | `#0284C7` | `#0369A1` | Info hover/border emphasis |
+| `--color-warning` | `text-warning`, `bg-warning` | `#F4BD50` | `#D97706` | Inaccuracy (`?!`), key square `[mark:]`, Woodpecker due |
+| `--color-warning-deep` | `text-warning-deep` | `#D99B26` | `#B45309` | Warning hover/border emphasis |
+| `--color-orange` | `text-orange`, `bg-orange` | `#FB923C` | `#EA580C` | Mistake (`?`), ECharts categorical series |
+| `--color-orange-warm` | `text-orange-warm` | `#F97316` | `#C2410C` | Secondary orange ECharts pair |
+| `--color-danger` | `text-danger`, `bg-danger` | `#F66061` | `#DC2626` | Blunder (`??`), threat/check, failed attempt, destructive action |
+| `--color-danger-deep` | `text-danger-deep` | `#E11D48` | `#B91C1C` | Danger hover/border emphasis |
+| `--color-highlight` | `text-highlight`, `bg-highlight` | `#F472B6` | `#DB2777` | Special badge / highlight marker |
+| `--color-amber` | `text-amber`, `bg-amber` | `#FBBF24` | `#D97706` | Trophy / record highlight, ECharts series |
 
-Reuse the existing twin-pair rose-chart palette as the canonical ECharts theme (`theme/echarts-theme.ts`) rather than redefining series colors per chart.
+---
 
-## Typography
+## 2. Typography
 
-Ubuntu, self-hosted, all weights registered as separate `@font-face` declarations (see Tailwind Setup below). Ubuntu Condensed is treated as its own family — used specifically for dense, numeric, tabular content, which is exactly the situation it exists for (engine lines, move lists, eval scores, coordinates, tablebase DTM values).
+Self-hosted **Ubuntu** (`--font-display`) and **Ubuntu Condensed** (`--font-condensed`) in compressed `.woff2` format.
 
-| Role            | Family           | Size | Weight              | Line Height | Usage                                               |
-| --------------- | ---------------- | ---- | ------------------- | ----------- | --------------------------------------------------- |
-| Display         | Ubuntu           | 32px | 700 (Bold)          | 1.2         | Page titles, report headlines                       |
-| Heading         | Ubuntu           | 20px | 500 (Medium)        | 1.3         | Section headers, card titles                        |
-| Body            | Ubuntu           | 15px | 400 (Regular)       | 1.55        | Coaching report prose, descriptions                 |
-| Body Light      | Ubuntu           | 15px | 300 (Light)         | 1.55        | Secondary/de-emphasized paragraph text              |
-| Data / Notation | Ubuntu Condensed | 14px | 400                 | 1.4         | Move lists, SAN/FEN strings, eval bars, coordinates |
-| Caption         | Ubuntu           | 12px | 400                 | 1.4         | Timestamps, metadata, footnotes                     |
-| Emphasis        | Ubuntu           | 15px | 700 (Bold) / Italic | 1.5         | Inline emphasis, key takeaways in reports           |
+- **`font-display` (`Ubuntu`, weights 400, 500, 700):** Used for headings, navigation, buttons, and prose. Headings use medium/bold weight (`500`–`700`) with tight tracking (`-0.02em`), never decorative neon drop-shadows.
+- **`font-condensed` (`Ubuntu Condensed`, weight 400, with `font-variant-numeric: tabular-nums`):** Mandatory for PGN move trees, SAN/FEN strings, engine PV lines, Glicko-2 ratings (`1540 ±42`), timers (`02:14`), percentages, and dense diagnostic matrices.
 
-## Tailwind v4 Setup
+| Role | Utility Class | Family | Size | Weight | Line Height | Usage |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Display | `font-display text-2xl font-semibold tracking-tight` | Ubuntu | 24–28px | 600–700 | 1.2 | Page headers, dashboard titles |
+| Heading | `font-display text-base font-medium` | Ubuntu | 16–18px | 500–600 | 1.3 | Card titles, section headers |
+| Body | `font-display text-sm font-normal` | Ubuntu | 14–15px | 400 | 1.55 | Coaching prose, descriptions, settings |
+| Button | `font-display text-sm font-medium` | Ubuntu | 14px | 500 | 1.0 | Action buttons (no wide uppercase letter-spacing) |
+| Notation / Data | `font-condensed text-sm` | Ubuntu Condensed | 13–14px | 400 | 1.4 | Move lists, PV lines, ratings, timers, table cells |
+| Micro / Badge | `font-condensed text-xs uppercase tracking-wider` | Ubuntu Condensed | 11–12px | 400–700 | 1.3 | Status pills, tier badges, table column headers |
 
-Tailwind v4 config lives in CSS via `@theme`, no `tailwind.config.js` needed. Fonts and colors below go in your main stylesheet (e.g. `src/assets/main.css`):
+---
 
-```css
-@import 'tailwindcss';
+## 3. Spacing, Radius & Elevation
 
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-Th.ttf') format('truetype');
-  font-weight: 100;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-L.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-LI.ttf') format('truetype');
-  font-weight: 300;
-  font-style: italic;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-R.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-RI.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-M.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-MI.ttf') format('truetype');
-  font-weight: 500;
-  font-style: italic;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-B.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-BI.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-}
-/* Variable italic (weight + width axes) — covers italic beyond the static cuts above */
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('../fonts/Ubuntu-Italic[wdth,wght].ttf') format('truetype-variations');
-  font-weight: 100 700;
-  font-stretch: 75% 100%;
-  font-style: italic;
-}
-@font-face {
-  font-family: 'Ubuntu Condensed';
-  src: url('../fonts/Ubuntu-C.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-}
+### 3.1. Border Radius Scale
+Technical, crisp radii inspired by Supabase Studio (never bubbly or pill-shaped for buttons):
 
-@theme {
-  --font-display: 'Ubuntu', sans-serif;
-  --font-condensed: 'Ubuntu Condensed', sans-serif;
+| Token | Value | Usage |
+| :--- | :--- | :--- |
+| `--radius-sm` (`rounded-sm`) | `4px` | Status badges, rating chips, inline tags |
+| `--radius-md` (`rounded-md`) | `6px` | Buttons, inputs, selects, inner sub-panels |
+| `--radius-lg` (`rounded-lg`) | `8px` | Standard dashboard cards, discipline tiles, modals |
+| `--radius-xl` (`rounded-xl`) | `12px` | Major section containers, Diploma frame |
 
-  /* Neutrals */
-  --color-void: #05060a;
-  --color-surface: #0d0f16;
-  --color-elevated: #151822;
-  --color-border: #232838;
-  --color-border-hover: #333a4f;
-  --color-text-primary: #e8ecf5;
-  --color-text-secondary: #8b93a8;
-  --color-text-disabled: #4a5169;
+*(Note: Chessground board always retains `border-radius: 0`.)*
 
-  /* Primary */
-  --color-neon-cyan: #00e5ff;
-  --color-cyan-deep: #00b8cc;
-  --color-neon-purple: #b000ff;
-  --color-purple-deep: #7a00cc;
+### 3.2. Elevation & Borders
+Depth is communicated primarily through **surface luminance steps** (`canvas` → `surface` → `elevated`) and **`1px solid var(--color-border)`** hairlines, supplemented by subtle shadows:
 
-  /* Semantic */
-  --color-success: #00ff55;
-  --color-success-deep: #00cc44;
-  --color-warning: #ffe600;
-  --color-warning-deep: #ccb800;
-  --color-danger: #ff073a;
-  --color-danger-deep: #d9004c;
-  --color-info: #0055ff;
-  --color-info-deep: #3d8bff;
-  --color-highlight: #ff007a;
-  --color-highlight-light: #ff4da6;
-}
-```
+- **Cards at rest:** `1px solid var(--color-border)`, flat or subtle `shadow-sm` (`0 1px 2px rgba(0, 0, 0, 0.08)` in Light, `0 1px 3px rgba(0, 0, 0, 0.3)` in Dark).
+- **Dropdowns & Popovers:** `1px solid var(--color-border-hover)`, `shadow-md` (`0 4px 16px rgba(0, 0, 0, 0.12)` in Light, `0 4px 16px rgba(0, 0, 0, 0.45)` in Dark).
+- **Modals:** `1px solid var(--color-border)`, `shadow-lg` (`0 12px 32px rgba(0, 0, 0, 0.18)` in Light, `0 12px 32px rgba(0, 0, 0, 0.6)` in Dark).
+- **Zero Glow Policy:** Never use colored neon `box-shadow` glows or `backdrop-filter: blur()`.
 
-Adjust the `url(...)` paths to match where `main.css` sits relative to `src/assets/fonts/`. This automatically generates utilities like `bg-neon-cyan`, `text-neon-cyan`, `border-neon-cyan`, `font-display`, `font-condensed`.
+---
 
-### Naive UI bridge
-
-Naive UI doesn't read Tailwind's CSS variables directly — its `GlobalThemeOverrides` object needs plain hex strings. Keep one `src/theme/tokens.ts` file with the _same_ hex values as the `@theme` block above (this DESIGN.md is the source of truth for both), and pass it into `n-config-provider`:
-
-```ts
-// src/theme/tokens.ts
-export const tokens = {
-  void: '#05060a',
-  surface: '#0d0f16',
-  elevated: '#151822',
-  border: '#232838',
-  textPrimary: '#e8ecf5',
-  textSecondary: '#8b93a8',
-  neonCyan: '#00e5ff',
-  cyanDeep: '#00b8cc',
-  neonPurple: '#b000ff',
-  purpleDeep: '#7a00cc',
-  success: '#00ff55',
-  warning: '#ffe600',
-  danger: '#ff073a',
-  info: '#0055ff',
-}
-```
-
-```ts
-// theme/naive-overrides.ts
-import { tokens } from './tokens'
-export const naiveThemeOverrides = {
-  common: {
-    primaryColor: tokens.neonCyan,
-    primaryColorHover: tokens.cyanDeep,
-    bodyColor: tokens.void,
-    cardColor: tokens.surface,
-    popoverColor: tokens.elevated,
-    borderColor: tokens.border,
-    textColorBase: tokens.textPrimary,
-    successColor: tokens.success,
-    warningColor: tokens.warning,
-    errorColor: tokens.danger,
-    infoColor: tokens.info,
-    fontFamily: 'Ubuntu, sans-serif',
-  },
-}
-```
-
-## Spacing
-
-| Token     | Value | Usage                                          |
-| --------- | ----- | ---------------------------------------------- |
-| `space-1` | 4px   | Icon-to-label gaps                             |
-| `space-2` | 8px   | Button padding, chip gaps                      |
-| `space-3` | 12px  | Card internal padding (compact)                |
-| `space-4` | 16px  | Card internal padding (default), panel gutters |
-| `space-6` | 24px  | Section spacing                                |
-| `space-8` | 32px  | Page-level vertical rhythm                     |
-
-## Border Radius
-
-| Token       | Value | Usage                         |
-| ----------- | ----- | ----------------------------- |
-| `radius-sm` | 4px   | Data chips, eval badges, tags |
-| `radius-md` | 8px   | Buttons, inputs, cards        |
-| `radius-lg` | 14px  | Modals, coaching report cards |
-
-Keep radius modest everywhere — this theme reads "precise HUD," not "soft/bubbly." Chessground's board stays square (`radius: 0`) regardless of the surrounding card radius.
-
-## Elevation
-
-Neon glow replaces Slack's soft drop-shadows — reserved for _interactive/focus_ states only, never on static or large surfaces (large neon-glowing panels cause eye fatigue and drown out real signal).
-
-| Level             | Value                          | Usage                                                    |
-| ----------------- | ------------------------------ | -------------------------------------------------------- |
-| `shadow-flat`     | `0 1px 2px rgba(0,0,0,0.4)`    | Default card elevation on dark surface                   |
-| `shadow-elevated` | `0 8px 24px rgba(0,0,0,0.5)`   | Modals, dropdowns                                        |
-| `glow-cyan`       | `0 0 12px rgba(0,229,255,0.5)` | Focus ring, primary button hover, active nav item        |
-| `glow-danger`     | `0 0 12px rgba(255,7,58,0.5)`  | Check indicator, blunder flag, destructive confirm hover |
-
-## Components
-
-### Chessboard (Chessground)
-
-- Board itself stays neutral/desaturated (standard chess board look) — the neon system lives in the _chrome around_ the board, not the squares, so the position stays easy to read.
-- Board annotation colors are mapped **1:1 to the coaching pipeline's existing tag semantics**, so the color language is learned once and reused everywhere:
-
-| Tag                | Meaning               | Color                                 |
-| ------------------ | --------------------- | ------------------------------------- |
-| `[arrow:]`         | Suggested move / plan | `color-neon-cyan`                     |
-| `[mark:]`          | Key square / weakness | `color-neon-yellow` (`color-warning`) |
-| `[route:]`         | Piece maneuver path   | `color-neon-purple`                   |
-| Best move (engine) | Top engine choice     | `color-success`                       |
-| Threat / blunder   | Danger square         | `color-danger`                        |
-| Check              | King in check         | `color-danger` with `glow-danger`     |
-
-- Last-move highlight: `color-neon-cyan` at low opacity (~20%) fill on the two squares.
-- Selected square: `color-neon-purple` outline, no fill (keeps the piece legible).
-
-### Analysis / Data Panels
-
-- Card background `color-surface`, border `color-border`, `radius-md`, `shadow-flat`.
-- Eval bar and numeric scores use `font-condensed`; positive eval in `color-success`, negative in `color-danger`, drawn/near-zero in `color-text-secondary`.
-- Move list rows: hover state lifts to `color-elevated`, active/current move underlined in `color-neon-cyan`.
-
-### Coaching Report Cards
-
-- `radius-lg`, generous `space-6` internal padding — these are read slowly, not scanned, so give body text room (`Body`/`Body Light` roles, 1.55 line height).
-- Category dividers (opening/middlegame/endgame) in `color-text-secondary`, not a neon color — dividers are structure, not signal.
-
-### Buttons
-
-- Primary: `color-neon-cyan` background, `color-void` text (dark text on bright cyan reads better than white-on-cyan), `glow-cyan` on hover.
-- Secondary: transparent background, `color-border` outline, `color-text-primary` text, border brightens to `color-neon-purple` on hover.
-- Destructive: `color-danger` background, follows primary button pattern otherwise.
-
-## Do's and Don'ts
+## 4. Do's and Don'ts
 
 ### Do
-
-- Treat `neon-cyan` as _the_ primary color; every other neon carries a specific semantic or chart meaning, never decoration.
-- Reuse the same board-annotation color mapping across the live board, coaching reports, and any replay/review UI.
-- Use `font-condensed` anywhere numbers or notation get dense (move lists, eval bars, tablebase output).
-- Keep the void/surface/elevated neutrals desaturated so neon accents read as signal, not noise.
+- Use semantic classes (`bg-canvas`, `bg-surface`, `bg-elevated`, `border-border`, `text-text-primary`, `text-text-secondary`, `bg-brand`, `text-on-brand`) so components automatically support both Dark and Light themes.
+- Keep navigation tabs and selection cards monochrome (`bg-elevated` + `border-border-hover` + `text-text-primary`), using at most a subtle `2px` indicator bar or dot in `bg-brand`.
+- Use `font-condensed` for all ratings, timers, move lists, and numeric tables.
+- Read theme tokens reactively via `useThemeTokens()` when configuring ECharts or Naive UI overrides.
 
 ### Don't
-
-- Don't use more than two neon colors in a single component (e.g. a card shouldn't combine a cyan border, purple text, and a red icon).
-- Don't apply `glow-*` shadows to large or static surfaces — glow means "this is interactive or urgent right now."
-- Don't repurpose chess-annotation colors (best-move green, check red) for unrelated UI decoration — they're a taught vocabulary, keep it consistent.
-- Don't set body text in pure white (`#fff`) — use `color-text-primary` (`#e8ecf5`) for comfortable long-session reading.
+- Never hardcode hex colors (`#1c1c1c`, `#ffffff`, `#3ecf8e`) or `rgba(...)` in Vue templates or TypeScript files.
+- Never use `!important` to fight specificity in global CSS.
+- Never use `backdrop-filter: blur(...)`, neon `drop-shadow`, or animated background canvases.
+- Never use white text on the `#3ECF8E` emerald primary button in Dark Mode — always use `text-on-brand` (`#171717`).

@@ -107,14 +107,14 @@ const deleteMove = () => {
     class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-surface"
   >
     <div class="px-3 pt-2 pb-1">
-      <n-text class="text-xs font-bold tracking-[0.5px] uppercase" depth="3">
+      <n-text class="text-xs font-semibold tracking-wider uppercase" depth="3">
         {{ t('shared.board.pgn.moveHistory') }}
       </n-text>
     </div>
 
     <div
       ref="scrollContainer"
-      class="mx-2 mb-2 min-h-0 flex-1 overflow-y-auto rounded border border-border bg-void/40 px-3 py-2"
+      class="mx-2 mb-2 min-h-0 flex-1 overflow-y-auto rounded-sm border border-border bg-canvas px-3 py-2"
     >
       <PgnTree :key="pgnTreeVersion" :read-only="isReadOnly" @contextmenu="handleContextMenu" />
     </div>
@@ -122,7 +122,7 @@ const deleteMove = () => {
     <teleport to="body">
       <div
         v-if="showMenu && selectedNode"
-        class="glass fixed z-[99999] flex min-w-[250px] translate-y-1 flex-col gap-0.5 rounded-[10px] p-1.5"
+        class="fixed z-99999 flex min-w-[240px] translate-y-1 flex-col gap-0.5 rounded-lg border border-border bg-overlay p-1.5 shadow-lg"
         :style="{ left: menuX + 'px', top: menuY + 'px' }"
         @click.stop
       >

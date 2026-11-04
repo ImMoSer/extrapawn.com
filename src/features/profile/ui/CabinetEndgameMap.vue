@@ -155,7 +155,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     <div class="flex flex-col justify-between gap-4 border-b border-border pb-4 md:flex-row md:items-center">
       <div>
         <div class="flex items-center gap-2">
-          <NIcon :component="SparklesOutline" class="text-lg text-neon-cyan" />
+          <NIcon :component="SparklesOutline" class="text-lg text-text-secondary" />
           <h2 class="font-display text-lg font-bold tracking-wider text-text-primary uppercase">
             {{ t('pages.userCabinet.map.endgameTitle') }}
           </h2>
@@ -172,8 +172,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'weakest'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'weakest'"
         >
@@ -184,8 +184,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'blind_spots'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'blind_spots'"
         >
@@ -196,8 +196,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'strongest'
-              ? 'bg-neon-cyan/15 text-neon-cyan'
-              : 'text-text-secondary hover:text-text-primary'
+              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'strongest'"
         >
@@ -305,8 +305,8 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           class="group cursor-pointer rounded-xl border p-3.5 transition-all duration-150"
           :class="
             selectedDomainKey === item.domain.key
-              ? 'border-neon-cyan bg-elevated shadow-sm'
-              : `${resolveStatusSemanticClass(item.domain).borderClass} bg-void/60 hover:border-border-hover hover:bg-elevated/50`
+              ? 'border-border-hover bg-elevated shadow-sm'
+              : `${resolveStatusSemanticClass(item.domain).borderClass} bg-canvas hover:border-border-hover hover:bg-elevated/50`
           "
           @click="selectedDomainKey = item.domain.key"
         >
@@ -329,7 +329,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
               </span>
               <button
                 type="button"
-                class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-neon-cyan transition-colors hover:border-neon-cyan/50 hover:bg-neon-cyan/10"
+                class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-brand transition-colors hover:border-brand/50 hover:bg-brand/10"
                 :title="t('pages.userCabinet.diagnostics.trainWarmup')"
                 @click.stop="
                   emit('trainScope', {
@@ -345,7 +345,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                 class="text-sm transition-transform"
                 :class="
                   selectedDomainKey === item.domain.key
-                    ? 'translate-x-0.5 text-neon-cyan'
+                    ? 'translate-x-0.5 text-text-primary'
                     : 'text-text-disabled'
                 "
               />
@@ -379,11 +379,11 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Right Column: Material Classes Bullet-List inside Selected Domain -->
-      <div class="rounded-xl border border-border bg-void/40 p-4 lg:col-span-7">
+      <div class="rounded-xl border border-border bg-canvas p-4 lg:col-span-7">
         <template v-if="activeDomainEntry">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
             <div>
-              <span class="text-xs font-semibold tracking-wider text-neon-cyan uppercase">
+              <span class="text-xs font-semibold tracking-wider text-text-secondary uppercase">
                 {{ t('pages.userCabinet.map.activeDomainDrilldown') }}
               </span>
               <h3 class="font-display text-base font-bold text-text-primary">
@@ -393,7 +393,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 
             <button
               type="button"
-              class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1.5 text-xs font-bold text-neon-cyan transition-colors hover:bg-neon-cyan/20"
+              class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-3 py-1.5 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
               @click="
                 emit('trainScope', {
                   focusGroup: 'domain',
@@ -438,7 +438,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 
                   <button
                     type="button"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-neon-cyan/40 bg-neon-cyan/10 px-2.5 py-1 text-xs font-bold text-neon-cyan transition-colors hover:bg-neon-cyan/20"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
                     @click="
                       emit('trainScope', {
                         focusGroup: 'class',
@@ -453,7 +453,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
               </div>
 
               <!-- Class Bullet Bar -->
-              <div class="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-void">
+              <div class="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-elevated">
                 <div
                   class="h-full rounded-full transition-all duration-300"
                   :class="resolveStatusSemanticClass(cls.stat).barClass"

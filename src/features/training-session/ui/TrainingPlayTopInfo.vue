@@ -57,7 +57,7 @@ function handleBackAction(): void {
 <template>
   <div
     v-if="activePuzzle"
-    class="w-full h-11 px-3 rounded-lg bg-surface/90 backdrop-blur-md border border-border flex items-center justify-between gap-2 select-none"
+    class="w-full h-11 px-3 rounded-lg bg-surface border border-border flex items-center justify-between gap-2 select-none"
   >
     <!-- Left: Pause / Return to Hub or Exit Analysis -->
     <div class="flex items-center gap-2 shrink-0">
@@ -94,7 +94,7 @@ function handleBackAction(): void {
       <!-- Analysis Badge -->
       <span
         v-if="store.isAnalysisMode"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-neon-purple/15 text-neon-purple border border-neon-purple/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40"
       >
         {{ t('features.trainingCenter.badges.analysis') }}
       </span>
@@ -108,7 +108,7 @@ function handleBackAction(): void {
       </span>
       <span
         v-else
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40"
       >
         {{ t('features.trainingCenter.badges.winTarget') }}
       </span>
@@ -116,7 +116,7 @@ function handleBackAction(): void {
       <!-- Woodpecker Badge -->
       <span
         v-if="activePuzzle.is_woodpecker"
-        class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold bg-neon-purple/15 text-neon-purple border border-neon-purple/40"
+        class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold bg-accent/15 text-accent border border-accent/40"
       >
         {{
           t('features.trainingCenter.badges.woodpeckerStreak', {

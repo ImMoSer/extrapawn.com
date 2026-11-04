@@ -18,32 +18,32 @@ const moduleVisuals: Record<
 > = {
   trainingCenter: {
     icon: '🎯',
-    color: 'var(--color-neon-cyan)',
-    glow: 'color-mix(in srgb, var(--color-neon-cyan) 15%, transparent)',
+    color: 'var(--color-brand)',
+    glow: 'color-mix(in srgb, var(--color-brand) 12%, transparent)',
   },
   warmup: {
     icon: '⚡',
-    color: 'var(--color-success)',
-    glow: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
+    color: 'var(--color-accent)',
+    glow: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
   },
   woodpecker: {
     icon: '🔥',
     color: 'var(--color-warning)',
-    glow: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
+    glow: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
   },
   userCabinet: {
     icon: '🧬',
-    color: 'var(--color-highlight)',
-    glow: 'color-mix(in srgb, var(--color-highlight) 15%, transparent)',
+    color: 'var(--color-info)',
+    glow: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
   },
 }
 
 const conceptKeys = ['what', 'forWho', 'uniqueness'] as const
 
 const techStackItems = [
-  { labelKey: 'frontend', stackKey: 'frontendStack', color: 'var(--color-neon-cyan)' },
-  { labelKey: 'backend', stackKey: 'backendStack', color: 'var(--color-neon-purple)' },
-  { labelKey: 'chessLogic', stackKey: 'chessLogicStack', color: 'var(--color-highlight)' },
+  { labelKey: 'frontend', stackKey: 'frontendStack', color: 'var(--color-brand)' },
+  { labelKey: 'backend', stackKey: 'backendStack', color: 'var(--color-accent)' },
+  { labelKey: 'chessLogic', stackKey: 'chessLogicStack', color: 'var(--color-info)' },
   { labelKey: 'boardRendering', stackKey: 'boardRenderingStack', color: 'var(--color-success)' },
   { labelKey: 'chessEngine', stackKey: 'chessEngineStack', color: 'var(--color-warning)' },
   { labelKey: 'api', stackKey: 'apiStack', color: 'var(--color-danger)' },
@@ -54,47 +54,36 @@ const techStackItems = [
   <div class="min-h-screen overflow-x-hidden bg-transparent pb-15 text-text-primary">
     <!-- Hero Section -->
     <header
-      class="relative flex h-80 items-center justify-center overflow-hidden border-b border-border bg-gradient-to-br from-void to-surface px-5 text-center md:h-[400px]"
+      class="relative flex h-72 items-center justify-center overflow-hidden border-b border-border bg-surface px-5 text-center md:h-88"
     >
       <div class="relative z-10">
         <h1
-          class="m-0 bg-gradient-to-r from-text-primary via-neon-cyan to-text-primary bg-clip-text font-display text-[clamp(2rem,5vw,4.5rem)] font-black tracking-[2px] text-transparent uppercase"
+          class="m-0 font-display text-[clamp(2rem,5vw,4.2rem)] font-black tracking-[2px] text-text-primary uppercase"
         >
           {{ t('about.hero.title') }}
         </h1>
         <p class="mt-4 text-xl tracking-[1px] text-text-secondary">
           {{ t('about.hero.subtitle') }}
           <span
-            class="ml-1 rounded-full border border-neon-cyan/30 bg-neon-cyan/20 px-2.5 py-0.5 align-middle font-condensed text-xs font-bold text-neon-cyan"
+            class="ml-1 rounded-full border border-brand/40 bg-brand/15 px-2.5 py-0.5 align-middle font-condensed text-xs font-bold text-brand"
           >
             v{{ appVersion }}
           </span>
         </p>
       </div>
-      <div class="pointer-events-none absolute inset-0 z-0">
-        <div
-          class="absolute top-0 left-0 h-[350px] w-[350px] rounded-full bg-neon-cyan opacity-12 blur-[100px]"
-        ></div>
-        <div
-          class="absolute top-10 left-1/2 h-[350px] w-[350px] rounded-full bg-neon-purple opacity-12 blur-[100px]"
-        ></div>
-        <div
-          class="absolute right-0 bottom-0 h-[350px] w-[350px] rounded-full bg-warning opacity-12 blur-[100px]"
-        ></div>
-      </div>
     </header>
 
-    <div class="relative z-20 mx-auto -mt-15 max-w-[1200px] px-5">
+    <div class="relative z-20 mx-auto mt-8 max-w-[1200px] px-5">
       <!-- Concept Section -->
       <section>
         <n-grid cols="1 s:1 m:3" responsive="screen" :x-gap="24" :y-gap="24">
           <n-gi v-for="key in conceptKeys" :key="key">
             <n-card
-              class="glass relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-neon-cyan/30"
+              class="glass relative h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover"
               :title="t(`about.concept.${key}.title`)"
             >
               <div
-                class="absolute top-0 left-0 h-[3px] w-full bg-gradient-to-r from-neon-cyan to-neon-purple"
+                class="absolute top-0 left-0 h-[2px] w-full bg-brand"
               ></div>
               <n-text class="text-[1.05rem] leading-relaxed">
                 <span
@@ -299,16 +288,13 @@ const techStackItems = [
         <div class="flex flex-col items-center gap-7.5 text-center md:flex-row md:gap-10 md:text-left">
           <div class="relative shrink-0">
             <img
-              class="relative z-10 h-[180px] w-[180px] rounded-full border-[3px] border-neon-cyan/30 object-cover shadow-[0_0_25px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)]"
+              class="relative z-10 h-[180px] w-[180px] rounded-full border-2 border-border-hover object-cover"
               src="/jpg/me.jpg"
               :alt="t('about.author.photoAlt')"
             />
-            <div
-              class="absolute -inset-1.5 z-0 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple opacity-40 blur-md"
-            ></div>
           </div>
           <div class="grow">
-            <h2 class="m-0 mb-4 font-display text-3xl font-extrabold text-neon-cyan">
+            <h2 class="m-0 mb-4 font-display text-3xl font-extrabold text-text-primary">
               {{ t('about.author.title') }}
             </h2>
             <div class="space-y-3 leading-relaxed text-text-secondary">
@@ -333,20 +319,20 @@ const techStackItems = [
                 <a
                   href="https://t.me/extrapawn_chat"
                   target="_blank"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated/60 text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-neon-cyan hover:text-void"
+                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-on-brand"
                 >
                   TG
                 </a>
                 <a
                   href="https://github.com/ImMoSer/extrapawn.com"
                   target="_blank"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated/60 text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-neon-cyan hover:text-void"
+                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-on-brand"
                 >
                   GH
                 </a>
                 <a
                   href="mailto:immozerai@gmail.com"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated/60 text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-neon-cyan hover:text-void"
+                  class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-elevated text-xs font-bold text-text-primary no-underline transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-on-brand"
                 >
                   @
                 </a>

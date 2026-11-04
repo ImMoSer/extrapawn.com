@@ -50,10 +50,10 @@ const CHESSGROUND_BRUSHES = {
   blue: { key: 'b', color: 'var(--color-info)', opacity: 1, lineWidth: 10 },
   yellow: { key: 'y', color: 'var(--color-warning)', opacity: 1, lineWidth: 10 },
   orange: { key: 'o', color: 'var(--color-orange)', opacity: 1, lineWidth: 10 },
-  purple: { key: 'u', color: 'var(--color-neon-purple)', opacity: 1, lineWidth: 10 },
+  purple: { key: 'u', color: 'var(--color-accent)', opacity: 1, lineWidth: 10 },
   enginePlan: { key: 'p', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
   bestmove: { key: 'p', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
-  cyan: { key: 'c', color: 'var(--color-neon-cyan)', opacity: 1, lineWidth: 10 },
+  cyan: { key: 'c', color: 'var(--color-brand)', opacity: 1, lineWidth: 10 },
   pink: { key: 'k', color: 'var(--color-highlight)', opacity: 1, lineWidth: 10 },
   brown: { key: 'w', color: 'var(--color-orange-warm)', opacity: 1, lineWidth: 10 },
   gray: { key: 'x', color: 'var(--color-text-secondary)', opacity: 1, lineWidth: 10 },
@@ -66,8 +66,8 @@ const CHESSGROUND_BRUSHES = {
   coachblue: { key: 'B', color: 'var(--color-info)', opacity: 0.5, lineWidth: 5 },
   coachyellow: { key: 'Y', color: 'var(--color-warning)', opacity: 0.5, lineWidth: 5 },
   coachorange: { key: 'O', color: 'var(--color-orange)', opacity: 0.5, lineWidth: 5 },
-  coachpurple: { key: 'U', color: 'var(--color-neon-purple)', opacity: 0.9, lineWidth: 5 },
-  coachcyan: { key: 'C', color: 'var(--color-neon-cyan)', opacity: 0.5, lineWidth: 5 },
+  coachpurple: { key: 'U', color: 'var(--color-accent)', opacity: 0.9, lineWidth: 5 },
+  coachcyan: { key: 'C', color: 'var(--color-brand)', opacity: 0.5, lineWidth: 5 },
   coachpink: { key: 'K', color: 'var(--color-highlight)', opacity: 0.5, lineWidth: 5 },
   coachbrown: { key: 'W', color: 'var(--color-orange-warm)', opacity: 0.5, lineWidth: 5 },
   coachgray: { key: 'X', color: 'var(--color-text-disabled)', opacity: 0.5, lineWidth: 5 },
@@ -95,21 +95,28 @@ function getNagSymbol(quality: string, nag?: string) {
   return '!'
 }
 
-const QUALITY_BG_COLOR: Record<string, string> = {
-  brilliant: tokens.neonCyan,
-  great: tokens.success,
-  best: tokens.success,
-  excellent: tokens.success,
-  good: tokens.infoDeep,
-  neutral: tokens.textSecondary,
-  inaccuracy: tokens.warning,
-  mistake: tokens.orange,
-  blunder: tokens.danger,
-  missed_mate: tokens.danger,
-}
-
 function getNagColor(quality: string): string {
-  return QUALITY_BG_COLOR[quality] || tokens.success
+  switch (quality) {
+    case 'brilliant':
+      return tokens.mint
+    case 'great':
+    case 'best':
+    case 'excellent':
+      return tokens.success
+    case 'good':
+      return tokens.info
+    case 'neutral':
+      return tokens.textSecondary
+    case 'inaccuracy':
+      return tokens.warning
+    case 'mistake':
+      return tokens.orange
+    case 'blunder':
+    case 'missed_mate':
+      return tokens.danger
+    default:
+      return tokens.success
+  }
 }
 
 type LooseShape = DrawShape & { stepBadge?: string; nag?: string; customNag?: string }
@@ -127,7 +134,7 @@ const combinedShapes = computed(() => {
     result.push({
       orig: boardStore.lastNag.square as Key,
       customSvg: {
-        html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.void}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.void}" text-anchor="middle">${sym}</text></g>`,
+        html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.canvas}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.canvas}" text-anchor="middle">${sym}</text></g>`,
         center: 'orig',
       },
     })
@@ -143,7 +150,7 @@ const combinedShapes = computed(() => {
       result.push({
         orig: s.orig as Key,
         customSvg: {
-          html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.void}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.void}" text-anchor="middle">${sym}</text></g>`,
+          html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.canvas}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.canvas}" text-anchor="middle">${sym}</text></g>`,
           center: 'orig',
         },
       })
@@ -154,7 +161,7 @@ const combinedShapes = computed(() => {
       result.push({
         orig: s.orig as Key,
         customSvg: {
-          html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="${tokens.warning}" stroke="${tokens.void}" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="${tokens.void}" text-anchor="middle">${label}</text></g>`,
+          html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="${tokens.warning}" stroke="${tokens.canvas}" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="${tokens.canvas}" text-anchor="middle">${label}</text></g>`,
           center: 'orig',
         },
       })

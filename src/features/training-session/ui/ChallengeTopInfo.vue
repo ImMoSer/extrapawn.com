@@ -69,7 +69,7 @@ function handleBackAction(): void {
 <template>
   <div
     v-if="activePuzzle"
-    class="w-full h-11 px-3 rounded-lg bg-surface/90 backdrop-blur-md border border-border flex items-center justify-between gap-2 select-none"
+    class="w-full h-11 px-3 rounded-lg bg-surface border border-border flex items-center justify-between gap-2 select-none"
   >
     <!-- Left: Exit to Training Center + Discipline/Category -->
     <div class="flex items-center gap-2 shrink-0">
@@ -101,7 +101,7 @@ function handleBackAction(): void {
     <div class="flex items-center gap-2 min-w-0">
       <span
         v-if="store.isAnalysisMode"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-neon-purple/15 text-neon-purple border border-neon-purple/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40"
       >
         {{ t('features.trainingCenter.badges.analysis') }}
       </span>
@@ -113,7 +113,7 @@ function handleBackAction(): void {
       </span>
       <span
         v-else
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40"
       >
         {{ t('features.trainingCenter.badges.winTarget') }}
       </span>

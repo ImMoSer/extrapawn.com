@@ -273,7 +273,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
           class="rounded-xl border border-border bg-surface p-5 shadow-md"
         >
           <div class="flex items-center gap-2 border-b border-border pb-3">
-            <NIcon :component="CalendarOutline" class="text-lg text-neon-purple" />
+            <NIcon :component="CalendarOutline" class="text-lg text-accent" />
             <h2 class="font-display text-base font-bold tracking-wider text-text-primary uppercase">
               {{ t('pages.userCabinet.macro.recentCoursesTitle') }}
             </h2>
@@ -283,10 +283,10 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
             <div
               v-for="course in cabinetData.recent_courses"
               :key="course.id"
-              class="flex flex-col justify-between rounded-lg border bg-void/60 p-4 transition-all"
+              class="flex flex-col justify-between rounded-lg border bg-canvas p-4 transition-all"
               :class="
                 course.status === 'completed'
-                  ? 'border-border hover:border-neon-cyan cursor-pointer'
+                  ? 'border-border hover:border-border-hover cursor-pointer'
                   : 'border-border'
               "
               @click="handleOpenDiploma(course)"
@@ -294,7 +294,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
               <div>
                 <div class="flex items-start justify-between gap-2">
                   <div>
-                    <div class="text-xs font-bold tracking-wider text-neon-cyan uppercase">
+                    <div class="text-xs font-bold tracking-wider text-text-secondary uppercase">
                       {{ resolveDisciplineLabel(course.discipline, t) }}
                     </div>
                     <div class="mt-0.5 text-sm font-bold text-text-primary">
@@ -311,7 +311,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                       course.status === 'completed'
                         ? 'border-success/40 bg-success/10 text-success'
                         : course.status === 'active'
-                          ? 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan'
+                          ? 'border-brand/40 bg-brand/10 text-brand'
                           : 'border-warning/40 bg-warning/10 text-warning'
                     "
                   >
@@ -344,7 +344,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                 <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-sm bg-elevated">
                   <div
                     class="h-full transition-all"
-                    :class="course.status === 'completed' ? 'bg-success' : 'bg-neon-cyan'"
+                    :class="course.status === 'completed' ? 'bg-success' : 'bg-brand'"
                     :style="{
                       width: `${Math.min(100, Math.round((course.solved_puzzles / Math.max(1, course.target_puzzles)) * 100))}%`,
                     }"
@@ -354,7 +354,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                 <!-- Course Metrics Strip (Accuracy, Mistakes, Optional Rating Delta) -->
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-2 font-condensed text-xs">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-neon-cyan font-bold">
+                    <span class="text-text-primary font-bold">
                       {{
                         t('features.trainingCenter.diploma.cardAccuracy', {
                           pct: getCourseAccuracyPercent(course),
@@ -414,7 +414,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                 v-if="course.status === 'completed'"
                 class="mt-3.5 flex items-center justify-between gap-2 border-t border-border pt-2.5"
               >
-                <span class="inline-flex items-center gap-1.5 font-condensed text-xs font-bold text-neon-cyan uppercase">
+                <span class="inline-flex items-center gap-1.5 font-condensed text-xs font-bold text-brand uppercase">
                   <NIcon :component="RibbonOutline" />
                   {{ t('features.trainingCenter.diploma.openDiplomaBtn') }} ↗
                 </span>

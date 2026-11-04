@@ -53,13 +53,13 @@ function onPieceSelected(role: ChessopsRole) {
 
 <template>
   <div
-    class="absolute inset-0 z-[100] grid cursor-default touch-none grid-cols-8 grid-rows-8 bg-void/60"
+    class="absolute inset-0 z-100 grid cursor-default touch-none grid-cols-8 grid-rows-8 bg-canvas/65"
     @click.stop
   >
     <div
       v-for="role in promotionRoles"
       :key="role"
-      class="m-0.5 flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-border-hover bg-text-primary transition-transform duration-100 hover:scale-110 hover:bg-neon-cyan/90"
+      class="m-0.5 flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-border-hover bg-eval-white transition-transform duration-100 hover:scale-105 hover:border-brand"
       :style="squareStyles(role)"
       @click="onPieceSelected(role)"
     >

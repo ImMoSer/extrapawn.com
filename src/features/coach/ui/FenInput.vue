@@ -35,13 +35,13 @@ function handleSubmit() {
       <input
         v-model="inputFen"
         :aria-invalid="fenError ? 'true' : 'false'"
-        class="flex-1 min-w-0 bg-void border rounded px-3 py-1.5 text-xs text-text-primary font-mono outline-none focus:border-neon-cyan transition-colors"
+        class="flex-1 min-w-0 bg-canvas border rounded px-3 py-1.5 text-xs text-text-primary font-mono outline-none focus:border-brand transition-colors"
         :class="fenError ? 'border-danger/55' : 'border-border'"
         placeholder="Paste FEN string..."
       />
       <button
         type="submit"
-        class="bg-elevated hover:bg-border-hover text-neon-cyan border border-border hover:border-neon-cyan px-4 py-1.5 rounded text-xs font-semibold cursor-pointer transition-colors shrink-0"
+        class="bg-elevated hover:bg-border-hover text-text-primary border border-border hover:border-border-hover px-4 py-1.5 rounded text-xs font-semibold cursor-pointer transition-colors shrink-0"
       >
         Load FEN
       </button>

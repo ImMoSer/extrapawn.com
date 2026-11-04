@@ -87,7 +87,7 @@ const filteredMenuItems = computed(() => {
           <img
             src="/webp/extra_pawn_black.webp"
             alt="EXTRAPAWN"
-            class="h-20 w-auto drop-shadow-[0_0_15px_color-mix(in_srgb,var(--color-neon-cyan)_20%,transparent)] md:h-[clamp(100px,25vh,500px)]"
+            class="h-20 w-auto md:h-[clamp(100px,25vh,500px)]"
           />
           <div class="flex flex-col items-center gap-1.5 md:gap-2">
             <h1 class="brand-text m-0 text-[2rem] leading-none md:text-[clamp(2rem,6vw,4.5rem)]">
@@ -104,7 +104,7 @@ const filteredMenuItems = computed(() => {
                 "{{ localizedQuoteText }}"
               </p>
               <footer
-                class="text-[0.7rem] font-medium tracking-[0.08rem] text-neon-cyan/80 md:text-[0.85rem]"
+                class="text-[0.7rem] font-medium tracking-[0.08rem] text-text-primary md:text-[0.85rem]"
               >
                 - {{ currentQuote.author }} -
               </footer>
@@ -143,7 +143,7 @@ const filteredMenuItems = computed(() => {
           <router-link :to="item.path" custom v-slot="{ navigate }">
             <n-card
               hoverable
-              class="group relative flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-border bg-surface/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:border-[var(--card-glow-color)] hover:bg-elevated/80 hover:shadow-[0_0_25px_-5px_var(--card-glow-color)] md:rounded-[var(--radius-lg)]"
+              class="group relative flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover hover:bg-elevated md:rounded-[var(--radius-lg)]"
               :content-style="{
                 padding: '0',
                 width: '100%',
@@ -154,7 +154,6 @@ const filteredMenuItems = computed(() => {
               }"
               @click="navigate"
               :bordered="false"
-              :style="{ '--card-glow-color': item.color }"
             >
               <div
                 class="relative z-10 flex w-full flex-col items-center justify-center gap-1.5 px-2 py-3 text-center md:gap-2 md:px-4 md:py-6"
@@ -162,12 +161,12 @@ const filteredMenuItems = computed(() => {
                 <n-icon
                   :size="isMobile ? 24 : 34"
                   :color="item.color"
-                  class="transition-transform duration-300 group-hover:scale-110"
+                  class="transition-transform duration-200 group-hover:scale-105"
                 >
                   <component :is="item.icon" />
                 </n-icon>
                 <n-text
-                  class="font-display text-[0.8rem] font-bold tracking-[1px] text-text-primary uppercase transition-colors duration-300 group-hover:text-text-primary md:text-[1.1rem] md:tracking-[1.5px]"
+                  class="font-display text-[0.8rem] font-bold tracking-[1px] text-text-primary uppercase transition-colors duration-200 group-hover:text-text-primary md:text-[1.1rem] md:tracking-[1.5px]"
                 >
                   {{ t(item.labelKey) }}
                 </n-text>
@@ -184,7 +183,7 @@ const filteredMenuItems = computed(() => {
             class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
             :class="
               locale === 'en'
-                ? 'font-bold text-neon-cyan'
+                ? 'font-bold text-text-primary underline underline-offset-4'
                 : 'text-text-secondary hover:text-text-primary'
             "
             @click="handleChangeLang('en')"
@@ -196,7 +195,7 @@ const filteredMenuItems = computed(() => {
             class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
             :class="
               locale === 'ru'
-                ? 'font-bold text-neon-cyan'
+                ? 'font-bold text-text-primary underline underline-offset-4'
                 : 'text-text-secondary hover:text-text-primary'
             "
             @click="handleChangeLang('ru')"
@@ -208,7 +207,7 @@ const filteredMenuItems = computed(() => {
             class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
             :class="
               locale === 'de'
-                ? 'font-bold text-neon-cyan'
+                ? 'font-bold text-text-primary underline underline-offset-4'
                 : 'text-text-secondary hover:text-text-primary'
             "
             @click="handleChangeLang('de')"

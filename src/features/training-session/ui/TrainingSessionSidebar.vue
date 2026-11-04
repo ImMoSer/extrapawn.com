@@ -84,12 +84,12 @@ function handleItemClick(item: HydratedSessionItem): void {
 
 <template>
   <div
-    class="h-full flex flex-col gap-3 p-3 bg-surface/90 backdrop-blur-md border-r border-border text-text-primary select-none overflow-hidden"
+    class="h-full flex flex-col gap-3 p-3 bg-surface border-r border-border text-text-primary select-none overflow-hidden"
   >
     <!-- Session Header -->
     <div v-if="summary" class="flex flex-col gap-2 pb-2 border-b border-border shrink-0">
       <div class="flex items-center justify-between gap-2">
-        <span class="font-display font-bold text-sm uppercase tracking-wider text-neon-cyan truncate">
+        <span class="font-display font-bold text-sm uppercase tracking-wider text-text-primary truncate">
           {{ disciplineLabel }}
         </span>
         <span
@@ -113,7 +113,7 @@ function handleItemClick(item: HydratedSessionItem): void {
 
       <div class="w-full h-1.5 rounded-sm bg-elevated overflow-hidden border border-border/60">
         <div
-          class="h-full bg-neon-cyan transition-all duration-300"
+          class="h-full bg-brand transition-all duration-300"
           :style="{ width: `${progressPercent}%` }"
         />
       </div>
@@ -155,7 +155,7 @@ function handleItemClick(item: HydratedSessionItem): void {
         class="text-[11px] text-text-secondary flex items-center justify-between bg-surface/70 px-2 py-1 rounded-sm border border-border"
       >
         <span>{{ t('features.trainingCenter.woodpecker.title') }}</span>
-        <span class="font-condensed font-bold text-neon-purple">
+        <span class="font-condensed font-bold text-accent">
           {{
             t(
               `features.trainingCenter.woodpecker.actions.${store.lastAttemptResult.woodpecker.action}`,
@@ -205,10 +205,10 @@ function handleItemClick(item: HydratedSessionItem): void {
             class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
             :class="[
               item.index === store.currentItemIndex && !store.isAnalysisMode
-                ? 'bg-neon-cyan/10 border-l-2 border-l-neon-cyan'
+                ? 'bg-elevated border-l-2 border-l-brand'
                 : '',
               store.isAnalysisMode && store.analysisPuzzle?.puzzle_id === item.puzzle_id
-                ? 'bg-neon-purple/15 border-l-2 border-l-neon-purple'
+                ? 'bg-accent/15 border-l-2 border-l-accent'
                 : '',
               item.status === 'solved' ? 'bg-success/5 border-l-2 border-l-success' : '',
               item.status === 'failed' ? 'bg-danger/5 border-l-2 border-l-danger' : '',
@@ -228,7 +228,7 @@ function handleItemClick(item: HydratedSessionItem): void {
                     : item.status === 'failed'
                       ? 'bg-danger/15 text-danger border-danger/40'
                       : item.index === store.currentItemIndex
-                        ? 'bg-neon-cyan text-void border-neon-cyan'
+                        ? 'bg-brand text-on-brand border-brand'
                         : 'bg-elevated text-text-secondary border-border',
                 ]"
               >
@@ -250,7 +250,7 @@ function handleItemClick(item: HydratedSessionItem): void {
                   </span>
                   <span
                     v-if="item.is_woodpecker"
-                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-neon-purple/15 text-neon-purple border border-neon-purple/40 shrink-0"
+                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40 shrink-0"
                   >
                     WP {{ item.woodpecker_streak }}/3
                   </span>
@@ -289,7 +289,7 @@ function handleItemClick(item: HydratedSessionItem): void {
           <div class="text-[10px] text-text-secondary uppercase">
             {{ t('features.trainingCenter.report.accuracy') }}
           </div>
-          <div class="font-condensed font-bold text-sm text-neon-cyan">
+          <div class="font-condensed font-bold text-sm text-text-primary">
             {{ store.sessionReportSummary.accuracyPercent }}%
           </div>
         </div>

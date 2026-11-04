@@ -62,12 +62,8 @@ const freeFeatures = [
       <n-space vertical :size="isMobile ? 24 : 36">
         <!-- Header -->
         <div class="text-center">
-          <n-h1 class="!mb-2 font-display text-[1.8rem] font-extrabold tracking-[1px] sm:text-[2.4rem]">
-            <span
-              class="bg-gradient-to-br from-neon-cyan to-neon-purple bg-clip-text text-transparent"
-            >
-              {{ t('pages.pricing.title') }}
-            </span>
+          <n-h1 class="!mb-2 font-display text-[1.8rem] font-extrabold tracking-[1px] text-text-primary sm:text-[2.4rem]">
+            {{ t('pages.pricing.title') }}
           </n-h1>
           <n-text depth="2" class="mx-auto block max-w-[650px] text-[1.15rem]">
             {{ t('pages.pricing.subtitle') }}
@@ -76,7 +72,7 @@ const freeFeatures = [
 
         <!-- Free Features Card -->
         <n-card
-          class="glass relative overflow-hidden !border-neon-cyan/25"
+          class="glass relative overflow-hidden border-border-hover"
           :bordered="false"
         >
           <div>

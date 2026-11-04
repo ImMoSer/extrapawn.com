@@ -101,12 +101,12 @@ function handleSelectParticipant(row: ChallengeParticipantDTO): void {
 
 <template>
   <div
-    class="h-full flex flex-col gap-3 p-3 bg-surface/90 backdrop-blur-md border-r border-border text-text-primary select-none overflow-hidden"
+    class="h-full flex flex-col gap-3 p-3 bg-surface border-r border-border text-text-primary select-none overflow-hidden"
   >
     <!-- Challenge Header -->
     <div v-if="state" class="flex flex-col gap-2 pb-2 border-b border-border shrink-0">
       <div class="flex items-center justify-between gap-2">
-        <span class="font-display font-bold text-sm uppercase tracking-wider text-neon-cyan truncate">
+        <span class="font-display font-bold text-sm uppercase tracking-wider text-text-primary truncate">
           {{ disciplineLabel }}
         </span>
         <span
@@ -265,7 +265,7 @@ function handleSelectParticipant(row: ChallengeParticipantDTO): void {
 
         <div
           v-if="store.isFinalized && store.selectedParticipant"
-          class="flex items-center justify-between text-[11px] text-neon-cyan pt-0.5 border-t border-border/50"
+          class="flex items-center justify-between text-[11px] text-brand pt-0.5 border-t border-border/50"
         >
           <span class="truncate">
             {{
@@ -296,9 +296,9 @@ function handleSelectParticipant(row: ChallengeParticipantDTO): void {
             :class="[
               canInspectParticipant(row) ? 'cursor-pointer hover:bg-elevated/70' : '',
               store.isFinalized && store.selectedUserId === row.user_id
-                ? 'bg-neon-cyan/15 border-l-2 border-l-neon-cyan'
+                ? 'bg-elevated border-l-2 border-l-brand'
                 : row.user_id === authStore.userProfile?.id
-                  ? 'bg-neon-cyan/8 border-l-2 border-l-neon-cyan/60'
+                  ? 'bg-elevated/60 border-l-2 border-l-brand/60'
                   : row.solved
                     ? 'bg-success/5 border-l-2 border-l-success'
                     : 'bg-danger/5 border-l-2 border-l-danger',
@@ -330,7 +330,7 @@ function handleSelectParticipant(row: ChallengeParticipantDTO): void {
                     size="13"
                     :class="
                       store.selectedUserId === row.user_id
-                        ? 'text-neon-cyan shrink-0'
+                        ? 'text-brand shrink-0'
                         : 'text-text-secondary/70 shrink-0'
                     "
                   >
@@ -338,7 +338,7 @@ function handleSelectParticipant(row: ChallengeParticipantDTO): void {
                   </NIcon>
                   <span
                     v-if="row.user_id === authStore.userProfile?.id"
-                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 shrink-0"
+                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40 shrink-0"
                   >
                     {{ t('features.leaderboards.sidebar.currentUser') }}
                   </span>

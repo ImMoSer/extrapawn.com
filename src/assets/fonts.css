@@ -2,78 +2,27 @@
 
 @font-face {
   font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-Th.ttf') format('truetype');
-  font-weight: 100;
+  src: url('./fonts/Ubuntu-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-stretch: 75% 100%;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-L.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-LI.ttf') format('truetype');
-  font-weight: 300;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-R.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-RI.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-M.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-MI.ttf') format('truetype');
-  font-weight: 500;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-B.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-BI.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: 'Ubuntu';
-  src: url('./fonts/Ubuntu-Italic[wdth,wght].ttf') format('truetype-variations');
-  font-weight: 100 700;
+  src: url('./fonts/Ubuntu-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 800;
   font-stretch: 75% 100%;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Ubuntu Condensed';
-  src: url('./fonts/Ubuntu-C.ttf') format('truetype');
-  font-weight: 400;
+  src: url('./fonts/Ubuntu-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-stretch: 75%;
   font-style: normal;
+  font-display: swap;
 }

@@ -30,7 +30,7 @@ const emit = defineEmits<{
 }>()
 
 const QUALITY_BG: Record<string, string> = {
-  brilliant: 'var(--color-neon-cyan)',
+  brilliant: 'var(--color-info)',
   great: 'var(--color-success)',
   best: 'var(--color-success)',
   excellent: 'var(--color-success)',
@@ -81,7 +81,7 @@ function characterColor(label: string) {
     case 'Risky': return 'var(--color-highlight)'
     case 'Drawish': return 'var(--color-text-secondary)'
     case 'Positional': return 'var(--color-success)'
-    case 'Solid': return 'var(--color-neon-cyan)'
+    case 'Solid': return 'var(--color-info)'
     case 'Quiet': return 'var(--color-text-disabled)'
     default: return 'var(--color-text-secondary)'
   }
@@ -264,7 +264,7 @@ function getStrategicThemes() {
         <span class="truncate">{{ openingName }}</span>
         <span
           v-if="posExplanation?.opening_info?.transposition"
-          class="ml-auto px-1.5 py-0.2 rounded bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 text-[9px] uppercase tracking-wider shrink-0"
+          class="ml-auto px-1.5 py-0.2 rounded bg-info/15 text-info border border-info/30 text-[9px] uppercase tracking-wider shrink-0"
           :title="`Transposed to canonical path: ${posExplanation?.opening_info?.wiki_path || ''}`"
         >
           Transposition
@@ -282,7 +282,7 @@ function getStrategicThemes() {
           {{ lastMoveAnalysis.san }}
           <span
             v-if="!lastMoveAnalysis.loading && lastMoveAnalysis.quality"
-            class="inline-flex items-center justify-center w-6 h-6 rounded-full text-void"
+            class="inline-flex items-center justify-center w-6 h-6 rounded-full text-on-brand"
             :style="{ backgroundColor: getQualityColor(lastMoveAnalysis.quality) }"
           >
             <QualityIcon :quality="lastMoveAnalysis.quality" :size="16" />
@@ -339,7 +339,7 @@ function getStrategicThemes() {
         >
           <span
             class="w-1.5 h-1.5 rounded-full shrink-0 translate-y-[-1px]"
-            :class="th.strength >= 80 ? 'bg-warning' : 'bg-neon-cyan'"
+            :class="th.strength >= 80 ? 'bg-warning' : 'bg-brand'"
           />
           <span>{{ th.description }}</span>
         </li>
@@ -350,7 +350,7 @@ function getStrategicThemes() {
     <div class="flex-1 p-3 overflow-y-auto thin-scroll">
       <div class="text-[9px] uppercase tracking-widest font-bold text-text-secondary mb-2 flex items-center justify-between">
         <span>Engine Candidates</span>
-        <span v-if="topMovesLoading" class="text-neon-cyan font-normal">Analyzing…</span>
+        <span v-if="topMovesLoading" class="text-brand font-normal">Analyzing…</span>
       </div>
 
       <div v-if="(!topMoves || topMoves.length === 0) && !topMovesLoading" class="text-xs text-text-secondary italic py-2">
@@ -361,14 +361,14 @@ function getStrategicThemes() {
         v-for="(move, idx) in (topMoves || [])"
         :key="`${move.move || move.uci}-${idx}`"
         class="top-move-row p-2.5 rounded-md mb-2 border border-border bg-surface hover:border-border-hover transition-colors cursor-pointer"
-        :class="selectedMoveIndex === idx ? 'border-neon-cyan/50 bg-elevated' : ''"
+        :class="selectedMoveIndex === idx ? 'border-border-hover bg-elevated' : ''"
         @click="emit('select-move', idx)"
       >
         <!-- 1. Header: Rank, Move SAN, NAG Quality Icon (if present), Eval Pawns -->
         <div class="flex items-center gap-2 mb-1">
           <span
             class="w-5 h-5 rounded-full text-[10px] font-bold font-mono flex items-center justify-center border shrink-0"
-            :class="idx === 0 ? 'text-success border-success/35 bg-success/10' : 'text-text-secondary border-border-hover bg-void'"
+            :class="idx === 0 ? 'text-success border-success/35 bg-success/10' : 'text-text-secondary border-border-hover bg-canvas'"
           >
             {{ move.rank }}
           </span>
@@ -383,13 +383,13 @@ function getStrategicThemes() {
           <!-- NAG Quality Badge right next to SAN if present -->
           <span
             v-if="getMoveQuality(move, idx)"
-            class="inline-flex items-center justify-center w-5 h-5 rounded-full text-void shrink-0 shadow-sm"
+            class="inline-flex items-center justify-center w-5 h-5 rounded-full text-on-brand shrink-0 shadow-sm"
             :style="{ backgroundColor: getQualityColor(getMoveQuality(move, idx) || '') }"
           >
             <QualityIcon
               :quality="getMoveQuality(move, idx) || ''"
               :size="13"
-              color="var(--color-void)"
+              color="var(--color-on-brand)"
             />
           </span>
 
@@ -441,7 +441,7 @@ function getStrategicThemes() {
         >
           <div class="flex items-center justify-between text-[10px] mb-1 font-mono">
             <span class="text-success font-bold">{{ getWdl(move)!.white }}% W</span>
-            <span class="text-neon-purple font-bold">{{ getWdl(move)!.draw }}% D</span>
+            <span class="text-accent font-bold">{{ getWdl(move)!.draw }}% D</span>
             <span class="text-danger font-bold">{{ getWdl(move)!.black }}% L</span>
             <span v-if="move.popularity !== null && move.popularity !== undefined" class="text-text-secondary text-[9px] font-normal" :title="move.totalGames ? `${formatGames(move.totalGames)} games` : ''">
               ({{ move.popularity }}%)
@@ -451,14 +451,14 @@ function getStrategicThemes() {
             </span>
           </div>
 
-          <div class="h-1.5 w-full bg-void rounded-full overflow-hidden flex border border-border">
+          <div class="h-1.5 w-full bg-canvas rounded-full overflow-hidden flex border border-border">
             <div
               class="bg-success h-full transition-all duration-300"
               :style="{ width: `${getWdl(move)!.white}%` }"
               :title="`White Wins: ${getWdl(move)!.white}%`"
             />
             <div
-              class="bg-neon-purple h-full transition-all duration-300"
+              class="bg-accent h-full transition-all duration-300"
               :style="{ width: `${getWdl(move)!.draw}%` }"
               :title="`Draws: ${getWdl(move)!.draw}%`"
             />
@@ -534,7 +534,7 @@ function getStrategicThemes() {
                 {{ move.pvLine.length - 1 }} moves
               </span>
             </div>
-            <div class="space-y-1 pl-2 border-l-2 border-neon-cyan/40">
+            <div class="space-y-1 pl-2 border-l-2 border-brand/40">
               <div
                 v-for="(p, i) in move.pvLine.slice(1)"
                 :key="i"

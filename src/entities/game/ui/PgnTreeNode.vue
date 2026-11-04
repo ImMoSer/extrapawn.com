@@ -72,17 +72,17 @@ const nagInfo = computed(() => {
 const qualityColorClass = computed(() => {
   switch (nagInfo.value?.quality) {
     case 'best':
-      return '!text-success'
+      return 'text-success'
     case 'brilliant':
-      return '!text-neon-purple'
+      return 'text-mint'
     case 'inaccuracy':
-      return '!text-orange'
+      return 'text-warning'
     case 'mistake':
-      return '!text-highlight'
+      return 'text-orange'
     case 'blunder':
-      return '!text-danger'
+      return 'text-danger'
     case 'interesting':
-      return '!text-neon-cyan'
+      return 'text-info'
     default:
       return ''
   }
@@ -109,12 +109,12 @@ const navigate = () => {
         {{ moveNumber }}
       </span>
       <span
-        class="move-san rounded border px-[5px] py-px font-semibold transition-all duration-150"
+        class="move-san rounded-xs border px-[5px] py-px font-semibold transition-colors"
         :class="[
           isActive
-            ? 'is-active border-highlight/40 bg-highlight/20 font-extrabold text-highlight'
+            ? 'is-active border-brand/50 bg-brand/15 font-bold text-brand'
             : 'border-transparent text-text-primary',
-          readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-elevated/80 hover:text-text-primary',
+          readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-elevated hover:text-text-primary',
           qualityColorClass,
         ]"
         @click="navigate"
@@ -124,7 +124,7 @@ const navigate = () => {
       </span>
       <span
         v-if="node.comment"
-        class="ml-1.5 inline-block max-w-[320px] rounded-r border-l-2 border-neon-cyan bg-elevated/50 px-1.5 py-0.5 align-middle font-display text-[0.82em] whitespace-normal text-text-secondary italic"
+        class="ml-1.5 inline-block max-w-[320px] rounded-r border-l-2 border-brand bg-elevated/60 px-1.5 py-0.5 align-middle font-display text-[0.82em] whitespace-normal text-text-secondary italic"
         :title="node.comment"
       >
         {{ node.comment }}
@@ -136,7 +136,7 @@ const navigate = () => {
       <!-- 1. Variations first (if any) -->
       <div
         v-if="variations.length > 0"
-        class="my-1.5 ml-3 block rounded-r-md border-l-2 border-border-hover bg-elevated/20 py-1 pl-3"
+        class="my-1.5 ml-3 block rounded-r-md border-l-2 border-border-hover bg-elevated/30 py-1 pl-3"
       >
         <div
           v-for="(vNode, idx) in variations"

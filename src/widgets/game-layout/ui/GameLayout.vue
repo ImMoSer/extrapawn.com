@@ -182,7 +182,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   padding: 10px;
   box-sizing: border-box;
   overflow: hidden;
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-canvas);
 }
 
 .layout-main {
@@ -271,7 +271,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   width: 100%;
   aspect-ratio: 1 / 1;
   position: relative;
-  background-color: var(--color-void);
+  background-color: var(--color-canvas);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -297,9 +297,9 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
 /* --- Side Panels --- */
 .left-panel,
 .right-panel {
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--panel-border-radius);
-  border: 1px solid var(--color-border-hover);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   padding: 0px;
   min-width: 200px;
   display: flex;

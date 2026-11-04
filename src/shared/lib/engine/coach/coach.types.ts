@@ -1,5 +1,5 @@
 export const QUALITY_COLOR: Record<string, string> = {
-  brilliant: 'var(--color-neon-cyan)',
+  brilliant: 'var(--color-info)',
   great: 'var(--color-success)',
   best: 'var(--color-success)',
   excellent: 'var(--color-success)',
