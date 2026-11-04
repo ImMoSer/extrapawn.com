@@ -342,16 +342,31 @@ export const useCoachStore = defineStore('coach', () => {
     { immediate: true },
   )
 
+  function isReadyForActiveAnalysis(fen: string): boolean {
+    if (!fen || isFairPlayLocked.value || !isCoachSpyActive.value) {
+      return false
+    }
+    if (gameStore.gamePhase === 'PLAYING') {
+      return boardStore.turn === boardStore.orientation && !boardStore.isGameOver
+    }
+    return gameStore.gamePhase === 'ANALYSIS'
+  }
+
+  function buildAnalysisRequestKey(fen: string, overrideLastMoveUci?: string | null): string {
+    const { moves } = pgnService.getAnalysisPayloadContext(overrideLastMoveUci)
+    const lastMoveUci = moves.length > 0 ? moves[moves.length - 1] : null
+    const payloadKeyUci = lastMoveUci || 'null'
+    return `${fen}_${payloadKeyUci}`
+  }
+
   // Reactive Board FEN Listener: Coach automatically analyzes board when active
   watch(
     () => boardStore.fen,
     (newFen) => {
-      if (isFairPlayLocked.value) {
+      if (!isReadyForActiveAnalysis(newFen)) {
         return
       }
-      if (isCoachSpyActive.value && newFen) {
-        void runAnalysis(newFen)
-      }
+      void runAnalysis(newFen)
     },
   )
 
@@ -359,13 +374,17 @@ export const useCoachStore = defineStore('coach', () => {
   watch(
     () => gameStore.currentStrategy,
     () => {
-      abortInFlightAnalysis()
-      boardStore.setCoachShapes([])
-      posExplanation.value = null
-      lastFetchedFen.value = ''
-      lastFetchedUci.value = null
-      if (!isFairPlayLocked.value && boardStore.fen && isCoachSpyActive.value) {
-        void runAnalysis(boardStore.fen)
+      const currentFen = boardStore.fen
+      const nextRequestKey = currentFen ? buildAnalysisRequestKey(currentFen) : ''
+      if (inFlightAnalysisKey !== nextRequestKey) {
+        abortInFlightAnalysis()
+        boardStore.setCoachShapes([])
+        posExplanation.value = null
+        lastFetchedFen.value = ''
+        lastFetchedUci.value = null
+      }
+      if (isReadyForActiveAnalysis(currentFen)) {
+        void runAnalysis(currentFen)
       }
     },
   )
@@ -383,7 +402,7 @@ export const useCoachStore = defineStore('coach', () => {
           lastFetchedUci.value = null
         }
       } else if (phase === 'PLAYING' || phase === 'ANALYSIS') {
-        if (boardStore.fen && spyActive) {
+        if (isReadyForActiveAnalysis(boardStore.fen)) {
           void runAnalysis(boardStore.fen)
         }
       } else if (phase === 'GAMEOVER') {
@@ -408,7 +427,7 @@ export const useCoachStore = defineStore('coach', () => {
       posExplanation.value = null
       return null
     }
-    if (!currentFen || !isCoachSpyActive.value) return null
+    if (!isReadyForActiveAnalysis(currentFen)) return null
 
     if (_overrideFenBefore) {
       logger.info(`[CoachStore] Analysis called with overrideFenBefore: ${_overrideFenBefore}`)
