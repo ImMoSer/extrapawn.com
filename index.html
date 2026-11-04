@@ -28,7 +28,7 @@
   <meta property="twitter:image" content="https://extrapawn.com/png/og-banner.png" />
 
   <!-- Theme Color -->
-  <meta name="theme-color" content="#0b0d17" />
+  <meta name="theme-color" content="#121212" />
 
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -73,7 +73,7 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          background-color: #0b0d17;
+          background-color: #121212;
           z-index: 99999;
           font-family: 'Ubuntu', sans-serif;
         }
@@ -83,27 +83,26 @@
           align-items: center;
         }
         .shell-logo {
-          width: 200px; /* Wie in LoginApp */
+          width: 200px;
           height: auto;
           margin-bottom: 30px;
-          filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.2));
         }
         .shell-spinner {
-          width: 32px;
-          height: 32px;
-          border: 2px solid rgba(0, 242, 255, 0.1);
-          border-top: 2px solid #00f2ff;
+          width: 28px;
+          height: 28px;
+          border: 2px solid #2e2e2e;
+          border-top: 2px solid #3ecf8e;
           border-radius: 50%;
-          animation: spin 1s linear infinite;
+          animation: spin 0.9s linear infinite;
           margin-bottom: 16px;
         }
         .shell-text {
-          font-size: 2rem;
+          font-size: 1.5rem;
           font-weight: 700;
-          letter-spacing: 0.15em;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
           margin: 0;
-          color: #00f2ff;
-          text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+          color: #ededed;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
       </style>
