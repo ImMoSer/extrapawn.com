@@ -700,7 +700,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       void fetchTacticsCourseCurriculum()
       return dto
     } catch (err) {
-      const msg = extractErrorText(err, 'Failed to start Crash-Test (3822) session')
+      const msg = extractErrorText(err, 'Failed to start Crash-Test session')
       error.value = msg
       logger.error('[TrainingSessionStore] startCrashTestSession failed:', err)
       throw err
@@ -817,7 +817,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     if (puzzle.tactical_solution) {
       const moves = puzzle.tactical_solution.trim().split(/\s+/).filter(Boolean)
-      for (const uci of moves) {
+      for (const rawToken of moves) {
+        const uci = rawToken.split('|')[0]?.trim() || ''
+        if (!uci) continue
         const posBefore = boardStore.chessPosition.clone()
         const parsed = parseUci(uci)
         if (!parsed) continue

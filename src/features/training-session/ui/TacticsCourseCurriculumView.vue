@@ -129,8 +129,9 @@ async function handleStartOrResumeCrashTest(): Promise<void> {
 
 async function handleJumpCrashTest(): Promise<void> {
   if (!authStore.isMo3ep) return
+  const maxIdx = Math.max(0, (curriculum.value?.total_puzzles ?? 2263) - 1)
   const targetOneBased = jumpIndexInput.value ?? 1
-  const zeroBased = Math.max(0, Math.min(3821, Math.floor(targetOneBased) - 1))
+  const zeroBased = Math.max(0, Math.min(maxIdx, Math.floor(targetOneBased) - 1))
   await store.startCrashTestSession(false, zeroBased)
 }
 
@@ -154,7 +155,7 @@ async function handleRestartCrashTest(): Promise<void> {
               6 недель · 24 батча · 12 Дней Дятла
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              3 822 задачи (от простых к сложным)
+              {{ curriculum?.total_puzzles ?? 2263 }} задачи (от простых к сложным)
             </span>
           </div>
 
@@ -233,7 +234,7 @@ async function handleRestartCrashTest(): Promise<void> {
       </div>
     </div>
 
-    <!-- Crash-Test (3 822 задачи в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
+    <!-- Crash-Test (все задачи курса в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
     <div
       v-if="authStore.isMo3ep"
       class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
@@ -242,18 +243,18 @@ async function handleRestartCrashTest(): Promise<void> {
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
             <span class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40">
-              КРЭШ-ТЕСТ · 3 822 ЗАДАЧИ В 1 БАТЧ
+              КРЭШ-ТЕСТ · {{ curriculum?.total_puzzles ?? 2263 }} ЗАДАЧИ В 1 БАТЧ
             </span>
             <span
               v-if="curriculum"
               class="font-condensed font-bold text-sm text-text-primary"
             >
-              Позиция: #{{ Math.min(3822, (curriculum.crash_test_index ?? 0) + 1) }} / 3822
+              Позиция: #{{ Math.min(curriculum.total_puzzles || 2263, (curriculum.crash_test_index ?? 0) + 1) }} / {{ curriculum.total_puzzles || 2263 }}
               · Решено: {{ curriculum.crash_test_solved }} · Ошибок: {{ curriculum.crash_test_failed }}
             </span>
           </div>
           <p class="text-xs text-text-secondary">
-            Сквозной прогон всех 3 822 задач курса с сохранением места остановки и кнопкой «Флаг / Пожаловаться» во время игры.
+            Сквозной прогон всех {{ curriculum?.total_puzzles ?? 2263 }} задач курса с сохранением места остановки и кнопкой «Флаг / Пожаловаться» во время игры.
           </p>
         </div>
 
@@ -264,7 +265,7 @@ async function handleRestartCrashTest(): Promise<void> {
               v-model:value="jumpIndexInput"
               size="small"
               :min="1"
-              :max="3822"
+              :max="curriculum?.total_puzzles ?? 2263"
               class="w-24"
             />
             <NButton
@@ -302,8 +303,8 @@ async function handleRestartCrashTest(): Promise<void> {
             </template>
             {{
               curriculum?.crash_test_active
-                ? `Продолжить Крэш-Тест (#${Math.min(3822, curriculum.crash_test_index + 1)})`
-                : 'Запустить Крэш-Тест (3822)'
+                ? `Продолжить Крэш-Тест (#${Math.min(curriculum.total_puzzles || 2263, curriculum.crash_test_index + 1)})`
+                : `Запустить Крэш-Тест (${curriculum?.total_puzzles ?? 2263})`
             }}
           </NButton>
 

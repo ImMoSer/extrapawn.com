@@ -19,10 +19,36 @@ export function normalizeUciMove(uci: string): string {
 }
 
 /**
- * Compares two UCI moves with normalization for castling.
- * This ensures that 'e1h1' (from book) matches 'e1g1' (from engine/user).
+ * Extracts the primary UCI move from a scenario move token that may contain
+ * a 2-move finishing dual separated by '|' (e.g. "d1d5|f1d5" -> "d1d5").
+ */
+export function extractPrimaryUciMove(moveToken: string): string {
+  if (!moveToken) return ''
+  return moveToken.split('|')[0]?.trim() || ''
+}
+
+/**
+ * Compares two UCI move tokens with normalization for castling and support for
+ * pipe-separated finishing duals ("moveA|moveB").
+ * This ensures that 'e1h1' (from book) matches 'e1g1' (from engine/user),
+ * and that either alternative in "d1d5|f1d5" is accepted as a valid scenario move.
  */
 export function areMovesEqual(move1: string, move2: string): boolean {
+  if (!move1 || !move2) return false
   if (move1 === move2) return true
-  return normalizeUciMove(move1) === normalizeUciMove(move2)
+
+  if (!move1.includes('|') && !move2.includes('|')) {
+    return normalizeUciMove(move1.trim()) === normalizeUciMove(move2.trim())
+  }
+
+  const candidates1 = move1
+    .split('|')
+    .map((m) => normalizeUciMove(m.trim()))
+    .filter(Boolean)
+  const candidates2 = move2
+    .split('|')
+    .map((m) => normalizeUciMove(m.trim()))
+    .filter(Boolean)
+
+  return candidates1.some((c1) => candidates2.includes(c1))
 }

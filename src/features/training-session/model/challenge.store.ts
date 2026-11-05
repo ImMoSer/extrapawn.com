@@ -192,7 +192,9 @@ export const useChallengeStore = defineStore('challenge', () => {
     const trimmed = uciMovesStr.trim()
     if (trimmed) {
       const moves = trimmed.split(/\s+/).filter(Boolean)
-      for (const uci of moves) {
+      for (const rawToken of moves) {
+        const uci = rawToken.split('|')[0]?.trim() || ''
+        if (!uci) continue
         const posBefore = boardStore.chessPosition.clone()
         const parsed = parseUci(uci)
         if (!parsed) continue

@@ -307,5 +307,56 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
       outcomeReason: 'resign',
     })
   })
+
+  it('accepts both moveA and moveB in a pipe-separated Finishing Dual (moveA|moveB) in scenarioOnly', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // White Kh6, Qf5, Rc1; Black Kg8. Solution: "f5d5 g8h8 d5d7|c1c7"
+    const fen = '6k1/8/7K/5Q2/8/8/8/2R5 w - - 0 1'
+    const dualPuzzle: PuzzlePuzzle = {
+      puzzle_id: 'DUAL-FIN-1',
+      puzzle_type: 'tactics_course',
+      category: 'deflection',
+      domain: 'COMBINATIONAL_IDEAS',
+      difficulty: 'Pro',
+      rating: 1600,
+      strategy: 'scenarioOnly',
+      first_move: 'user',
+      user_color: 'white',
+      objective: 'win',
+      initial_fen: fen,
+      tactical_solution: 'f5d5 g8h8 d5d7|c1c7',
+    }
+
+    // Subcase 1: User plays first alternative (d5d7) on move 2 -> success!
+    const onSuccess1 = vi.fn()
+    const onFailure1 = vi.fn()
+    const strat1 = new PuzzleStrategy(dualPuzzle, 'white', 'tactics_course', {
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      onSuccess: onSuccess1,
+      onFailure: onFailure1,
+    })
+    gameStore.startWithStrategy(fen, strat1, 'white')
+    await gameStore.handleUserMove('f5', 'd5')
+    await gameStore.handleUserMove('d5', 'd7')
+    expect(onSuccess1).toHaveBeenCalledTimes(1)
+    expect(onFailure1).not.toHaveBeenCalled()
+
+    // Subcase 2: User plays second alternative (c1c7) on move 2 -> success!
+    const onSuccess2 = vi.fn()
+    const onFailure2 = vi.fn()
+    const strat2 = new PuzzleStrategy(dualPuzzle, 'white', 'tactics_course', {
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      onSuccess: onSuccess2,
+      onFailure: onFailure2,
+    })
+    gameStore.startWithStrategy(fen, strat2, 'white')
+    await gameStore.handleUserMove('f5', 'd5')
+    await gameStore.handleUserMove('c1', 'c7')
+    expect(onSuccess2).toHaveBeenCalledTimes(1)
+    expect(onFailure2).not.toHaveBeenCalled()
+  })
 })
 

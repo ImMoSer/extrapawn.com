@@ -2,7 +2,7 @@ import { enginePlayService } from '../lib/EnginePlayService'
 import { useBoardStore } from './board.store'
 import { isFideDrawReason, useGameStore } from './game.store'
 import type { GameplayStrategyConfig, GameStatusInfo, IGameplayStrategy } from './strategy.types'
-import { areMovesEqual } from '@/shared/lib/chess-utils'
+import { areMovesEqual, extractPrimaryUciMove } from '@/shared/lib/chess-utils'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
 import type { EngineId } from '@/shared/types/api.types'
@@ -238,7 +238,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     return {
       isScenario: true,
       isCorrect,
-      expectedMove,
+      expectedMove: expectedMove !== undefined ? extractPrimaryUciMove(expectedMove) : undefined,
     }
   }
 
@@ -413,7 +413,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
     if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
       const move = this.scenarioMoves[this.scenarioIndex] || null
       this.scenarioIndex++
-      return move
+      return move ? extractPrimaryUciMove(move) : null
     }
 
     if (this.puzzle.strategy === 'scenarioOnly') return null
