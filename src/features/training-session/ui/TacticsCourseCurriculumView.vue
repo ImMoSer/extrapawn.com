@@ -57,12 +57,13 @@ interface WeekGroup {
 }
 
 const WEEK_TITLES: Readonly<Record<number, string>> = {
-  1: 'Неделя 1 · Матовая атака, Типичные жертвы и Выигрыш материала',
-  2: 'Неделя 2 · Прямые тактические удары: Связка, Открытое нападение, Цугцванг и Ловушки',
-  3: 'Неделя 3 · Рубежные практикумы (Срезы #1–#2) и Комбинационные идеи: Отвлечение',
-  4: 'Неделя 4 · Комбинационные идеи: Отвлечение и Искусство завлечения',
-  5: 'Неделя 5 · Экватор курса, Уничтожение защиты, Блокада, Перекрытие и Открытие линий',
-  6: 'Неделя 6 · Искусство защиты (Ничья: Пат, Вечный шах, Крепость) и Выпускной экзамен',
+  1: 'Неделя 1 · Цели атаки: Матовая атака, Матовые сети и Выигрыш материала',
+  2: 'Неделя 2 · Средства и Геометрия: Жертвы ферзя/ладьи, Двойной удар и Связка',
+  3: 'Неделя 3 · Вскрытое нападение, Линейный удар, Рентген и Практикумы вслепую',
+  4: 'Неделя 4 · Рубежный экзамен и Комбинационные мотивы: Завлечение, Отвлечение, Перекрытие',
+  5: 'Неделя 5 · Стратегическая тактика: Разрушение пешечной структуры, Критические поля и Линии',
+  6: 'Неделя 6 · Стратегическая тактика: Освобождение линий, Устранение защиты, Темп и Цугцванг',
+  7: 'Неделя 7 · Блокада и Крепости, Спасение патом/вечным шахом и Выпускной экзамен',
 }
 
 const weeksList = computed<WeekGroup[]>(() => {
@@ -74,8 +75,9 @@ const weeksList = computed<WeekGroup[]>(() => {
     cpByAfterBatch[wp.after_batch_id] = wp
   }
 
+  const maxWeek = c.batches.reduce((acc, b) => Math.max(acc, b.week), 7)
   const groups: WeekGroup[] = []
-  for (let w = 1; w <= 6; w++) {
+  for (let w = 1; w <= maxWeek; w++) {
     const wBatches = c.batches.filter((b) => b.week === w)
     if (wBatches.length > 0) {
       groups.push({
@@ -152,10 +154,10 @@ async function handleRestartCrashTest(): Promise<void> {
               КЛАССИЧЕСКИЙ КУРС ТАКТИКИ
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              6 недель · 24 батча · 12 Дней Дятла
+              {{ weeksList.length || 7 }} недель · {{ curriculum?.batches?.length ?? 28 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 14 }} Дней Дятла
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ curriculum?.total_puzzles ?? 2263 }} задачи (от простых к сложным)
+              {{ curriculum?.total_puzzles ?? 2997 }} задачи (от простых к сложным)
             </span>
           </div>
 
@@ -164,7 +166,7 @@ async function handleRestartCrashTest(): Promise<void> {
               День Дятла #{{ curriculum.current_woodpecker_id }} — Очистка ошибок перед следующим блоком
             </template>
             <template v-else-if="curriculum?.current_step_type === 'completed'">
-              Поздравляем! Все 24 батча и 12 Дней Дятла успешно пройдены!
+              Поздравляем! Все {{ curriculum?.batches?.length ?? 28 }} батчей и {{ curriculum?.woodpecker_days?.length ?? 14 }} Дней Дятла успешно пройдены!
             </template>
             <template v-else-if="currentBatchMeta">
               Текущий этап: Батч #{{ currentBatchMeta.batch_id }} — {{ currentBatchMeta.batch_title }}
@@ -219,7 +221,7 @@ async function handleRestartCrashTest(): Promise<void> {
       <div v-if="curriculum" class="flex flex-col gap-1.5">
         <div class="flex items-baseline justify-between text-xs">
           <span class="text-text-secondary uppercase font-display font-semibold">
-            Общий прогресс курса (Диплом по закрытию 24 батчей)
+            Общий прогресс курса (Диплом по закрытию {{ curriculum?.batches?.length ?? 28 }} батчей)
           </span>
           <span class="font-condensed font-bold text-base text-text-primary">
             {{ curriculum.solved_total }} / {{ curriculum.total_puzzles }} ({{ totalProgressPercent }}%)
