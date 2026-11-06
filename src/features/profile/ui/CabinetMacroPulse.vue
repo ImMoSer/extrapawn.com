@@ -45,13 +45,17 @@ const disciplineTimeline = computed(() => {
 const yearlyStats = computed(() => {
   let activeDays = 0
   let totalSolved = 0
+  let totalFailed = 0
   let totalGraduated = 0
   for (const day of props.cabinet.daily_activity) {
     if (day.solved + day.failed > 0) activeDays++
     totalSolved += day.solved
+    totalFailed += day.failed
     totalGraduated += day.woodpecker_graduated
   }
-  return { activeDays, totalSolved, totalGraduated }
+  const totalAttempts = totalSolved + totalFailed
+  const acc = totalAttempts > 0 ? Math.round((totalSolved / totalAttempts) * 100) : 100
+  return { activeDays, totalSolved, totalFailed, totalGraduated, acc }
 })
 
 const chartOption = computed(() => {
@@ -174,6 +178,7 @@ const chartOption = computed(() => {
                 t('pages.userCabinet.macro.yearlySummary', {
                   days: yearlyStats.activeDays,
                   solved: yearlyStats.totalSolved,
+                  acc: yearlyStats.acc,
                 })
               }}
             </span>

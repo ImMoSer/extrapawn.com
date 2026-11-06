@@ -79,7 +79,6 @@ const CLASSICAL_COURSE_SCOPE_FALLBACKS: Readonly<Record<string, string>> = {
   winMinorPiece: 'Выигрыш лёгкой фигуры',
   exchangeAndTrapped: 'Выигрыш качества и ловля фигуры',
   pin: 'Связка и полусвязка',
-  doubleAttack: 'Двойной удар и вилка',
   discoveredAttack: 'Открытое нападение',
   discoveredCheck: 'Открытый шах',
   lineAndXRayAttack: 'Линейный удар и рентген',
@@ -110,7 +109,6 @@ const CLASSICAL_COURSE_SCOPE_FALLBACKS: Readonly<Record<string, string>> = {
   intermediateAndWeakSquare: 'Промежуточный ход и слабость',
   stalemateDraw: 'Спасение патом',
   perpetualCheckDraw: 'Вечный шах',
-  fortressAndPositionalDraw: 'Позиционная ничья и крепость',
   mixedExam: 'Экзамен без подсказок',
 }
 
