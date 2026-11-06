@@ -1,0 +1,45 @@
+services:
+  chess-maintenance:
+    build:
+      context: .
+      dockerfile: maintenance/Dockerfile
+    restart: always
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.15'
+        reservations:
+          memory: 8M
+          cpus: '0.02'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      # HTTP роутер (приоритет 1 — самый низкий, включается только когда основной фронтенд выключен)
+      - "traefik.http.routers.chess-maintenance-web.rule=Host(`extrapawn.com`) || Host(`www.extrapawn.com`)"
+      - "traefik.http.routers.chess-maintenance-web.entrypoints=web"
+      - "traefik.http.routers.chess-maintenance-web.priority=1"
+      - "traefik.http.routers.chess-maintenance-web.service=chess-maintenance-svc"
+      # HTTPS роутер (приоритет 1 — самый низкий, перехватывает трафик при падении/остановке chess-frontend)
+      - "traefik.http.routers.chess-maintenance-websecure.rule=Host(`extrapawn.com`) || Host(`www.extrapawn.com`)"
+      - "traefik.http.routers.chess-maintenance-websecure.entrypoints=websecure"
+      - "traefik.http.routers.chess-maintenance-websecure.tls=true"
+      - "traefik.http.routers.chess-maintenance-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.chess-maintenance-websecure.priority=1"
+      - "traefik.http.routers.chess-maintenance-websecure.service=chess-maintenance-svc"
+      # Внутренний порт Nginx
+      - "traefik.http.services.chess-maintenance-svc.loadbalancer.server.port=80"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/" ]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  app-network:
+    external: true
+    name: dokploy-network
+

@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EXTRAPAWN — Техническое обслуживание</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+      @font-face {
+        font-family: 'Ubuntu';
+        src: url('/fonts/Ubuntu-Variable.woff2') format('woff2');
+        font-weight: 100 800;
+        font-stretch: 75% 100%;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Ubuntu';
+        src: url('/fonts/Ubuntu-Italic-Variable.woff2') format('woff2');
+        font-weight: 100 800;
+        font-stretch: 75% 100%;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --theme-canvas: #121212;
+        --theme-surface: #1c1c1c;
+        --theme-elevated: #242424;
+        --theme-border: #2e2e2e;
+        --theme-border-hover: #3e3e3e;
+        --theme-text-primary: #ededed;
+        --theme-text-secondary: #a1a1aa;
+        --theme-brand: #3ecf8e;
+        --theme-brand-deep: #24b47e;
+        --theme-warning: #f4bd50;
+        --font-display: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        font-family: var(--font-display);
+        background-color: var(--theme-canvas);
+        color: var(--theme-text-primary);
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .page-wrapper {
+        display: flex;
+        width: 100%;
+        min-height: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 12px;
+      }
+
+      .container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 920px;
+        gap: 20px;
+      }
+
+      /* Hero Section (exact match to WelcomeView.vue) */
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .hero-pawn {
+        height: clamp(90px, 19vh, 210px);
+        width: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+        filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
+      }
+
+      .hero-title-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .brand-text {
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(2rem, 5.2vw, 3.8rem);
+        line-height: 1;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--theme-text-primary);
+        user-select: none;
+      }
+
+      .quote-box {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        max-width: 680px;
+        padding: 0 8px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .quote-box:hover {
+        opacity: 0.85;
+      }
+
+      .quote-text {
+        margin: 0;
+        font-size: clamp(0.8rem, 1.15vw, 1rem);
+        line-height: 1.5;
+        font-weight: 400;
+        font-style: italic;
+        color: var(--theme-text-secondary);
+      }
+
+      .quote-author {
+        font-size: clamp(0.72rem, 0.9vw, 0.85rem);
+        font-weight: 500;
+        letter-spacing: 0.08rem;
+        color: var(--theme-text-primary);
+      }
+
+      /* Maintenance Card (replaces the 4 mode cards) */
+      .maintenance-card {
+        width: 100%;
+        background-color: var(--theme-surface);
+        border: 1px solid var(--theme-border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: border-color 0.25s ease;
+      }
+
+      .maintenance-card:hover {
+        border-color: var(--theme-border-hover);
+      }
+
+      .art-wrapper {
+        position: relative;
+        width: 100%;
+        max-height: clamp(220px, 42vh, 420px);
+        overflow: hidden;
+        background: #0d0f0e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .art-wrapper::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(28, 28, 28, 0) 70%,
+          rgba(28, 28, 28, 0.95) 100%
+        );
+        pointer-events: none;
+      }
+
+      .art-image {
+        width: 100%;
+        height: 100%;
+        max-height: clamp(220px, 42vh, 420px);
+        object-fit: cover;
+        object-position: center 18%;
+        display: block;
+      }
+
+      .card-content {
+        padding: 16px 24px 22px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        background: rgba(244, 189, 80, 0.1);
+        border: 1px solid rgba(244, 189, 80, 0.28);
+        color: var(--theme-warning);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-badge.online {
+        background: rgba(62, 207, 142, 0.12);
+        border-color: rgba(62, 207, 142, 0.35);
+        color: var(--theme-brand);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--theme-warning);
+        box-shadow: 0 0 8px var(--theme-warning);
+        animation: pulse 1.8s infinite ease-in-out;
+      }
+
+      .status-badge.online .status-dot {
+        background-color: var(--theme-brand);
+        box-shadow: 0 0 8px var(--theme-brand);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.45;
+          transform: scale(0.88);
+        }
+      }
+
+      .maintenance-title {
+        margin: 0;
+        font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+        font-weight: 700;
+        color: var(--theme-text-primary);
+        letter-spacing: 0.02em;
+      }
+
+      .maintenance-subtitle {
+        margin: 0;
+        max-width: 600px;
+        font-size: clamp(0.85rem, 1.15vw, 0.98rem);
+        line-height: 1.55;
+        color: var(--theme-text-secondary);
+      }
+
+      .reload-btn {
+        display: none;
+        margin-top: 6px;
+        padding: 10px 22px;
+        border-radius: 6px;
+        border: none;
+        background-color: var(--theme-brand);
+        color: #171717;
+        font-family: var(--font-display);
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.15s ease;
+      }
+
+      .reload-btn:hover {
+        background-color: var(--theme-brand-deep);
+        transform: translateY(-1px);
+      }
+
+      .reload-btn.visible {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Language Switcher */
+      .lang-switcher {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px 0;
+      }
+
+      .lang-btn {
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        padding: 2px 6px;
+        font-family: var(--font-display);
+        font-size: 0.88rem;
+        color: var(--theme-text-secondary);
+        transition: color 0.15s ease;
+      }
+
+      .lang-btn:hover {
+        color: var(--theme-text-primary);
+      }
+
+      .lang-btn.active {
+        font-weight: 700;
+        color: var(--theme-text-primary);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      .lang-sep {
+        color: var(--theme-text-secondary);
+        opacity: 0.5;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="container">
+        <!-- Green Rectangle Area: Pawn + EXTRAPAWN + English Chess Quotes -->
+        <div class="hero">
+          <img
+            src="/webp/extra_pawn_black.webp"
+            alt="EXTRAPAWN"
+            width="256"
+            height="256"
+            class="hero-pawn"
+          />
+          <div class="hero-title-group">
+            <h1 class="brand-text">EXTRAPAWN</h1>
+            <blockquote class="quote-box" id="quoteBox" title="Click for another quote">
+              <p class="quote-text" id="quoteText">
+                "When you see a good move, look for a better one."
+              </p>
+              <footer class="quote-author" id="quoteAuthor">- Emanuel Lasker -</footer>
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Red Rectangle Area: Maintenance Card with "Dad under the hood" -->
+        <div class="maintenance-card">
+          <div class="art-wrapper">
+            <img
+              src="/maintenance_art.jpg"
+              alt="Under the hood of the chess machine"
+              class="art-image"
+            />
+          </div>
+          <div class="card-content">
+            <div class="status-badge" id="statusBadge">
+              <span class="status-dot"></span>
+              <span id="statusText">PIT STOP / ТЕХРАБОТЫ</span>
+            </div>
+            <h2 class="maintenance-title" id="maintTitle">
+              Батя залез под капот своей шахматной машины
+            </h2>
+            <p class="maintenance-subtitle" id="maintSubtitle">
+              Проводим техническое обслуживание сервера и подкручиваем дебютные гайки. Скоро всё
+              снова поедет — страница обновится автоматически!
+            </p>
+            <button class="reload-btn" id="reloadBtn" onclick="window.location.reload()">
+              Машина завелась! Вернуться на сайт
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+          <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+          <span class="lang-sep">|</span>
+          <button class="lang-btn active" data-lang="ru" onclick="setLang('ru')">RU</button>
+          <span class="lang-sep">|</span>
+          <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Built-in English fallback quotes (and full list loaded from /quotes/lichess_quotes.json)
+      let quotes = [
+        {
+          id: 1,
+          author: 'Emanuel Lasker',
+          text: 'When you see a good move, look for a better one.',
+        },
+        {
+          id: 2,
+          author: 'José Raúl Capablanca',
+          text: 'Chess is something more than a game. It is an intellectual diversion which has certain artistic qualities and many scientific elements.',
+        },
+        {
+          id: 3,
+          author: 'Savielly Tartakower',
+          text: 'Chess is a fairy tale of 1001 blunders.',
+        },
+        {
+          id: 4,
+          author: 'Bobby Fischer',
+          text: "I don't believe in psychology. I believe in good moves.",
+        },
+        {
+          id: 5,
+          author: 'Mikhail Tal',
+          text: 'You must take your opponent into a deep dark forest where 2+2=5, and the path leading out is only wide enough for one.',
+        },
+        {
+          id: 6,
+          author: 'Aron Nimzowitsch',
+          text: 'Even the laziest king flees wildly in the face of a double check!',
+        },
+        {
+          id: 7,
+          author: 'Max Euwe',
+          text: 'Strategy requires thought, tactics require observation.',
+        },
+        {
+          id: 8,
+          author: 'Garry Kasparov',
+          text: 'Chess is mental torture.',
+        },
+      ]
+
+      let currentQuoteId = null
+
+      function pickRandomQuote() {
+        if (!quotes || quotes.length === 0) return
+        const pool =
+          quotes.length > 1 && currentQuoteId !== null
+            ? quotes.filter((q) => q.id !== currentQuoteId)
+            : quotes
+        const chosen = pool[Math.floor(Math.random() * pool.length)]
+        if (!chosen) return
+        currentQuoteId = chosen.id
+        document.getElementById('quoteText').textContent = `"${chosen.text}"`
+        document.getElementById('quoteAuthor').textContent = `- ${chosen.author} -`
+      }
+
+      document.getElementById('quoteBox').addEventListener('click', pickRandomQuote)
+
+      // Load full English quotes list from /quotes/lichess_quotes.json
+      fetch('/quotes/lichess_quotes.json')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            quotes = data
+            pickRandomQuote()
+          }
+        })
+        .catch(() => {
+          pickRandomQuote()
+        })
+
+      pickRandomQuote()
+
+      // Localization for the Maintenance Card (Quotes always remain in English)
+      const i18n = {
+        ru: {
+          pageTitle: 'EXTRAPAWN — Техническое обслуживание',
+          badge: 'PIT STOP / ТЕХРАБОТЫ',
+          badgeOnline: 'СЕРВЕР В СТРОЮ',
+          title: 'Батя залез под капот своей шахматной машины',
+          subtitle:
+            'Проводим техническое обслуживание сервера и подкручиваем дебютные гайки. Скоро всё снова поедет — страница обновится автоматически!',
+          reloadBtn: 'Машина завелась! Вернуться на сайт',
+        },
+        en: {
+          pageTitle: 'EXTRAPAWN — Scheduled Maintenance',
+          badge: 'UNDER THE HOOD / MAINTENANCE',
+          badgeOnline: 'BACK ONLINE',
+          title: 'Dad is under the hood of his chess machine',
+          subtitle:
+            'We are tuning up the engine and tightening a few opening bolts. Everything will be back on the board shortly — this page will refresh automatically!',
+          reloadBtn: 'Engine is running! Return to site',
+        },
+        de: {
+          pageTitle: 'EXTRAPAWN — Wartungsarbeiten',
+          badge: 'BOXENSTOPP / WARTUNG',
+          badgeOnline: 'WIEDER ONLINE',
+          title: 'Papa schraubt unter der Haube seiner Schachmaschine',
+          subtitle:
+            'Wir führen gerade Wartungsarbeiten am Server durch und ziehen ein paar Schrauben nach. Gleich geht es weiter — die Seite aktualisiert sich automatisch!',
+          reloadBtn: 'Motor läuft! Zurück zur Seite',
+        },
+      }
+
+      let currentLang = 'ru'
+      let isServerBackOnline = false
+
+      function setLang(lang) {
+        if (!i18n[lang]) return
+        currentLang = lang
+        try {
+          localStorage.setItem('user-locale', lang)
+        } catch (_) {}
+
+        const dict = i18n[lang]
+        document.title = dict.pageTitle
+        document.getElementById('statusText').textContent = isServerBackOnline
+          ? dict.badgeOnline
+          : dict.badge
+        document.getElementById('maintTitle').textContent = dict.title
+        document.getElementById('maintSubtitle').textContent = dict.subtitle
+        document.getElementById('reloadBtn').textContent = dict.reloadBtn
+
+        document.querySelectorAll('.lang-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.getAttribute('data-lang') === lang)
+        })
+      }
+
+      // Initialize language from localStorage or browser preference
+      ;(function initLang() {
+        let saved = null
+        try {
+          saved = localStorage.getItem('user-locale') || localStorage.getItem('locale')
+        } catch (_) {}
+        if (saved && i18n[saved]) {
+          setLang(saved)
+        } else {
+          setLang('ru')
+        }
+      })()
+
+      // Auto-check every 10 seconds if the main frontend container is back up
+      setInterval(async () => {
+        try {
+          const res = await fetch('/?_check=' + Date.now(), {
+            method: 'HEAD',
+            cache: 'no-store',
+          })
+          // Maintenance nginx sets 'X-Maintenance-Mode: 1'.
+          // When main chess-frontend starts up, that header disappears!
+          if (res.ok && res.headers.get('x-maintenance-mode') !== '1') {
+            isServerBackOnline = true
+            const badge = document.getElementById('statusBadge')
+            badge.classList.add('online')
+            document.getElementById('statusText').textContent = i18n[currentLang].badgeOnline
+            document.getElementById('reloadBtn').classList.add('visible')
+            setTimeout(() => window.location.reload(), 1200)
+          }
+        } catch (_) {
+          // Still offline or switching
+        }
+      }, 10000)
+    </script>
+  </body>
+</html>
+
