@@ -232,24 +232,25 @@ export const useGameStore = defineStore('game', () => {
     }
 
     if (currentStrategy.value) {
+      const strategyAtRequest = currentStrategy.value
       const tokenAtRequest = gameSessionToken
       const fenAtRequest = boardStore.fen
       const startTime = Date.now()
-      const uci = await currentStrategy.value.requestBotMove?.(fenAtRequest)
-      if (!uci || tokenAtRequest !== gameSessionToken) {
+      const uci = await strategyAtRequest.requestBotMove?.(fenAtRequest)
+      if (!uci || tokenAtRequest !== gameSessionToken || currentStrategy.value !== strategyAtRequest) {
         logger.info('[GameStore] No bot move requested by strategy or session changed.')
         return
       }
       const elapsedTime = Date.now() - startTime
 
-      const strategyBotDelay = currentStrategy.value.config?.botDelayMs ?? 0
+      const strategyBotDelay = strategyAtRequest.config?.botDelayMs ?? 0
       const targetDelay = overrideDelay ?? strategyBotDelay
       const remainingDelay = Math.max(0, targetDelay - elapsedTime)
       if (remainingDelay > 0) {
         await new Promise((resolve) => setTimeout(resolve, remainingDelay))
       }
 
-      if (tokenAtRequest !== gameSessionToken) {
+      if (tokenAtRequest !== gameSessionToken || currentStrategy.value !== strategyAtRequest) {
         return
       }
 
@@ -265,6 +266,7 @@ export const useGameStore = defineStore('game', () => {
       // Race condition protection
       if (
         tokenAtRequest !== gameSessionToken ||
+        currentStrategy.value !== strategyAtRequest ||
         boardStore.fen !== fenAtRequest ||
         gamePhase.value !== 'PLAYING'
       ) {
@@ -292,11 +294,15 @@ export const useGameStore = defineStore('game', () => {
           boardStore.applyUciMove(uci)
         }
 
-        const isGameOver = _checkAndHandleGameOver()
-
-        if (!isGameOver && currentStrategy.value.onBotMoveExecuted) {
-          await currentStrategy.value.onBotMoveExecuted(uci, boardStore.fen, fenBefore)
+        if (strategyAtRequest.onBotMoveExecuted) {
+          await strategyAtRequest.onBotMoveExecuted(uci, boardStore.fen, fenBefore)
         }
+
+        if (tokenAtRequest !== gameSessionToken || currentStrategy.value !== strategyAtRequest) {
+          return
+        }
+
+        _checkAndHandleGameOver()
       }
     }
   }
@@ -336,6 +342,7 @@ export const useGameStore = defineStore('game', () => {
 
     // Cleanup old strategy and reset Orchestrator state if exists
     gameSessionToken++
+    isMoveProcessing.value = false
     currentStrategy.value?.onDestroy?.()
     _executeStopHandlers()
 
@@ -418,9 +425,14 @@ export const useGameStore = defineStore('game', () => {
       return
     }
 
+    const tokenAtStart = gameSessionToken
+    const strategyAtStart = currentStrategy.value
     isMoveProcessing.value = true
     try {
       const intendedUci = await boardStore.prepareUserUciMove({ orig, dest })
+      if (tokenAtStart !== gameSessionToken) {
+        return
+      }
       if (!intendedUci) {
         boardStore.loadPosition(boardStore.fen) // snapback visually
         return
@@ -429,11 +441,14 @@ export const useGameStore = defineStore('game', () => {
       const isAnalysis = gamePhase.value === 'ANALYSIS'
 
       // Pre-validate move with Strategy (only during PLAYING, not in ANALYSIS)
-      if (!isAnalysis && currentStrategy.value && currentStrategy.value.validateUserMove) {
-        const isLegalForStrategy = await currentStrategy.value.validateUserMove(
+      if (!isAnalysis && strategyAtStart && strategyAtStart.validateUserMove) {
+        const isLegalForStrategy = await strategyAtStart.validateUserMove(
           intendedUci,
           boardStore.fen,
         )
+        if (tokenAtStart !== gameSessionToken) {
+          return
+        }
         if (!isLegalForStrategy) {
           logger.warn(`[GameStore] Move ${intendedUci} rejected by Strategy.`)
           boardStore.loadPosition(boardStore.fen) // snapback visually
@@ -464,19 +479,27 @@ export const useGameStore = defineStore('game', () => {
         return
       }
 
-      const strategyAtStart = currentStrategy.value
-
       if (strategyAtStart) {
         await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
       }
 
+      if (tokenAtStart !== gameSessionToken || currentStrategy.value !== strategyAtStart) {
+        return
+      }
+
       const isGameOver = _checkAndHandleGameOver()
+
+      if (tokenAtStart !== gameSessionToken || currentStrategy.value !== strategyAtStart) {
+        return
+      }
 
       if (!isGameOver && gamePhase.value === 'PLAYING' && boardStore.turn !== playerColor.value) {
         await triggerBotMove()
       }
     } finally {
-      isMoveProcessing.value = false
+      if (tokenAtStart === gameSessionToken) {
+        isMoveProcessing.value = false
+      }
     }
   }
 
@@ -484,12 +507,14 @@ export const useGameStore = defineStore('game', () => {
     gamePhase.value = phase
     if (phase === 'GAMEOVER' || phase === 'IDLE') {
       isGameActive.value = false
+      isMoveProcessing.value = false
     }
   }
 
   function enterAnalysisMode() {
     logger.info('[GameStore] Entering ANALYSIS / FREEPLAY mode.')
     gameSessionToken++
+    isMoveProcessing.value = false
     currentStrategy.value?.onDestroy?.()
     currentStrategy.value = null
     stopHandlers.clear()
@@ -504,6 +529,7 @@ export const useGameStore = defineStore('game', () => {
   function stop() {
     logger.info('[GameStore] Stopping game and clearing entity states.')
     gameSessionToken++
+    isMoveProcessing.value = false
 
     // 1. Clear Strategy
     currentStrategy.value?.onDestroy?.()

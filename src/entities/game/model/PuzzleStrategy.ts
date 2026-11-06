@@ -393,7 +393,14 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   async onBotMoveExecuted(): Promise<void> {
+    if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
+      this.scenarioIndex++
+    }
+
     if (!this.isPlayoutMode && this.scenarioIndex >= this.scenarioMoves.length) {
+      if (this.boardStore.isGameOver) {
+        return
+      }
       const isTacticsCourse =
         this.submode === 'tactics_course' || this.puzzle.puzzle_type === 'tactics_course'
       if (
@@ -412,7 +419,6 @@ export class PuzzleStrategy implements IGameplayStrategy {
   async requestBotMove(fen: string): Promise<string | null> {
     if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
       const move = this.scenarioMoves[this.scenarioIndex] || null
-      this.scenarioIndex++
       return move ? extractPrimaryUciMove(move) : null
     }
 

@@ -358,5 +358,75 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     expect(onSuccess2).toHaveBeenCalledTimes(1)
     expect(onFailure2).not.toHaveBeenCalled()
   })
+
+  it('does not leak triggerBotMove or corrupt scenarioIndex when next puzzle is launched inside onSuccess', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // Puzzle 1: Black plays h7h5, White plays e4d5, Black plays g8f8, White plays d5a2
+    const puzzle1: PuzzlePuzzle = {
+      puzzle_id: 'TAC-1',
+      puzzle_type: 'tactics',
+      category: 'fork',
+      difficulty: 'Pro',
+      rating: 1500,
+      strategy: 'scenarioOnly',
+      first_move: 'bot',
+      user_color: 'white',
+      objective: 'win',
+      initial_fen: '6k1/p5pp/2N5/2P5/1P2B1n1/6P1/r7/5K2 b - - 0 32',
+      tactical_solution: 'h7h5 e4d5 g8f8 d5a2',
+    }
+
+    // Puzzle 2: Black plays d6b4, White plays e4f6, Black plays g7f6, White plays h4b4
+    const puzzle2: PuzzlePuzzle = {
+      puzzle_id: 'TAC-2',
+      puzzle_type: 'tactics',
+      category: 'discoveredAttack',
+      difficulty: 'Pro',
+      rating: 1550,
+      strategy: 'scenarioOnly',
+      first_move: 'bot',
+      user_color: 'white',
+      objective: 'win',
+      initial_fen: 'r3r1k1/1bp2ppp/p1pq4/3pn3/4N2Q/8/PPP1BPPP/3RR1K1 b - - 1 16',
+      tactical_solution: 'd6b4 e4f6 g7f6 h4b4',
+    }
+
+    const onPuzzle2Success = vi.fn()
+    const onPuzzle2Failure = vi.fn()
+
+    const strategy1 = new PuzzleStrategy(puzzle1, 'white', 'tactics', {
+      delays: { initialBotDelayMs: 0, botDelayMs: 0 },
+      onSuccess: async () => {
+        const strategy2 = new PuzzleStrategy(puzzle2, 'white', 'tactics', {
+          delays: { initialBotDelayMs: 20, botDelayMs: 0 },
+          onSuccess: onPuzzle2Success,
+          onFailure: onPuzzle2Failure,
+        })
+        gameStore.startWithStrategy(puzzle2.initial_fen, strategy2, 'white')
+      },
+    })
+
+    gameStore.startWithStrategy(puzzle1.initial_fen, strategy1, 'white')
+    // Wait for Puzzle 1's initial bot move (h7h5)
+    await new Promise((r) => setTimeout(r, 5))
+
+    await gameStore.handleUserMove('e4', 'd5')
+    await gameStore.handleUserMove('d5', 'a2')
+
+    // Wait for Puzzle 2's initial bot move (d6b4) to finish its 20ms delay
+    await new Promise((r) => setTimeout(r, 35))
+    expect(boardStore.fen).toContain('r3r1k1/1bp2ppp/p1p5/3pn3/1q2N2Q/8/PPP1BPPP/3RR1K1 w')
+
+    // Now play Puzzle 2's user moves: e4f6 -> (bot g7f6) -> h4b4
+    await gameStore.handleUserMove('e4', 'f6')
+    expect(onPuzzle2Failure).not.toHaveBeenCalled()
+
+    await gameStore.handleUserMove('h4', 'b4')
+    expect(onPuzzle2Success).toHaveBeenCalledTimes(1)
+    expect(onPuzzle2Failure).not.toHaveBeenCalled()
+  })
 })
 

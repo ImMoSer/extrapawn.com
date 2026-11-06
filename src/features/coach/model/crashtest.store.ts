@@ -154,9 +154,11 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     } catch (err) {
       logger.error('[Crashtest] Exception during handleUserMove execution:', err)
     } finally {
-      plannedPromotionRole.value = null
-      if (boardStore.fen === targetFen) {
-        lastExecutedFen.value = null
+      if (token === currentCycleToken) {
+        plannedPromotionRole.value = null
+        if (boardStore.fen === targetFen) {
+          lastExecutedFen.value = null
+        }
       }
     }
   }
