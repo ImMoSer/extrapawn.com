@@ -380,7 +380,7 @@ onUnmounted(() => {
   <TrainingSessionReport v-else-if="store.viewState === 'report'" />
 
   <!-- 3. INTERACTIVE BOARD PLAY & ANALYSIS -->
-  <GameLayout v-else :hide-engine-selector="true">
+  <GameLayout v-else>
     <template #left-panel>
       <TrainingSessionSidebar />
     </template>

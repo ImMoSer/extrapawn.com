@@ -15,7 +15,7 @@
     },
     "finishHim": {
       "title": "Finish Him — Die Kunst der Realisierung",
-      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Maia, Bad Gyal, T1000). Lerne, Vorteile sicher nach Hause zu bringen.",
+      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Maia 1500, Maia 2200, T1000). Lerne, Vorteile sicher nach Hause zu bringen.",
       "keywords": "Vorteilsverwertung, Schach-Training, Endspieltechnik"
     },
     "theoryEndings": {
@@ -201,7 +201,7 @@
     "modules": {
       "trainingCenter": {
         "title": "TRAINING CENTER — 7 / 30-Tage-Kurssystem",
-        "text": "Strukturierte Trainingskurse in vier Kerndisziplinen (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) auf drei Leistungsstufen (**Novice, Pro, Master**).\n\n• **Dual-Gate-Zulassung**: Der Aufstieg in die nächste Stufe erfordert das Erfüllen der Kursquote sowie das Erreichen der Glicko-2-Wertungsschwelle in allen Pflichtbereichen.\n• **Intelligenter Coach-Sidebar**: Echtzeit-Zugbewertung, visuelle strategische Pläne und Schutz vor groben Patzern.\n• **Neuronales Ausspielen**: In Endspielen und Finish Him wird die Stellung nach der forcierten Variante gegen menschenähnliche neuronale Netze (Maia, Bad Gyal, T1000) zu Ende gespielt."
+        "text": "Strukturierte Trainingskurse in vier Kerndisziplinen (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) auf drei Leistungsstufen (**Novice, Pro, Master**).\n\n• **Dual-Gate-Zulassung**: Der Aufstieg in die nächste Stufe erfordert das Erfüllen der Kursquote sowie das Erreichen der Glicko-2-Wertungsschwelle in allen Pflichtbereichen.\n• **Intelligenter Coach-Sidebar**: Echtzeit-Zugbewertung, visuelle strategische Pläne und Schutz vor groben Patzern.\n• **Neuronales Ausspielen**: In Endspielen und Finish Him wird die Stellung nach der forcierten Variante gegen menschenähnliche neuronale Netze (Maia 1500, Maia 2200, T1000) zu Ende gespielt."
       },
       "warmup": {
         "title": "TARGETED WARMUP — Gezielte Kalibrierungs-Arena",
@@ -227,7 +227,7 @@
       "boardRendering": "Datenvisualisierung: ",
       "boardRenderingStack": "Apache ECharts für 12-Monats-Analysen & Taktik-Radare",
       "chessEngine": "Analyse- & Sparring-Cluster: ",
-      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia, Bad Gyal, T1000 Neural Hub)",
+      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia 1500, Maia 2200, T1000 Neural Hub)",
       "api": "Protokolle: ",
       "apiStack": "Lichess REST API & OAuth 2.0"
     },
@@ -247,7 +247,7 @@
       },
       "neuralNetworks": {
         "title": "Neuronales Sparring-Hub",
-        "text": "Realistisches Sparring wird durch spezialisierte neuronale Netze ermöglicht: die menschenähnliche **Maia**-Serie (1500, 1700, 1900, 2200 Elo), das scharfe taktische **Bad Gyal**-Netz von Dietrich Kappe (10 Nodes) und das fundamentale Großmeister-Netz **T1000** (T1-256x10). Der Inferenz-Prozess läuft über LCZero mit optimierten Policy-Parametern für zähen Widerstand ohne vorzeitige Materialaufgabe.",
+        "text": "Realistisches Sparring wird durch spezialisierte neuronale Netze ermöglicht: die menschenähnliche **Maia**-Serie (1500 und 2200 Elo) und das fundamentale Großmeister-Netz **T1000** (T1-256x10). Der Inferenz-Prozess läuft über LCZero mit optimierten Policy-Parametern für zähen Widerstand ohne vorzeitige Materialaufgabe.",
         "links": {
           "website": "LCZero Hub",
           "github": "LCZero Repo",

@@ -3,7 +3,6 @@ import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
 import { useAnalysisStore } from '@/features/analysis'
 import { EvalBar, useCoachStore, useCrashtestStore } from '@/features/coach'
-import { EngineSelector } from '@/features/engine'
 import { useSidebarStore } from '../model/sidebar.store'
 import ControlCenter from './ControlCenter.vue'
 import RightSidebarSlot from './RightSidebarSlot.vue'
@@ -13,12 +12,10 @@ import { computed, onMounted, onUnmounted } from 'vue'
 const props = withDefaults(
   defineProps<{
     boardLocked?: boolean
-    hideEngineSelector?: boolean
     hideEvalBar?: boolean
   }>(),
   {
     boardLocked: false,
-    hideEngineSelector: false,
     hideEvalBar: false,
   },
 )
@@ -95,11 +92,6 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
         <div class="cb-top-panel">
           <div class="top-info-slot">
             <slot name="top-info"></slot>
-          </div>
-          <div v-if="!props.hideEngineSelector" class="top-engine-slot">
-            <slot name="engine-selector">
-              <EngineSelector />
-            </slot>
           </div>
         </div>
 
@@ -257,13 +249,6 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   display: flex;
   align-items: center;
   min-width: 0;
-}
-
-.top-engine-slot {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
 }
 
 .board-aspect-wrapper {

@@ -37,25 +37,10 @@ export const useCoachStore = defineStore('coach', () => {
 
   // 2. Settings & Mode State
   const preferencesStore = usePreferencesStore()
-  const isCrashtestActive = computed(
-    () => authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest,
-  )
-  const isFairPlayLocked = computed(
-    () => gameStore.gamePhase !== 'ANALYSIS' && !isCrashtestActive.value,
-  )
-  const isStockfishCrashtestActive = computed(
-    () =>
-      isCrashtestActive.value &&
-      gameStore.gamePhase === 'PLAYING' &&
-      preferencesStore.preferences.gameplay.crashtestEngine === 'stockfish',
-  )
+  const isFairPlayLocked = computed(() => gameStore.gamePhase !== 'ANALYSIS')
   const isCoachSpyActive = computed(() => {
     if (isFairPlayLocked.value) return false
-    if (isStockfishCrashtestActive.value) return true
-    if (gameStore.gamePhase === 'ANALYSIS') {
-      return isCoachEnabled.value
-    }
-    return false
+    return isCoachEnabled.value
   })
 
   // Cache FEN & UCI & in-flight analysis deduplication

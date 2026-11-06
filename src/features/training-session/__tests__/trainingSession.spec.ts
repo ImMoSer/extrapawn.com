@@ -414,14 +414,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       const preferencesStore = usePreferencesStore()
       boardStore.animationDurationMs = 0
 
-      // Verify all 6 Crashtest engines are registered
+      // Verify the 3 Crashtest engines are registered
       expect(CRASHTEST_ENGINES).toEqual([
         'stockfish',
-        'maia-1500',
-        'maia-1900',
         'maia-2200',
         't1000',
-        'badgyal',
       ])
       expect(preferencesStore.preferences.gameplay.crashtestEngine).toBe('stockfish')
 
@@ -685,7 +682,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(preferencesStore.preferences.delays.nextPuzzleDelayMs).toBe(500)
       await expect(store.startCrashTestSession(false)).rejects.toThrow(/restricted to developer/)
 
-      // 4. Enable Developer Crashtest (as developer mo3ep) with Bad Gyal neural network and fail TAC-3 ->
+      // 4. Enable Developer Crashtest (as developer mo3ep) with T1000 neural network and fail TAC-3 ->
       //    should auto-advance to Report after the unified nextPuzzleDelayMs (500ms), NOT crashtestDelayMs
       authStore.userProfile = {
         id: 'mo3ep',
@@ -693,7 +690,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         base_puzzle_rating: 2000,
       }
       await preferencesStore.updatePreferences({
-        gameplay: { global_crashtest: true, crashtestEngine: 'badgyal' },
+        gameplay: { global_crashtest: true, crashtestEngine: 't1000' },
         delays: { crashtestDelayMs: 100, nextPuzzleDelayMs: 500 },
       })
 

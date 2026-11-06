@@ -1,15 +1,17 @@
 // src/entities/game/lib/EnginePlayService.ts
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
+import { pgnService } from '@/shared/lib/pgn/PgnService'
 import type { EngineId } from '@/shared/types/api.types'
 import { Chess } from 'chessops/chess'
-import { parseFen } from 'chessops/fen'
+import { makeFen, parseFen } from 'chessops/fen'
 
 class EnginePlayServiceController {
   /**
-   * Generates the best move for the given engineId and position FEN via Fastify backend API (/api/bestmove).
+   * Generates the best move for the given engineId and position FEN via backend API (POST /api/bestmove).
+   * Sends start_fen and move history from pgnService for native threefold repetition protection.
    *
-   * @throws {Error} Fail-Fast principle: throws immediately if FEN is invalid, engineId is invalid, or network fails.
+   * @throws {Error} Fail-Fast principle: throws immediately if FEN is invalid, PGN is out of sync, or network fails.
    */
   public async getBestMove(engineId: EngineId, fen: string): Promise<string | null> {
     const parsedSetup = parseFen(fen)
@@ -21,7 +23,8 @@ class EnginePlayServiceController {
       throw new Error(`[EnginePlayService] Invalid chess position from FEN: "${fen}". Fail-Fast!`)
     }
 
-    const outcome = parsedPos.unwrap().outcome()
+    const chessPos = parsedPos.unwrap()
+    const outcome = chessPos.outcome()
     if (outcome) {
       logger.info(
         `[EnginePlayService] Skipping move fetch: position is terminal (winner: ${outcome.winner}).`,
@@ -29,11 +32,28 @@ class EnginePlayServiceController {
       return null
     }
 
-    const endpoint = `/bestmove?engine=${encodeURIComponent(engineId)}&fen=${encodeURIComponent(fen)}`
+    const normalizedFen = makeFen(chessPos.toSetup())
+    const navigatedFen = pgnService.getCurrentNavigatedFen()
+    if (navigatedFen !== normalizedFen) {
+      throw new Error(
+        `[EnginePlayService] PGN state desynchronized from requested FEN: expected "${normalizedFen}", got "${navigatedFen}". Fail-Fast!`,
+      )
+    }
+
+    const { startFen, moves } = pgnService.getAnalysisPayloadContext()
 
     try {
-      logger.info(`[EnginePlayService] Requesting move from Maia Hub via Fastify for ${engineId}...`)
-      const data = await apiClient<{ bestMove?: string }>(endpoint)
+      logger.info(
+        `[EnginePlayService] Requesting move from Engine Hub for ${engineId} (moves: ${moves.length})...`,
+      )
+      const data = await apiClient<{ bestMove?: string | null }>('/bestmove', {
+        method: 'POST',
+        body: JSON.stringify({
+          engine: engineId,
+          start_fen: startFen,
+          moves,
+        }),
+      })
       if (!data || !data.bestMove) {
         logger.warn(`[EnginePlayService] Engine Hub returned empty bestMove for FEN: ${fen}`)
         return null

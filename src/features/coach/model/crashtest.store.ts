@@ -6,13 +6,11 @@ import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { useCoachStore } from './coach.store'
 
 export const useCrashtestStore = defineStore('crashtest', () => {
   const authStore = useAuthStore()
   const boardStore = useBoardStore()
   const gameStore = useGameStore()
-  const coachStore = useCoachStore()
   const preferencesStore = usePreferencesStore()
 
   const isMo3ep = computed(() => authStore.isMo3ep)
@@ -85,13 +83,6 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     if (boardStore.turn !== boardStore.orientation) return false
     if (lastExecutedFen.value === boardStore.fen) return false
 
-    if (crashtestEngine.value === 'stockfish') {
-      if (coachStore.isAnalyzing) return false
-      if (coachStore.lastFetchedFen !== boardStore.fen) return false
-      const topMove = coachStore.topMoves[0]?.uci
-      if (!topMove || topMove.length < 4) return false
-    }
-
     return true
   })
 
@@ -100,17 +91,12 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     targetFen: string,
     engineId: CrashtestEngineId,
   ): Promise<string | null> {
-    if (engineId === 'stockfish') {
-      if (coachStore.lastFetchedFen !== targetFen) return null
-      return coachStore.topMoves[0]?.uci ?? null
-    }
-
     try {
       const move = await enginePlayService.getBestMove(engineId, targetFen)
       if (token !== currentCycleToken) return null
       return move
     } catch (err) {
-      logger.error(`[Crashtest] Neural engine "${engineId}" move fetch failed:`, err)
+      logger.error(`[Crashtest] Engine "${engineId}" move fetch failed:`, err)
       return null
     }
   }
@@ -197,24 +183,11 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   function evaluateCrashtestCycle() {
     const currentFen = boardStore.fen
     const ready = isReadyForCrashtestMove.value
-    const engine = crashtestEngine.value
 
     if (ready && currentFen && lastExecutedFen.value !== currentFen) {
       scheduleMove(currentFen)
     } else if (!ready) {
       cancelPendingCycle()
-      if (
-        engine === 'stockfish' &&
-        isMo3ep.value &&
-        isCrashtestEnabled.value &&
-        gameStore.gamePhase === 'PLAYING' &&
-        boardStore.turn === boardStore.orientation &&
-        !coachStore.isAnalyzing &&
-        (coachStore.topMoves.length === 0 || coachStore.lastFetchedFen !== currentFen) &&
-        currentFen
-      ) {
-        void coachStore.runAnalysis(currentFen)
-      }
     }
   }
 

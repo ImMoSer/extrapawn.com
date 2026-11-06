@@ -37,7 +37,7 @@ Textbook theoretical endgame scenarios. Practice position-specific win and defen
 </p>
 
 #### FinishHim
-A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Maia 1500–2200, Bad Gyal, T1000**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
+A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Maia 1500, Maia 2200, T1000**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
 
 <p align="center">
   <img src="public/screenshots/12_finish-him.png" width="900" alt="FinishHim Mode">
@@ -121,19 +121,17 @@ Our backend distributed cluster manages multiple specialized engine components:
 *   **Neural Network Sparring Hub (LCZero v0.32.1)**: Dedicated pure-policy neural network models running with 1-node search, deterministic argmax selection (Temperature = 0.0), and pure neural evaluation (Syzygy disabled) for human-like sparring and technique perfection.
 *   **MozerBook Database**: Statistics-based opening theory engine compiled from Lichess 2000+ Elo games.
 
-### Available Neural Networks:
+### Available Engines in `chessboard_engines`:
 
-| Имя в UI | ID движка | Файл весов | Nodes | Особенности / Назначение |
+| Имя в UI | ID движка | Файл весов / Бинарник | Параметры | Особенности / Назначение |
 | :--- | :--- | :--- | :--- | :--- |
-| **Maia 1500** | `maia-1500` | `maia-1500.pb.gz` | 1 | Человечный стиль игрока ~1500 Elo (дефолтная сеть для спарринга) |
-| **Maia 1700** | `maia-1700` | `maia-1700.pb.gz` | 1 | Человечный стиль игрока ~1700 Elo (уверенная клубная игра) |
-| **Maia 1900** | `maia-1900` | `maia-1900.pb.gz` | 1 | Человечный стиль кандидата в мастера ~1900 Elo |
-| **Maia 2200** | `maia-2200` | `maia-2200.pb.gz` | 1 | Человечный стиль мастера ~2200 Elo с реалистичным сопротивлением |
-| **Bad Gyal** | `badgyal` | `Bad_Gyal_128x10.pb.gz` | 10 | Бескомпромиссная агрессивная тактическая сеть Дитриха Каппе (Dietrich Kappe) |
-| **T1000** | `t1000` | `t1-256x10-distilled-swa-2432500.pb.gz` | 1 | Мощная позиционная дистиллированная нейросеть (Zero Search Policy) |
+| **Maia 1500** | `maia-1500` | `maia-1500.pb.gz` | 1 node | Человечный стиль игрока ~1500 Elo (Novice спарринг) |
+| **Maia 2200** | `maia-2200` | `maia-2200.pb.gz` | 10 nodes | Человечный стиль мастера ~2200 Elo (Pro спарринг и краштест) |
+| **T1000** | `t1000` | `t1-256x10-distilled-swa-2432500.pb.gz` | 1 node | Мощная позиционная дистиллированная нейросеть (Master спарринг и краштест) |
+| **Stockfish** | `stockfish` | `stockfish` + Syzygy + Gaviota | Depth 12 / 50ms | Движок краштеста с каскадом Gaviota (`<= 5` фигур) + Stockfish (`> 5` фигур) |
 
-#### Inference Parameters:
-* **Nodes = 1 (10 для Bad Gyal)**: Мгновенная оценка политики с минимальным деревом поиска для естественного человеческого сопротивления.
+#### Inference Parameters (LC0):
+* **Nodes = 1 (10 для Maia 2200)**: Мгновенная оценка политики с минимальным деревом поиска для естественного человеческого сопротивления.
 * **Temperature = 0.0**: Детерминированный выбор хода (топ-1 ход политики без случайного шума).
 * **SyzygyPath = <empty>**: Эндшпильные таблицы отключены для оценки позиции исключительно нейросетью.
 

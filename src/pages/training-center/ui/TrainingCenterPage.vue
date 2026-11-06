@@ -39,7 +39,7 @@ onUnmounted(() => {
 <template>
   <TrainingHubDashboard v-if="store.viewState === 'hub'" :mode="props.mode" />
   <TrainingSessionReport v-else-if="store.viewState === 'report'" />
-  <GameLayout v-else :hide-engine-selector="true">
+  <GameLayout v-else>
     <template #left-panel>
       <TrainingSessionSidebar />
     </template>

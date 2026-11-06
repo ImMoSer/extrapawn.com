@@ -117,7 +117,6 @@ onUnmounted(() => {
   <!-- Challenge GameLayout -->
   <GameLayout
     v-else
-    :hide-engine-selector="true"
     :board-locked="isBoardLocked"
   >
     <template #left-panel>
