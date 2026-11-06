@@ -563,6 +563,33 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
   }
 
+  async function resetTacticsCourse(): Promise<TacticsCourseCurriculumDTO> {
+    isLoadingCurriculum.value = true
+    error.value = null
+    try {
+      const data = await trainingApi.resetTacticsCourse()
+      tacticsCourseCurriculum.value = data
+      if (
+        hydratedSession.value?.session.discipline === 'tactics_course' &&
+        hydratedSession.value.session.mode === 'course'
+      ) {
+        clearAutoNextTimeout()
+        stopTimer()
+        hydratedSession.value = null
+        gameStore.stop()
+        viewState.value = 'hub'
+      }
+      return data
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to reset Classical Course')
+      error.value = msg
+      logger.error('[TrainingSessionStore] resetTacticsCourse failed:', err)
+      throw err
+    } finally {
+      isLoadingCurriculum.value = false
+    }
+  }
+
   async function fetchCourseHistory(limit: number = 25): Promise<CourseDTO[]> {
     error.value = null
     try {
@@ -968,6 +995,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     // Actions
     fetchOverview,
     fetchTacticsCourseCurriculum,
+    resetTacticsCourse,
     fetchCourseHistory,
     selectDiscipline,
     dismissPromotionBanner,

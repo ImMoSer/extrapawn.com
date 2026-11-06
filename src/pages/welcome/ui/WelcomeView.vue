@@ -48,7 +48,7 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
 const menuItems = [
   GAME_MODES.training_center,
   GAME_MODES.warmup,
-  GAME_MODES.club_player,
+  GAME_MODES.courses,
   GAME_MODES.user_cabinet,
 ]
 

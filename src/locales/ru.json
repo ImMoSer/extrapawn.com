@@ -1312,7 +1312,8 @@
       "logout": "Выход",
       "loginWithLichess": "Войти через Lichess",
       "trainingCenter": "Тренировочный Центр",
-      "warmup": "Разминка (WarmUp)"
+      "warmup": "Разминка (WarmUp)",
+      "courses": "Курсы"
     },
     "errors": {
       "backendConnectionFailed": "Не удалось подключиться к серверу.",

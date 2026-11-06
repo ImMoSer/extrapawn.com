@@ -23,21 +23,31 @@ export function isValidTrainingDiscipline(value: string): value is TrainingDisci
  * Add any new in-development discipline here to hide it from regular users in production,
  * and remove it from this array when ready for public release.
  */
+export const CORE_TRAINING_DISCIPLINES = [
+  'tactics',
+  'theoretical_endgames',
+  'practical_chess',
+  'finishhim',
+] as const
+
+export type CoreTrainingDiscipline = (typeof CORE_TRAINING_DISCIPLINES)[number]
+
 export const DEV_ONLY_TRAINING_DISCIPLINES: readonly TrainingDiscipline[] = ['tactics_course']
 
 export function isDisciplineVisibleForUser(
   discipline: TrainingDiscipline,
-  isDeveloper: boolean,
+  isDeveloper?: boolean,
 ): boolean {
-  if (isDeveloper) return true
-  return !DEV_ONLY_TRAINING_DISCIPLINES.includes(discipline)
+  if (!isDeveloper && DEV_ONLY_TRAINING_DISCIPLINES.includes(discipline)) {
+    return false
+  }
+  return (CORE_TRAINING_DISCIPLINES as readonly string[]).includes(discipline)
 }
 
 export function getVisibleTrainingDisciplines(
-  isDeveloper: boolean,
+  isDeveloper?: boolean,
 ): readonly TrainingDiscipline[] {
-  if (isDeveloper) return TRAINING_DISCIPLINES
-  return TRAINING_DISCIPLINES.filter((d) => !DEV_ONLY_TRAINING_DISCIPLINES.includes(d))
+  return CORE_TRAINING_DISCIPLINES.filter((d) => isDisciplineVisibleForUser(d, isDeveloper))
 }
 
 export const TRAINING_DIFFICULTIES = ['Novice', 'Pro', 'Master'] as const

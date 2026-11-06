@@ -47,7 +47,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
-import TacticsCourseCurriculumView from './TacticsCourseCurriculumView.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -649,15 +648,10 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       </div>
     </div>
 
-    <!-- Main Content Card: Classical Course, Course Mode (/training) OR WarmUp Mode (/warmup) -->
+    <!-- Main Content Card: Course Mode (/training) OR WarmUp Mode (/warmup) -->
     <div class="rounded-lg bg-surface border border-border overflow-hidden">
-      <!-- CLASSICAL TACTICS COURSE (24 Batches, 12 Woodpecker Days & Crash-Test 3822) -->
-      <div v-if="store.activeDiscipline === 'tactics_course' && authStore.isMo3ep" class="p-6">
-        <TacticsCourseCurriculumView />
-      </div>
-
       <!-- COURSE MODE (/training) ([D7, D8, D9, D10, D12]) -->
-      <div v-else-if="props.mode === 'course'" class="p-6 flex flex-col gap-6">
+      <div v-if="props.mode === 'course'" class="p-6 flex flex-col gap-6">
         <!-- Active Course HUD -->
         <template v-if="activeCourse">
           <div class="p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-4">

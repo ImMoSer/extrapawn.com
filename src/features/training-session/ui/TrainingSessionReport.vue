@@ -93,6 +93,10 @@ async function handleReturnToHub(): Promise<void> {
 
 async function handleLaunchNextCourseBatch(): Promise<void> {
   if (!report.value) return
+  if (report.value.discipline === 'tactics_course') {
+    await store.startTacticsCourseBatch(0, true)
+    return
+  }
   await store.startOrResumeCourseBatch(report.value.discipline, undefined, true)
 }
 

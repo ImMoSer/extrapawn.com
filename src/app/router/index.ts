@@ -130,6 +130,11 @@ const router = createRouter({
       },
     },
     {
+      path: '/courses',
+      name: 'courses',
+      component: () => import('@/pages/courses').then((m) => m.CoursesPage),
+    },
+    {
       path: '/club-player',
       name: 'club-player',
       component: () => import('@/pages/club-player').then((m) => m.ClubPlayerPage),

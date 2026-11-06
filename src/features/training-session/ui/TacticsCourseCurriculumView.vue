@@ -14,8 +14,9 @@ import {
   RefreshOutline,
   RibbonOutline,
   SparklesOutline,
+  TrashOutline,
 } from '@vicons/ionicons5'
-import { NButton, NIcon, NInputNumber } from 'naive-ui'
+import { NButton, NIcon, NInputNumber, NPopconfirm } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -44,9 +45,15 @@ const currentBatchMeta = computed<CourseBatchStatusDTO | null>(() => {
 })
 
 const activeCourseDiplomaId = computed<string | null>(() => {
-  const ac = store.overview?.disciplines?.tactics_course?.active_course
+  const ac = curriculum.value?.active_course
   if (ac && ac.status === 'completed') return ac.id
   return null
+})
+
+const hasCourseProgressToReset = computed<boolean>(() => {
+  const c = curriculum.value
+  if (!c) return false
+  return c.solved_total > 0 || c.failed_total > 0 || Boolean(c.active_course)
 })
 
 interface WeekGroup {
@@ -141,6 +148,10 @@ async function handleRestartCrashTest(): Promise<void> {
   if (!authStore.isMo3ep) return
   await store.startCrashTestSession(true, 0)
 }
+
+async function handleResetCourseProgress(): Promise<void> {
+  await store.resetTacticsCourse()
+}
 </script>
 
 <template>
@@ -182,6 +193,28 @@ async function handleRestartCrashTest(): Promise<void> {
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <NPopconfirm
+            v-if="hasCourseProgressToReset"
+            positive-text="Сбросить прогресс"
+            negative-text="Отмена"
+            @positive-click="handleResetCourseProgress"
+          >
+            <template #trigger>
+              <NButton
+                secondary
+                type="error"
+                size="medium"
+                :loading="store.isLoadingCurriculum"
+              >
+                <template #icon>
+                  <NIcon><TrashOutline /></NIcon>
+                </template>
+                Сбросить курс
+              </NButton>
+            </template>
+            Сбросить прогресс батчей и очередь Дня Дятла этого курса, чтобы начать с Батча #1?
+          </NPopconfirm>
+
           <NButton
             v-if="activeCourseDiplomaId"
             secondary

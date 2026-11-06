@@ -224,6 +224,13 @@ export const trainingApi = {
     return assertTacticsCourseCurriculumDTO(raw)
   },
 
+  async resetTacticsCourse(): Promise<TacticsCourseCurriculumDTO> {
+    const raw = await apiClient<unknown>('/training/tactics-course/reset', {
+      method: 'POST',
+    })
+    return assertTacticsCourseCurriculumDTO(raw)
+  },
+
   composeCrashTestSession(payload: CrashTestSessionRequest = {}): Promise<HydratedSessionDTO> {
     const body: Record<string, unknown> = {
       force_restart: payload.force_restart ?? false,

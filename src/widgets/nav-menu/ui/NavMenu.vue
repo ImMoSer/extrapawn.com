@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {
+  BookOutline,
   CashOutline,
   FlameOutline,
   FlashOutline,
   HomeOutline,
   InformationCircleOutline,
   PersonOutline,
-  TrophyOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NMenu, type MenuOption } from 'naive-ui'
 import { computed, h, type Component } from 'vue'
@@ -55,9 +55,9 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(PersonOutline),
   },
   {
-    label: () => 'Club Top 20',
-    key: '/club-player',
-    icon: renderIcon(TrophyOutline),
+    label: () => t('shared.nav.courses'),
+    key: '/courses',
+    icon: renderIcon(BookOutline),
   },
   {
     label: () => t('shared.nav.pricing'),

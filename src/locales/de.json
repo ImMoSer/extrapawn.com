@@ -1312,7 +1312,8 @@
       "logout": "Abmelden",
       "loginWithLichess": "Mit Lichess anmelden",
       "trainingCenter": "Trainingszentrum",
-      "warmup": "WarmUp"
+      "warmup": "WarmUp",
+      "courses": "Kurse"
     },
     "errors": {
       "backendConnectionFailed": "Verbindung zum Server fehlgeschlagen.",

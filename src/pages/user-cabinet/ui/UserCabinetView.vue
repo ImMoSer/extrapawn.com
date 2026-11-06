@@ -94,9 +94,6 @@ const activeDiagnosticStrip = computed<DiagnosticStripDTO | null>(() => {
   const data = cabinetData.value
   if (!data) return null
   if (selectedDiscipline.value === 'tactics') return data.tactics.diagnostics
-  if (selectedDiscipline.value === 'tactics_course') {
-    return data.tactics_course?.diagnostics ?? null
-  }
   if (selectedDiscipline.value === 'theoretical_endgames') return data.theoretical.diagnostics
   if (selectedDiscipline.value === 'practical_chess') return data.practical.diagnostics
   return data.finishhim.diagnostics
@@ -105,9 +102,6 @@ const activeDiagnosticStrip = computed<DiagnosticStripDTO | null>(() => {
 const activeEndgameMap = computed<EndgameCabinetMapDTO | null>(() => {
   const data = cabinetData.value
   if (!data || selectedDiscipline.value === 'tactics') return null
-  if (selectedDiscipline.value === 'tactics_course') {
-    return data.tactics_course ?? null
-  }
   if (selectedDiscipline.value === 'theoretical_endgames') return data.theoretical
   if (selectedDiscipline.value === 'practical_chess') return data.practical
   return data.finishhim
@@ -117,12 +111,14 @@ const activeGateThreshold = computed<number>(() => {
   const data = cabinetData.value
   if (!data) return 1500
   const discOverview = data.overview.disciplines[selectedDiscipline.value]
-  return discOverview.next_tier_gate?.rating_threshold ?? 2000
+  return discOverview?.next_tier_gate?.rating_threshold ?? 2000
 })
 
 const visibleRecentCourses = computed<CourseDTO[]>(() => {
   const courses = cabinetData.value?.recent_courses ?? []
-  return courses.filter((c) => isDisciplineVisibleForUser(c.discipline, authStore.isMo3ep))
+  return courses.filter(
+    (c) => c.status === 'completed' && isDisciplineVisibleForUser(c.discipline, authStore.isMo3ep),
+  )
 })
 
 function handleOpenTrainingHub(discipline: TrainingDiscipline): void {
