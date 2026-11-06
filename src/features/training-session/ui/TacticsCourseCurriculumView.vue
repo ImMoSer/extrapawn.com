@@ -2,11 +2,13 @@
 import {
   resolveScopeLabel,
   type CourseBatchStatusDTO,
+  type TacticsCourseSlug,
   type WoodpeckerCheckpointDTO,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import {
   CheckmarkCircleOutline,
+  DownloadOutline,
   FlagOutline,
   FlameOutline,
   LockClosedOutline,
@@ -17,20 +19,46 @@ import {
   TrashOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon, NInputNumber, NPopconfirm } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import {
+  downloadCrashTestReport,
+  resetCrashTestReport,
+  useCrashTestReport,
+} from '../lib/crashTestReportLogger'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
+
+const props = withDefaults(
+  defineProps<{
+    courseSlug?: TacticsCourseSlug
+  }>(),
+  {
+    courseSlug: 'tactics_classical_1',
+  },
+)
 
 const { t, te } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const store = useTrainingSessionStore()
+const { report: crashTestReport, anomaliesCount } = useCrashTestReport()
+
+const COURSE_TITLES: Readonly<Record<TacticsCourseSlug, string>> = {
+  tactics_classical_1: 'КУРС ТАКТИКИ I · ГЕОМЕТРИЯ И МАТОВЫЕ КОНСТРУКЦИИ',
+  tactics_classical_2: 'КУРС ТАКТИКИ II · ЖЕРТВЫ И КОМБИНАЦИОННЫЙ ВЗРЫВ',
+  tactics_classical_3: 'КУРС ТАКТИКИ III · СТРАТЕГИЧЕСКАЯ ТАКТИКА И СПАСЕНИЕ',
+}
+
+const activeCourseTitle = computed(
+  () => COURSE_TITLES[props.courseSlug] ?? 'КЛАССИЧЕСКИЙ КУРС ТАКТИКИ',
+)
 
 const jumpIndexInput = ref<number | null>(1)
 const showFlagsPanel = ref<boolean>(false)
 
 const curriculum = computed(() => store.tacticsCourseCurriculum)
+const crashTestTotal = computed(() => curriculum.value?.crash_test_total || 6147)
 
 const totalProgressPercent = computed(() => {
   const c = curriculum.value
@@ -63,14 +91,28 @@ interface WeekGroup {
   checkpoints: Record<number, WoodpeckerCheckpointDTO>
 }
 
-const WEEK_TITLES: Readonly<Record<number, string>> = {
-  1: 'Неделя 1 · Цели атаки: Матовая атака, Матовые сети и Выигрыш материала',
-  2: 'Неделя 2 · Средства и Геометрия: Жертвы ферзя/ладьи, Двойной удар и Связка',
-  3: 'Неделя 3 · Вскрытое нападение, Линейный удар, Рентген и Практикумы вслепую',
-  4: 'Неделя 4 · Рубежный экзамен и Комбинационные мотивы: Завлечение, Отвлечение, Перекрытие',
-  5: 'Неделя 5 · Стратегическая тактика: Разрушение пешечной структуры, Критические поля и Линии',
-  6: 'Неделя 6 · Стратегическая тактика: Освобождение линий, Устранение защиты, Темп и Цугцванг',
-  7: 'Неделя 7 · Блокада и Крепости, Спасение патом/вечным шахом и Выпускной экзамен',
+const WEEK_TITLES_BY_COURSE: Readonly<Record<TacticsCourseSlug, Readonly<Record<number, string>>>> = {
+  tactics_classical_1: {
+    1: 'Неделя 1 · Основы матовой геометрии и линейные маты',
+    2: 'Неделя 2 · Матовые сети и координированная атака на короля',
+    3: 'Неделя 3 · Рубежный экзамен, Двойной удар, Связка и Сквозной удар',
+    4: 'Неделя 4 · Вскрытое нападение, Рентген и завоевание материала',
+    5: 'Неделя 5 · Комбинированная геометрия, ловля фигур и Выпускной экзамен',
+  },
+  tactics_classical_2: {
+    1: 'Неделя 1 · Тактические жертвы, Завлечение и Отвлечение защитника',
+    2: 'Неделя 2 · Жертва ферзя и ладьи: вскрытие королевской резиденции',
+    3: 'Неделя 3 · Рубежный экзамен, Перекрытие и Устранение защиты',
+    4: 'Неделя 4 · Разрушение пешечного щита и тотальный штурм короля',
+    5: 'Неделя 5 · Многоходовые комбинационные взрывы и Выпускной экзамен',
+  },
+  tactics_classical_3: {
+    1: 'Неделя 1 · Освобождение линий и захват критических полей',
+    2: 'Неделя 2 · Опасные проходные, превращение пешки и Цугцванг',
+    3: 'Неделя 3 · Рубежный экзамен, Контрудар и Перехват инициативы',
+    4: 'Неделя 4 · Искусство защиты: Вечный шах, Пат и спасение в критических позициях',
+    5: 'Неделя 5 · Этюдная глубина, крепости и Выпускной экзамен трилогии',
+  },
 }
 
 const weeksList = computed<WeekGroup[]>(() => {
@@ -82,14 +124,17 @@ const weeksList = computed<WeekGroup[]>(() => {
     cpByAfterBatch[wp.after_batch_id] = wp
   }
 
-  const maxWeek = c.batches.reduce((acc, b) => Math.max(acc, b.week), 7)
+  const activeSlug = (c.course_slug as TacticsCourseSlug) || props.courseSlug
+  const weekTitles = WEEK_TITLES_BY_COURSE[activeSlug] ?? WEEK_TITLES_BY_COURSE.tactics_classical_1
+
+  const maxWeek = c.batches.reduce((acc, b) => Math.max(acc, b.week), 5)
   const groups: WeekGroup[] = []
   for (let w = 1; w <= maxWeek; w++) {
     const wBatches = c.batches.filter((b) => b.week === w)
     if (wBatches.length > 0) {
       groups.push({
         week: w,
-        title: WEEK_TITLES[w] ?? `Неделя ${w}`,
+        title: weekTitles[w] ?? `Неделя ${w}`,
         batches: wBatches,
         checkpoints: cpByAfterBatch,
       })
@@ -98,10 +143,26 @@ const weeksList = computed<WeekGroup[]>(() => {
   return groups
 })
 
+watch(
+  () => props.courseSlug,
+  async (newSlug) => {
+    if (newSlug && store.tacticsCourseCurriculum?.course_slug !== newSlug) {
+      try {
+        await store.fetchTacticsCourseCurriculum(newSlug)
+      } catch {
+        // Handled by store
+      }
+    }
+  },
+)
+
 onMounted(async () => {
-  if (!store.tacticsCourseCurriculum) {
+  if (
+    !store.tacticsCourseCurriculum ||
+    store.tacticsCourseCurriculum.course_slug !== props.courseSlug
+  ) {
     try {
-      await store.fetchTacticsCourseCurriculum()
+      await store.fetchTacticsCourseCurriculum(props.courseSlug)
     } catch {
       // Handled by store
     }
@@ -115,20 +176,20 @@ async function handleLaunchCurrentStep(): Promise<void> {
   const c = curriculum.value
   if (!c) return
   if (c.current_step_type === 'woodpecker') {
-    await store.startTacticsCourseBatch(0, true)
+    await store.startTacticsCourseBatch(0, true, props.courseSlug)
     return
   }
-  await store.startTacticsCourseBatch(c.current_batch_id, false)
+  await store.startTacticsCourseBatch(c.current_batch_id, false, props.courseSlug)
 }
 
 async function handleLaunchBatch(batch: CourseBatchStatusDTO): Promise<void> {
   if (!batch.is_unlocked) return
-  await store.startTacticsCourseBatch(batch.batch_id, true)
+  await store.startTacticsCourseBatch(batch.batch_id, true, props.courseSlug)
 }
 
 async function handleLaunchWoodpecker(wp: WoodpeckerCheckpointDTO): Promise<void> {
   if (!wp.is_active && wp.due_count <= 0) return
-  await store.startTacticsCourseBatch(0, true)
+  await store.startTacticsCourseBatch(0, true, props.courseSlug)
 }
 
 async function handleStartOrResumeCrashTest(): Promise<void> {
@@ -138,7 +199,7 @@ async function handleStartOrResumeCrashTest(): Promise<void> {
 
 async function handleJumpCrashTest(): Promise<void> {
   if (!authStore.isMo3ep) return
-  const maxIdx = Math.max(0, (curriculum.value?.total_puzzles ?? 2263) - 1)
+  const maxIdx = Math.max(0, crashTestTotal.value - 1)
   const targetOneBased = jumpIndexInput.value ?? 1
   const zeroBased = Math.max(0, Math.min(maxIdx, Math.floor(targetOneBased) - 1))
   await store.startCrashTestSession(false, zeroBased)
@@ -149,8 +210,16 @@ async function handleRestartCrashTest(): Promise<void> {
   await store.startCrashTestSession(true, 0)
 }
 
+function handleDownloadCrashTestReport(): void {
+  downloadCrashTestReport()
+}
+
+function handleClearCrashTestReport(): void {
+  resetCrashTestReport(crashTestTotal.value)
+}
+
 async function handleResetCourseProgress(): Promise<void> {
-  await store.resetTacticsCourse()
+  await store.resetTacticsCourse(props.courseSlug)
 }
 </script>
 
@@ -162,13 +231,13 @@ async function handleResetCourseProgress(): Promise<void> {
         <div class="flex flex-col gap-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
-              КЛАССИЧЕСКИЙ КУРС ТАКТИКИ
+              {{ activeCourseTitle }}
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ weeksList.length || 7 }} недель · {{ curriculum?.batches?.length ?? 28 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 14 }} Дней Дятла
+              {{ weeksList.length || 5 }} недель · {{ curriculum?.batches?.length ?? 20 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 10 }} Дней Дятла
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ curriculum?.total_puzzles ?? 2997 }} задачи (от простых к сложным)
+              {{ curriculum?.total_puzzles ?? 2013 }} задач · BlunderSpy Engine
             </span>
           </div>
 
@@ -269,27 +338,32 @@ async function handleResetCourseProgress(): Promise<void> {
       </div>
     </div>
 
-    <!-- Crash-Test (все задачи курса в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
+    <!-- Crash-Test (все 6147 задач трилогии в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
     <div
       v-if="authStore.isMo3ep"
       class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
     >
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div class="flex flex-col gap-1">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <span class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40">
-              КРЭШ-ТЕСТ · {{ curriculum?.total_puzzles ?? 2263 }} ЗАДАЧИ В 1 БАТЧ
+              КРЭШ-ТЕСТ ТРИЛОГИИ · {{ crashTestTotal }} ЗАДАЧ В 1 ДАМП
             </span>
             <span
               v-if="curriculum"
               class="font-condensed font-bold text-sm text-text-primary"
             >
-              Позиция: #{{ Math.min(curriculum.total_puzzles || 2263, (curriculum.crash_test_index ?? 0) + 1) }} / {{ curriculum.total_puzzles || 2263 }}
+              Позиция: #{{ Math.min(crashTestTotal, (curriculum.crash_test_index ?? 0) + 1) }} / {{ crashTestTotal }}
               · Решено: {{ curriculum.crash_test_solved }} · Ошибок: {{ curriculum.crash_test_failed }}
+            </span>
+            <span
+              class="px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated border border-border text-text-secondary"
+            >
+              Лог в браузере: проверено {{ crashTestReport.processed_count }} · аномалий {{ anomaliesCount }} · cache misses {{ crashTestReport.cache_misses_healed_count }}
             </span>
           </div>
           <p class="text-xs text-text-secondary">
-            Сквозной прогон всех {{ curriculum?.total_puzzles ?? 2263 }} задач курса с сохранением места остановки и кнопкой «Флаг / Пожаловаться» во время игры.
+            Сквозной прогон всех {{ crashTestTotal }} задач 3 курсов в одном дампе (BlunderSpy 100/110 → 111 + userLastMove). Все ошибки и cache-промахи сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
           </p>
         </div>
 
@@ -300,7 +374,7 @@ async function handleResetCourseProgress(): Promise<void> {
               v-model:value="jumpIndexInput"
               size="small"
               :min="1"
-              :max="curriculum?.total_puzzles ?? 2263"
+              :max="crashTestTotal"
               class="w-24"
             />
             <NButton
@@ -338,10 +412,38 @@ async function handleResetCourseProgress(): Promise<void> {
             </template>
             {{
               curriculum?.crash_test_active
-                ? `Продолжить Крэш-Тест (#${Math.min(curriculum.total_puzzles || 2263, curriculum.crash_test_index + 1)})`
-                : `Запустить Крэш-Тест (${curriculum?.total_puzzles ?? 2263})`
+                ? `Продолжить Крэш-Тест (#${Math.min(crashTestTotal, curriculum.crash_test_index + 1)})`
+                : `Запустить Крэш-Тест (${crashTestTotal})`
             }}
           </NButton>
+
+          <NButton
+            size="small"
+            secondary
+            type="info"
+            @click="handleDownloadCrashTestReport"
+          >
+            <template #icon>
+              <NIcon><DownloadOutline /></NIcon>
+            </template>
+            Скачать craschTestReport.json ({{ anomaliesCount }})
+          </NButton>
+
+          <NPopconfirm
+            v-if="crashTestReport.processed_count > 0 || anomaliesCount > 0"
+            positive-text="Очистить"
+            negative-text="Отмена"
+            @positive-click="handleClearCrashTestReport"
+          >
+            <template #trigger>
+              <NButton size="small" quaternary type="error">
+                <template #icon>
+                  <NIcon><TrashOutline /></NIcon>
+                </template>
+              </NButton>
+            </template>
+            Очистить локальный отчёт craschTestReport.json в браузере?
+          </NPopconfirm>
 
           <NButton
             v-if="curriculum && curriculum.flagged_puzzles.length > 0"

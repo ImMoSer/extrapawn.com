@@ -37,7 +37,7 @@ Textbook theoretical endgame scenarios. Practice position-specific win and defen
 </p>
 
 #### FinishHim
-A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Maia 1500, Maia 2200, T1000**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
+A two-phase tactical battle. Identify the tactical winning strike from a Lichess-derived game, and then transition directly into realizing the won endgame against dedicated neural network sparring models (**Maia 1500, Maia 2200, MOZERO**). Refine your conversion technique against opponents with distinct styles and human-like resistance.
 
 <p align="center">
   <img src="public/screenshots/12_finish-him.png" width="900" alt="FinishHim Mode">
@@ -127,13 +127,13 @@ Our backend distributed cluster manages multiple specialized engine components:
 | :--- | :--- | :--- | :--- | :--- |
 | **Maia 1500** | `maia-1500` | `maia-1500.pb.gz` | 1 node | Человечный стиль игрока ~1500 Elo (Novice спарринг) |
 | **Maia 2200** | `maia-2200` | `maia-2200.pb.gz` | 10 nodes | Человечный стиль мастера ~2200 Elo (Pro спарринг и краштест) |
-| **T1000** | `t1000` | `t1-256x10-distilled-swa-2432500.pb.gz` | 1 node | Мощная позиционная дистиллированная нейросеть (Master спарринг и краштест) |
-| **Stockfish** | `stockfish` | `stockfish` + Syzygy + Gaviota | Depth 12 / 50ms | Движок краштеста с каскадом Gaviota (`<= 5` фигур) + Stockfish (`> 5` фигур) |
+| **MOZERO** | `mozero` | `lc0_32_1` + `Elite-Leela-v2-128x10x8h-1704000.pb.gz` + Python/Syzygy/Gaviota | 50 nodes (MCTS Batched) | Гибридная система эндшпильного спарринга (Master спарринг, единый соперник в Theoretical Endgames и краштест) |
+| **Stockfish** | `stockfish` | `stockfish` + Syzygy + Gaviota | Depth 16 / 100ms | Движок краштеста с каскадом Gaviota (`<= 5` фигур и `6 → 5`) + Stockfish (`> 5` фигур) |
 
 #### Inference Parameters (LC0):
-* **Nodes = 1 (10 для Maia 2200)**: Мгновенная оценка политики с минимальным деревом поиска для естественного человеческого сопротивления.
-* **Temperature = 0.0**: Детерминированный выбор хода (топ-1 ход политики без случайного шума).
-* **SyzygyPath = <empty>**: Эндшпильные таблицы отключены для оценки позиции исключительно нейросетью.
+* **Nodes = 1 (10 для Maia 2200, 50 с MCTS-батчингом для MOZERO)**: Оптимальное сочетание человеческого стиля и тактической плотности.
+* **Temperature = 0.0**: Детерминированный выбор хода без случайного шума.
+* **Syzygy & Gaviota Python Orchestration (MOZERO)**: Стандартный бинарник `lc0_32_1` и веса `Elite-Leela-v2-128x10x8h-1704000.pb.gz` работают в связке со специализированной Python-обвязкой и таблицами `Syzygy & Gaviota`.
 
 ---
 
@@ -151,7 +151,7 @@ Our backend distributed cluster manages multiple specialized engine components:
 
 *   **Coach Sidebar Foundation**: Special thanks to [Chess Analysis Studio](https://github.com/dev-arcturus/positional_chess) by [dev-arcturus](https://github.com/dev-arcturus). We used this browser-based analysis tool as the foundation for our Coach Sidebar, expanding it with advanced graphical indicators and full backend server-side engine capabilities.
 *   **Platform & Database**: Huge thanks to [Lichess.org](https://lichess.org) for their open database, APIs, and puzzle datasets.
-*   **Engines**: The open-source Stockfish community, LCZero team, and the open-weights neural network research community.
+*   **Engines & Neural Weights**: The open-source Stockfish community, LCZero team (`lc0_32_1`), and special gratitude to the author of [CallOn84/LeelaNets](https://github.com/CallOn84/LeelaNets) for training and publishing the `Elite-Leela-v2-128x10x8h-1704000.pb.gz` neural network weights.
 
 ---
 _License: GNU General Public License v3.0 | Built for those who seek chess mastery._

@@ -480,7 +480,7 @@ export const useGameStore = defineStore('game', () => {
       }
 
       if (strategyAtStart) {
-        await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen)
+        await strategyAtStart.onUserMoveExecuted?.(intendedUci, boardStore.fen, fenBefore)
       }
 
       if (tokenAtStart !== gameSessionToken || currentStrategy.value !== strategyAtStart) {

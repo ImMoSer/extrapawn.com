@@ -10,16 +10,19 @@ import {
   ArrowForwardOutline,
   CheckmarkOutline,
   CloseOutline,
+  DownloadOutline,
   EyeOutline,
   PauseOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon, NScrollbar } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 
 const { t, te } = useI18n()
 const store = useTrainingSessionStore()
+const { anomaliesCount } = useCrashTestReport()
 
 const summary = computed(() => store.activeSessionSummary)
 
@@ -34,20 +37,60 @@ const difficultyLabel = computed(() =>
 const botName = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
 
 const completedCount = computed(() => {
+  if (summary.value) {
+    return summary.value.solved_count + summary.value.failed_count
+  }
   return store.sessionItems.filter((it) => it.status === 'solved' || it.status === 'failed').length
 })
 
 const progressPercent = computed(() => {
-  const total = store.sessionItems.length
+  const total = summary.value?.total_count ?? store.sessionItems.length
   if (total === 0) return 0
   return Math.round((completedCount.value / total) * 100)
 })
 
-function itemRating(item: HydratedSessionItem): number {
-  if (item.tactical) return item.tactical.rating
-  if (item.course_puzzle) return item.course_puzzle.rating
-  if (item.endgame) return item.endgame.effective_rating
-  return 1500
+const WINDOW_THRESHOLD = 100
+const WINDOW_BEFORE = 15
+const WINDOW_SIZE = 60
+
+const isWindowedQueue = computed(() => store.sessionItems.length > WINDOW_THRESHOLD)
+
+const visibleWindowRange = computed(() => {
+  const total = store.sessionItems.length
+  if (total <= WINDOW_THRESHOLD) {
+    return { start: 0, end: total }
+  }
+  const start = Math.max(
+    0,
+    Math.min(store.currentItemIndex - WINDOW_BEFORE, total - WINDOW_SIZE),
+  )
+  const end = Math.min(total, start + WINDOW_SIZE)
+  return { start, end }
+})
+
+const visibleSessionItems = computed(() => {
+  const items = store.sessionItems
+  if (items.length <= WINDOW_THRESHOLD) return items
+  const { start, end } = visibleWindowRange.value
+  return items.slice(start, end)
+})
+
+const scopeLabelCache = new Map<string, string>()
+function cachedScopeLabel(key: string): string {
+  const hit = scopeLabelCache.get(key)
+  if (hit !== undefined) return hit
+  const resolved = resolveScopeLabel('scopes', key, t, te)
+  scopeLabelCache.set(key, resolved)
+  return resolved
+}
+
+function itemMetaSubtitle(item: HydratedSessionItem): string {
+  if (item.course_puzzle) {
+    return `Курс ${item.course_puzzle.course_id || 1} · Батч #${item.course_puzzle.batch_id}`
+  }
+  if (item.tactical) return `R: ${item.tactical.rating}`
+  if (item.endgame) return `R: ${item.endgame.effective_rating}`
+  return 'R: 1500'
 }
 
 function itemCategoryLabel(item: HydratedSessionItem): string {
@@ -55,7 +98,7 @@ function itemCategoryLabel(item: HydratedSessionItem): string {
     if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') {
       return `Экзамен · Батч #${item.course_puzzle.batch_id}`
     }
-    return resolveScopeLabel('scopes', item.course_puzzle.class, t, te)
+    return cachedScopeLabel(item.course_puzzle.class)
   }
   if (item.tactical) {
     const firstMotif =
@@ -64,10 +107,10 @@ function itemCategoryLabel(item: HydratedSessionItem): string {
       item.tactical.concept_motifs[0] ??
       item.tactical.trigger_motifs[0] ??
       item.tactical.cognitive_profile
-    return resolveScopeLabel('scopes', firstMotif, t, te)
+    return cachedScopeLabel(firstMotif)
   }
   if (item.endgame) {
-    return resolveScopeLabel('scopes', item.endgame.class, t, te)
+    return cachedScopeLabel(item.endgame.class)
   }
   return item.puzzle_id
 }
@@ -108,17 +151,27 @@ function handleItemClick(item: HydratedSessionItem): void {
         <span
           class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated border border-border text-text-primary"
         >
-          {{
-            summary.mode === 'course'
-              ? t('features.trainingCenter.modes.courseBadge')
-              : t('features.trainingCenter.modes.warmupBadge')
-          }}
-          · {{ difficultyLabel }}
+          <template v-if="summary.discipline === 'tactics_course'">
+            {{
+              summary.mode === 'crashtest'
+                ? 'КРЭШ-ТЕСТ'
+                : t('features.trainingCenter.modes.courseBadge')
+            }}
+          </template>
+          <template v-else>
+            {{
+              summary.mode === 'course'
+                ? t('features.trainingCenter.modes.courseBadge')
+                : t('features.trainingCenter.modes.warmupBadge')
+            }}
+            · {{ difficultyLabel }}
+          </template>
         </span>
       </div>
 
       <div class="flex items-center justify-between text-xs text-text-secondary">
-        <span>{{ t('features.trainingCenter.sidebar.sparringBot') }}: {{ botName }}</span>
+        <span v-if="summary.discipline === 'tactics_course'">Режим: BlunderSpy</span>
+        <span v-else>{{ t('features.trainingCenter.sidebar.sparringBot') }}: {{ botName }}</span>
         <span class="font-condensed font-bold text-text-primary">
           {{ completedCount }} / {{ store.sessionItems.length }} ({{ progressPercent }}%)
         </span>
@@ -199,12 +252,15 @@ function handleItemClick(item: HydratedSessionItem): void {
       <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex items-center justify-between">
         <span class="font-display font-bold text-[11px] uppercase tracking-wider text-text-secondary">
           {{ t('features.trainingCenter.sidebar.queueTitle') }}
+          <template v-if="isWindowedQueue">
+            (#{{ visibleWindowRange.start + 1 }}–{{ visibleWindowRange.end }})
+          </template>
         </span>
         <span class="font-condensed text-xs text-text-secondary">
           {{
             t('features.trainingCenter.sidebar.solvedRatio', {
-              solved: store.sessionReportSummary?.solvedCount ?? 0,
-              total: store.sessionItems.length,
+              solved: summary?.solved_count ?? store.sessionReportSummary?.solvedCount ?? 0,
+              total: summary?.total_count ?? store.sessionItems.length,
             })
           }}
         </span>
@@ -213,7 +269,7 @@ function handleItemClick(item: HydratedSessionItem): void {
       <NScrollbar class="flex-1">
         <div class="divide-y divide-border/50">
           <div
-            v-for="item in store.sessionItems"
+            v-for="item in visibleSessionItems"
             :key="item.puzzle_id"
             class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
             :class="[
@@ -269,7 +325,7 @@ function handleItemClick(item: HydratedSessionItem): void {
                   </span>
                 </div>
                 <span class="font-condensed text-[11px] text-text-secondary">
-                  R: {{ itemRating(item) }}
+                  {{ itemMetaSubtitle(item) }}
                 </span>
               </div>
             </div>
@@ -328,6 +384,20 @@ function handleItemClick(item: HydratedSessionItem): void {
           </div>
         </div>
       </div>
+
+      <NButton
+        v-if="summary?.mode === 'crashtest'"
+        block
+        size="small"
+        secondary
+        type="info"
+        @click="downloadCrashTestReport()"
+      >
+        <template #icon>
+          <NIcon><DownloadOutline /></NIcon>
+        </template>
+        Скачать craschTestReport.json ({{ anomaliesCount }})
+      </NButton>
 
       <NButton
         v-if="store.isAnalysisMode"

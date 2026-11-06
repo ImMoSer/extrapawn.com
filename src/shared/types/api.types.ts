@@ -4,20 +4,20 @@
 export type EngineId =
   | 'maia-1500'
   | 'maia-2200'
-  | 't1000'
+  | 'mozero'
   | 'stockfish'
 
 export const ENGINE_NAMES: Record<EngineId, string> = {
   'maia-1500': 'Maia 1500',
   'maia-2200': 'Maia 2200',
-  t1000: 'T1000',
+  mozero: 'MOZERO',
   stockfish: 'Stockfish',
 }
 
 export const AVAILABLE_ENGINES: EngineId[] = [
   'maia-1500',
   'maia-2200',
-  't1000',
+  'mozero',
   'stockfish',
 ]
 
@@ -25,18 +25,18 @@ export const AVAILABLE_ENGINES: EngineId[] = [
 export type CrashtestEngineId =
   | 'stockfish'
   | 'maia-2200'
-  | 't1000'
+  | 'mozero'
 
 export const CRASHTEST_ENGINES: CrashtestEngineId[] = [
   'stockfish',
   'maia-2200',
-  't1000',
+  'mozero',
 ]
 
 export const CRASHTEST_ENGINE_NAMES: Record<CrashtestEngineId, string> = {
   stockfish: 'Stockfish',
   'maia-2200': 'Maia 2200 (maia-2200.pb.gz)',
-  t1000: 'T1 256x10 (t1-256x10-distilled-swa-2432500.pb.gz)',
+  mozero: 'MOZERO (Elite-Leela-v2 + Syzygy/Gaviota)',
 }
 
 export type Color = 'white' | 'black'

@@ -17,7 +17,7 @@ import {
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
@@ -27,6 +27,17 @@ const router = useRouter()
 const store = useTrainingSessionStore()
 
 const report = computed(() => store.sessionReportSummary)
+const reportRenderLimit = ref<number>(100)
+
+const visibleReportItems = computed(() => {
+  const items = report.value?.items ?? []
+  if (items.length <= reportRenderLimit.value) return items
+  return items.slice(0, reportRenderLimit.value)
+})
+
+const hasMoreReportItems = computed(
+  () => (report.value?.items.length ?? 0) > reportRenderLimit.value,
+)
 
 const activeCourse = computed(() => {
   const disc = report.value?.discipline
@@ -71,11 +82,13 @@ function itemCategory(item: HydratedSessionItem): string {
   return item.puzzle_id
 }
 
-function itemRating(item: HydratedSessionItem): number {
-  if (item.tactical) return item.tactical.rating
-  if (item.course_puzzle) return item.course_puzzle.rating
-  if (item.endgame) return item.endgame.effective_rating
-  return 1500
+function itemMetaLabel(item: HydratedSessionItem): string {
+  if (item.course_puzzle) {
+    return `Курс ${item.course_puzzle.course_id || 1} · Батч #${item.course_puzzle.batch_id}`
+  }
+  if (item.tactical) return `R: ${item.tactical.rating}`
+  if (item.endgame) return `R: ${item.endgame.effective_rating}`
+  return 'R: 1500'
 }
 
 async function handleReturnToHub(): Promise<void> {
@@ -303,7 +316,7 @@ function handleGoToCabinet(): void {
 
       <div class="divide-y divide-border">
         <div
-          v-for="item in report.items"
+          v-for="item in visibleReportItems"
           :key="item.puzzle_id"
           class="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-elevated/60 transition-colors"
         >
@@ -341,7 +354,7 @@ function handleGoToCabinet(): void {
 
           <div class="flex items-center gap-4 shrink-0">
             <span class="font-condensed text-xs text-text-secondary">
-              R: {{ itemRating(item) }}
+              {{ itemMetaLabel(item) }}
             </span>
 
             <span
@@ -368,6 +381,12 @@ function handleGoToCabinet(): void {
             </NButton>
           </div>
         </div>
+      </div>
+
+      <div v-if="hasMoreReportItems" class="p-3 bg-elevated border-t border-border text-center">
+        <NButton size="small" secondary @click="reportRenderLimit += 200">
+          Показать ещё ({{ visibleReportItems.length }} / {{ report.items.length }})
+        </NButton>
       </div>
     </div>
   </div>

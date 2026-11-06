@@ -58,30 +58,36 @@ export function isValidTrainingDifficulty(value: string): value is TrainingDiffi
   return (TRAINING_DIFFICULTIES as readonly string[]).includes(value)
 }
 
-export type BotLadderEngineId = Extract<EngineId, 'maia-1500' | 'maia-2200' | 't1000'>
+export type BotLadderEngineId = Extract<EngineId, 'maia-1500' | 'maia-2200' | 'mozero'>
 
 export const BOT_ENGINE_BY_DIFFICULTY: Readonly<Record<TrainingDifficulty, BotLadderEngineId>> = {
   Novice: 'maia-1500',
   Pro: 'maia-2200',
-  Master: 't1000',
+  Master: 'mozero',
 }
 
-export function resolveBotEngineForDifficulty(difficulty: TrainingDifficulty): BotLadderEngineId {
+export function resolveBotEngineForDifficulty(
+  difficulty: TrainingDifficulty,
+  discipline?: TrainingDiscipline,
+): BotLadderEngineId {
   const engine = BOT_ENGINE_BY_DIFFICULTY[difficulty]
   if (!engine) {
     throw new Error(
       `[TrainingTaxonomy] Unknown difficulty "${String(difficulty)}" for Bot Ladder resolution. Fail-Fast!`,
     )
   }
+  if (discipline === 'theoretical_endgames') {
+    return 'mozero'
+  }
   return engine
 }
 
 export function validateBotLadderEngine(engineId: string): BotLadderEngineId {
-  if (engineId === 'maia-1500' || engineId === 'maia-2200' || engineId === 't1000') {
+  if (engineId === 'maia-1500' || engineId === 'maia-2200' || engineId === 'mozero') {
     return engineId
   }
   throw new Error(
-    `[TrainingTaxonomy] Unexpected bot_engine "${engineId}" outside v2 Bot Ladder (maia-1500 | maia-2200 | t1000). Fail-Fast!`,
+    `[TrainingTaxonomy] Unexpected bot_engine "${engineId}" outside v2 Bot Ladder (maia-1500 | maia-2200 | mozero). Fail-Fast!`,
   )
 }
 
@@ -248,11 +254,22 @@ export interface CatalogManifestDTO {
   total_count: number
 }
 
+export const TACTICS_COURSE_SLUGS = [
+  'tactics_classical_1',
+  'tactics_classical_2',
+  'tactics_classical_3',
+] as const
+
+export type TacticsCourseSlug = (typeof TACTICS_COURSE_SLUGS)[number]
+
 export interface CoursePuzzleV2 {
   puzzle_id: string
   base_id: string
   discipline: 'tactics_course'
+  course_slug?: TacticsCourseSlug | string
+  course_id?: number
   batch_id: number
+  global_batch_id?: number
   batch_slug?: string
   batch_title: string
   week_number: number
@@ -262,11 +279,9 @@ export interface CoursePuzzleV2 {
   class: string
   sub_class?: string
   objective: TrainingObjective
-  strategy: 'scenarioOnly' | 'scenarioPlus'
+  strategy: 'scenarioOnly' | 'scenarioPlus' | 'blunderSpy'
   first_move: 'bot' | 'user'
   user_color: 'white' | 'black'
-  difficulty: TrainingDifficulty
-  rating: number
   pieces_count: number
   plies_count: number
   phase?: string
@@ -436,6 +451,7 @@ export interface CourseHistoryResponseDTO {
 
 export interface CourseSessionRequest {
   discipline: TrainingDiscipline
+  course_slug?: TacticsCourseSlug | string
   batch_size?: number
   force_new?: boolean
 }
@@ -716,13 +732,16 @@ export interface ChallengeRecordEntryDTO {
 }
 
 // ============================================================================
-// Classical Tactics Course (24 Batches, 12 Woodpecker Days & Crash-Test)
+// Classical Tactics Course (3 Courses × 20 Batches, 10 Woodpecker Days & Crash-Test)
 // ============================================================================
 
 export type ClassicalCourseStepType = 'batch' | 'woodpecker' | 'completed'
 
 export interface CourseBatchStatusDTO {
+  course_slug?: string
+  course_id?: number
   batch_id: number
+  global_batch_id?: number
   batch_slug?: string
   batch_title: string
   week: number
@@ -762,6 +781,8 @@ export interface CourseFlagDTO {
 }
 
 export interface TacticsCourseCurriculumDTO {
+  course_slug?: string
+  course_id?: number
   active_course?: CourseDTO
   total_puzzles: number
   solved_total: number
@@ -771,6 +792,7 @@ export interface TacticsCourseCurriculumDTO {
   current_woodpecker_id: number
   batches: CourseBatchStatusDTO[]
   woodpecker_days: WoodpeckerCheckpointDTO[]
+  crash_test_total?: number
   crash_test_active: boolean
   crash_test_index: number
   crash_test_solved: number
@@ -788,6 +810,26 @@ export interface FlagCoursePuzzleRequest {
   puzzle_id: string
   comment: string
   session_id?: string
+}
+
+export interface BlunderSpyStepRequest {
+  puzzle_id?: string
+  fen: string
+  move_uci: string
+  objective: TrainingObjective
+  user_move_number?: number
+}
+
+export interface BlunderSpyStepResponse {
+  status: 'solved' | 'continue' | 'blunder'
+  quality: 'Best' | 'Good' | 'Inaccuracy' | 'Blunder' | string
+  node_state: '100' | '110' | '111' | 'terminal' | string
+  is_user_last_move: boolean
+  bot_reply: string | null
+  next_fen4: string | null
+  next_state: string | null
+  best_move_uci: string | null
+  cache_source: 'ram_hit' | 'self_healed_111' | 'self_healed_node' | 'terminal' | string
 }
 
 

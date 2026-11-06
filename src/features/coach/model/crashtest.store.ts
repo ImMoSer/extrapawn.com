@@ -133,7 +133,20 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     }
 
     if (!bestMoveUci || bestMoveUci.length < 4) {
-      logger.warn(`[Crashtest] Execution aborted: empty move from "${activeEngine}".`)
+      logger.warn(
+        `[Crashtest] Empty move from "${activeEngine}" for FEN: ${targetFen}. Retrying in 1500ms...`,
+      )
+      activeTimer = setTimeout(() => {
+        activeTimer = null
+        if (
+          token === currentCycleToken &&
+          isCrashtestEnabled.value &&
+          gameStore.gamePhase === 'PLAYING' &&
+          boardStore.fen === targetFen
+        ) {
+          scheduleMove(targetFen)
+        }
+      }, 1500)
       return
     }
 

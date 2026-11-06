@@ -1,3 +1,4 @@
+export * from './lib/crashTestReportLogger'
 export * from './lib/sessionPuzzleAdapter'
 export * from './model/challenge.store'
 export * from './model/trainingSession.store'

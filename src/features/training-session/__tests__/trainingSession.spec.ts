@@ -23,12 +23,14 @@ vi.mock('@/shared/lib/sound', () => ({
 }))
 
 function createSessionSummary(overrides: Partial<SessionSummaryDTO> = {}): SessionSummaryDTO {
+  const discipline = overrides.discipline ?? 'theoretical_endgames'
+  const difficulty = overrides.difficulty ?? 'Pro'
   return {
     id: '22222222-2222-4222-8222-222222222222',
-    discipline: 'theoretical_endgames',
+    discipline,
     mode: 'warmup',
-    difficulty: 'Pro',
-    bot_engine: 'maia-2200',
+    difficulty,
+    bot_engine: resolveBotEngineForDifficulty(difficulty, discipline),
     focus_group: 'objective',
     focus_key: 'hold_draw',
     total_count: 2,
@@ -48,10 +50,13 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     vi.restoreAllMocks()
   })
 
-  it('resolves Bot Ladder strictly per rank tier ([D12])', () => {
+  it('resolves Bot Ladder strictly per rank tier and discipline ([D12])', () => {
     expect(resolveBotEngineForDifficulty('Novice')).toBe('maia-1500')
     expect(resolveBotEngineForDifficulty('Pro')).toBe('maia-2200')
-    expect(resolveBotEngineForDifficulty('Master')).toBe('t1000')
+    expect(resolveBotEngineForDifficulty('Master')).toBe('mozero')
+    expect(resolveBotEngineForDifficulty('Novice', 'theoretical_endgames')).toBe('mozero')
+    expect(resolveBotEngineForDifficulty('Pro', 'theoretical_endgames')).toBe('mozero')
+    expect(resolveBotEngineForDifficulty('Master', 'theoretical_endgames')).toBe('mozero')
   })
 
   it('adapts HydratedSessionItem accurately across tactics, finishhim, practical_chess, and theoretical_endgames', () => {
@@ -153,7 +158,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     )
   })
 
-  it('orchestrates Pro WarmUp session, auto-locks maia-2200, records single attempt, supports analysis, and builds Session Report', async () => {
+  it('orchestrates Pro WarmUp session in theoretical_endgames, auto-locks mozero, records single attempt, supports analysis, and builds Session Report', async () => {
     const store = useTrainingSessionStore()
     const gameStore = useGameStore()
     const boardStore = useBoardStore()
@@ -164,7 +169,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     const sessionDto: HydratedSessionDTO = {
       session: createSessionSummary({
         difficulty: 'Pro',
-        bot_engine: 'maia-2200',
+        bot_engine: 'mozero',
         total_count: 2,
       }),
       items: [
@@ -229,7 +234,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       bot_engines: {
         Novice: 'maia-1500',
         Pro: 'maia-2200',
-        Master: 't1000',
+        Master: 'mozero',
       },
       disciplines: {
         tactics: {
@@ -354,8 +359,8 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     })
 
     expect(store.viewState).toBe('playing')
-    expect(gameStore.botEngineId).toBe('maia-2200')
-    expect(store.activeBotEngine).toBe('maia-2200')
+    expect(gameStore.botEngineId).toBe('mozero')
+    expect(store.activeBotEngine).toBe('mozero')
     expect(store.currentPuzzle?.objective).toBe('hold_draw')
 
     // Solve Puzzle 1 via FIDE stalemate (f7g6)
@@ -418,7 +423,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(CRASHTEST_ENGINES).toEqual([
         'stockfish',
         'maia-2200',
-        't1000',
+        'mozero',
       ])
       expect(preferencesStore.preferences.gameplay.crashtestEngine).toBe('stockfish')
 
@@ -540,7 +545,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         bot_engines: {
           Novice: 'maia-1500',
           Pro: 'maia-2200',
-          Master: 't1000',
+          Master: 'mozero',
         },
         disciplines: {
           tactics: {
@@ -628,6 +633,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           woodpecker: { action: payload.solved ? 'none' : 'queued', streak: 0 },
           session: createSessionSummary({
             discipline: 'tactics',
+            difficulty: 'Novice',
             total_count: 3,
             current_index: payload.puzzle_id === 'TAC-1' ? 1 : payload.puzzle_id === 'TAC-2' ? 2 : 3,
             solved_count: payload.solved ? 1 : 0,
@@ -682,7 +688,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(preferencesStore.preferences.delays.nextPuzzleDelayMs).toBe(500)
       await expect(store.startCrashTestSession(false)).rejects.toThrow(/restricted to developer/)
 
-      // 4. Enable Developer Crashtest (as developer mo3ep) with T1000 neural network and fail TAC-3 ->
+      // 4. Enable Developer Crashtest (as developer mo3ep) with MOZERO neural network and fail TAC-3 ->
       //    should auto-advance to Report after the unified nextPuzzleDelayMs (500ms), NOT crashtestDelayMs
       authStore.userProfile = {
         id: 'mo3ep',
@@ -690,7 +696,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         base_puzzle_rating: 2000,
       }
       await preferencesStore.updatePreferences({
-        gameplay: { global_crashtest: true, crashtestEngine: 't1000' },
+        gameplay: { global_crashtest: true, crashtestEngine: 'mozero' },
         delays: { crashtestDelayMs: 100, nextPuzzleDelayMs: 500 },
       })
 

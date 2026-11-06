@@ -3,6 +3,8 @@ import type {
   ActiveSessionResponseDTO,
   AttemptRequest,
   AttemptResultDTO,
+  BlunderSpyStepRequest,
+  BlunderSpyStepResponse,
   CabinetDTO,
   CatalogManifestDTO,
   ChallengeAttemptRequest,
@@ -153,6 +155,7 @@ export const trainingApi = {
       method: 'POST',
       body: JSON.stringify({
         discipline: payload.discipline,
+        ...(payload.course_slug ? { course_slug: payload.course_slug } : {}),
         batch_size: payload.batch_size ?? 0,
         force_new: payload.force_new ?? false,
       }),
@@ -219,16 +222,33 @@ export const trainingApi = {
     return apiClient<CoursePuzzleV2>(`/training/puzzle/tactics_course/${encodeURIComponent(id)}`)
   },
 
-  async getTacticsCourseCurriculum(): Promise<TacticsCourseCurriculumDTO> {
-    const raw = await apiClient<unknown>('/training/tactics-course/curriculum')
+  async getTacticsCourseCurriculum(courseSlug?: string): Promise<TacticsCourseCurriculumDTO> {
+    const trimmed = courseSlug?.trim() ?? ''
+    const query = trimmed ? `?course_slug=${encodeURIComponent(trimmed)}` : ''
+    const raw = await apiClient<unknown>(`/training/tactics-course/curriculum${query}`)
     return assertTacticsCourseCurriculumDTO(raw)
   },
 
-  async resetTacticsCourse(): Promise<TacticsCourseCurriculumDTO> {
+  async resetTacticsCourse(courseSlug?: string): Promise<TacticsCourseCurriculumDTO> {
+    const trimmed = courseSlug?.trim() ?? ''
     const raw = await apiClient<unknown>('/training/tactics-course/reset', {
       method: 'POST',
+      ...(trimmed ? { body: JSON.stringify({ course_slug: trimmed }) } : {}),
     })
     return assertTacticsCourseCurriculumDTO(raw)
+  },
+
+  stepBlunderSpy(payload: BlunderSpyStepRequest): Promise<BlunderSpyStepResponse> {
+    return apiClient<BlunderSpyStepResponse>('/coach-engine/blunderspy/step', {
+      method: 'POST',
+      body: JSON.stringify({
+        puzzle_id: payload.puzzle_id ?? '',
+        fen: payload.fen,
+        move_uci: payload.move_uci,
+        objective: payload.objective ?? 'win',
+        user_move_number: payload.user_move_number ?? 1,
+      }),
+    })
   },
 
   composeCrashTestSession(payload: CrashTestSessionRequest = {}): Promise<HydratedSessionDTO> {

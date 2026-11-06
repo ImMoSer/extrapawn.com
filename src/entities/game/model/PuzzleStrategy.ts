@@ -12,7 +12,7 @@ import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 
 const t = i18n.global.t
 
-export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
+export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus' | 'blunderSpy'
 export type PuzzleObjective = 'win' | 'hold_draw'
 export type PuzzleFailStage = 'none' | 'scenario' | 'playout'
 
@@ -22,6 +22,22 @@ export interface PuzzleAttemptTelemetry {
   outcomeReason: string
 }
 
+export interface BlunderSpyStepTelemetry {
+  puzzleId: string
+  fenBefore: string
+  moveUci: string
+  userMoveNumber: number
+  status: 'solved' | 'continue' | 'blunder' | 'error'
+  reason: string
+  stateMask: string
+  nextState?: string | null
+  botReply?: string | null
+  allowedMoves: string[]
+  cacheHit: boolean
+  playedMovesUci: string[]
+  errorMessage?: string
+}
+
 export interface PuzzlePuzzle {
   puzzle_id: string
   puzzle_type: string
@@ -29,13 +45,16 @@ export interface PuzzlePuzzle {
   category_comby?: string[]
   motifs_pg?: string[]
   sub_category?: string
-  difficulty: string
+  difficulty?: string
   rating?: number | string
   strategy: PuzzleStrategyType
   first_move: 'bot' | 'user'
   user_color?: 'white' | 'black'
   objective?: PuzzleObjective
   domain?: string
+  course_slug?: string
+  course_id?: number
+  global_batch_id?: number
   batch_id?: number
   batch_title?: string
   week?: number
@@ -83,6 +102,7 @@ export interface PuzzleStrategyCallbacks {
   onGameOver?: (status: GameStatusInfo) => void
   onFeedback?: (message: string) => void
   onUndo?: () => void
+  onBlunderSpyStep?: (info: BlunderSpyStepTelemetry) => void
   planId?: string
   botEngineOverride?: EngineId
   delays?: Partial<GameplayStrategyConfig>
@@ -101,6 +121,9 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private userMovesPlayed = 0
   private deviatedInScenario = false
   private deviatedOnFirstMove = false
+  private pendingBotReplyUci: string | null = null
+  private prevPendingBotReplyUci: string | null = null
+  private playedMovesUci: string[] = []
 
   private prevScenarioIndex = 0
   private prevPlayoutMode = false
@@ -243,7 +266,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   private buildFailureTelemetry(outcomeReason: string): PuzzleAttemptTelemetry {
-    if (this.puzzle.strategy === 'scenarioOnly') {
+    if (this.puzzle.strategy === 'scenarioOnly' || this.puzzle.strategy === 'blunderSpy') {
       return {
         firstMoveFailed: this.userMovesPlayed <= 1,
         failStage: 'scenario',
@@ -314,16 +337,155 @@ export class PuzzleStrategy implements IGameplayStrategy {
     soundService.play('tactics_error')
   }
 
-  async onUserMoveExecuted(uciMove: string): Promise<void> {
+  async onUserMoveExecuted(uciMove: string, _fenAfter?: string, fenBefore?: string): Promise<void> {
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
     this.prevUserMovesPlayed = this.userMovesPlayed
     this.prevDeviatedInScenario = this.deviatedInScenario
     this.prevDeviatedOnFirstMove = this.deviatedOnFirstMove
+    this.prevPendingBotReplyUci = this.pendingBotReplyUci
 
     this.userMovesPlayed++
+    this.playedMovesUci.push(uciMove)
 
     const isCheckmate = this.boardStore.chessPosition.isCheckmate()
+
+    if (this.puzzle.strategy === 'blunderSpy') {
+      if (isCheckmate) {
+        this.pendingBotReplyUci = null
+        logger.info('[PuzzleStrategy] Checkmate delivered in blunderSpy mode. Puzzle solved!')
+        await this.triggerSuccess('checkmate')
+        return
+      }
+
+      if (this.objective === 'hold_draw') {
+        const statusAfter = this.gameStore.getGameStatus()
+        if (
+          statusAfter.isGameOver &&
+          statusAfter.outcome &&
+          !statusAfter.outcome.winner &&
+          isFideDrawReason(statusAfter.outcome.reason)
+        ) {
+          this.pendingBotReplyUci = null
+          logger.info(
+            `[PuzzleStrategy] Draw achieved in blunderSpy mode (${statusAfter.outcome.reason}). Puzzle solved!`,
+          )
+          await this.triggerSuccess(statusAfter.outcome.reason)
+          return
+        }
+      }
+
+      const stepFen = fenBefore || this.puzzle.initial_fen
+      try {
+        const httpRes = await fetch('/api/coach-engine/blunderspy/step', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puzzle_id: this.puzzle.puzzle_id,
+            fen: stepFen,
+            move_uci: uciMove,
+            objective: this.objective,
+            user_move_number: this.userMovesPlayed,
+          }),
+        })
+        if (!httpRes.ok) {
+          throw new Error(`BlunderSpy HTTP error: ${httpRes.status}`)
+        }
+        const res = (await httpRes.json()) as {
+          status: 'solved' | 'continue' | 'blunder'
+          quality?: string
+          reason?: string
+          node_state?: string
+          state_mask?: string
+          is_user_last_move?: boolean
+          move_ok?: boolean
+          bot_reply: string | null
+          next_fen4?: string | null
+          next_fen?: string | null
+          next_state: string | null
+          best_move_uci?: string | null
+          allowed_moves?: string[]
+          cache_source?: string
+          cache_hit?: boolean
+        }
+
+        if (this.isDestroyed || this.isResolved) return
+
+        const stateMask = res.node_state ?? res.state_mask ?? '100'
+        const reason = res.quality ?? res.reason ?? res.status
+        const allowedMoves =
+          res.allowed_moves && res.allowed_moves.length > 0
+            ? res.allowed_moves
+            : res.best_move_uci
+              ? [res.best_move_uci]
+              : []
+        const cacheHit =
+          typeof res.cache_hit === 'boolean'
+            ? res.cache_hit
+            : res.cache_source === 'ram_hit' || res.cache_source === 'terminal'
+
+        this.callbacks?.onBlunderSpyStep?.({
+          puzzleId: this.puzzle.puzzle_id,
+          fenBefore: stepFen,
+          moveUci: uciMove,
+          userMoveNumber: this.userMovesPlayed,
+          status: res.status,
+          reason,
+          stateMask,
+          nextState: res.next_state,
+          botReply: res.bot_reply,
+          allowedMoves,
+          cacheHit,
+          playedMovesUci: [...this.playedMovesUci],
+        })
+
+        if (res.status === 'solved') {
+          this.pendingBotReplyUci = null
+          await this.triggerSuccess(reason || 'blunderspy_solved')
+          return
+        }
+
+        if (res.status === 'continue') {
+          this.pendingBotReplyUci = res.bot_reply ? extractPrimaryUciMove(res.bot_reply) : null
+          if (!this.pendingBotReplyUci) {
+            await this.triggerSuccess('no_bot_reply_solved')
+          }
+          return
+        }
+
+        this.pendingBotReplyUci = null
+        await this.triggerFailure({
+          firstMoveFailed: this.userMovesPlayed === 1,
+          failStage: 'scenario',
+          outcomeReason: reason || 'blunder',
+        })
+        return
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        logger.error(`[PuzzleStrategy] blunderSpy step error for ${this.puzzle.puzzle_id}:`, error)
+        this.callbacks?.onBlunderSpyStep?.({
+          puzzleId: this.puzzle.puzzle_id,
+          fenBefore: stepFen,
+          moveUci: uciMove,
+          userMoveNumber: this.userMovesPlayed,
+          status: 'error',
+          reason: 'api_error',
+          stateMask: 'unknown',
+          allowedMoves: [],
+          cacheHit: false,
+          playedMovesUci: [...this.playedMovesUci],
+          errorMessage: msg,
+        })
+        this.pendingBotReplyUci = null
+        await this.triggerFailure({
+          firstMoveFailed: this.userMovesPlayed === 1,
+          failStage: 'scenario',
+          outcomeReason: 'blunderspy_api_error',
+        })
+        return
+      }
+    }
 
     if (this.isPlayoutMode) {
       if (isCheckmate) {
@@ -384,6 +546,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
     this.userMovesPlayed = this.prevUserMovesPlayed
     this.deviatedInScenario = this.prevDeviatedInScenario
     this.deviatedOnFirstMove = this.prevDeviatedOnFirstMove
+    this.pendingBotReplyUci = this.prevPendingBotReplyUci
+    if (this.playedMovesUci.length >= 2) {
+      this.playedMovesUci.splice(-2, 2)
+    } else {
+      this.playedMovesUci = []
+    }
     this.isResolved = false
     this.callbacks?.onUndo?.()
     if (this.nextPuzzleTimeout !== null) {
@@ -392,7 +560,13 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
   }
 
-  async onBotMoveExecuted(): Promise<void> {
+  async onBotMoveExecuted(uciMove?: string): Promise<void> {
+    if (uciMove) {
+      this.playedMovesUci.push(uciMove)
+    }
+    if (this.puzzle.strategy === 'blunderSpy') {
+      return
+    }
     if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
       this.scenarioIndex++
     }
@@ -417,6 +591,12 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
+    if (this.puzzle.strategy === 'blunderSpy') {
+      const reply = this.pendingBotReplyUci
+      this.pendingBotReplyUci = null
+      return reply
+    }
+
     if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
       const move = this.scenarioMoves[this.scenarioIndex] || null
       return move ? extractPrimaryUciMove(move) : null

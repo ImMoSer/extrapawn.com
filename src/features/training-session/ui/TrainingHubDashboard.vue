@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  BOT_ENGINE_BY_DIFFICULTY,
   formatRemainingDuration,
   getVisibleTrainingDisciplines,
   isDisciplineVisibleForUser,
@@ -8,6 +7,7 @@ import {
   isValidTrainingDiscipline,
   PRACTICAL_AND_FINISHHIM_DOMAINS,
   PRACTICAL_DOMAIN_CLASSES,
+  resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -781,7 +781,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       </NIcon>
                     </div>
                     <span class="font-condensed text-[11px] text-text-secondary">
-                      {{ ENGINE_NAMES[BOT_ENGINE_BY_DIFFICULTY[tier]] }}
+                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
                     </span>
                   </button>
                 </div>
@@ -1004,7 +1004,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                     {{ resolveDifficultyLabel(tier, t) }}
                   </span>
                   <span class="font-condensed text-[11px] text-text-secondary">
-                    {{ ENGINE_NAMES[BOT_ENGINE_BY_DIFFICULTY[tier]] }}
+                    {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
                   </span>
                 </button>
               </div>

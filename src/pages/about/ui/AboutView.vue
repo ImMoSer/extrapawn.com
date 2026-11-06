@@ -237,6 +237,16 @@ const techStackItems = [
                   "
                 ></span>
               </n-text>
+              <div class="mt-2">
+                <a
+                  href="https://github.com/CallOn84/LeelaNets"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-xs font-semibold text-accent hover:underline"
+                >
+                  github.com/CallOn84/LeelaNets →
+                </a>
+              </div>
             </n-card>
           </n-gi>
 

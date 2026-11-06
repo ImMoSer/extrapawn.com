@@ -4,6 +4,7 @@ import {
   PuzzleStrategy,
   useBoardStore,
   useGameStore,
+  type BlunderSpyStepTelemetry,
   type PuzzleAttemptTelemetry,
   type PuzzlePuzzle,
 } from '@/entities/game'
@@ -23,6 +24,7 @@ import {
   type SessionSummaryDTO,
   type StartCourseRequest,
   type TacticsCourseCurriculumDTO,
+  type TacticsCourseSlug,
   type TrainingDifficulty,
   type TrainingDiscipline,
   type TrainingSessionMode,
@@ -34,7 +36,13 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import { defineStore } from 'pinia'
-import { computed, onScopeDispose, ref } from 'vue'
+import { computed, markRaw, onScopeDispose, ref } from 'vue'
+import {
+  recordCrashTestAnomaly,
+  recordCrashTestPuzzleOutcome,
+  recordCrashTestStepHit,
+  resetCrashTestReport,
+} from '../lib/crashTestReportLogger'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 
 export type TrainingViewState = 'hub' | 'playing' | 'awaiting_next' | 'analyzing' | 'report'
@@ -84,6 +92,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const overview = ref<HubOverviewDTO | null>(null)
   const courseHistory = ref<CourseDTO[]>([])
   const tacticsCourseCurriculum = ref<TacticsCourseCurriculumDTO | null>(null)
+  const activeCourseSlug = ref<TacticsCourseSlug>('tactics_classical_1')
   const activeDiscipline = ref<TrainingDiscipline>('tactics')
   const viewState = ref<TrainingViewState>('hub')
 
@@ -102,6 +111,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const lastAttemptTelemetry = ref<PuzzleAttemptTelemetry | null>(null)
   const sessionAttemptResults = ref<Record<string, AttemptResultDTO>>({})
   const promotionBannerTier = ref<TrainingDifficulty | null>(null)
+  const runningSessionTimeMs = ref<number>(0)
 
   const analysisPuzzle = ref<PuzzlePuzzle | null>(null)
   const analysisReturnState = ref<'awaiting_next' | 'report'>('awaiting_next')
@@ -117,6 +127,27 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   let autoNextTimeoutId: ReturnType<typeof setTimeout> | null = null
   let activePlayToken = 0
   let inFlightAttemptKey: string | null = null
+  let lastBlunderSpyStep: BlunderSpyStepTelemetry | null = null
+  const itemByPuzzleId = new Map<string, HydratedSessionItem>()
+
+  function captureCurrentGameMoveHistory() {
+    try {
+      const gameMovesUci = pgnService.getCurrentUciPath()
+      const gameMovesSan = pgnService.getCurrentSanPath()
+      const gamePgn = pgnService.getCurrentPgnString({ showVariations: true })
+      return {
+        game_moves_uci: gameMovesUci,
+        game_moves_san: gameMovesSan,
+        game_pgn: gamePgn,
+      }
+    } catch {
+      return {
+        game_moves_uci: [],
+        game_moves_san: [],
+        game_pgn: '',
+      }
+    }
+  }
 
   function clearAutoNextTimeout(): void {
     if (autoNextTimeoutId !== null) {
@@ -225,7 +256,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       return validateBotLadderEngine(activeSessionSummary.value.bot_engine)
     }
     const tier = activeDisciplineOverview.value?.unlocked_tier ?? 'Novice'
-    return resolveBotEngineForDifficulty(tier)
+    return resolveBotEngineForDifficulty(tier, activeDiscipline.value)
   })
 
   const isPlaying = computed<boolean>(() => viewState.value === 'playing')
@@ -236,6 +267,41 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const sessionReportSummary = computed<SessionReportSummary | null>(() => {
     const sess = hydratedSession.value
     if (!sess) return null
+
+    if (sess.session.mode === 'crashtest' || sess.items.length > 200) {
+      const solvedCount = sess.session.solved_count
+      const failedCount = sess.session.failed_count
+      const totalCount = sess.session.total_count || sess.items.length
+      const pendingCount = Math.max(0, totalCount - solvedCount - failedCount)
+      const decidedCount = solvedCount + failedCount
+      const totalTimeMs = runningSessionTimeMs.value
+      const accuracyPercent =
+        decidedCount > 0 ? Math.round((solvedCount / decidedCount) * 1000) / 10 : 0
+      const avgTimeMs = decidedCount > 0 ? Math.round(totalTimeMs / decidedCount) : 0
+
+      return {
+        sessionId: sess.session.id,
+        discipline: sess.session.discipline,
+        mode: sess.session.mode,
+        difficulty: sess.session.difficulty,
+        botEngine: validateBotLadderEngine(sess.session.bot_engine),
+        focusGroup: sess.session.focus_group,
+        focusKey: sess.session.focus_key,
+        totalCount,
+        solvedCount,
+        failedCount,
+        pendingCount,
+        accuracyPercent,
+        totalTimeMs,
+        avgTimeMs,
+        netGlobalRatingDelta: 0,
+        woodpeckerCount: 0,
+        woodpeckerSolvedCount: 0,
+        woodpeckerGraduatedCount: 0,
+        woodpeckerQueuedCount: 0,
+        items: sess.items,
+      }
+    }
 
     let solvedCount = 0
     let failedCount = 0
@@ -304,11 +370,11 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   // ==========================================================================
 
   function syncBotLadderForSession(summary: SessionSummaryDTO): BotLadderEngineId {
-    const expectedBot = resolveBotEngineForDifficulty(summary.difficulty)
+    const expectedBot = resolveBotEngineForDifficulty(summary.difficulty, summary.discipline)
     const serverBot = validateBotLadderEngine(summary.bot_engine)
     if (serverBot !== expectedBot) {
       throw new Error(
-        `[TrainingSessionStore] Bot Ladder mismatch for session ${summary.id}: difficulty "${summary.difficulty}" requires "${expectedBot}", got "${serverBot}". Fail-Fast!`,
+        `[TrainingSessionStore] Bot Ladder mismatch for session ${summary.id}: difficulty "${summary.difficulty}" (${summary.discipline}) requires "${expectedBot}", got "${serverBot}". Fail-Fast!`,
       )
     }
     gameStore.setBotEngineId(serverBot)
@@ -337,8 +403,29 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     syncBotLadderForSession(dto.session)
 
+    itemByPuzzleId.clear()
+    let initialTotalTimeMs = 0
+    for (const item of dto.items) {
+      if (typeof item.time_ms === 'number' && item.time_ms > 0) {
+        initialTotalTimeMs += item.time_ms
+      }
+      if (item.course_puzzle) {
+        item.course_puzzle = markRaw(item.course_puzzle)
+      }
+      if (item.tactical) {
+        item.tactical = markRaw(item.tactical)
+      }
+      if (item.endgame) {
+        item.endgame = markRaw(item.endgame)
+      }
+    }
+    runningSessionTimeMs.value = initialTotalTimeMs
+
     activeDiscipline.value = dto.session.discipline
     hydratedSession.value = dto
+    for (const reactiveItem of hydratedSession.value.items) {
+      itemByPuzzleId.set(reactiveItem.puzzle_id, reactiveItem)
+    }
     lastAttemptResult.value = null
     lastAttemptTelemetry.value = null
     feedbackMessage.value = null
@@ -385,11 +472,80 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     lastAttemptTelemetry.value = null
     feedbackMessage.value = null
     analysisPuzzle.value = null
+    lastBlunderSpyStep = null
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
       planId: sess.session.id.slice(0, 12),
       botEngineOverride: botEngine,
       delays: preferencesStore.preferences.delays,
+      onBlunderSpyStep: (stepInfo: BlunderSpyStepTelemetry) => {
+        if (activePlayToken !== tokenAtLaunch) return
+        lastBlunderSpyStep = stepInfo
+
+        const isCrashtestMode =
+          sess.session.mode === 'crashtest' ||
+          (authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest)
+
+        if (isCrashtestMode) {
+          recordCrashTestStepHit(stepInfo.cacheHit ? 'cache' : 'engine_healed')
+        }
+
+        if (!stepInfo.cacheHit && isCrashtestMode) {
+          const gameHistory = captureCurrentGameMoveHistory()
+          recordCrashTestAnomaly({
+            type: 'cache_miss_healed',
+            puzzle_id: puzzle.puzzle_id,
+            course_slug: puzzle.course_slug,
+            global_batch_id: puzzle.global_batch_id,
+            batch_id: puzzle.batch_id,
+            index_in_session: item.index,
+            domain: puzzle.domain,
+            class: puzzle.category,
+            objective: puzzle.objective,
+            initial_fen: puzzle.initial_fen,
+            current_fen: stepInfo.fenBefore,
+            move_uci: stepInfo.moveUci,
+            user_move_number: stepInfo.userMoveNumber,
+            played_moves_uci: stepInfo.playedMovesUci,
+            ...gameHistory,
+            canonical_solution: puzzle.tactical_solution,
+            crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
+            blunderspy_state: stepInfo.stateMask,
+            blunderspy_next_state: stepInfo.nextState ?? undefined,
+            blunderspy_source: 'engine_healed',
+            blunderspy_reason: stepInfo.reason,
+            best_move_uci: stepInfo.allowedMoves[0],
+            allowed_moves: stepInfo.allowedMoves,
+          })
+        }
+
+        if (stepInfo.status === 'error' && isCrashtestMode) {
+          const gameHistory = captureCurrentGameMoveHistory()
+          recordCrashTestAnomaly({
+            type: 'api_error',
+            puzzle_id: puzzle.puzzle_id,
+            course_slug: puzzle.course_slug,
+            global_batch_id: puzzle.global_batch_id,
+            batch_id: puzzle.batch_id,
+            index_in_session: item.index,
+            domain: puzzle.domain,
+            class: puzzle.category,
+            objective: puzzle.objective,
+            initial_fen: puzzle.initial_fen,
+            current_fen: stepInfo.fenBefore,
+            move_uci: stepInfo.moveUci,
+            user_move_number: stepInfo.userMoveNumber,
+            played_moves_uci: stepInfo.playedMovesUci,
+            ...gameHistory,
+            canonical_solution: puzzle.tactical_solution,
+            crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
+            blunderspy_state: stepInfo.stateMask,
+            best_move_uci: stepInfo.allowedMoves[0],
+            allowed_moves: stepInfo.allowedMoves,
+            error_message: stepInfo.errorMessage || 'blunderspy API error',
+          })
+        }
+      },
       onFeedback: (msg: string) => {
         if (activePlayToken === tokenAtLaunch) {
           feedbackMessage.value = msg
@@ -408,7 +564,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
         if (activePlayToken !== tokenAtLaunch) return
         const resolvedTelemetry: PuzzleAttemptTelemetry = telemetry ?? {
           firstMoveFailed: false,
-          failStage: puzzle.strategy === 'scenarioOnly' ? 'scenario' : 'playout',
+          failStage:
+            puzzle.strategy === 'scenarioOnly' || puzzle.strategy === 'blunderSpy'
+              ? 'scenario'
+              : 'playout',
           outcomeReason: 'failed',
         }
         await handleAttemptOutcome(tokenAtLaunch, sess.session.id, item.puzzle_id, false, resolvedTelemetry)
@@ -432,7 +591,8 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     const sess = hydratedSession.value
     if (!sess || sess.session.id !== sessionId) return
-    const targetItem = sess.items.find((it) => it.puzzle_id === puzzleId)
+    const targetItem =
+      itemByPuzzleId.get(puzzleId) ?? sess.items.find((it) => it.puzzle_id === puzzleId)
     if (!targetItem || targetItem.status !== 'pending') return
 
     inFlightAttemptKey = attemptKey
@@ -449,6 +609,43 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
 
     const attemptStartedAt = Date.now()
+    const isCrashtestActive =
+      sess.session.mode === 'crashtest' ||
+      (authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest)
+
+    if (isCrashtestActive) {
+      recordCrashTestPuzzleOutcome(puzzleId, targetItem.index, solved)
+      if (!solved) {
+        const gameHistory = captureCurrentGameMoveHistory()
+        recordCrashTestAnomaly({
+          type:
+            telemetry.outcomeReason === 'blunderspy_api_error'
+              ? 'api_error'
+              : 'blunder_in_crashtest',
+          puzzle_id: puzzleId,
+          course_slug: targetItem.course_puzzle?.course_slug,
+          global_batch_id: targetItem.course_puzzle?.global_batch_id,
+          batch_id: targetItem.course_puzzle?.batch_id,
+          index_in_session: targetItem.index,
+          domain: targetItem.course_puzzle?.domain,
+          class: targetItem.course_puzzle?.class,
+          objective: targetItem.course_puzzle?.objective,
+          initial_fen: targetItem.course_puzzle?.tactical_fen || '',
+          current_fen: lastBlunderSpyStep?.fenBefore || boardStore.fen,
+          move_uci: lastBlunderSpyStep?.moveUci,
+          user_move_number: lastBlunderSpyStep?.userMoveNumber,
+          played_moves_uci: lastBlunderSpyStep?.playedMovesUci ?? [],
+          ...gameHistory,
+          canonical_solution: targetItem.course_puzzle?.tactical_solution,
+          crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
+          blunderspy_state: lastBlunderSpyStep?.stateMask,
+          blunderspy_reason: telemetry.outcomeReason,
+          best_move_uci: lastBlunderSpyStep?.allowedMoves?.[0],
+          allowed_moves: lastBlunderSpyStep?.allowedMoves,
+          error_message: `Outcome reason: ${telemetry.outcomeReason} (failStage: ${telemetry.failStage}, timeMs: ${elapsedMs})`,
+        })
+      }
+    }
 
     try {
       const result = await trainingApi.submitAttempt(sessionId, {
@@ -462,11 +659,14 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       targetItem.status = solved ? 'solved' : 'failed'
       targetItem.time_ms = elapsedMs
       targetItem.rating_delta = result.global_rating_delta
+      runningSessionTimeMs.value += elapsedMs
       sess.session = result.session
 
       lastAttemptResult.value = result
       lastAttemptTelemetry.value = telemetry
-      sessionAttemptResults.value[puzzleId] = result
+      if (sess.session.mode !== 'crashtest') {
+        sessionAttemptResults.value[puzzleId] = result
+      }
 
       if (result.promoted_to_tier) {
         promotionBannerTier.value = result.promoted_to_tier
@@ -492,8 +692,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
       if (activePlayToken !== playToken) return
 
-      const isCrashtestActive =
-        authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest
       if (solved || isCrashtestActive) {
         const configuredDelayMs = preferencesStore.preferences.delays.nextPuzzleDelayMs
         const elapsedSinceSubmitMs = Math.max(0, Date.now() - attemptStartedAt)
@@ -515,6 +713,33 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       const msg = extractErrorText(err, 'Failed to submit puzzle attempt')
       error.value = msg
       logger.error('[TrainingSessionStore] Failed to record attempt:', err)
+      if (isCrashtestActive) {
+        const gameHistory = captureCurrentGameMoveHistory()
+        recordCrashTestAnomaly({
+          type: 'api_error',
+          puzzle_id: puzzleId,
+          course_slug: targetItem.course_puzzle?.course_slug,
+          global_batch_id: targetItem.course_puzzle?.global_batch_id,
+          batch_id: targetItem.course_puzzle?.batch_id,
+          index_in_session: targetItem.index,
+          domain: targetItem.course_puzzle?.domain,
+          class: targetItem.course_puzzle?.class,
+          objective: targetItem.course_puzzle?.objective,
+          initial_fen: targetItem.course_puzzle?.tactical_fen || '',
+          current_fen: boardStore.fen,
+          played_moves_uci: lastBlunderSpyStep?.playedMovesUci ?? [],
+          ...gameHistory,
+          canonical_solution: targetItem.course_puzzle?.tactical_solution,
+          crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
+          error_message: msg,
+        })
+        targetItem.status = solved ? 'solved' : 'failed'
+        targetItem.time_ms = elapsedMs
+        if (activePlayToken === playToken) {
+          advanceAfterAttempt()
+        }
+        return
+      }
       throw err
     } finally {
       inFlightAttemptKey = null
@@ -549,10 +774,14 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
   }
 
-  async function fetchTacticsCourseCurriculum(): Promise<TacticsCourseCurriculumDTO> {
+  async function fetchTacticsCourseCurriculum(
+    courseSlug?: TacticsCourseSlug,
+  ): Promise<TacticsCourseCurriculumDTO> {
+    const slug = courseSlug ?? activeCourseSlug.value
+    activeCourseSlug.value = slug
     isLoadingCurriculum.value = true
     try {
-      const data = await trainingApi.getTacticsCourseCurriculum()
+      const data = await trainingApi.getTacticsCourseCurriculum(slug)
       tacticsCourseCurriculum.value = data
       return data
     } catch (err) {
@@ -563,11 +792,20 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
   }
 
-  async function resetTacticsCourse(): Promise<TacticsCourseCurriculumDTO> {
+  function selectTacticsCourse(courseSlug: TacticsCourseSlug): void {
+    activeCourseSlug.value = courseSlug
+    void fetchTacticsCourseCurriculum(courseSlug)
+  }
+
+  async function resetTacticsCourse(
+    courseSlug?: TacticsCourseSlug,
+  ): Promise<TacticsCourseCurriculumDTO> {
+    const slug = courseSlug ?? activeCourseSlug.value
+    activeCourseSlug.value = slug
     isLoadingCurriculum.value = true
     error.value = null
     try {
-      const data = await trainingApi.resetTacticsCourse()
+      const data = await trainingApi.resetTacticsCourse(slug)
       tacticsCourseCurriculum.value = data
       if (
         hydratedSession.value?.session.discipline === 'tactics_course' &&
@@ -683,18 +921,22 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   async function startTacticsCourseBatch(
     batchId: number = 0,
     forceNew: boolean = false,
+    courseSlug?: TacticsCourseSlug,
   ): Promise<HydratedSessionDTO> {
+    const slug = courseSlug ?? activeCourseSlug.value
+    activeCourseSlug.value = slug
     isStartingSession.value = true
     error.value = null
     try {
       const dto = await trainingApi.composeCourseSession({
         discipline: 'tactics_course',
+        course_slug: slug,
         batch_size: batchId,
         force_new: forceNew,
       })
       applyHydratedSessionAndLaunch(dto)
       void fetchOverview()
-      void fetchTacticsCourseCurriculum()
+      void fetchTacticsCourseCurriculum(slug)
       return dto
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to start Classical Course batch')
@@ -718,13 +960,14 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     isStartingSession.value = true
     error.value = null
     try {
+      if (forceRestart && jumpToIndex === undefined) {
+        resetCrashTestReport(tacticsCourseCurriculum.value?.crash_test_total ?? 6147)
+      }
       const dto = await trainingApi.composeCrashTestSession({
         force_restart: forceRestart,
         jump_to_index: jumpToIndex,
       })
       applyHydratedSessionAndLaunch(dto)
-      void fetchOverview()
-      void fetchTacticsCourseCurriculum()
       return dto
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to start Crash-Test session')
@@ -749,6 +992,25 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     isFlaggingPuzzle.value = true
     error.value = null
     try {
+      const gameHistory = captureCurrentGameMoveHistory()
+      recordCrashTestAnomaly({
+        type: 'manual_flag',
+        puzzle_id: item.puzzle_id,
+        course_slug: item.course_puzzle?.course_slug,
+        global_batch_id: item.course_puzzle?.global_batch_id,
+        batch_id: item.course_puzzle?.batch_id,
+        index_in_session: item.index,
+        domain: item.course_puzzle?.domain,
+        class: item.course_puzzle?.class,
+        objective: item.course_puzzle?.objective,
+        initial_fen: item.course_puzzle?.tactical_fen || '',
+        current_fen: boardStore.fen,
+        played_moves_uci: lastBlunderSpyStep?.playedMovesUci ?? [],
+        ...gameHistory,
+        canonical_solution: item.course_puzzle?.tactical_solution,
+        error_message: comment.trim() || 'Помечено во время прохождения',
+      })
+
       const updatedSession = await trainingApi.flagCoursePuzzle({
         puzzle_id: item.puzzle_id,
         comment: comment.trim() || 'Помечено во время прохождения',
@@ -877,7 +1139,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     analysisReturnState.value = viewState.value === 'report' ? 'report' : 'awaiting_next'
 
     const targetItem = puzzleId
-      ? sess.items.find((it) => it.puzzle_id === puzzleId) ?? null
+      ? itemByPuzzleId.get(puzzleId) ?? sess.items.find((it) => it.puzzle_id === puzzleId) ?? null
       : currentItem.value
 
     if (!targetItem) {
@@ -961,6 +1223,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     overview,
     courseHistory,
     tacticsCourseCurriculum,
+    activeCourseSlug,
     activeDiscipline,
     viewState,
     hydratedSession,
@@ -995,6 +1258,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     // Actions
     fetchOverview,
     fetchTacticsCourseCurriculum,
+    selectTacticsCourse,
     resetTacticsCourse,
     fetchCourseHistory,
     selectDiscipline,

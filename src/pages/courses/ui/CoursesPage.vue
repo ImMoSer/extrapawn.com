@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TacticsCourseSlug } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import {
   TacticsCourseCurriculumView,
@@ -41,34 +42,34 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     id: 'tactics_classical_1',
     category: 'tactics',
     number: 1,
-    title: 'Классический курс тактики I · Фундамент и комбинации',
+    title: 'Курс тактики I · Геометрия и Матовые конструкции',
     subtitle:
-      'Системная программа от базовых матовых конструкций и двойных ударов до многоходовых комбинаций и выпускного экзамена.',
-    scheduleLabel: '7 недель · 28 батчей · 14 Дней Дятла',
-    volumeLabel: '2997 задач',
+      'Фундаментальная геометрия доски, матовые сети, двойные удары, связки, вскрытые шахи и материальные завоевания.',
+    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
+    volumeLabel: '2013 задач',
     status: 'ready',
   },
   {
     id: 'tactics_classical_2',
     category: 'tactics',
     number: 2,
-    title: 'Классический курс тактики II · Расчёт и позиционный удар',
+    title: 'Курс тактики II · Жертвы и Комбинационный взрыв',
     subtitle:
-      'Углублённый курс по разрушению прикрытия короля, промежуточным ходам, тихим тактическим ударам и счёту на 3–5 ходов.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Жертвы ферзя и ладьи, завлечение, отвлечение, перекрытие, разрушение прикрытия короля и многоходовые комбинации.',
+    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
+    volumeLabel: '2035 задач',
+    status: 'ready',
   },
   {
     id: 'tactics_classical_3',
     category: 'tactics',
     number: 3,
-    title: 'Классический курс тактики III · Мастерство атаки и защиты',
+    title: 'Курс тактики III · Стратегическая тактика и Искусство спасения',
     subtitle:
-      'Сложные многофигурные столкновения, контрудары в критических позициях, спасение вечным шахом/патом и турнирный практикум.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Освобождение линий, критические поля, цугцванг, контрудары в худших позициях и этюдное спасение вечным шахом/патом.',
+    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
+    volumeLabel: '2099 задач',
+    status: 'ready',
   },
   {
     id: 'endgame_classical_1',
@@ -142,6 +143,9 @@ function handleSelectCategory(cat: CourseCategoryKey): void {
 
 function handleSelectCourse(course: ClassicalCourseCatalogItem): void {
   selectedCourseId.value = course.id
+  if (course.category === 'tactics' && course.status === 'ready') {
+    store.selectTacticsCourse(course.id as TacticsCourseSlug)
+  }
 }
 
 onUnmounted(() => {
@@ -360,8 +364,8 @@ onUnmounted(() => {
 
     <!-- Active Course Curriculum Cabinet OR Coming Soon Placeholder -->
     <div class="rounded-lg bg-surface border border-border p-6">
-      <template v-if="selectedCourse?.id === 'tactics_classical_1'">
-        <TacticsCourseCurriculumView />
+      <template v-if="selectedCourse?.category === 'tactics' && selectedCourse?.status === 'ready'">
+        <TacticsCourseCurriculumView :course-slug="selectedCourse.id as TacticsCourseSlug" />
       </template>
 
       <div v-else-if="selectedCourse" class="py-10 flex flex-col items-center justify-center text-center gap-3">

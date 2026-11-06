@@ -47,7 +47,7 @@ export interface IGameplayStrategy {
   /**
    * Вызывается ПОСЛЕ того как ход был успешно применён ядром.
    */
-  onUserMoveExecuted?: (uciMove: string, fen: string) => void | Promise<void>
+  onUserMoveExecuted?: (uciMove: string, fen: string, fenBefore?: string) => void | Promise<void>
 
   /**
    * Вызывается когда происходит Takeback (возврат хода),

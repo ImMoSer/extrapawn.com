@@ -172,11 +172,11 @@ export const useChallengeStore = defineStore('challenge', () => {
   // ==========================================================================
 
   function syncBotLadder(state: ChallengeStateDTO): BotLadderEngineId {
-    const expectedBot = resolveBotEngineForDifficulty(state.difficulty)
+    const expectedBot = resolveBotEngineForDifficulty(state.difficulty, state.discipline)
     const serverBot = validateBotLadderEngine(state.bot_engine)
     if (serverBot !== expectedBot) {
       throw new Error(
-        `[ChallengeStore] Bot Ladder mismatch for challenge ${state.puzzle_id}: difficulty "${state.difficulty}" requires "${expectedBot}", got "${serverBot}". Fail-Fast!`,
+        `[ChallengeStore] Bot Ladder mismatch for challenge ${state.puzzle_id}: difficulty "${state.difficulty}" (${state.discipline}) requires "${expectedBot}", got "${serverBot}". Fail-Fast!`,
       )
     }
     gameStore.setBotEngineId(serverBot)

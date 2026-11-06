@@ -114,12 +114,11 @@ export function adaptCoursePuzzleV2(
       `[sessionPuzzleAdapter] Expected discipline="tactics_course" for course puzzle "${cp.puzzle_id}". Fail-Fast!`,
     )
   }
-  if (!isValidTrainingDifficulty(cp.difficulty)) {
-    throw new Error(
-      `[sessionPuzzleAdapter] Invalid difficulty "${String(cp.difficulty)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
-    )
-  }
-  if (cp.strategy !== 'scenarioOnly' && cp.strategy !== 'scenarioPlus') {
+  if (
+    cp.strategy !== 'blunderSpy' &&
+    cp.strategy !== 'scenarioOnly' &&
+    cp.strategy !== 'scenarioPlus'
+  ) {
     throw new Error(
       `[sessionPuzzleAdapter] Invalid strategy "${String(cp.strategy)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
     )
@@ -145,6 +144,9 @@ export function adaptCoursePuzzleV2(
   const mapped: PuzzlePuzzle = {
     puzzle_id: cp.puzzle_id,
     puzzle_type: 'tactics_course',
+    course_slug: cp.course_slug,
+    course_id: cp.course_id,
+    global_batch_id: cp.global_batch_id,
     category: isExam ? 'mixedExam' : cp.class,
     category_comby: isExam
       ? []
@@ -156,8 +158,6 @@ export function adaptCoursePuzzleV2(
     batch_title: cp.batch_title,
     week: cp.week_number,
     is_exam: isExam,
-    difficulty: cp.difficulty,
-    rating: cp.rating,
     strategy: cp.strategy,
     first_move: firstMove,
     user_color: userColor,

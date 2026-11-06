@@ -264,7 +264,7 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     // Case A: User completes tactical_solution (f5d5 -> bot g8h8), then stalemates Black in playout (Qd5->g5) -> failStage: 'playout', firstMoveFailed: false
     let capturedTelemetryA: PuzzleAttemptTelemetry | undefined
     const strategyA = new PuzzleStrategy(baseFinishHim, 'white', 'finishhim', {
-      botEngineOverride: 't1000',
+      botEngineOverride: 'mozero',
       delays: { botDelayMs: 0, initialBotDelayMs: 0 },
       onFailure: (tel) => {
         capturedTelemetryA = tel
@@ -289,7 +289,7 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     gameStore.startWithStrategy(
       fen,
       new PuzzleStrategy(baseFinishHim, 'white', 'finishhim', {
-        botEngineOverride: 't1000',
+        botEngineOverride: 'mozero',
         delays: { botDelayMs: 0, initialBotDelayMs: 0 },
         onFailure: (tel) => {
           capturedTelemetryB = tel
@@ -427,6 +427,111 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     await gameStore.handleUserMove('h4', 'b4')
     expect(onPuzzle2Success).toHaveBeenCalledTimes(1)
     expect(onPuzzle2Failure).not.toHaveBeenCalled()
+  })
+
+  it('executes blunderSpy strategy (100/110 -> bot_reply from cache -> 111 userLastMove solved) without calling enginePlayService', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const engineSpy = vi.spyOn(enginePlayService, 'getBestMove')
+    const fen = '6k1/8/7K/5Q2/8/8/8/2R5 w - - 0 1'
+
+    const blunderSpyPuzzle: PuzzlePuzzle = {
+      puzzle_id: 'BSPY-1',
+      puzzle_type: 'tactics_course',
+      course_slug: 'tactics_classical_1',
+      course_id: 1,
+      global_batch_id: 1,
+      batch_id: 1,
+      category: 'doubleAttack',
+      domain: 'TACTICAL_GEOMETRY',
+      strategy: 'blunderSpy',
+      first_move: 'user',
+      user_color: 'white',
+      objective: 'win',
+      initial_fen: fen,
+      tactical_solution: 'f5d5 g8h8 c1c7',
+    }
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, opts) => {
+      const body = JSON.parse(String(opts?.body || '{}'))
+      if (body.move_uci === 'f5d5') {
+        return new Response(
+          JSON.stringify({
+            status: 'continue',
+            reason: 'minefield_survived',
+            state_mask: '100',
+            move_ok: true,
+            bot_reply: 'g8h8',
+            next_fen: '7k/8/7K/3Q4/8/8/8/2R5 w - - 2 2',
+            next_state: '111',
+            allowed_moves: ['f5d5'],
+            cache_hit: true,
+          }),
+          { status: 200 },
+        )
+      }
+      if (body.move_uci === 'c1c7') {
+        return new Response(
+          JSON.stringify({
+            status: 'solved',
+            reason: 'plateau_111_completed',
+            state_mask: '111',
+            move_ok: true,
+            bot_reply: null,
+            next_fen: null,
+            next_state: 'solved',
+            allowed_moves: ['c1c7', 'd5d7', 'd5e5'],
+            cache_hit: true,
+          }),
+          { status: 200 },
+        )
+      }
+      return new Response(
+        JSON.stringify({
+          status: 'blunder',
+          reason: 'stepped_on_mine',
+          state_mask: '100',
+          move_ok: false,
+          bot_reply: null,
+          next_fen: null,
+          next_state: null,
+          allowed_moves: ['f5d5'],
+          cache_hit: true,
+        }),
+        { status: 200 },
+      )
+    })
+
+    const onSuccess = vi.fn()
+    const onFailure = vi.fn()
+    const onStep = vi.fn()
+
+    const strategy = new PuzzleStrategy(blunderSpyPuzzle, 'white', 'tactics_course', {
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      onSuccess,
+      onFailure,
+      onBlunderSpyStep: onStep,
+    })
+
+    gameStore.startWithStrategy(fen, strategy, 'white')
+
+    // Move 1: f5d5 -> blunderSpy returns 'continue' with bot_reply 'g8h8'
+    await gameStore.handleUserMove('f5', 'd5')
+    expect(onFailure).not.toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(engineSpy).not.toHaveBeenCalled()
+    // Bot reply g8h8 should have been applied on board
+    expect(boardStore.fen).toContain('7k/8/7K/3Q4/8/8/8/2R5 w')
+
+    // Move 2 (userLastMove on 111): c1c7 -> blunderSpy returns 'solved'
+    await gameStore.handleUserMove('c1', 'c7')
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(onSuccess.mock.calls[0]?.[0]).toBe('plateau_111_completed')
+    expect(onStep).toHaveBeenCalledTimes(2)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(engineSpy).not.toHaveBeenCalled()
   })
 })
 

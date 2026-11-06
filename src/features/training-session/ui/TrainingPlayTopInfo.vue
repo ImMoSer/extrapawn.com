@@ -5,17 +5,20 @@ import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
   CloseCircleOutline,
+  DownloadOutline,
   EyeOutline,
   FlagOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon, NInput, NPopover } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 
 const { t, te } = useI18n()
 const authStore = useAuthStore()
 const store = useTrainingSessionStore()
+const { anomaliesCount } = useCrashTestReport()
 
 const showFlagPopover = ref<boolean>(false)
 const flagComment = ref<string>('')
@@ -67,7 +70,7 @@ async function handleFlagSubmit(preset?: string): Promise<void> {
 
 const showBotBadge = computed(() => {
   const disc = store.activeSessionSummary?.discipline
-  return disc && disc !== 'tactics'
+  return disc && disc !== 'tactics' && disc !== 'tactics_course'
 })
 
 const botLabel = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
@@ -191,6 +194,20 @@ function handleBackAction(): void {
 
     <!-- Right: Post-Attempt Actions / Analysis Controls / Flag Button -->
     <div class="flex items-center gap-1.5 shrink-0">
+      <NButton
+        v-if="authStore.isMo3ep && store.activeSessionSummary?.mode === 'crashtest'"
+        size="tiny"
+        secondary
+        type="info"
+        title="Скачать отчёт крэш-теста craschTestReport.json"
+        @click="downloadCrashTestReport()"
+      >
+        <template #icon>
+          <NIcon><DownloadOutline /></NIcon>
+        </template>
+        Отчёт ({{ anomaliesCount }})
+      </NButton>
+
       <NPopover
         v-if="authStore.isMo3ep && isTacticsCourse && !store.isAnalysisMode"
         v-model:show="showFlagPopover"
