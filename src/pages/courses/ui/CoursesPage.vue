@@ -46,7 +46,7 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Фундаментальная геометрия доски, матовые сети, двойные удары, связки, вскрытые шахи и материальные завоевания.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: 'BlunderSpy Pure WDL',
+    volumeLabel: '1211 задач',
     status: 'ready',
   },
   {
@@ -57,7 +57,7 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Жертвы ферзя и ладьи, завлечение, отвлечение, перекрытие, разрушение прикрытия короля и многоходовые комбинации.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: 'BlunderSpy Pure WDL',
+    volumeLabel: '1275 задач',
     status: 'ready',
   },
   {
@@ -68,7 +68,7 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Освобождение линий, критические поля, цугцванг, контрудары в худших позициях и этюдное спасение вечным шахом/патом.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: 'BlunderSpy Pure WDL',
+    volumeLabel: '1285 задач',
     status: 'ready',
   },
   {

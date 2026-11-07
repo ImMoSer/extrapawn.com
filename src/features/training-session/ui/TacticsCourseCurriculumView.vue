@@ -58,7 +58,7 @@ const jumpIndexInput = ref<number | null>(1)
 const showFlagsPanel = ref<boolean>(false)
 
 const curriculum = computed(() => store.tacticsCourseCurriculum)
-const crashTestTotal = computed(() => curriculum.value?.crash_test_total || 6147)
+const crashTestTotal = computed(() => curriculum.value?.crash_test_total || 3771)
 
 const totalProgressPercent = computed(() => {
   const c = curriculum.value
@@ -234,7 +234,7 @@ async function handleResetCourseProgress(): Promise<void> {
               {{ weeksList.length || 4 }} недели · {{ curriculum?.batches?.length ?? 16 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 8 }} Дней Дятла
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ curriculum?.total_puzzles ?? 1300 }} задач · BlunderSpy Engine
+              {{ curriculum?.total_puzzles ?? 1211 }} задач · BlunderSpy Engine
             </span>
           </div>
 
