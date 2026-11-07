@@ -45,8 +45,8 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     title: 'Курс тактики I · Геометрия и Матовые конструкции',
     subtitle:
       'Фундаментальная геометрия доски, матовые сети, двойные удары, связки, вскрытые шахи и материальные завоевания.',
-    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
-    volumeLabel: '2013 задач',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    volumeLabel: 'BlunderSpy Pure WDL',
     status: 'ready',
   },
   {
@@ -56,8 +56,8 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     title: 'Курс тактики II · Жертвы и Комбинационный взрыв',
     subtitle:
       'Жертвы ферзя и ладьи, завлечение, отвлечение, перекрытие, разрушение прикрытия короля и многоходовые комбинации.',
-    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
-    volumeLabel: '2035 задач',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    volumeLabel: 'BlunderSpy Pure WDL',
     status: 'ready',
   },
   {
@@ -67,8 +67,8 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     title: 'Курс тактики III · Стратегическая тактика и Искусство спасения',
     subtitle:
       'Освобождение линий, критические поля, цугцванг, контрудары в худших позициях и этюдное спасение вечным шахом/патом.',
-    scheduleLabel: '5 недель · 20 батчей · 10 Дней Дятла',
-    volumeLabel: '2099 задач',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    volumeLabel: 'BlunderSpy Pure WDL',
     status: 'ready',
   },
   {

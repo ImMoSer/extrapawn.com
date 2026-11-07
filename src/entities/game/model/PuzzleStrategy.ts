@@ -34,6 +34,7 @@ export interface BlunderSpyStepTelemetry {
   botReply?: string | null
   allowedMoves: string[]
   cacheHit: boolean
+  cacheSource?: string
   playedMovesUci: string[]
   errorMessage?: string
 }
@@ -209,7 +210,27 @@ export class PuzzleStrategy implements IGameplayStrategy {
     return useBoardStore()
   }
 
-  onGameStart() {}
+  onGameStart() {
+    if (this.puzzle.strategy === 'blunderSpy') {
+      void this.prefetchBlunderSpyNode(this.puzzle.initial_fen)
+    }
+  }
+
+  private async prefetchBlunderSpyNode(fen: string): Promise<void> {
+    try {
+      await fetch('/api/coach-engine/blunderspy/prefetch', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fen,
+          objective: this.objective,
+        }),
+      })
+    } catch {
+      // Non-blocking background warm-up while the user thinks
+    }
+  }
 
   onDestroy() {
     this.isDestroyed = true
@@ -437,6 +458,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
           botReply: res.bot_reply,
           allowedMoves,
           cacheHit,
+          cacheSource: res.cache_source,
           playedMovesUci: [...this.playedMovesUci],
         })
 

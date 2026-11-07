@@ -93,25 +93,22 @@ interface WeekGroup {
 
 const WEEK_TITLES_BY_COURSE: Readonly<Record<TacticsCourseSlug, Readonly<Record<number, string>>>> = {
   tactics_classical_1: {
-    1: 'Неделя 1 · Основы матовой геометрии и линейные маты',
-    2: 'Неделя 2 · Матовые сети и координированная атака на короля',
-    3: 'Неделя 3 · Рубежный экзамен, Двойной удар, Связка и Сквозной удар',
-    4: 'Неделя 4 · Вскрытое нападение, Рентген и завоевание материала',
-    5: 'Неделя 5 · Комбинированная геометрия, ловля фигур и Выпускной экзамен',
+    1: 'Неделя 1 · Основы матовой геометрии, Матовые сети и выигрыш материала',
+    2: 'Неделя 2 · Многоходовый выигрыш, ловля фигур и Двойной удар',
+    3: 'Неделя 3 · Геометрия связки, Вскрытое нападение и Двойной шах',
+    4: 'Неделя 4 · Линейный удар, Рентген, Практикум и Выпускной экзамен Курса I',
   },
   tactics_classical_2: {
-    1: 'Неделя 1 · Тактические жертвы, Завлечение и Отвлечение защитника',
-    2: 'Неделя 2 · Жертва ферзя и ладьи: вскрытие королевской резиденции',
-    3: 'Неделя 3 · Рубежный экзамен, Перекрытие и Устранение защиты',
-    4: 'Неделя 4 · Разрушение пешечного щита и тотальный штурм короля',
-    5: 'Неделя 5 · Многоходовые комбинационные взрывы и Выпускной экзамен',
+    1: 'Неделя 1 · Жертвы ферзя и ладьи, Завлечение в матовую сеть',
+    2: 'Неделя 2 · Комбинационные мотивы: Завлечение, Отвлечение и Перекрытие линий',
+    3: 'Неделя 3 · Устранение защиты и Разрушение пешечного прикрытия короля',
+    4: 'Неделя 4 · Тотальный штурм королевской резиденции и Выпускной экзамен Курса II',
   },
   tactics_classical_3: {
-    1: 'Неделя 1 · Освобождение линий и захват критических полей',
-    2: 'Неделя 2 · Опасные проходные, превращение пешки и Цугцванг',
-    3: 'Неделя 3 · Рубежный экзамен, Контрудар и Перехват инициативы',
-    4: 'Неделя 4 · Искусство защиты: Вечный шах, Пат и спасение в критических позициях',
-    5: 'Неделя 5 · Этюдная глубина, крепости и Выпускной экзамен трилогии',
+    1: 'Неделя 1 · Открытие и Освобождение линий и полей для решающего вторжения',
+    2: 'Неделя 2 · Критические поля, Тактика проходной пешки и Борьба за темп',
+    3: 'Неделя 3 · Цугцванг, Активная блокада, Крепости и Спасение патом',
+    4: 'Неделя 4 · Искусство выживания: «Бешеная фигура», Вечный шах и Выпускной экзамен трилогии',
   },
 }
 
@@ -127,7 +124,7 @@ const weeksList = computed<WeekGroup[]>(() => {
   const activeSlug = (c.course_slug as TacticsCourseSlug) || props.courseSlug
   const weekTitles = WEEK_TITLES_BY_COURSE[activeSlug] ?? WEEK_TITLES_BY_COURSE.tactics_classical_1
 
-  const maxWeek = c.batches.reduce((acc, b) => Math.max(acc, b.week), 5)
+  const maxWeek = c.batches.reduce((acc, b) => Math.max(acc, b.week), 4)
   const groups: WeekGroup[] = []
   for (let w = 1; w <= maxWeek; w++) {
     const wBatches = c.batches.filter((b) => b.week === w)
@@ -234,10 +231,10 @@ async function handleResetCourseProgress(): Promise<void> {
               {{ activeCourseTitle }}
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ weeksList.length || 5 }} недель · {{ curriculum?.batches?.length ?? 20 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 10 }} Дней Дятла
+              {{ weeksList.length || 4 }} недели · {{ curriculum?.batches?.length ?? 16 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 8 }} Дней Дятла
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ curriculum?.total_puzzles ?? 2013 }} задач · BlunderSpy Engine
+              {{ curriculum?.total_puzzles ?? 1300 }} задач · BlunderSpy Engine
             </span>
           </div>
 
@@ -246,7 +243,7 @@ async function handleResetCourseProgress(): Promise<void> {
               День Дятла #{{ curriculum.current_woodpecker_id }} — Очистка ошибок перед следующим блоком
             </template>
             <template v-else-if="curriculum?.current_step_type === 'completed'">
-              Поздравляем! Все {{ curriculum?.batches?.length ?? 28 }} батчей и {{ curriculum?.woodpecker_days?.length ?? 14 }} Дней Дятла успешно пройдены!
+              Поздравляем! Все {{ curriculum?.batches?.length ?? 16 }} батчей и {{ curriculum?.woodpecker_days?.length ?? 8 }} Дней Дятла успешно пройдены!
             </template>
             <template v-else-if="currentBatchMeta">
               Текущий этап: Батч #{{ currentBatchMeta.batch_id }} — {{ currentBatchMeta.batch_title }}

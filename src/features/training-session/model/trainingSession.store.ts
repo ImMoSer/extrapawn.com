@@ -490,7 +490,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
           recordCrashTestStepHit(stepInfo.cacheHit ? 'cache' : 'engine_healed')
         }
 
-        if (!stepInfo.cacheHit && isCrashtestMode) {
+        if (!stepInfo.cacheHit && stepInfo.cacheSource === 'self_healed_node' && isCrashtestMode) {
           const gameHistory = captureCurrentGameMoveHistory()
           recordCrashTestAnomaly({
             type: 'cache_miss_healed',
