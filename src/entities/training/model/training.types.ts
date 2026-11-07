@@ -279,7 +279,7 @@ export interface CoursePuzzleV2 {
   class: string
   sub_class?: string
   objective: TrainingObjective
-  strategy: 'scenarioOnly' | 'scenarioPlus' | 'blunderSpy'
+  strategy: 'scenarioOnly' | 'scenarioPlus' | 'playOutOnly' | 'blunderSpy'
   first_move: 'bot' | 'user'
   user_color: 'white' | 'black'
   pieces_count: number

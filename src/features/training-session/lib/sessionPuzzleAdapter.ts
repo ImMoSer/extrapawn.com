@@ -117,7 +117,8 @@ export function adaptCoursePuzzleV2(
   if (
     cp.strategy !== 'blunderSpy' &&
     cp.strategy !== 'scenarioOnly' &&
-    cp.strategy !== 'scenarioPlus'
+    cp.strategy !== 'scenarioPlus' &&
+    cp.strategy !== 'playOutOnly'
   ) {
     throw new Error(
       `[sessionPuzzleAdapter] Invalid strategy "${String(cp.strategy)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,

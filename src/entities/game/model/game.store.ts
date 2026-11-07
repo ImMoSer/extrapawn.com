@@ -21,7 +21,6 @@ export const FIDE_DRAW_REASONS = [
   'insufficient_material',
   'threefold_repetition',
   'fifty_move_rule',
-  'draw',
 ] as const
 
 export type FideDrawReason = (typeof FIDE_DRAW_REASONS)[number]

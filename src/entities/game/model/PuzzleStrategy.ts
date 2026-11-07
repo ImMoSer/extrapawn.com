@@ -211,25 +211,55 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onGameStart() {
-    if (this.puzzle.strategy === 'blunderSpy') {
-      void this.prefetchBlunderSpyNode(this.puzzle.initial_fen)
-    }
+    // Root `initial_fen` is always pre-baked in `blunderSpyCache.json`, and follow-up `next_fen4` nodes
+    // are proactively prefetched inside `stockfish_server` during `verify_step`.
   }
 
-  private async prefetchBlunderSpyNode(fen: string): Promise<void> {
-    try {
-      await fetch('/api/coach-engine/blunderspy/prefetch', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fen,
-          objective: this.objective,
-        }),
-      })
-    } catch {
-      // Non-blocking background warm-up while the user thinks
+  private async fetchBlunderSpyStepWithRetry(payload: {
+    puzzle_id: string
+    fen: string
+    move_uci: string
+    objective: PuzzleObjective
+    user_move_number: number
+  }): Promise<Response> {
+    const backoffDelaysMs = [250, 600, 1200]
+    let lastError: unknown = null
+
+    for (let attempt = 0; attempt <= backoffDelaysMs.length; attempt++) {
+      try {
+        const httpRes = await fetch('/api/coach-engine/blunderspy/step', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (httpRes.ok) {
+          return httpRes
+        }
+        if (
+          (httpRes.status === 502 || httpRes.status === 503 || httpRes.status === 504) &&
+          attempt < backoffDelaysMs.length
+        ) {
+          lastError = new Error(`BlunderSpy HTTP transient status: ${httpRes.status}`)
+        } else {
+          throw new Error(`BlunderSpy HTTP error: ${httpRes.status}`)
+        }
+      } catch (err) {
+        lastError = err
+        if (attempt >= backoffDelaysMs.length || this.isDestroyed) {
+          throw err
+        }
+      }
+
+      const waitMs = backoffDelaysMs[attempt] ?? 500
+      logger.warn(
+        `[PuzzleStrategy] Transient blunderSpy step error on attempt ${attempt + 1} for ${payload.puzzle_id}. Retrying in ${waitMs}ms...`,
+        lastError,
+      )
+      await new Promise((resolve) => setTimeout(resolve, waitMs))
     }
+
+    throw lastError instanceof Error ? lastError : new Error('BlunderSpy step failed after retries')
   }
 
   onDestroy() {
@@ -398,21 +428,13 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
       const stepFen = fenBefore || this.puzzle.initial_fen
       try {
-        const httpRes = await fetch('/api/coach-engine/blunderspy/step', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            puzzle_id: this.puzzle.puzzle_id,
-            fen: stepFen,
-            move_uci: uciMove,
-            objective: this.objective,
-            user_move_number: this.userMovesPlayed,
-          }),
+        const httpRes = await this.fetchBlunderSpyStepWithRetry({
+          puzzle_id: this.puzzle.puzzle_id,
+          fen: stepFen,
+          move_uci: uciMove,
+          objective: this.objective,
+          user_move_number: this.userMovesPlayed,
         })
-        if (!httpRes.ok) {
-          throw new Error(`BlunderSpy HTTP error: ${httpRes.status}`)
-        }
         const res = (await httpRes.json()) as {
           status: 'solved' | 'continue' | 'blunder'
           quality?: string

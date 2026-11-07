@@ -41,30 +41,45 @@ class EnginePlayServiceController {
     }
 
     const { startFen, moves } = pgnService.getAnalysisPayloadContext()
+    const retryDelaysMs = [250, 600]
+    let lastError: unknown = null
 
-    try {
-      logger.info(
-        `[EnginePlayService] Requesting move from Engine Hub for ${engineId} (moves: ${moves.length})...`,
-      )
-      const data = await apiClient<{ bestMove?: string | null }>('/bestmove', {
-        method: 'POST',
-        body: JSON.stringify({
-          engine: engineId,
-          start_fen: startFen,
-          moves,
-        }),
-      })
-      if (!data || !data.bestMove) {
-        logger.warn(`[EnginePlayService] Engine Hub returned empty bestMove for FEN: ${fen}`)
-        return null
+    for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+      try {
+        logger.info(
+          `[EnginePlayService] Requesting move from Engine Hub for ${engineId} (moves: ${moves.length})...`,
+        )
+        const data = await apiClient<{ bestMove?: string | null }>('/bestmove', {
+          method: 'POST',
+          body: JSON.stringify({
+            engine: engineId,
+            start_fen: startFen,
+            moves,
+          }),
+        })
+        if (!data || !data.bestMove) {
+          logger.warn(`[EnginePlayService] Engine Hub returned empty bestMove for FEN: ${fen}`)
+          return null
+        }
+
+        logger.info(`[EnginePlayService] Move received for ${engineId}: ${data.bestMove}`)
+        return data.bestMove
+      } catch (error) {
+        lastError = error
+        if (attempt >= retryDelaysMs.length) {
+          logger.error(`[EnginePlayService] Fail-Fast: Failed to fetch move for ${engineId}:`, error)
+          throw error
+        }
+        const waitMs = retryDelaysMs[attempt] ?? 250
+        logger.warn(
+          `[EnginePlayService] Transient error fetching move for ${engineId} (attempt ${attempt + 1}). Retrying in ${waitMs}ms...`,
+          error,
+        )
+        await new Promise((resolve) => setTimeout(resolve, waitMs))
       }
-
-      logger.info(`[EnginePlayService] Move received for ${engineId}: ${data.bestMove}`)
-      return data.bestMove
-    } catch (error) {
-      logger.error(`[EnginePlayService] Fail-Fast: Failed to fetch move for ${engineId}:`, error)
-      throw error
     }
+
+    throw lastError instanceof Error ? lastError : new Error('Failed to fetch best move')
   }
 }
 

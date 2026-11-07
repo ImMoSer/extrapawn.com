@@ -465,6 +465,15 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     const botEngine = syncBotLadderForSession(sess.session)
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
     const humanColor = determineHumanColor(puzzle)
+    const effectiveBotEngine: BotLadderEngineId =
+      puzzle.puzzle_type === 'tactics_course' &&
+      puzzle.strategy === 'playOutOnly' &&
+      puzzle.objective === 'hold_draw'
+        ? 'mozero'
+        : botEngine
+    if (effectiveBotEngine !== botEngine) {
+      gameStore.setBotEngineId(effectiveBotEngine)
+    }
 
     activePlayToken++
     const tokenAtLaunch = activePlayToken
@@ -476,7 +485,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
       planId: sess.session.id.slice(0, 12),
-      botEngineOverride: botEngine,
+      botEngineOverride: effectiveBotEngine,
       delays: preferencesStore.preferences.delays,
       onBlunderSpyStep: (stepInfo: BlunderSpyStepTelemetry) => {
         if (activePlayToken !== tokenAtLaunch) return
@@ -488,35 +497,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
         if (isCrashtestMode) {
           recordCrashTestStepHit(stepInfo.cacheHit ? 'cache' : 'engine_healed')
-        }
-
-        if (!stepInfo.cacheHit && stepInfo.cacheSource === 'self_healed_node' && isCrashtestMode) {
-          const gameHistory = captureCurrentGameMoveHistory()
-          recordCrashTestAnomaly({
-            type: 'cache_miss_healed',
-            puzzle_id: puzzle.puzzle_id,
-            course_slug: puzzle.course_slug,
-            global_batch_id: puzzle.global_batch_id,
-            batch_id: puzzle.batch_id,
-            index_in_session: item.index,
-            domain: puzzle.domain,
-            class: puzzle.category,
-            objective: puzzle.objective,
-            initial_fen: puzzle.initial_fen,
-            current_fen: stepInfo.fenBefore,
-            move_uci: stepInfo.moveUci,
-            user_move_number: stepInfo.userMoveNumber,
-            played_moves_uci: stepInfo.playedMovesUci,
-            ...gameHistory,
-            canonical_solution: puzzle.tactical_solution,
-            crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
-            blunderspy_state: stepInfo.stateMask,
-            blunderspy_next_state: stepInfo.nextState ?? undefined,
-            blunderspy_source: 'engine_healed',
-            blunderspy_reason: stepInfo.reason,
-            best_move_uci: stepInfo.allowedMoves[0],
-            allowed_moves: stepInfo.allowedMoves,
-          })
         }
 
         if (stepInfo.status === 'error' && isCrashtestMode) {
@@ -648,13 +628,40 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
 
     try {
-      const result = await trainingApi.submitAttempt(sessionId, {
+      const attemptPayload = {
         puzzle_id: puzzleId,
         solved,
         time_ms: elapsedMs,
         first_move_failed: solved ? false : telemetry.firstMoveFailed,
         fail_stage: failStage,
-      })
+      }
+      const retryDelaysMs = [250, 600, 1200]
+      let result: Awaited<ReturnType<typeof trainingApi.submitAttempt>> | null = null
+      let lastSubmitErr: unknown = null
+
+      for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+        try {
+          result = await trainingApi.submitAttempt(sessionId, attemptPayload)
+          break
+        } catch (submitErr) {
+          lastSubmitErr = submitErr
+          if (attempt >= retryDelaysMs.length) {
+            throw submitErr
+          }
+          const waitMs = retryDelaysMs[attempt] ?? 250
+          logger.warn(
+            `[TrainingSessionStore] Transient submitAttempt error for ${puzzleId} (attempt ${attempt + 1}). Retrying in ${waitMs}ms...`,
+            submitErr,
+          )
+          await new Promise((resolve) => setTimeout(resolve, waitMs))
+        }
+      }
+
+      if (!result) {
+        throw lastSubmitErr instanceof Error
+          ? lastSubmitErr
+          : new Error('Failed to submit puzzle attempt')
+      }
 
       targetItem.status = solved ? 'solved' : 'failed'
       targetItem.time_ms = elapsedMs
