@@ -6,14 +6,6 @@ services:
     restart: always
     networks:
       - app-network
-    deploy:
-      resources:
-        limits:
-          memory: 32M
-          cpus: '0.15'
-        reservations:
-          memory: 8M
-          cpus: '0.02'
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=dokploy-network"
