@@ -706,7 +706,6 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       authStore.userProfile = {
         id: 'other_user',
         username: 'OtherUser',
-        base_puzzle_rating: 1500,
       }
       preferencesStore.preferences.gameplay.global_crashtest = true
       expect(preferencesStore.preferences.gameplay.global_crashtest).toBe(false)
@@ -719,7 +718,6 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       authStore.userProfile = {
         id: 'mo3ep',
         username: 'MO3EP',
-        base_puzzle_rating: 2000,
       }
       await preferencesStore.updatePreferences({
         gameplay: { global_crashtest: true, crashtestEngine: 'mozero' },

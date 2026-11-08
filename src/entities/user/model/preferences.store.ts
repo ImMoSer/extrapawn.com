@@ -83,18 +83,6 @@ export interface UserPreferencesDto {
   coach: CoachPreferences
 }
 
-export interface BackendUserPreferencesDto {
-  theme: ThemePreferences
-  engine: EnginePreferences
-  audio: AudioPreferences
-  gameplay: Omit<GameplayPreferences, 'global_crashtest' | 'crashtestEngine'> & {
-    global_autoplay?: boolean
-  }
-  delays: Omit<DelayPreferences, 'crashtestDelayMs'> & { autoPlayDelayMs?: number }
-  puzzle?: PuzzlePreferences
-  analysis?: AnalysisPreferences
-}
-
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
@@ -274,7 +262,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
       return
     }
     try {
-      const rawBackendPrefs = await apiClient<BackendUserPreferencesDto>('/users/me/preferences')
+      const rawBackendPrefs = await apiClient<UserPreferencesDto>('/users/me/preferences')
 
       const mappedPrefs: DeepPartial<UserPreferencesDto> = {
         theme: rawBackendPrefs.theme,
@@ -286,9 +274,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
           botEngine:
             rawBackendPrefs.gameplay?.botEngine ?? DEFAULT_USER_PREFERENCES.gameplay.botEngine,
           global_crashtest: isMo3ep.value
-            ? (rawBackendPrefs.gameplay?.global_autoplay ??
+            ? (rawBackendPrefs.gameplay?.global_crashtest ??
               DEFAULT_USER_PREFERENCES.gameplay.global_crashtest)
             : false,
+          crashtestEngine:
+            rawBackendPrefs.gameplay?.crashtestEngine &&
+            CRASHTEST_ENGINES.includes(rawBackendPrefs.gameplay.crashtestEngine)
+              ? rawBackendPrefs.gameplay.crashtestEngine
+              : DEFAULT_USER_PREFERENCES.gameplay.crashtestEngine,
         },
         delays: {
           initialBotDelayMs:
@@ -304,7 +297,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             rawBackendPrefs.delays?.restartDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
           crashtestDelayMs:
-            rawBackendPrefs.delays?.autoPlayDelayMs ??
+            rawBackendPrefs.delays?.crashtestDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
         },
         puzzle: {
@@ -320,6 +313,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             rawBackendPrefs.analysis?.engineVersion ??
             DEFAULT_USER_PREFERENCES.analysis.engineVersion,
         },
+        coach: rawBackendPrefs.coach,
       }
 
       preferences.value = deepMerge(preferences.value, mappedPrefs)
@@ -344,7 +338,8 @@ export const usePreferencesStore = defineStore('preferences', () => {
         updateDto.gameplay ||
         updateDto.delays ||
         updateDto.puzzle ||
-        updateDto.analysis,
+        updateDto.analysis ||
+        updateDto.coach,
     )
 
     if (authStore.isAuthenticated && hasBackendFields) {
@@ -354,27 +349,29 @@ export const usePreferencesStore = defineStore('preferences', () => {
       saveTimeout = window.setTimeout(async () => {
         try {
           const current = rawPreferences.value
-          const backendDto: DeepPartial<BackendUserPreferencesDto> = {
+          const backendDto: DeepPartial<UserPreferencesDto> = {
             theme: current.theme,
             engine: current.engine,
             audio: current.audio,
             gameplay: {
               language: current.gameplay.language,
               botEngine: current.gameplay.botEngine,
-              global_autoplay: isMo3ep.value ? current.gameplay.global_crashtest : false,
+              global_crashtest: isMo3ep.value ? current.gameplay.global_crashtest : false,
+              crashtestEngine: current.gameplay.crashtestEngine,
             },
             delays: {
               initialBotDelayMs: current.delays.initialBotDelayMs,
               botDelayMs: current.delays.botDelayMs,
               nextPuzzleDelayMs: current.delays.nextPuzzleDelayMs,
               restartDelayMs: current.delays.restartDelayMs,
-              autoPlayDelayMs: current.delays.crashtestDelayMs,
+              crashtestDelayMs: current.delays.crashtestDelayMs,
             },
             puzzle: current.puzzle,
             analysis: current.analysis,
+            coach: current.coach,
           }
 
-          await apiClient<BackendUserPreferencesDto>('/users/me/preferences', {
+          await apiClient<UserPreferencesDto>('/users/me/preferences', {
             method: 'PATCH',
             body: JSON.stringify(backendDto),
           })

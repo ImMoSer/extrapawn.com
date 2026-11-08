@@ -19,7 +19,6 @@ interface ConfirmationOptions {
   persistent?: boolean
   variant?: ModalVariant
   icon?: ModalIcon
-  telegramAttached?: boolean
 }
 
 export const useUiStore = defineStore('ui', () => {
@@ -35,7 +34,6 @@ export const useUiStore = defineStore('ui', () => {
   const isExtraButtonVisible = ref(false)
   const modalVariant = ref<ModalVariant>('primary')
   const modalIcon = ref<ModalIcon>(null)
-  const modalTelegramAttached = ref(false)
 
   let resolvePromise: ResolveFunction | null = null
 
@@ -54,7 +52,6 @@ export const useUiStore = defineStore('ui', () => {
     isModalPersistent.value = options.persistent ?? false
     modalVariant.value = options.variant || 'primary'
     modalIcon.value = options.icon ?? null
-    modalTelegramAttached.value = options.telegramAttached ?? false
     isModalVisible.value = true
 
     return new Promise<'confirm' | 'cancel' | 'extra' | null>((resolve) => {
@@ -104,7 +101,6 @@ export const useUiStore = defineStore('ui', () => {
     isModalPersistent.value = false
     modalVariant.value = 'primary'
     modalIcon.value = null
-    modalTelegramAttached.value = false
   }
 
   return {
@@ -119,7 +115,6 @@ export const useUiStore = defineStore('ui', () => {
     isExtraButtonVisible,
     modalVariant,
     modalIcon,
-    modalTelegramAttached,
     showConfirmation,
     handleConfirm,
     handleCancel,

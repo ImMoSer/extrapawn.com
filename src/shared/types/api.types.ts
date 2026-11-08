@@ -62,12 +62,8 @@ interface LichessUserProfile {
 }
 
 export interface UserSessionProfile extends LichessUserProfile {
-  base_puzzle_rating: number
-  telegram?: boolean
-  telegramId?: number | null
   language?: string | null
   validatedAt?: number
-  endgame_skill?: number
 }
 
 export interface AuthState {
