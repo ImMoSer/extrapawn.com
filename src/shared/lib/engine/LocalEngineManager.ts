@@ -1,15 +1,17 @@
-import { loadLocalEngine, type EngineController, type EngineVariant } from '@/shared/lib/engine.loader'
+import { loadLocalEngine, type EngineController } from '@/shared/lib/engine.loader'
 import logger from '@/shared/lib/logger'
 
 import {
   type AnalysisUpdateCallback,
+  type EngineLoadingListener,
+  type EngineLoadingState,
   type EvaluatedLine,
   MAX_ANALYSIS_DEPTH,
   type WdlStats,
 } from './types'
 
 /**
- * Service managing the local single-threaded Stockfish engine instance.
+ * Service managing the local single-threaded Stockfish 19 Full WASM engine instance.
  */
 export class LocalEngineManager {
   private engine: EngineController | null = null
@@ -23,10 +25,16 @@ export class LocalEngineManager {
 
   private currentThreads: number = 1
   private preferredAnalysisThreads: number = 1
-  private currentVariant: EngineVariant = 'lite'
   private commandQueue: string[] = []
   private infiniteAnalysisCallback: AnalysisUpdateCallback | null = null
   private lastIsReadyTime: number = 0
+
+  private loadingState: EngineLoadingState = {
+    phase: 'idle',
+    progress: null,
+    errorMessage: null,
+  }
+  private loadingListeners = new Set<EngineLoadingListener>()
 
   // Promises for synchronization
   private readyResolve: (() => void) | null = null
@@ -43,11 +51,34 @@ export class LocalEngineManager {
     this.currentThreads = 1
   }
 
+  private updateLoadingState(nextState: EngineLoadingState): void {
+    this.loadingState = nextState
+    this.loadingListeners.forEach((listener) => listener(nextState))
+  }
+
+  public getLoadingState(): EngineLoadingState {
+    return this.loadingState
+  }
+
+  public onLoadingStateChange(listener: EngineLoadingListener): () => void {
+    this.loadingListeners.add(listener)
+    listener(this.loadingState)
+    return () => {
+      this.loadingListeners.delete(listener)
+    }
+  }
+
   public async ensureReady(): Promise<void> {
     if (this.isReady && !this.isInitializing) return
     if (this.isInitializing && this.initPromise) return this.initPromise
 
     this.isInitializing = true
+    this.updateLoadingState({
+      phase: 'downloading',
+      progress: null,
+      errorMessage: null,
+    })
+
     this.initPromise = new Promise<void>((resolve, reject) => {
       this.resolveInitPromise = resolve
       this.rejectInitPromise = reject
@@ -58,15 +89,14 @@ export class LocalEngineManager {
 
   private async _initEngine(): Promise<void> {
     try {
-      const loadedEngine = await loadLocalEngine(this.currentVariant)
-
-      if (!loadedEngine) {
-        this.isSupported = false
-        logger.warn(`[LocalEngineManager] Engine loader failed to return engine.`)
-        this.isInitializing = false
-        this.resolveInitPromise()
-        return
-      }
+      const loadedEngine = await loadLocalEngine((progress) => {
+        if (this.isReady || !this.isInitializing) return
+        this.updateLoadingState({
+          phase: progress.percent >= 1 ? 'initializing' : 'downloading',
+          progress,
+          errorMessage: null,
+        })
+      })
 
       this.engine = loadedEngine
       this.isSupported = true
@@ -76,17 +106,30 @@ export class LocalEngineManager {
         if (!this.isReady) {
           const errorMsg = 'UCI handshake timeout for LocalEngineManager'
           logger.error(`[LocalEngineManager] ${errorMsg}`)
+          this.isInitializing = false
+          this.initPromise = null
+          this.updateLoadingState({
+            phase: 'error',
+            progress: null,
+            errorMessage: errorMsg,
+          })
           this.rejectInitPromise(new Error(errorMsg))
         }
-      }, 60000)
+      }, 180000)
 
       this.initPromise?.finally(() => clearTimeout(timeoutId))
       this.sendCommand('uci')
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       logger.error('[LocalEngineManager] Failed to initialize engine:', errorMsg, error)
+      this.isSupported = false
       this.isInitializing = false
       this.initPromise = null
+      this.updateLoadingState({
+        phase: 'error',
+        progress: null,
+        errorMessage: errorMsg,
+      })
       if (this.rejectInitPromise) this.rejectInitPromise(error)
     }
   }
@@ -131,6 +174,13 @@ export class LocalEngineManager {
     const cmd = parts[0]
 
     if (message === 'uciok') {
+      if (this.isInitializing) {
+        this.updateLoadingState({
+          phase: 'initializing',
+          progress: this.loadingState.progress,
+          errorMessage: null,
+        })
+      }
       this.sendCommand(`setoption name Hash value ${this.getOptimalHashSize()}`)
       this.sendCommand('setoption name UCI_ShowWDL value true')
 
@@ -145,6 +195,11 @@ export class LocalEngineManager {
       if (this.isInitializing) {
         this.isReady = true
         this.isInitializing = false
+        this.updateLoadingState({
+          phase: 'ready',
+          progress: null,
+          errorMessage: null,
+        })
         logger.info(
           `[LocalEngineManager] Engine is ready (init) in ${waitTime.toFixed(1)}ms.`,
         )
@@ -324,9 +379,9 @@ export class LocalEngineManager {
   }
 
   public async stopAnalysis(): Promise<void> {
-    await this.ensureReady()
-    if (!this.engine || !this.isSearching) {
+    if (!this.isReady || !this.engine || !this.isSearching) {
       this.isSearching = false
+      this.infiniteAnalysisCallback = null
       return
     }
 
@@ -359,27 +414,6 @@ export class LocalEngineManager {
   public async setThreads(count: number): Promise<void> {
     logger.debug(`[LocalEngineManager] setThreads called with ${count}, forcing 1`)
     await this.setOption('Threads', 1)
-  }
-
-  public async setVariant(variant: EngineVariant): Promise<void> {
-    if (this.currentVariant === variant && this.isReady) return
-    logger.info(`[LocalEngineManager] Switching engine variant to '${variant}'`)
-    this.currentVariant = variant
-
-    if (this.engine) {
-      if (this.isSearching) {
-        await this.stopAnalysis()
-      }
-      if (this.engine.terminate) {
-        this.engine.terminate()
-      }
-      this.engine = null
-      this.isReady = false
-      this.isInitializing = false
-      this.initPromise = null
-    }
-
-    await this.ensureReady()
   }
 
   public isEngineSupported(): boolean {

@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NButton, NIcon, NPopover, NText, NSlider, NCheckbox, NSelect } from 'naive-ui'
-import { SettingsOutline } from '@vicons/ionicons5'
+import { NButton, NIcon, NPopover, NText, NSlider, NCheckbox } from 'naive-ui'
+import { RefreshOutline, SettingsOutline } from '@vicons/ionicons5'
 import { useAnalysisStore } from '../model/analysis.store'
 import EngineLines from './EngineLines.vue'
 
@@ -16,8 +16,32 @@ const {
   multiPv,
   searchTime,
   showArrows,
-  engineVersion,
+  engineLoadingState,
+  isEngineLoading,
 } = storeToRefs(analysisStore)
+
+const downloadPercent = computed<number | null>(() => {
+  const prog = engineLoadingState.value.progress
+  if (!prog || prog.total <= 0) return null
+  return Math.min(100, Math.max(0, Math.round(prog.percent * 100)))
+})
+
+const downloadSizeText = computed<string>(() => {
+  const prog = engineLoadingState.value.progress
+  if (!prog || prog.total <= 0) return ''
+  const loadedMb = (prog.loaded / 1048576).toFixed(1)
+  const totalMb = (prog.total / 1048576).toFixed(1)
+  return `${loadedMb} / ${totalMb} MB`
+})
+
+const downloadSpeedAndEtaText = computed<string>(() => {
+  const prog = engineLoadingState.value.progress
+  if (!prog) return ''
+  const parts: string[] = []
+  if (prog.speedText) parts.push(prog.speedText)
+  if (prog.etaText) parts.push(prog.etaText)
+  return parts.join(' · ')
+})
 
 const bestScore = computed(() => {
   if (!isAnalysisActive.value || analysisLines.value.length === 0) return '...'
@@ -74,13 +98,8 @@ const handleShowArrowsChange = (value: boolean) => {
   analysisStore.setShowArrows(value)
 }
 
-const engineVersionOptions = [
-  { label: 'Stockfish 19 Lite (~2 MB)', value: 'lite' },
-  { label: 'Stockfish 19 Full (~95 MB)', value: 'full' },
-]
-
-const handleEngineVersionChange = (value: 'lite' | 'full') => {
-  analysisStore.setEngineVersion(value)
+const handleRetryEngineLoad = () => {
+  void analysisStore.retryEngineLoad()
 }
 
 const sliderSearchTime = computed({
@@ -111,10 +130,23 @@ const formatSearchTimeTooltip = (value: number) => {
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-[0.9rem] font-bold tracking-[0.5px] text-text-primary">
-          Stockfish 19 {{ engineVersion === 'full' ? 'Full' : 'Lite' }}
+          Stockfish 19
         </span>
         <div
-          v-if="isAnalysisActive"
+          v-if="isEngineLoading"
+          class="inline-flex items-center gap-1.5 rounded border border-brand/35 bg-brand/10 px-2 py-0.5 font-condensed text-xs font-bold text-brand"
+        >
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+          <span>
+            {{
+              downloadPercent !== null
+                ? `${downloadPercent}%`
+                : t('features.analysis.initializingShort')
+            }}
+          </span>
+        </div>
+        <div
+          v-else-if="isAnalysisActive"
           class="rounded border border-border bg-elevated/60 px-1.5 py-0.5 font-condensed text-xs"
         >
           <n-text depth="3">d: {{ engineDepth }}</n-text>
@@ -152,21 +184,6 @@ const formatSearchTimeTooltip = (value: number) => {
             >
               {{ t('features.analysis.engineSettings') }}
             </n-text>
-
-            <!-- Engine Version Select -->
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-text-secondary">
-                  {{ t('features.analysis.engineVersion') }}
-                </span>
-              </div>
-              <n-select
-                :value="engineVersion"
-                :options="engineVersionOptions"
-                size="small"
-                @update:value="handleEngineVersionChange"
-              />
-            </div>
 
             <!-- MultiPV Slider -->
             <div class="flex flex-col gap-2">
@@ -218,8 +235,76 @@ const formatSearchTimeTooltip = (value: number) => {
       </div>
     </div>
 
+    <!-- WASM Download / Initialization Progress Panel -->
+    <div
+      v-if="isEngineLoading"
+      class="mt-1 border-t border-dashed border-border pt-2.5"
+    >
+      <div class="flex min-h-[90px] flex-col justify-center gap-2.5 rounded-md border border-border bg-canvas px-3.5 py-3">
+        <div class="flex items-center justify-between gap-2 text-xs">
+          <span class="font-semibold text-text-primary">
+            {{
+              engineLoadingState.phase === 'initializing'
+                ? t('features.analysis.initializingEngine')
+                : t('features.analysis.downloadingEngine')
+            }}
+          </span>
+          <span
+            v-if="downloadPercent !== null"
+            class="font-condensed font-bold text-brand"
+          >
+            {{ downloadPercent }}%
+          </span>
+        </div>
+
+        <div class="h-2 w-full overflow-hidden rounded-full bg-elevated">
+          <div
+            class="h-full rounded-full bg-brand transition-all duration-150"
+            :class="{
+              'animate-pulse':
+                engineLoadingState.phase === 'initializing' || downloadPercent === null,
+            }"
+            :style="{
+              width: `${downloadPercent !== null ? Math.max(4, downloadPercent) : 100}%`,
+            }"
+          />
+        </div>
+
+        <div class="flex items-center justify-between gap-2 font-condensed text-[11px] text-text-secondary">
+          <span v-if="downloadSizeText">
+            {{ downloadSizeText }}
+          </span>
+          <span v-else>
+            {{ t('features.analysis.downloadingEngineHint') }}
+          </span>
+
+          <span v-if="downloadSpeedAndEtaText" class="text-text-secondary">
+            {{ downloadSpeedAndEtaText }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Engine Load Error Panel -->
+    <div
+      v-else-if="engineLoadingState.phase === 'error'"
+      class="mt-1 border-t border-dashed border-border pt-2.5"
+    >
+      <div class="flex min-h-[90px] flex-col items-center justify-center gap-2 rounded-md border border-danger/35 bg-canvas px-3.5 py-3 text-center">
+        <span class="text-xs font-semibold text-danger">
+          {{ t('features.analysis.engineLoadError') }}
+        </span>
+        <n-button size="tiny" secondary type="error" @click="handleRetryEngineLoad">
+          <template #icon>
+            <n-icon><RefreshOutline /></n-icon>
+          </template>
+          {{ t('shared.actions.retry') }}
+        </n-button>
+      </div>
+    </div>
+
     <!-- PV lines preview -->
-    <div v-show="isAnalysisActive" class="mt-1 border-t border-dashed border-border pt-2.5">
+    <div v-else-if="isAnalysisActive" class="mt-1 border-t border-dashed border-border pt-2.5">
       <EngineLines />
     </div>
   </div>

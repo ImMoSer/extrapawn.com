@@ -27,7 +27,7 @@
     "lint": "eslint . --fix",
     "type-check:watch": "vue-tsc --watch",
     "format": "prettier --write src/",
-    "postinstall": "node -e \"import fs from 'fs'; fs.rmSync('public/stockfish', { recursive: true, force: true }); fs.mkdirSync('public/stockfish', { recursive: true }); fs.cpSync('node_modules/stockfish/bin', 'public/stockfish', { recursive: true });\""
+    "postinstall": "node -e \"import fs from 'fs'; fs.rmSync('public/stockfish', { recursive: true, force: true }); fs.mkdirSync('public/stockfish', { recursive: true }); for (const f of ['stockfish-19-single.js', 'stockfish-19-single.wasm']) { fs.cpSync('node_modules/stockfish/bin/' + f, 'public/stockfish/' + f); }\""
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.5.0",

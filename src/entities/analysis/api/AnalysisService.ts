@@ -1,5 +1,7 @@
 import {
   type AnalysisUpdateCallback,
+  type EngineLoadingListener,
+  type EngineLoadingState,
   type EvaluatedLine,
   localEngineManager,
   type WdlStats,
@@ -32,20 +34,32 @@ class AnalysisServiceController {
     logger.info('[AnalysisService] Created.')
   }
 
+  public getLoadingState(): EngineLoadingState {
+    return localEngineManager.getLoadingState()
+  }
+
+  public onLoadingStateChange(listener: EngineLoadingListener): () => void {
+    return localEngineManager.onLoadingStateChange(listener)
+  }
+
   public initialize(): Promise<void> {
     if (!this.initPromise) {
       this.initPromise = (async () => {
-        logger.info('[AnalysisService] Initializing engines...')
+        try {
+          logger.info('[AnalysisService] Initializing engines...')
 
-        // 1. Versuch: Local Engine laden
-        await localEngineManager.ensureReady()
+          await localEngineManager.ensureReady()
 
-        // 2. Prüfen, ob der Local Engine Manager wirklich eine Engine geladen hat
-        if (localEngineManager.isEngineSupported()) {
-          this.activeEngineManager = localEngineManager
-          logger.info(`[AnalysisService] Initialized successfully with Local Engine.`)
-        } else {
-          logger.error(`[AnalysisService] Local Engine not supported. Analysis cannot run.`)
+          if (localEngineManager.isEngineSupported()) {
+            this.activeEngineManager = localEngineManager
+            logger.info(`[AnalysisService] Initialized successfully with Local Engine.`)
+          } else {
+            this.initPromise = null
+            logger.error(`[AnalysisService] Local Engine not supported. Analysis cannot run.`)
+          }
+        } catch (err: unknown) {
+          this.initPromise = null
+          throw err
         }
       })()
     }
@@ -143,16 +157,6 @@ class AnalysisServiceController {
           `[AnalysisService] activeEngineManager does not support setThreads. Ignoring request for ${count} threads.`,
         )
       }
-    }
-  }
-
-  public async setEngineVariant(variant: 'lite' | 'full') {
-    if (!this.activeEngineManager) {
-      await this.initialize()
-    }
-    if (this.activeEngineManager === localEngineManager) {
-      await localEngineManager.setVariant(variant)
-      logger.info(`[AnalysisService] Engine variant set to ${variant}`)
     }
   }
 

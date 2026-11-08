@@ -1,11 +1,15 @@
-import { analysisService, type EvaluatedLineWithSan } from '@/entities/analysis'
+import {
+  analysisService,
+  type EngineLoadingState,
+  type EvaluatedLineWithSan,
+} from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const ARROW_STYLES = [
   { brush: 'blue', lineWidth: 14 },
@@ -27,7 +31,18 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const multiPv = ref(3)
   const searchTime = ref(5) // 99 represents Infinity
   const showArrows = ref(true)
-  const engineVersion = ref<'lite' | 'full'>('lite')
+
+  // Engine WASM download & initialization state
+  const engineLoadingState = ref<EngineLoadingState>(analysisService.getLoadingState())
+  analysisService.onLoadingStateChange((state) => {
+    engineLoadingState.value = state
+  })
+
+  const isEngineLoading = computed(
+    () =>
+      engineLoadingState.value.phase === 'downloading' ||
+      engineLoadingState.value.phase === 'initializing',
+  )
 
   // Internal versioning to prevent race conditions
   let analysisVersion = 0
@@ -145,20 +160,25 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   async function initialize() {
-    await analysisService.initialize()
-
     // Load options from preferencesStore
     const prefs = preferencesStore.preferences.analysis
     multiPv.value = prefs.multiPv
     searchTime.value = prefs.searchTime
     showArrows.value = prefs.showArrows
-    engineVersion.value = prefs.engineVersion
 
-    await analysisService.setEngineVariant(engineVersion.value)
+    await analysisService.initialize()
 
     logger.info(
-      `[AnalysisStore] Initialized. EngineVersion: ${engineVersion.value}, MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
+      `[AnalysisStore] Initialized. MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
     )
+  }
+
+  async function retryEngineLoad() {
+    await initialize()
+    await startNewGame()
+    if (boardStore.fen && gameStore.gamePhase === 'ANALYSIS') {
+      await startAnalysis(boardStore.fen)
+    }
   }
 
   async function triggerRestart() {
@@ -189,14 +209,6 @@ export const useAnalysisStore = defineStore('analysis', () => {
     if (showArrows.value === value) return
     showArrows.value = value
     preferencesStore.updatePreferences({ analysis: { showArrows: value } })
-  }
-
-  async function setEngineVersion(version: 'lite' | 'full') {
-    if (engineVersion.value === version) return
-    engineVersion.value = version
-    await preferencesStore.updatePreferences({ analysis: { engineVersion: version } })
-    await analysisService.setEngineVariant(version)
-    await triggerRestart()
   }
 
   async function startNewGame() {
@@ -287,12 +299,13 @@ export const useAnalysisStore = defineStore('analysis', () => {
     multiPv,
     searchTime,
     showArrows,
-    engineVersion,
+    engineLoadingState,
+    isEngineLoading,
     initialize,
+    retryEngineLoad,
     setMultiPv,
     setSearchTime,
     setShowArrows,
-    setEngineVersion,
     startNewGame,
     startAnalysis,
     stopAnalysis,

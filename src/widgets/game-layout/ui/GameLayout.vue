@@ -64,7 +64,10 @@ const activeEvalMate = computed<number | null>(() => {
 const activeEvalLoading = computed<boolean>(() => {
   if (coachStore.isFairPlayLocked) return false
   if (sidebarStore.activeMode === 'explorer') {
-    return analysisStore.isAnalysisActive && analysisStore.analysisLines.length === 0
+    return (
+      analysisStore.isEngineLoading ||
+      (analysisStore.isAnalysisActive && analysisStore.analysisLines.length === 0)
+    )
   }
   return coachStore.topMovesLoading
 })

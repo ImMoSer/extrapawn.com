@@ -6,15 +6,29 @@ import { EngineEvaluationHeader, useAnalysisStore } from '@/features/analysis'
 const analysisStore = useAnalysisStore()
 const boardStore = useBoardStore()
 
-onMounted(async () => {
-  await analysisStore.initialize()
-  await analysisStore.startNewGame()
-  if (boardStore.fen) {
-    await analysisStore.startAnalysis(boardStore.fen)
+let isMounted = true
+
+async function initAndStartAnalysis(): Promise<void> {
+  try {
+    await analysisStore.initialize()
+    if (!isMounted) return
+    await analysisStore.startNewGame()
+    if (!isMounted) return
+    if (boardStore.fen) {
+      await analysisStore.startAnalysis(boardStore.fen)
+    }
+  } catch {
+    // Error state is handled and displayed via analysisStore.engineLoadingState
   }
+}
+
+onMounted(() => {
+  isMounted = true
+  void initAndStartAnalysis()
 })
 
 onUnmounted(() => {
+  isMounted = false
   void analysisStore.stopAnalysis()
 })
 </script>

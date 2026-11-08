@@ -58,7 +58,6 @@ export interface AnalysisPreferences {
   multiPv: number
   searchTime: number
   showArrows: boolean
-  engineVersion: 'lite' | 'full'
 }
 
 export interface CoachVisualLayersPreferences {
@@ -121,7 +120,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     multiPv: 3,
     searchTime: 5,
     showArrows: true,
-    engineVersion: 'lite',
   },
   coach: {
     showVisuals: true,
@@ -309,9 +307,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
             rawBackendPrefs.analysis?.searchTime ?? DEFAULT_USER_PREFERENCES.analysis.searchTime,
           showArrows:
             rawBackendPrefs.analysis?.showArrows ?? DEFAULT_USER_PREFERENCES.analysis.showArrows,
-          engineVersion:
-            rawBackendPrefs.analysis?.engineVersion ??
-            DEFAULT_USER_PREFERENCES.analysis.engineVersion,
         },
         coach: rawBackendPrefs.coach,
       }
@@ -367,7 +362,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
               crashtestDelayMs: current.delays.crashtestDelayMs,
             },
             puzzle: current.puzzle,
-            analysis: current.analysis,
+            analysis: {
+              multiPv: current.analysis.multiPv,
+              searchTime: current.analysis.searchTime,
+              showArrows: current.analysis.showArrows,
+            },
             coach: current.coach,
           }
 
