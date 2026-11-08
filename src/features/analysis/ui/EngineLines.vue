@@ -11,17 +11,27 @@ const analysisStore = useAnalysisStore()
 const boardStore = useBoardStore()
 const { t } = useI18n()
 
-const { isAnalysisActive, analysisLines } = storeToRefs(analysisStore)
+const { isAnalysisActive, analysisLines, multiPv } = storeToRefs(analysisStore)
 
 const formatScore = (line: EvaluatedLineWithSan) => {
   if (line.score.type === 'cp') {
     const val = line.score.value / 100
     return (val > 0 ? '+' : '') + val.toFixed(2)
   }
-  return t('features.analysis.mateInShort', { value: Math.abs(line.score.value) })
+  const sign = line.score.value > 0 ? '+' : '-'
+  return `${sign}${t('features.analysis.mateInShort', { value: Math.abs(line.score.value) })}`
 }
 
-const getScoreType = (index: number): 'success' | 'warning' | 'info' => {
+const getScoreType = (
+  line: EvaluatedLineWithSan,
+  index: number,
+): 'success' | 'warning' | 'info' | 'error' => {
+  if (line.isTablebase) {
+    if (line.score.type === 'mate') {
+      return line.score.value > 0 ? 'success' : 'error'
+    }
+    return 'info'
+  }
   if (index === 0) return 'success'
   if (index === 1) return 'warning'
   return 'info'
@@ -48,11 +58,11 @@ const formatPv = (line: EvaluatedLineWithSan) => {
 }
 
 const formattedLines = computed(() => {
-  return analysisLines.value.slice(0, 3).map((line, index) => ({
+  return analysisLines.value.slice(0, multiPv.value).map((line, index) => ({
     ...line,
     formattedScore: formatScore(line),
     formattedPv: formatPv(line),
-    scoreType: getScoreType(index),
+    scoreType: getScoreType(line, index),
   }))
 })
 
@@ -77,7 +87,7 @@ const handleLineClick = (line: EvaluatedLineWithSan) => {
           class="flex items-center gap-2 rounded bg-surface px-1.5 py-0.5 font-condensed"
         >
           <n-text class="min-w-[20px] text-right font-condensed text-xs" depth="3">{{
-            line.depth
+            line.isTablebase ? 'TB' : line.depth
           }}</n-text>
           <n-button
             size="tiny"

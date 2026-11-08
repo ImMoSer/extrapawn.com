@@ -1,4 +1,4 @@
-export { analysisService } from './api/AnalysisService'
+export { analysisService, countBoardPieces } from './api/AnalysisService'
 export type { EvaluatedLineWithSan } from './api/AnalysisService'
 export type {
   EngineDownloadProgress,

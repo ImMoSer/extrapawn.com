@@ -5,23 +5,10 @@ import {
   isDisciplineVisibleForUser,
   isValidTrainingDifficulty,
   isValidTrainingDiscipline,
-  PRACTICAL_AND_FINISHHIM_DOMAINS,
-  PRACTICAL_DOMAIN_CLASSES,
   resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
-  TACTICS_COGNITIVE_PROFILES,
-  TACTICS_CONCEPT_MOTIFS,
-  TACTICS_GEOMETRY_MOTIFS,
-  TACTICS_GOALS,
-  TACTICS_LENGTHS,
-  TACTICS_MOTIF_GROUPS,
-  TACTICS_OPERATOR_MOTIFS,
-  TACTICS_PHASES,
-  TACTICS_TRIGGER_MOTIFS,
-  THEORETICAL_DOMAIN_CLASSES,
-  THEORETICAL_DOMAINS,
   TRAINING_DIFFICULTIES,
   type CourseDurationDays,
   type TrainingDifficulty,
@@ -42,7 +29,7 @@ import {
   TrashOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
-import { NAlert, NButton, NIcon, NSelect, type SelectOption } from 'naive-ui'
+import { NAlert, NButton, NIcon } from 'naive-ui'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -81,13 +68,6 @@ const TIER_RANK_ORDER: Readonly<Record<TrainingDifficulty, number>> = {
   Pro: 1,
   Master: 2,
 }
-
-const ALL_TACTICS_MOTIFS = [
-  ...TACTICS_GEOMETRY_MOTIFS,
-  ...TACTICS_OPERATOR_MOTIFS,
-  ...TACTICS_CONCEPT_MOTIFS,
-  ...TACTICS_TRIGGER_MOTIFS,
-]
 
 const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.isMo3ep))
 
@@ -161,110 +141,97 @@ const gateScopesPercent = computed(() => {
   return Math.min(100, Math.max(0, Math.round(((gateCurrentRating.value - baseRating) / span) * 100)))
 })
 
-// WarmUp Focus Group & Key Options
-const focusGroupOptions = computed<SelectOption[]>(() => {
-  if (store.activeDiscipline === 'tactics') {
-    return [
-      { label: t('features.trainingCenter.warmup.focusGroups.all'), value: 'all' },
-      { label: t('features.trainingCenter.warmup.focusGroups.motif_group'), value: 'motif_group' },
-      { label: t('features.trainingCenter.warmup.focusGroups.motif'), value: 'motif' },
-      { label: t('features.trainingCenter.warmup.focusGroups.phase'), value: 'phase' },
-      { label: t('features.trainingCenter.warmup.focusGroups.length'), value: 'length' },
-      { label: t('features.trainingCenter.warmup.focusGroups.goal'), value: 'goal' },
-      { label: t('features.trainingCenter.warmup.focusGroups.cognitive'), value: 'cognitive' },
-      { label: t('features.trainingCenter.warmup.focusGroups.master_game'), value: 'master_game' },
-    ]
+interface WarmupQuickTile {
+  id: string
+  focusGroup: string
+  focusKey: string
+  labelKey: string
+}
+
+const tacticsQuickTiles: readonly WarmupQuickTile[] = [
+  { id: 'opening', focusGroup: 'phase', focusKey: 'opening', labelKey: 'features.trainingCenter.warmup.quickGrid.opening' },
+  { id: 'middlegame', focusGroup: 'phase', focusKey: 'middlegame', labelKey: 'features.trainingCenter.warmup.quickGrid.middlegame' },
+  { id: 'endgame', focusGroup: 'phase', focusKey: 'endgame', labelKey: 'features.trainingCenter.warmup.quickGrid.endgame' },
+  { id: 'attack', focusGroup: 'motif', focusKey: 'kingsideAttack', labelKey: 'features.trainingCenter.warmup.quickGrid.attack' },
+  { id: 'defense', focusGroup: 'motif', focusKey: 'defensiveMove', labelKey: 'features.trainingCenter.warmup.quickGrid.defense' },
+  { id: 'sacrifice', focusGroup: 'motif', focusKey: 'sacrifice', labelKey: 'features.trainingCenter.warmup.quickGrid.sacrifice' },
+  { id: 'mate', focusGroup: 'goal', focusKey: 'mate', labelKey: 'features.trainingCenter.warmup.quickGrid.mate' },
+  { id: 'crushing', focusGroup: 'goal', focusKey: 'crushing', labelKey: 'features.trainingCenter.warmup.quickGrid.crushing' },
+  { id: 'advantage', focusGroup: 'goal', focusKey: 'advantage', labelKey: 'features.trainingCenter.warmup.quickGrid.advantage' },
+]
+
+const theoreticalQuickTiles: readonly WarmupQuickTile[] = [
+  { id: 'draw', focusGroup: 'objective', focusKey: 'hold_draw', labelKey: 'features.trainingCenter.warmup.quickGrid.draw' },
+  { id: 'win', focusGroup: 'objective', focusKey: 'win', labelKey: 'features.trainingCenter.warmup.quickGrid.win' },
+  { id: 'pawn', focusGroup: 'domain', focusKey: 'PAWN', labelKey: 'features.trainingCenter.warmup.quickGrid.pawn' },
+  { id: 'rook', focusGroup: 'domain', focusKey: 'ROOK', labelKey: 'features.trainingCenter.warmup.quickGrid.rook' },
+  { id: 'bishop', focusGroup: 'domain', focusKey: 'BISHOP', labelKey: 'features.trainingCenter.warmup.quickGrid.bishop' },
+  { id: 'knight', focusGroup: 'domain', focusKey: 'KNIGHT', labelKey: 'features.trainingCenter.warmup.quickGrid.knight' },
+  { id: 'queen', focusGroup: 'domain', focusKey: 'QUEEN', labelKey: 'features.trainingCenter.warmup.quickGrid.queen' },
+  { id: 'complex', focusGroup: 'domain', focusKey: 'COMPLEX', labelKey: 'features.trainingCenter.warmup.quickGrid.complex' },
+]
+
+const practicalQuickTiles: readonly WarmupQuickTile[] = [
+  { id: 'pawn', focusGroup: 'domain', focusKey: 'PAWN', labelKey: 'features.trainingCenter.warmup.quickGrid.pawn' },
+  { id: 'rook', focusGroup: 'domain', focusKey: 'ROOK', labelKey: 'features.trainingCenter.warmup.quickGrid.rook' },
+  { id: 'bishop', focusGroup: 'domain', focusKey: 'BISHOP', labelKey: 'features.trainingCenter.warmup.quickGrid.bishop' },
+  { id: 'knight', focusGroup: 'domain', focusKey: 'KNIGHT', labelKey: 'features.trainingCenter.warmup.quickGrid.knight' },
+  { id: 'queen', focusGroup: 'domain', focusKey: 'QUEEN', labelKey: 'features.trainingCenter.warmup.quickGrid.queen' },
+  { id: 'complex', focusGroup: 'domain', focusKey: 'COMPLEX', labelKey: 'features.trainingCenter.warmup.quickGrid.complex' },
+]
+
+function selectWarmupFocus(group: string, key: string): void {
+  selectedFocusGroup.value = group
+  selectedFocusKey.value = key
+  selectedObjective.value = ''
+}
+
+function isWarmupFocusSelected(group: string, key: string): boolean {
+  return (
+    selectedFocusGroup.value === group &&
+    selectedFocusKey.value === key &&
+    selectedObjective.value === ''
+  )
+}
+
+const isCustomCabinetFocus = computed<boolean>(() => {
+  if (selectedFocusGroup.value === 'all' && selectedObjective.value === '') {
+    return false
   }
-  const base: SelectOption[] = [
-    { label: t('features.trainingCenter.warmup.focusGroups.all'), value: 'all' },
-    { label: t('features.trainingCenter.warmup.focusGroups.domain'), value: 'domain' },
-    { label: t('features.trainingCenter.warmup.focusGroups.class'), value: 'class' },
-  ]
-  if (store.activeDiscipline === 'theoretical_endgames') {
-    base.push({
-      label: t('features.trainingCenter.warmup.focusGroups.objective'),
-      value: 'objective',
-    })
+  if (selectedObjective.value !== '') {
+    return true
   }
-  return base
+  const disc = store.activeDiscipline
+  if (disc === 'tactics') {
+    return !tacticsQuickTiles.some(
+      (tile) =>
+        tile.focusGroup === selectedFocusGroup.value && tile.focusKey === selectedFocusKey.value,
+    )
+  }
+  if (disc === 'theoretical_endgames') {
+    return !theoreticalQuickTiles.some(
+      (tile) =>
+        tile.focusGroup === selectedFocusGroup.value && tile.focusKey === selectedFocusKey.value,
+    )
+  }
+  if (selectedFocusGroup.value === 'domain' && selectedFocusKey.value === 'EXTRA') {
+    return false
+  }
+  return !practicalQuickTiles.some(
+    (tile) =>
+      tile.focusGroup === selectedFocusGroup.value && tile.focusKey === selectedFocusKey.value,
+  )
 })
 
-const focusKeyOptions = computed<SelectOption[]>(() => {
-  const grp = selectedFocusGroup.value
-  const disc = store.activeDiscipline
-  if (grp === 'all') return []
-
-  if (disc === 'tactics') {
-    if (grp === 'phase') {
-      return TACTICS_PHASES.map((k) => ({
-        label: resolveScopeLabel('phase', k, t, te),
-        value: k,
-      }))
-    }
-    if (grp === 'length') {
-      return TACTICS_LENGTHS.map((k) => ({
-        label: resolveScopeLabel('length', k, t, te),
-        value: k,
-      }))
-    }
-    if (grp === 'goal') {
-      return TACTICS_GOALS.map((k) => ({
-        label: resolveScopeLabel('goal', k, t, te),
-        value: k,
-      }))
-    }
-    if (grp === 'master_game') {
-      return [
-        { label: t('features.trainingCenter.taxonomy.master_game.true'), value: 'true' },
-        { label: t('features.trainingCenter.taxonomy.master_game.false'), value: 'false' },
-      ]
-    }
-    if (grp === 'cognitive') {
-      return TACTICS_COGNITIVE_PROFILES.filter((k) => k !== 'other_motif').map((k) => ({
-        label: resolveScopeLabel('cognitive', k, t, te),
-        value: k,
-      }))
-    }
-    if (grp === 'motif_group') {
-      return TACTICS_MOTIF_GROUPS.map((k) => ({
-        label: t(`features.trainingCenter.warmup.motifGroups.${k}`),
-        value: k,
-      }))
-    }
-    if (grp === 'motif') {
-      return ALL_TACTICS_MOTIFS.map((k) => ({
-        label: resolveScopeLabel('scopes', k, t, te),
-        value: k,
-      }))
-    }
-    return []
+const customFocusDisplayLabel = computed<string>(() => {
+  const base = resolveScopeLabel(selectedFocusGroup.value, selectedFocusKey.value, t, te)
+  if (selectedObjective.value === 'win') {
+    return `${base} · ${t('features.trainingCenter.warmup.quickGrid.win')}`
   }
-
-  // Endgame disciplines
-  if (grp === 'domain') {
-    const domains =
-      disc === 'theoretical_endgames' ? THEORETICAL_DOMAINS : PRACTICAL_AND_FINISHHIM_DOMAINS
-    return domains.map((d) => ({
-      label: resolveScopeLabel('domain', d, t, te),
-      value: d,
-    }))
+  if (selectedObjective.value === 'hold_draw') {
+    return `${base} · ${t('features.trainingCenter.warmup.quickGrid.draw')}`
   }
-  if (grp === 'objective') {
-    return [
-      { label: t('features.trainingCenter.badges.winTarget'), value: 'win' },
-      { label: t('features.trainingCenter.badges.holdDrawFide'), value: 'hold_draw' },
-    ]
-  }
-  if (grp === 'class') {
-    const classMap =
-      disc === 'theoretical_endgames' ? THEORETICAL_DOMAIN_CLASSES : PRACTICAL_DOMAIN_CLASSES
-    const allClasses = Object.values(classMap).flat()
-    return allClasses.map((cls) => ({
-      label: resolveScopeLabel('scopes', cls, t, te),
-      value: cls,
-    }))
-  }
-  return []
+  return base
 })
 
 function syncDefaultsForDiscipline(disc: TrainingDiscipline): void {
@@ -305,8 +272,13 @@ function applyRouteQueryOverrides(): void {
         qFocusGroup === 'concept' ||
         qFocusGroup === 'trigger')
     ) {
-      selectedFocusGroup.value = 'motif'
-      selectedFocusKey.value = qFocusKey
+      if (!qFocusKey || qFocusKey === 'all' || qFocusKey === qFocusGroup) {
+        selectedFocusGroup.value = 'motif_group'
+        selectedFocusKey.value = qFocusGroup
+      } else {
+        selectedFocusGroup.value = 'motif'
+        selectedFocusKey.value = qFocusKey
+      }
     } else {
       selectedFocusGroup.value = qFocusGroup
       selectedFocusKey.value = qFocusKey || 'all'
@@ -318,30 +290,6 @@ function applyRouteQueryOverrides(): void {
     selectedObjective.value = qObj
   }
 }
-
-watch(
-  () => store.activeDiscipline,
-  (disc) => {
-    syncDefaultsForDiscipline(disc)
-  },
-)
-
-watch(
-  () => selectedFocusGroup.value,
-  (newGrp) => {
-    if (newGrp === 'all') {
-      selectedFocusKey.value = 'all'
-      return
-    }
-    const firstOpt = focusKeyOptions.value[0]
-    if (firstOpt && typeof firstOpt.value === 'string') {
-      const exists = focusKeyOptions.value.some((o) => o.value === selectedFocusKey.value)
-      if (!exists) {
-        selectedFocusKey.value = firstOpt.value
-      }
-    }
-  },
-)
 
 watch(
   () => route.query,
@@ -362,6 +310,10 @@ onMounted(async () => {
 
 function handleDisciplineSelect(disc: TrainingDiscipline): void {
   store.selectDiscipline(disc)
+  syncDefaultsForDiscipline(disc)
+  if (Object.keys(route.query).length > 0) {
+    void router.replace({ path: route.path, query: { discipline: disc } })
+  }
 }
 
 async function handleStartCourse(): Promise<void> {
@@ -980,135 +932,66 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       <!-- WARMUP MODE (/warmup) ([D11, D12]) -->
       <div v-else class="p-6 flex flex-col gap-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Left: Free Rank Tier & Session Volume -->
-          <div class="flex flex-col gap-5">
-            <!-- Free Rank Selector -->
-            <div class="flex flex-col gap-2">
-              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
-                {{ t('features.trainingCenter.warmup.selectTierLabel') }}
-              </label>
-              <div class="grid grid-cols-3 gap-2.5">
-                <button
-                  v-for="tier in TRAINING_DIFFICULTIES"
-                  :key="tier"
-                  type="button"
-                  class="p-3 rounded-md border flex flex-col items-start gap-1 transition-colors cursor-pointer"
-                  :class="
-                    selectedWarmupTier === tier
-                      ? 'bg-elevated border-border-hover text-text-primary'
-                      : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
-                  "
-                  @click="selectedWarmupTier = tier"
-                >
-                  <span class="font-display font-semibold text-sm">
-                    {{ resolveDifficultyLabel(tier, t) }}
-                  </span>
-                  <span class="font-condensed text-[11px] text-text-secondary">
-                    {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
-                  </span>
-                </button>
+          <!-- Left: Free Rank Tier, Session Volume & Start CTA -->
+          <div class="flex flex-col justify-between gap-5">
+            <div class="flex flex-col gap-5">
+              <!-- Free Rank Selector -->
+              <div class="flex flex-col gap-2">
+                <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+                  {{ t('features.trainingCenter.warmup.selectTierLabel') }}
+                </label>
+                <div class="grid grid-cols-3 gap-2.5">
+                  <button
+                    v-for="tier in TRAINING_DIFFICULTIES"
+                    :key="tier"
+                    type="button"
+                    class="p-3 rounded-md border flex flex-col items-start gap-1 transition-colors cursor-pointer"
+                    :class="
+                      selectedWarmupTier === tier
+                        ? 'bg-elevated border-border-hover text-text-primary'
+                        : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                    "
+                    @click="selectedWarmupTier = tier"
+                  >
+                    <span class="font-display font-semibold text-sm">
+                      {{ resolveDifficultyLabel(tier, t) }}
+                    </span>
+                    <span class="font-condensed text-[11px] text-text-secondary">
+                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- WarmUp Count Selector -->
+              <div class="flex flex-col gap-2">
+                <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+                  {{ t('features.trainingCenter.warmup.selectCountLabel') }}
+                </label>
+                <div class="grid grid-cols-3 gap-2.5">
+                  <button
+                    v-for="cnt in warmupAllowedSizes"
+                    :key="cnt"
+                    type="button"
+                    class="py-2.5 px-3 rounded-md border font-condensed font-bold text-sm transition-colors cursor-pointer"
+                    :class="
+                      selectedWarmupCount === cnt
+                        ? 'bg-elevated border-border-hover text-text-primary'
+                        : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                    "
+                    @click="selectedWarmupCount = cnt"
+                  >
+                    {{ cnt }} {{ t('features.trainingCenter.warmup.puzzlesUnit') }}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- WarmUp Count Selector -->
-            <div class="flex flex-col gap-2">
-              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
-                {{ t('features.trainingCenter.warmup.selectCountLabel') }}
-              </label>
-              <div class="grid grid-cols-3 gap-2.5">
-                <button
-                  v-for="cnt in warmupAllowedSizes"
-                  :key="cnt"
-                  type="button"
-                  class="py-2.5 px-3 rounded-md border font-condensed font-bold text-sm transition-colors cursor-pointer"
-                  :class="
-                    selectedWarmupCount === cnt
-                      ? 'bg-elevated border-border-hover text-text-primary'
-                      : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
-                  "
-                  @click="selectedWarmupCount = cnt"
-                >
-                  {{ cnt }} {{ t('features.trainingCenter.warmup.puzzlesUnit') }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right: Focus Group, Focus Key & Objective -->
-          <div class="flex flex-col gap-4">
-            <div class="flex flex-col gap-1.5">
-              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
-                {{ t('features.trainingCenter.warmup.focusGroupLabel') }}
-              </label>
-              <NSelect v-model:value="selectedFocusGroup" :options="focusGroupOptions" />
-            </div>
-
-            <div v-if="selectedFocusGroup !== 'all'" class="flex flex-col gap-1.5">
-              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
-                {{ t('features.trainingCenter.warmup.focusKeyLabel') }}
-              </label>
-              <NSelect
-                v-model:value="selectedFocusKey"
-                filterable
-                :options="focusKeyOptions"
-              />
-            </div>
-
-            <!-- Theoretical Objective Filter (Win vs Hold Draw) -->
-            <div
-              v-if="
-                store.activeDiscipline === 'theoretical_endgames' &&
-                selectedFocusGroup !== 'objective'
-              "
-              class="flex flex-col gap-1.5"
-            >
-              <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
-                {{ t('features.trainingCenter.warmup.objectiveFilterLabel') }}
-              </label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
-                  :class="
-                    selectedObjective === ''
-                      ? 'bg-elevated border-border-hover text-text-primary'
-                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
-                  "
-                  @click="selectedObjective = ''"
-                >
-                  {{ t('features.trainingCenter.warmup.objectiveAll') }}
-                </button>
-                <button
-                  type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
-                  :class="
-                    selectedObjective === 'win'
-                      ? 'bg-elevated border-border-hover text-text-primary'
-                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
-                  "
-                  @click="selectedObjective = 'win'"
-                >
-                  {{ t('features.trainingCenter.badges.winTarget') }}
-                </button>
-                <button
-                  type="button"
-                  class="py-2 px-2.5 rounded-sm text-xs font-condensed font-bold uppercase border cursor-pointer transition-colors"
-                  :class="
-                    selectedObjective === 'hold_draw'
-                      ? 'bg-elevated border-warning/50 text-warning'
-                      : 'bg-surface border-border text-text-secondary hover:border-border-hover'
-                  "
-                  @click="selectedObjective = 'hold_draw'"
-                >
-                  {{ t('features.trainingCenter.badges.holdDrawFide') }}
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-auto pt-2 flex justify-end">
+            <div class="pt-2">
               <NButton
                 type="primary"
                 size="large"
+                block
                 :loading="store.isStartingSession"
                 @click="handleStartWarmup"
               >
@@ -1121,6 +1004,122 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                   })
                 }}
               </NButton>
+            </div>
+          </div>
+
+          <!-- Right: Visual Quick-Select Focus Grid -->
+          <div class="flex flex-col gap-2">
+            <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+              {{ t('features.trainingCenter.warmup.quickGrid.title') }}
+            </label>
+
+            <!-- Active Custom Topic Indicator (when navigated with a specific class/motif) -->
+            <div
+              v-if="isCustomCabinetFocus"
+              class="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-brand/10 border border-brand/40 text-xs"
+            >
+              <span class="font-display font-semibold text-text-primary truncate">
+                <span class="text-text-secondary font-normal mr-1">
+                  {{ t('features.trainingCenter.warmup.quickGrid.customFocusPrefix') }}
+                </span>
+                <strong class="text-brand">{{ customFocusDisplayLabel }}</strong>
+              </span>
+              <button
+                type="button"
+                class="font-condensed font-bold uppercase text-[11px] text-text-secondary hover:text-text-primary cursor-pointer shrink-0"
+                @click="selectWarmupFocus('all', 'all')"
+              >
+                × {{ t('features.trainingCenter.warmup.quickGrid.mix') }}
+              </button>
+            </div>
+
+            <!-- Full-Width Top MIX Button -->
+            <button
+              type="button"
+              class="w-full py-2.5 px-3 rounded-md border font-display font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer text-center"
+              :class="
+                isWarmupFocusSelected('all', 'all')
+                  ? 'bg-elevated border-brand text-brand shadow-xs'
+                  : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="selectWarmupFocus('all', 'all')"
+            >
+              {{ t('features.trainingCenter.warmup.quickGrid.mix') }}
+            </button>
+
+            <!-- TACTICS: 3x3 Visual Grid -->
+            <div
+              v-if="store.activeDiscipline === 'tactics'"
+              class="grid grid-cols-3 gap-2"
+            >
+              <button
+                v-for="tile in tacticsQuickTiles"
+                :key="tile.id"
+                type="button"
+                class="py-2.5 px-2 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer text-center truncate"
+                :class="
+                  isWarmupFocusSelected(tile.focusGroup, tile.focusKey)
+                    ? 'bg-elevated border-brand text-brand shadow-xs'
+                    : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                "
+                @click="selectWarmupFocus(tile.focusGroup, tile.focusKey)"
+              >
+                {{ t(tile.labelKey) }}
+              </button>
+            </div>
+
+            <!-- THEORETICAL ENDGAMES: 2x4 Visual Grid (Draw/Win + 6 Domains) -->
+            <div
+              v-else-if="store.activeDiscipline === 'theoretical_endgames'"
+              class="grid grid-cols-2 gap-2"
+            >
+              <button
+                v-for="tile in theoreticalQuickTiles"
+                :key="tile.id"
+                type="button"
+                class="py-2 px-2.5 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer text-center truncate"
+                :class="
+                  isWarmupFocusSelected(tile.focusGroup, tile.focusKey)
+                    ? 'bg-elevated border-brand text-brand shadow-xs'
+                    : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                "
+                @click="selectWarmupFocus(tile.focusGroup, tile.focusKey)"
+              >
+                {{ t(tile.labelKey) }}
+              </button>
+            </div>
+
+            <!-- PRACTICAL CHESS & FINISH HIM: 2x3 Domains + Full-Width EXTRAPAWN -->
+            <div v-else class="flex flex-col gap-2">
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  v-for="tile in practicalQuickTiles"
+                  :key="tile.id"
+                  type="button"
+                  class="py-2 px-2.5 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer text-center truncate"
+                  :class="
+                    isWarmupFocusSelected(tile.focusGroup, tile.focusKey)
+                      ? 'bg-elevated border-brand text-brand shadow-xs'
+                      : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                  "
+                  @click="selectWarmupFocus(tile.focusGroup, tile.focusKey)"
+                >
+                  {{ t(tile.labelKey) }}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="w-full py-2.5 px-3 rounded-md border font-display font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer text-center"
+                :class="
+                  isWarmupFocusSelected('domain', 'EXTRA')
+                    ? 'bg-elevated border-brand text-brand shadow-xs'
+                    : 'bg-surface border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+                "
+                @click="selectWarmupFocus('domain', 'EXTRA')"
+              >
+                {{ t('features.trainingCenter.warmup.quickGrid.extrapawn') }}
+              </button>
             </div>
           </div>
         </div>

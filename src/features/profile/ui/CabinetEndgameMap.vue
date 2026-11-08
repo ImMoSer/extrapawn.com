@@ -237,11 +237,11 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
         </div>
         <button
           type="button"
-          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-bold text-success transition-colors hover:bg-success/20"
+          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-bold text-success transition-colors hover:bg-success/20 shrink-0"
           @click="emit('trainScope', { focusGroup: 'objective', focusKey: 'win', objective: 'win' })"
         >
           <NIcon :component="FlashOutline" />
-          {{ t('pages.userCabinet.diagnostics.trainWarmup') }}
+          {{ t('pages.userCabinet.map.trainShort') }}
         </button>
       </div>
 
@@ -271,7 +271,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
         </div>
         <button
           type="button"
-          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-info/40 bg-info/10 px-3 py-1.5 text-xs font-bold text-info transition-colors hover:bg-info/20"
+          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-info/40 bg-info/10 px-3 py-1.5 text-xs font-bold text-info transition-colors hover:bg-info/20 shrink-0"
           @click="
             emit('trainScope', {
               focusGroup: 'objective',
@@ -281,7 +281,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           "
         >
           <NIcon :component="FlashOutline" />
-          {{ t('pages.userCabinet.diagnostics.trainWarmup') }}
+          {{ t('pages.userCabinet.map.trainShort') }}
         </button>
       </div>
     </div>
@@ -323,14 +323,13 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
               </span>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               <span class="font-condensed text-lg font-bold text-text-primary">
                 {{ Math.round(item.domain.rating) }}
               </span>
               <button
                 type="button"
-                class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-brand transition-colors hover:border-brand/50 hover:bg-brand/10"
-                :title="t('pages.userCabinet.diagnostics.trainWarmup')"
+                class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2 py-1 text-[11px] font-bold text-brand transition-colors hover:bg-brand/20"
                 @click.stop="
                   emit('trainScope', {
                     focusGroup: 'domain',
@@ -339,6 +338,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                 "
               >
                 <NIcon :component="FlashOutline" />
+                {{ t('pages.userCabinet.map.trainShort') }}
               </button>
               <NIcon
                 :component="ChevronForwardOutline"
@@ -447,7 +447,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                     "
                   >
                     <NIcon :component="FlashOutline" />
-                    {{ t('pages.userCabinet.diagnostics.trainWarmup') }}
+                    {{ t('pages.userCabinet.map.trainShort') }}
                   </button>
                 </div>
               </div>

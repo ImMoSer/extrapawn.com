@@ -514,12 +514,21 @@
         "gateMarkerLabel": "Порог: {gate}",
         "classesCount": "классов",
         "activeDomainDrilldown": "Детализация классов домена",
-        "trainEntireDomain": "Тренировать весь домен",
+        "trainEntireDomain": "Старт (весь домен)",
+        "trainEntireContour": "Старт (весь контур)",
         "trainShort": "Старт",
         "structuralCompass": "Структурный компас",
         "motifsCount": "мотивов",
         "shortHorizon": "Короткие (1-2х)",
         "deepHorizon": "Глубокие (3+х)"
+      },
+      "warmupModal": {
+        "title": "Быстрый старт разминки",
+        "topicLabel": "Выбранная тема",
+        "tierLabel": "1. Сложность задач",
+        "batchLabel": "2. Размер батча",
+        "objectiveLabel": "3. Целевой вектор",
+        "startBtn": "Старт ({count} задач)"
       }
     },
     "pricing": {
@@ -958,7 +967,7 @@
       },
       "actions": {
         "analyze": "Анализ",
-        "backToHub": "В Тренировочный Центр",
+        "backToHub": "В главное меню",
         "continueSession": "Продолжить",
         "dismissSession": "Сбросить",
         "exitAnalysis": "Выйти из анализа",
@@ -1064,6 +1073,29 @@
           "operator": "Операторы (7)",
           "concept": "Концепты (3)",
           "trigger": "Триггеры (6)"
+        },
+        "quickGrid": {
+          "title": "3. Фокус разминки",
+          "mix": "MIX",
+          "opening": "Дебют",
+          "middlegame": "Миттельшпиль",
+          "endgame": "Эндшпиль",
+          "attack": "Атака",
+          "defense": "Защита",
+          "sacrifice": "Жертва",
+          "mate": "Мат",
+          "crushing": "Разгром",
+          "advantage": "Перевес",
+          "draw": "Ничья",
+          "win": "Победа",
+          "pawn": "Пешечник",
+          "rook": "Ладейник",
+          "bishop": "Слоновый",
+          "knight": "Коневой",
+          "queen": "Ферзевый",
+          "complex": "Сложный",
+          "extrapawn": "EXTRAPAWN",
+          "customFocusPrefix": "Выбрана тема:"
         }
       },
       "play": {
@@ -1085,6 +1117,7 @@
       },
       "report": {
         "completedHeading": "Отчет о тренировочной сессии",
+        "warmupCompletedHeading": "Результаты разминки",
         "solvedTotal": "Решено / Всего",
         "accuracy": "Точность сессии",
         "netDelta": "Изменение Glicko-2",

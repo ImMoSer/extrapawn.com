@@ -192,7 +192,11 @@ function handleGoToCabinet(): void {
         </div>
         <h1 class="font-display font-bold text-2xl text-text-primary mt-1">
           {{ resolveDisciplineLabel(report.discipline, t) }} —
-          {{ t('features.trainingCenter.report.completedHeading') }}
+          {{
+            report.mode === 'warmup'
+              ? t('features.trainingCenter.report.warmupCompletedHeading')
+              : t('features.trainingCenter.report.completedHeading')
+          }}
         </h1>
       </div>
 

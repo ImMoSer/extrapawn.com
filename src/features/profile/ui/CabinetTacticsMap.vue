@@ -228,14 +228,13 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                   </span>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                   <span class="font-condensed text-sm font-bold text-text-primary">
                     {{ Math.round(stat.rating) }}
                   </span>
                   <button
                     type="button"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded border border-border bg-elevated px-2 py-0.5 text-[11px] font-semibold text-brand transition-colors hover:border-brand/50 hover:bg-brand/10"
-                    :title="t('pages.userCabinet.diagnostics.trainWarmup')"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded border border-brand/40 bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand transition-colors hover:bg-brand/20"
                     @click="
                       emit('trainScope', {
                         focusGroup: section.focusGroup,
@@ -244,6 +243,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                     "
                   >
                     <NIcon :component="FlashOutline" />
+                    {{ t('pages.userCabinet.map.trainShort') }}
                   </button>
                 </div>
               </div>
@@ -269,11 +269,10 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       <div class="rounded-xl border border-border bg-canvas p-4 lg:col-span-7">
         <!-- 4 Contour Selector Tabs -->
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <button
+          <div
             v-for="contour in TACTICS_MOTIF_GROUPS"
             :key="contour"
-            type="button"
-            class="cursor-pointer rounded-lg border px-3 py-2 text-left transition-all"
+            class="cursor-pointer rounded-lg border p-2.5 text-left transition-all flex flex-col justify-between gap-1.5"
             :class="
               activeContour === contour
                 ? 'border-border-hover bg-elevated text-text-primary shadow-sm'
@@ -281,14 +280,29 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
             "
             @click="activeContour = contour"
           >
-            <div class="text-xs font-bold uppercase">
+            <div class="text-xs font-bold uppercase truncate">
               {{ t(`features.trainingCenter.warmup.motifGroups.${contour}`) }}
             </div>
-            <div class="mt-0.5 font-condensed text-[11px] text-text-disabled">
-              {{ (mapData.motif_contours[contour] ?? []).length }}
-              {{ t('pages.userCabinet.map.motifsCount') }}
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-condensed text-[11px] text-text-disabled">
+                {{ (mapData.motif_contours[contour] ?? []).length }}
+                {{ t('pages.userCabinet.map.motifsCount') }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex cursor-pointer items-center gap-0.5 rounded border border-brand/40 bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold text-brand transition-colors hover:bg-brand/20 shrink-0"
+                @click.stop="
+                  emit('trainScope', {
+                    focusGroup: 'motif_group',
+                    focusKey: contour,
+                  })
+                "
+              >
+                <NIcon :component="FlashOutline" />
+                {{ t('pages.userCabinet.map.trainShort') }}
+              </button>
             </div>
-          </button>
+          </div>
         </div>
 
         <!-- Motif Bullet-Bars List -->
@@ -327,13 +341,13 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                   class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
                   @click="
                     emit('trainScope', {
-                      focusGroup: activeContour,
+                      focusGroup: 'motif',
                       focusKey: item.motif.key,
                     })
                   "
                 >
                   <NIcon :component="FlashOutline" />
-                  {{ t('pages.userCabinet.diagnostics.trainWarmup') }}
+                  {{ t('pages.userCabinet.map.trainShort') }}
                 </button>
               </div>
             </div>

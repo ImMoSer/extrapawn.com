@@ -251,6 +251,7 @@ export function resolveScopeLabel(
 ): string {
   const candidates: string[] = [
     `features.trainingCenter.taxonomy.${group}.${key}`,
+    `features.trainingCenter.warmup.motifGroups.${key}`,
     `features.trainingCenter.taxonomy.scopes.${key}`,
     `puzzleCategories.themes.${key}`,
     `puzzleCategories.tactics.${key}`,

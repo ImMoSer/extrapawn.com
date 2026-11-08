@@ -514,12 +514,21 @@
         "gateMarkerLabel": "Gate: {gate}",
         "classesCount": "classes",
         "activeDomainDrilldown": "Domain Class Drill-Down",
-        "trainEntireDomain": "Train Entire Domain",
-        "trainShort": "Train",
+        "trainEntireDomain": "Start (Entire Domain)",
+        "trainEntireContour": "Start (Entire Contour)",
+        "trainShort": "Start",
         "structuralCompass": "Structural Compass",
         "motifsCount": "motifs",
         "shortHorizon": "Short (1-2m)",
         "deepHorizon": "Deep (3+m)"
+      },
+      "warmupModal": {
+        "title": "Quick WarmUp Launch",
+        "topicLabel": "Selected Topic",
+        "tierLabel": "1. Puzzle Difficulty Tier",
+        "batchLabel": "2. Session Batch Size",
+        "objectiveLabel": "3. Objective Vector",
+        "startBtn": "Start ({count} puzzles)"
       }
     },
     "pricing": {
@@ -958,7 +967,7 @@
       },
       "actions": {
         "analyze": "Analyze",
-        "backToHub": "Back to Training Center",
+        "backToHub": "Main Menu",
         "continueSession": "Continue",
         "dismissSession": "Dismiss",
         "exitAnalysis": "Exit Analysis",
@@ -1064,6 +1073,29 @@
           "operator": "Operators (7)",
           "concept": "Concepts (3)",
           "trigger": "Triggers (6)"
+        },
+        "quickGrid": {
+          "title": "3. WarmUp Focus",
+          "mix": "MIX",
+          "opening": "Opening",
+          "middlegame": "Middlegame",
+          "endgame": "Endgame",
+          "attack": "Attack",
+          "defense": "Defense",
+          "sacrifice": "Sacrifice",
+          "mate": "Mate",
+          "crushing": "Crushing",
+          "advantage": "Advantage",
+          "draw": "Draw",
+          "win": "Win",
+          "pawn": "Pawn",
+          "rook": "Rook",
+          "bishop": "Bishop",
+          "knight": "Knight",
+          "queen": "Queen",
+          "complex": "Complex",
+          "extrapawn": "EXTRAPAWN",
+          "customFocusPrefix": "Selected topic:"
         }
       },
       "play": {
@@ -1085,6 +1117,7 @@
       },
       "report": {
         "completedHeading": "Training Session Report",
+        "warmupCompletedHeading": "WarmUp Results",
         "solvedTotal": "Solved / Total",
         "accuracy": "Session Accuracy",
         "netDelta": "Glicko-2 Net Delta",

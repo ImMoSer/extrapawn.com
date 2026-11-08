@@ -1,3 +1,4 @@
+import { apiClient } from '@/shared/api/client'
 import {
   type AnalysisUpdateCallback,
   type EngineLoadingListener,
@@ -19,6 +20,35 @@ export interface EvaluatedLineWithSan extends EvaluatedLine {
   initialFullMoveNumber: number
   initialTurn: ChessopsColor
   wdl?: WdlStats
+  isTablebase?: boolean
+}
+
+interface GaviotaExplainerLineDTO {
+  rank: number
+  uci: string
+  san: string
+  cp: number | null
+  mate: number | null
+  pv: string[]
+  win_p?: number | null
+  draw_p?: number | null
+  loss_p?: number | null
+}
+
+interface GaviotaExplainerLinesResponse {
+  lines: GaviotaExplainerLineDTO[] | null
+}
+
+export function countBoardPieces(fen: string): number {
+  const placement = fen.trim().split(/\s+/)[0] ?? ''
+  let count = 0
+  for (let i = 0; i < placement.length; i++) {
+    const ch = placement[i]!
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+      count++
+    }
+  }
+  return count
 }
 
 class AnalysisServiceController {
@@ -79,6 +109,19 @@ class AnalysisServiceController {
     callback: (lines: EvaluatedLineWithSan[]) => void,
     options: { multiPv?: number; movetime?: number } = {},
   ) {
+    const pieceCount = countBoardPieces(fen)
+    if (pieceCount >= 2 && pieceCount <= 5) {
+      if (this.activeEngineManager) {
+        await this.activeEngineManager.stopAnalysis()
+      }
+      const maxCandidates = options.multiPv ?? 5
+      const tbLines = await this.fetchGaviotaLines(fen, maxCandidates)
+      if (tbLines.length > 0) {
+        callback(tbLines)
+      }
+      return
+    }
+
     if (!this.activeEngineManager) {
       logger.info('[AnalysisService] Engine manager not active. Waiting for initialization...')
       await this.initialize()
@@ -98,6 +141,40 @@ class AnalysisServiceController {
     }
 
     await this.activeEngineManager.startAnalysis(fen, analysisUpdateCallback, options)
+  }
+
+  private async fetchGaviotaLines(
+    fen: string,
+    maxCandidates: number,
+  ): Promise<EvaluatedLineWithSan[]> {
+    const res = await apiClient<GaviotaExplainerLinesResponse>('/gaviota/explainer-lines', {
+      method: 'POST',
+      body: JSON.stringify({
+        fen,
+        max_candidates: maxCandidates,
+        include_pv: false,
+      }),
+    })
+
+    if (!res.lines || res.lines.length === 0) {
+      return []
+    }
+
+    const rawEvaluated: EvaluatedLine[] = res.lines.map((item) => ({
+      id: item.rank,
+      depth: 99,
+      score:
+        item.mate !== null && item.mate !== undefined
+          ? { type: 'mate', value: item.mate }
+          : { type: 'cp', value: 0 },
+      pvUci: [item.uci],
+    }))
+
+    const prepared = this.prepareLinesForDisplay(rawEvaluated, fen)
+    return prepared.map((line) => ({
+      ...line,
+      isTablebase: true,
+    }))
   }
 
   public async calculateFixedDepth(
@@ -127,9 +204,6 @@ class AnalysisServiceController {
 
   public async startNewGame() {
     this.sanCache.clear()
-    if (!this.activeEngineManager) {
-      await this.initialize()
-    }
     if (this.activeEngineManager === localEngineManager) {
       await localEngineManager.startNewGame()
     }

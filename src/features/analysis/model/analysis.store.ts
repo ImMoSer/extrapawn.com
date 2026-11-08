@@ -1,5 +1,6 @@
 import {
   analysisService,
+  countBoardPieces,
   type EngineLoadingState,
   type EvaluatedLineWithSan,
 } from '@/entities/analysis'
@@ -38,10 +39,22 @@ export const useAnalysisStore = defineStore('analysis', () => {
     engineLoadingState.value = state
   })
 
+  const isTablebasePosition = computed(() => {
+    const count = countBoardPieces(boardStore.fen)
+    return count >= 2 && count <= 5
+  })
+
+  const isTablebaseMode = computed(
+    () =>
+      isAnalysisActive.value &&
+      (isTablebasePosition.value || Boolean(analysisLines.value[0]?.isTablebase)),
+  )
+
   const isEngineLoading = computed(
     () =>
-      engineLoadingState.value.phase === 'downloading' ||
-      engineLoadingState.value.phase === 'initializing',
+      !isTablebasePosition.value &&
+      (engineLoadingState.value.phase === 'downloading' ||
+        engineLoadingState.value.phase === 'initializing'),
   )
 
   // Internal versioning to prevent race conditions
@@ -93,8 +106,9 @@ export const useAnalysisStore = defineStore('analysis', () => {
   // Watch lines to update board arrows
   watch(analysisLines, (lines) => {
     if (isAnalysisActive.value && lines.length > 0) {
-      const currentDepth = lines[0]!.depth
-      if (shouldUpdateBoard(currentDepth)) {
+      const firstLine = lines[0]!
+      const currentDepth = firstLine.depth
+      if (firstLine.isTablebase || shouldUpdateBoard(currentDepth)) {
         if (showArrows.value) {
           drawAnalysisArrows(lines)
         } else {
@@ -166,7 +180,13 @@ export const useAnalysisStore = defineStore('analysis', () => {
     searchTime.value = prefs.searchTime
     showArrows.value = prefs.showArrows
 
-    await analysisService.initialize()
+    if (!isTablebasePosition.value) {
+      await analysisService.initialize()
+    } else {
+      void analysisService.initialize().catch(() => {
+        // Error state is tracked in engineLoadingState if needed later for >5 pieces
+      })
+    }
 
     logger.info(
       `[AnalysisStore] Initialized. MultiPV: ${multiPv.value}, SearchTime: ${searchTime.value}, ShowArrows: ${showArrows.value}`,
@@ -301,6 +321,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
     showArrows,
     engineLoadingState,
     isEngineLoading,
+    isTablebasePosition,
+    isTablebaseMode,
     initialize,
     retryEngineLoad,
     setMultiPv,

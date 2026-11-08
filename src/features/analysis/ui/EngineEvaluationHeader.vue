@@ -18,6 +18,7 @@ const {
   showArrows,
   engineLoadingState,
   isEngineLoading,
+  isTablebaseMode,
 } = storeToRefs(analysisStore)
 
 const downloadPercent = computed<number | null>(() => {
@@ -53,7 +54,8 @@ const bestScore = computed(() => {
     const val = line.score.value / 100
     return (val > 0 ? '+' : '') + val.toFixed(2)
   }
-  return t('features.analysis.mateInShort', { value: Math.abs(line.score.value) })
+  const sign = line.score.value > 0 ? '+' : line.score.value < 0 ? '-' : ''
+  return `${sign}${t('features.analysis.mateInShort', { value: Math.abs(line.score.value) })}`
 })
 
 const bestScoreClass = computed(() => {
@@ -130,10 +132,16 @@ const formatSearchTimeTooltip = (value: number) => {
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-[0.9rem] font-bold tracking-[0.5px] text-text-primary">
-          Stockfish 19
+          {{ isTablebaseMode ? 'Gaviota TB' : 'Stockfish 19' }}
         </span>
         <div
-          v-if="isEngineLoading"
+          v-if="isTablebaseMode"
+          class="rounded border border-brand/40 bg-brand/10 px-1.5 py-0.5 font-condensed text-xs font-bold text-brand"
+        >
+          DTM ≤5
+        </div>
+        <div
+          v-else-if="isEngineLoading"
           class="inline-flex items-center gap-1.5 rounded border border-brand/35 bg-brand/10 px-2 py-0.5 font-condensed text-xs font-bold text-brand"
         >
           <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />

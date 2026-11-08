@@ -3,10 +3,13 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { NAlert, NButton, NIcon, NResult, NSpin } from 'naive-ui'
+import { NAlert, NButton, NIcon, NModal, NResult, NSpin } from 'naive-ui'
 import {
   CalendarOutline,
   CheckmarkCircleOutline,
+  CloseOutline,
+  FlashOutline,
+  PlayOutline,
   RibbonOutline,
   RefreshOutline,
   ShareSocialOutline,
@@ -16,13 +19,17 @@ import { useAuthStore } from '@/entities/user'
 import {
   formatElapsedDuration,
   isDisciplineVisibleForUser,
-  trainingApi,
-  resolveDisciplineLabel,
+  resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
+  resolveDisciplineLabel,
+  resolveScopeLabel,
+  TRAINING_DIFFICULTIES,
+  trainingApi,
   type CabinetDTO,
   type CourseDTO,
   type DiagnosticStripDTO,
   type EndgameCabinetMapDTO,
+  type TrainingDifficulty,
   type TrainingDiscipline,
   type TrainingObjective,
 } from '@/entities/training'
@@ -33,12 +40,14 @@ import {
   CabinetMacroPulse,
   CabinetTacticsMap,
 } from '@/features/profile'
+import { useTrainingSessionStore } from '@/features/training-session'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const authStore = useAuthStore()
+const trainingSessionStore = useTrainingSessionStore()
 const { userProfile, isAuthenticated } = storeToRefs(authStore)
 
 const isPublicMo3epCabinet = computed<boolean>(() => {
@@ -121,6 +130,27 @@ const visibleRecentCourses = computed<CourseDTO[]>(() => {
   )
 })
 
+// Quick WarmUp Launch Modal State
+const showWarmupModal = ref(false)
+const warmupModalFocusGroup = ref('all')
+const warmupModalFocusKey = ref('all')
+const warmupModalObjective = ref<TrainingObjective | ''>('')
+const warmupModalTier = ref<TrainingDifficulty>('Novice')
+const warmupModalCount = ref<number>(50)
+const warmupModalError = ref<string | null>(null)
+
+const warmupModalAllowedSizes = computed<number[]>(() => {
+  const discOverview = cabinetData.value?.overview.disciplines[selectedDiscipline.value]
+  if (discOverview?.warmup_allowed_sizes?.length) {
+    return discOverview.warmup_allowed_sizes
+  }
+  return selectedDiscipline.value === 'tactics' ? [50, 100, 200] : [10, 25, 50]
+})
+
+const warmupModalTopicTitle = computed<string>(() => {
+  return resolveScopeLabel(warmupModalFocusGroup.value, warmupModalFocusKey.value, t, te)
+})
+
 function handleOpenTrainingHub(discipline: TrainingDiscipline): void {
   void router.push({
     path: '/training',
@@ -133,18 +163,61 @@ function handleTrainScope(payload: {
   focusKey: string
   objective?: TrainingObjective
 }): void {
-  const query: Record<string, string> = {
-    discipline: selectedDiscipline.value,
-    focusGroup: payload.focusGroup,
-    focusKey: payload.focusKey,
+  if (!isAuthenticated.value) {
+    const query: Record<string, string> = {
+      discipline: selectedDiscipline.value,
+      focusGroup: payload.focusGroup,
+      focusKey: payload.focusKey,
+    }
+    if (payload.objective) {
+      query.objective = payload.objective
+    }
+    void router.push({
+      path: '/warmup',
+      query,
+    })
+    return
   }
-  if (payload.objective) {
-    query.objective = payload.objective
+
+  const discOverview = cabinetData.value?.overview.disciplines[selectedDiscipline.value]
+  const sizes = warmupModalAllowedSizes.value
+
+  warmupModalFocusGroup.value = payload.focusGroup
+  warmupModalFocusKey.value = payload.focusKey
+  warmupModalObjective.value = payload.objective ?? ''
+  warmupModalTier.value = discOverview?.unlocked_tier ?? 'Novice'
+  warmupModalCount.value = sizes[0] ?? (selectedDiscipline.value === 'tactics' ? 50 : 10)
+  warmupModalError.value = null
+  showWarmupModal.value = true
+}
+
+async function handleConfirmWarmupLaunch(): Promise<void> {
+  warmupModalError.value = null
+  try {
+    trainingSessionStore.selectDiscipline(selectedDiscipline.value)
+    await trainingSessionStore.startWarmupSession({
+      discipline: selectedDiscipline.value,
+      difficulty: warmupModalTier.value,
+      count: warmupModalCount.value,
+      focus_group: warmupModalFocusGroup.value,
+      focus_key: warmupModalFocusGroup.value === 'all' ? 'all' : warmupModalFocusKey.value,
+      objective:
+        selectedDiscipline.value === 'theoretical_endgames' &&
+        warmupModalFocusGroup.value !== 'objective'
+          ? warmupModalObjective.value
+          : '',
+      force_replace: true,
+    })
+    showWarmupModal.value = false
+    await router.push({
+      path: '/warmup',
+      query: {
+        discipline: selectedDiscipline.value,
+      },
+    })
+  } catch (err: unknown) {
+    warmupModalError.value = err instanceof Error ? err.message : String(err)
   }
-  void router.push({
-    path: '/warmup',
-    query,
-  })
 }
 
 function getCourseAccuracyPercent(course: CourseDTO): number {
@@ -451,5 +524,158 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
         </section>
       </template>
     </div>
+
+    <!-- Quick WarmUp Launch Modal (Direct Start from Cabinet) -->
+    <NModal v-model:show="showWarmupModal" :mask-closable="!trainingSessionStore.isStartingSession">
+      <div class="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl text-text-primary select-none flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-border pb-3">
+          <div class="flex items-center gap-2">
+            <NIcon :component="FlashOutline" class="text-lg text-brand" />
+            <h3 class="font-display text-base font-bold uppercase tracking-wider text-text-primary">
+              {{ t('pages.userCabinet.warmupModal.title') }}
+            </h3>
+          </div>
+          <button
+            type="button"
+            class="cursor-pointer rounded p-1 text-text-secondary hover:bg-elevated hover:text-text-primary transition-colors"
+            :disabled="trainingSessionStore.isStartingSession"
+            @click="showWarmupModal = false"
+          >
+            <NIcon :component="CloseOutline" class="text-lg" />
+          </button>
+        </div>
+
+        <!-- Selected Discipline & Topic Summary -->
+        <div class="rounded-lg border border-brand/30 bg-brand/5 p-3 flex flex-col gap-1">
+          <span class="font-condensed text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+            {{ resolveDisciplineLabel(selectedDiscipline, t) }} · {{ t('pages.userCabinet.warmupModal.topicLabel') }}
+          </span>
+          <span class="font-display text-sm font-bold text-brand">
+            {{ warmupModalTopicTitle }}
+          </span>
+        </div>
+
+        <NAlert v-if="warmupModalError" type="error" closable @close="warmupModalError = null">
+          {{ warmupModalError }}
+        </NAlert>
+
+        <!-- 1. Difficulty Tier Selector -->
+        <div class="flex flex-col gap-2">
+          <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+            {{ t('pages.userCabinet.warmupModal.tierLabel') }}
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="tier in TRAINING_DIFFICULTIES"
+              :key="tier"
+              type="button"
+              class="p-2.5 rounded-md border flex flex-col items-start gap-0.5 transition-colors cursor-pointer"
+              :class="
+                warmupModalTier === tier
+                  ? 'bg-elevated border-border-hover text-text-primary'
+                  : 'bg-canvas border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="warmupModalTier = tier"
+            >
+              <span class="font-display font-semibold text-xs">
+                {{ resolveDifficultyLabel(tier, t) }}
+              </span>
+              <span class="font-condensed text-[10px] text-text-secondary">
+                {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, selectedDiscipline)] }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Session Batch Size Selector -->
+        <div class="flex flex-col gap-2">
+          <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+            {{ t('pages.userCabinet.warmupModal.batchLabel') }}
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="cnt in warmupModalAllowedSizes"
+              :key="cnt"
+              type="button"
+              class="py-2 px-2.5 rounded-md border font-condensed font-bold text-sm transition-colors cursor-pointer"
+              :class="
+                warmupModalCount === cnt
+                  ? 'bg-elevated border-border-hover text-text-primary'
+                  : 'bg-canvas border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="warmupModalCount = cnt"
+            >
+              {{ cnt }} {{ t('features.trainingCenter.warmup.puzzlesUnit') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Optional Objective Selector (Theoretical Endgames Only) -->
+        <div
+          v-if="
+            selectedDiscipline === 'theoretical_endgames' &&
+            warmupModalFocusGroup !== 'objective'
+          "
+          class="flex flex-col gap-2"
+        >
+          <label class="font-display font-semibold text-xs uppercase tracking-wider text-text-secondary">
+            {{ t('pages.userCabinet.warmupModal.objectiveLabel') }}
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              class="py-2 px-2 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer"
+              :class="
+                warmupModalObjective === ''
+                  ? 'bg-elevated border-border-hover text-text-primary'
+                  : 'bg-canvas border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="warmupModalObjective = ''"
+            >
+              {{ t('features.trainingCenter.warmup.quickGrid.mix') }}
+            </button>
+            <button
+              type="button"
+              class="py-2 px-2 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer"
+              :class="
+                warmupModalObjective === 'win'
+                  ? 'bg-elevated border-border-hover text-text-primary'
+                  : 'bg-canvas border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="warmupModalObjective = 'win'"
+            >
+              {{ t('features.trainingCenter.warmup.quickGrid.win') }}
+            </button>
+            <button
+              type="button"
+              class="py-2 px-2 rounded-md border font-display font-semibold text-xs transition-colors cursor-pointer"
+              :class="
+                warmupModalObjective === 'hold_draw'
+                  ? 'bg-elevated border-border-hover text-text-primary'
+                  : 'bg-canvas border-border text-text-secondary hover:border-border-hover hover:text-text-primary'
+              "
+              @click="warmupModalObjective = 'hold_draw'"
+            >
+              {{ t('features.trainingCenter.warmup.quickGrid.draw') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-1">
+          <NButton
+            type="primary"
+            size="large"
+            block
+            :loading="trainingSessionStore.isStartingSession"
+            @click="handleConfirmWarmupLaunch"
+          >
+            <template #icon>
+              <NIcon :component="PlayOutline" />
+            </template>
+            {{ t('pages.userCabinet.warmupModal.startBtn', { count: warmupModalCount }) }}
+          </NButton>
+        </div>
+      </div>
+    </NModal>
   </div>
 </template>

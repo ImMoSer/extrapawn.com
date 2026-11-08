@@ -9,7 +9,7 @@ import { AlertCircleOutline, EyeOffOutline, FlashOutline, ShieldCheckmarkOutline
 import { NButton, NIcon } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 
-defineProps<{
+const props = defineProps<{
   diagnostics: DiagnosticStripDTO
   discipline: TrainingDiscipline
   gateThreshold: number
@@ -26,8 +26,15 @@ function cardScopeName(card: DiagnosticFocusCardDTO): string {
 }
 
 function handleTrainCard(card: DiagnosticFocusCardDTO): void {
+  const isTacticalMotifGroup =
+    props.discipline === 'tactics' &&
+    (card.focus_group === 'geometry' ||
+      card.focus_group === 'operator' ||
+      card.focus_group === 'concept' ||
+      card.focus_group === 'trigger')
+
   emit('trainScope', {
-    focusGroup: card.focus_group,
+    focusGroup: isTacticalMotifGroup ? 'motif' : card.focus_group,
     focusKey: card.focus_key,
   })
 }
@@ -68,7 +75,10 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
             }}
           </span>
           <NButton size="tiny" secondary @click="handleTrainCard(diagnostics.top_strength)">
-            {{ t('pages.userCabinet.diagnostics.warmupAction') }}
+            <template #icon>
+              <NIcon><FlashOutline /></NIcon>
+            </template>
+            {{ t('pages.userCabinet.map.trainShort') }}
           </NButton>
         </div>
       </template>
@@ -114,7 +124,7 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
             <template #icon>
               <NIcon><FlashOutline /></NIcon>
             </template>
-            {{ t('pages.userCabinet.diagnostics.fixInWarmup') }}
+            {{ t('pages.userCabinet.map.trainShort') }}
           </NButton>
         </div>
       </template>
@@ -158,7 +168,7 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
             <template #icon>
               <NIcon><FlashOutline /></NIcon>
             </template>
-            {{ t('pages.userCabinet.diagnostics.calibrateInWarmup') }}
+            {{ t('pages.userCabinet.map.trainShort') }}
           </NButton>
         </div>
       </template>
