@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   formatRemainingDuration,
+  isClassicalCourseDiscipline,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -106,7 +107,7 @@ async function handleReturnToHub(): Promise<void> {
 
 async function handleLaunchNextCourseBatch(): Promise<void> {
   if (!report.value) return
-  if (report.value.discipline === 'tactics_course') {
+  if (isClassicalCourseDiscipline(report.value.discipline)) {
     await store.startTacticsCourseBatch(0, true)
     return
   }
@@ -338,7 +339,10 @@ function handleGoToCabinet(): void {
             </span>
 
             <span
-              v-if="item.endgame?.objective === 'hold_draw'"
+              v-if="
+                item.course_puzzle?.objective === 'hold_draw' ||
+                item.endgame?.objective === 'hold_draw'
+              "
               class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40"
             >
               {{ t('features.trainingCenter.badges.holdDrawFide') }}

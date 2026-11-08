@@ -941,6 +941,7 @@
       "disciplines": {
         "tactics": "Тактика",
         "tactics_course": "Классический курс тактики",
+        "endgame_course": "Классический курс эндшпиля",
         "theoretical_endgames": "Теория эндшпиля",
         "practical_chess": "Практический эндшпиль",
         "finishhim": "Добивание (Finish Him)"

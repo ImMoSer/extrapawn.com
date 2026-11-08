@@ -261,6 +261,18 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           course_batch_sizes: [150, 3822],
           default_course_batch: 150,
         },
+        endgame_course: {
+          discipline: 'endgame_course',
+          unlocked_tier: 'Novice',
+          global_rating: 1500,
+          global_rd: 350,
+          ema_accuracy: 0.5,
+          solved_total: 0,
+          failed_total: 0,
+          warmup_allowed_sizes: [25, 50, 100],
+          course_batch_sizes: [40, 2485],
+          default_course_batch: 40,
+        },
         theoretical_endgames: {
           discipline: 'theoretical_endgames',
           unlocked_tier: 'Pro',
@@ -305,6 +317,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         by_discipline: {
           tactics: { due_now: 0, on_cooldown: 0 },
           tactics_course: { due_now: 0, on_cooldown: 0 },
+          endgame_course: { due_now: 0, on_cooldown: 0 },
           theoretical_endgames: { due_now: 1, on_cooldown: 0 },
           practical_chess: { due_now: 0, on_cooldown: 0 },
           finishhim: { due_now: 0, on_cooldown: 0 },
@@ -572,6 +585,18 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
             course_batch_sizes: [150, 3822],
             default_course_batch: 150,
           },
+          endgame_course: {
+            discipline: 'endgame_course',
+            unlocked_tier: 'Novice',
+            global_rating: 1500,
+            global_rd: 350,
+            ema_accuracy: 0.5,
+            solved_total: 0,
+            failed_total: 0,
+            warmup_allowed_sizes: [25, 50, 100],
+            course_batch_sizes: [40, 2485],
+            default_course_batch: 40,
+          },
           theoretical_endgames: {
             discipline: 'theoretical_endgames',
             unlocked_tier: 'Pro',
@@ -616,6 +641,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           by_discipline: {
             tactics: { due_now: 0, on_cooldown: 0 },
             tactics_course: { due_now: 0, on_cooldown: 0 },
+            endgame_course: { due_now: 0, on_cooldown: 0 },
             theoretical_endgames: { due_now: 1, on_cooldown: 0 },
             practical_chess: { due_now: 0, on_cooldown: 0 },
             finishhim: { due_now: 0, on_cooldown: 0 },

@@ -7,6 +7,7 @@ import type { EngineId } from '@/shared/types/api.types'
 export const TRAINING_DISCIPLINES = [
   'tactics',
   'tactics_course',
+  'endgame_course',
   'theoretical_endgames',
   'practical_chess',
   'finishhim',
@@ -16,6 +17,12 @@ export type TrainingDiscipline = (typeof TRAINING_DISCIPLINES)[number]
 
 export function isValidTrainingDiscipline(value: string): value is TrainingDiscipline {
   return (TRAINING_DISCIPLINES as readonly string[]).includes(value)
+}
+
+export function isClassicalCourseDiscipline(
+  discipline?: TrainingDiscipline | string | null,
+): discipline is 'tactics_course' | 'endgame_course' {
+  return discipline === 'tactics_course' || discipline === 'endgame_course'
 }
 
 /**
@@ -32,7 +39,10 @@ export const CORE_TRAINING_DISCIPLINES = [
 
 export type CoreTrainingDiscipline = (typeof CORE_TRAINING_DISCIPLINES)[number]
 
-export const DEV_ONLY_TRAINING_DISCIPLINES: readonly TrainingDiscipline[] = ['tactics_course']
+export const DEV_ONLY_TRAINING_DISCIPLINES: readonly TrainingDiscipline[] = [
+  'tactics_course',
+  'endgame_course',
+]
 
 export function isDisciplineVisibleForUser(
   discipline: TrainingDiscipline,
@@ -76,7 +86,7 @@ export function resolveBotEngineForDifficulty(
       `[TrainingTaxonomy] Unknown difficulty "${String(difficulty)}" for Bot Ladder resolution. Fail-Fast!`,
     )
   }
-  if (discipline === 'theoretical_endgames') {
+  if (discipline === 'theoretical_endgames' || discipline === 'endgame_course') {
     return 'mozero'
   }
   return engine
@@ -247,6 +257,7 @@ export interface CatalogManifestDTO {
   files_signature: string
   tactics_count: number
   tactics_course_count?: number
+  endgame_course_count?: number
   practical_count: number
   finishhim_count: number
   theoretical_count: number
@@ -260,12 +271,40 @@ export const TACTICS_COURSE_SLUGS = [
   'tactics_classical_3',
 ] as const
 
-export type TacticsCourseSlug = (typeof TACTICS_COURSE_SLUGS)[number]
+export const ENDGAME_COURSE_SLUGS = [
+  'endgame_course_1_pawn',
+  'endgame_course_2_minor',
+  'endgame_course_3_rook',
+  'endgame_course_4_heavy',
+] as const
+
+export const CLASSICAL_COURSE_SLUGS = [
+  ...TACTICS_COURSE_SLUGS,
+  ...ENDGAME_COURSE_SLUGS,
+] as const
+
+export type TacticsCourseSlug = (typeof CLASSICAL_COURSE_SLUGS)[number]
+export type ClassicalCourseSlug = (typeof CLASSICAL_COURSE_SLUGS)[number]
+
+export function isEndgameCourseSlug(
+  slug?: string | null,
+): slug is (typeof ENDGAME_COURSE_SLUGS)[number] {
+  return Boolean(slug && (ENDGAME_COURSE_SLUGS as readonly string[]).includes(slug))
+}
+
+export function resolveDisciplineForCourseSlug(
+  slug?: string | null,
+): 'tactics_course' | 'endgame_course' {
+  if (isEndgameCourseSlug(slug)) {
+    return 'endgame_course'
+  }
+  return 'tactics_course'
+}
 
 export interface CoursePuzzleV2 {
   puzzle_id: string
   base_id: string
-  discipline: 'tactics_course'
+  discipline: 'tactics_course' | 'endgame_course'
   course_slug?: TacticsCourseSlug | string
   course_id?: number
   batch_id: number
@@ -802,6 +841,8 @@ export interface TacticsCourseCurriculumDTO {
 }
 
 export interface CrashTestSessionRequest {
+  discipline?: TrainingDiscipline
+  course_slug?: string
   force_restart?: boolean
   jump_to_index?: number
 }

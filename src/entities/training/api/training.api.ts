@@ -255,6 +255,12 @@ export const trainingApi = {
     const body: Record<string, unknown> = {
       force_restart: payload.force_restart ?? false,
     }
+    if (payload.discipline) {
+      body.discipline = payload.discipline
+    }
+    if (payload.course_slug) {
+      body.course_slug = payload.course_slug
+    }
     if (typeof payload.jump_to_index === 'number') {
       body.jump_to_index = payload.jump_to_index
     }

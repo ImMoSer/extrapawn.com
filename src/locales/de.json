@@ -941,6 +941,7 @@
       "disciplines": {
         "tactics": "Taktik",
         "tactics_course": "Klassischer Taktikkurs",
+        "endgame_course": "Klassischer Endspielkurs",
         "theoretical_endgames": "Theoretische Endspiele",
         "practical_chess": "Praktische Endspiele",
         "finishhim": "Finish Him"

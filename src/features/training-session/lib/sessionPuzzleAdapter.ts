@@ -1,5 +1,6 @@
 import { determineHumanColor, type PuzzleObjective, type PuzzlePuzzle } from '@/entities/game'
 import {
+  isClassicalCourseDiscipline,
   isValidTrainingDifficulty,
   isValidTrainingDiscipline,
   type ChallengeStateDTO,
@@ -109,9 +110,9 @@ export function adaptCoursePuzzleV2(
   cp: CoursePuzzleV2,
   wpMeta: WoodpeckerAdapterMeta = { isWoodpecker: false, woodpeckerStreak: 0 },
 ): PuzzlePuzzle {
-  if (!cp.puzzle_id || cp.discipline !== 'tactics_course') {
+  if (!cp.puzzle_id || !isClassicalCourseDiscipline(cp.discipline)) {
     throw new Error(
-      `[sessionPuzzleAdapter] Expected discipline="tactics_course" for course puzzle "${cp.puzzle_id}". Fail-Fast!`,
+      `[sessionPuzzleAdapter] Expected classical course discipline ("tactics_course" | "endgame_course") for course puzzle "${cp.puzzle_id}", got "${String(cp.discipline)}". Fail-Fast!`,
     )
   }
   if (
@@ -124,7 +125,7 @@ export function adaptCoursePuzzleV2(
       `[sessionPuzzleAdapter] Invalid strategy "${String(cp.strategy)}" on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
     )
   }
-  if (!cp.tactical_fen?.trim() || !cp.tactical_solution?.trim()) {
+  if (!cp.tactical_fen?.trim() || (cp.strategy !== 'playOutOnly' && !cp.tactical_solution?.trim())) {
     throw new Error(
       `[sessionPuzzleAdapter] Missing tactical_fen or tactical_solution on course puzzle ${cp.puzzle_id}. Fail-Fast!`,
     )
@@ -144,7 +145,7 @@ export function adaptCoursePuzzleV2(
 
   const mapped: PuzzlePuzzle = {
     puzzle_id: cp.puzzle_id,
-    puzzle_type: 'tactics_course',
+    puzzle_type: cp.discipline,
     course_slug: cp.course_slug,
     course_id: cp.course_id,
     global_batch_id: cp.global_batch_id,
@@ -308,7 +309,7 @@ export function adaptSessionItemToPuzzle(
     return adaptTacticalPuzzleV2(item.tactical, wpMeta)
   }
 
-  if (discipline === 'tactics_course') {
+  if (isClassicalCourseDiscipline(discipline)) {
     if (!item.course_puzzle) {
       throw new Error(
         `[sessionPuzzleAdapter] Missing hydrated course_puzzle payload for puzzle ${item.puzzle_id}. Fail-Fast!`,

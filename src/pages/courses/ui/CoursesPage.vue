@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { TacticsCourseSlug } from '@/entities/training'
+import {
+  isEndgameCourseSlug,
+  type TacticsCourseSlug,
+} from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import {
   TacticsCourseCurriculumView,
@@ -20,20 +23,19 @@ import {
   TimeOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 type CourseCategoryKey = 'tactics' | 'endgames'
 
 interface ClassicalCourseCatalogItem {
-  id: string
+  id: TacticsCourseSlug
   category: CourseCategoryKey
   number: number
   title: string
   subtitle: string
   scheduleLabel: string
-  volumeLabel: string
   status: 'ready' | 'coming_soon'
 }
 
@@ -46,7 +48,6 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Фундаментальная геометрия доски, матовые сети, двойные удары, связки, вскрытые шахи и материальные завоевания.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: '1211 задач',
     status: 'ready',
   },
   {
@@ -57,7 +58,6 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Жертвы ферзя и ладьи, завлечение, отвлечение, перекрытие, разрушение прикрытия короля и многоходовые комбинации.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: '1275 задач',
     status: 'ready',
   },
   {
@@ -68,52 +68,47 @@ const CLASSICAL_COURSES_CATALOG: readonly ClassicalCourseCatalogItem[] = [
     subtitle:
       'Освобождение линий, критические поля, цугцванг, контрудары в худших позициях и этюдное спасение вечным шахом/патом.',
     scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
-    volumeLabel: '1285 задач',
     status: 'ready',
   },
   {
-    id: 'endgame_classical_1',
+    id: 'endgame_course_1_pawn',
     category: 'endgames',
     number: 1,
-    title: 'Классический курс эндшпиля I · Пешечные и ладейные основы',
+    title: 'Курс эндшпиля I · Базовые маты и Пешечная геометрия',
     subtitle:
-      'Ключевые поля, оппозиция, квадрат пешки, мосты Люсены и защита Филидора с закреплением в выделенные Дни Дятла.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Матование одинокого короля, квадрат пешки, ключевые поля, оппозиция, пешечный прорыв и базовые теоретические эндшпили.',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    status: 'ready',
   },
   {
-    id: 'endgame_classical_2',
+    id: 'endgame_course_2_minor',
     category: 'endgames',
     number: 2,
-    title: 'Классический курс эндшпиля II · Легкофигурные окончания',
+    title: 'Курс эндшпиля II · Легкофигурные окончания и Крепости',
     subtitle:
-      'Конь против пешек, одноцветные и разноцветные слоны, борьба слона против коня и построение непробиваемых крепостей.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Конь против пешек, одноцветные и разноцветные слоны, борьба слона против коня и двух слонов, искусство защиты и пата.',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    status: 'ready',
   },
   {
-    id: 'endgame_classical_3',
+    id: 'endgame_course_3_rook',
     category: 'endgames',
     number: 3,
-    title: 'Классический курс эндшпиля III · Тяжелофигурные окончания',
+    title: 'Курс эндшпиля III · Ладейная школа (От Люсены до Многопешечных)',
     subtitle:
-      'Двухладейные и ферзевые эндшпили, борьба ферзя против ладьи и взаимодействие тяжёлых фигур с проходными пешками.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Мост Люсены, позиция Филидора, отрезание короля, ладейные окончания с пешками на одном и двух флангах, двухладейные битвы.',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    status: 'ready',
   },
   {
-    id: 'endgame_classical_4',
+    id: 'endgame_course_4_heavy',
     category: 'endgames',
     number: 4,
-    title: 'Классический курс эндшпиля IV · Практическая реализация',
+    title: 'Курс эндшпиля IV · Тяжёлые фигуры и Многофигурный синтез',
     subtitle:
-      'Переход из миттельшпиля в выигранный эндшпиль, принцип двух слабостей, подавление контригры и техника дожима.',
-    scheduleLabel: '2 батча → 1 День Дятла',
-    volumeLabel: 'В разработке',
-    status: 'coming_soon',
+      'Ферзевые окончания, ферзь против ладьи и пешек, ладья против лёгкой фигуры и комбинированные многофигурные эндшпили.',
+    scheduleLabel: '4 недели · 16 батчей · 8 Дней Дятла',
+    status: 'ready',
   },
 ]
 
@@ -122,8 +117,20 @@ const router = useRouter()
 const authStore = useAuthStore()
 const store = useTrainingSessionStore()
 
-const activeCategory = ref<CourseCategoryKey>('tactics')
-const selectedCourseId = ref<string>('tactics_classical_1')
+const activeCategory = ref<CourseCategoryKey>(
+  isEndgameCourseSlug(store.activeCourseSlug) ? 'endgames' : 'tactics',
+)
+const selectedCourseId = ref<TacticsCourseSlug>(store.activeCourseSlug)
+
+watch(
+  () => store.activeCourseSlug,
+  (slug) => {
+    if (slug && selectedCourseId.value !== slug) {
+      selectedCourseId.value = slug
+      activeCategory.value = isEndgameCourseSlug(slug) ? 'endgames' : 'tactics'
+    }
+  },
+)
 
 const categoryCourses = computed<ClassicalCourseCatalogItem[]>(() =>
   CLASSICAL_COURSES_CATALOG.filter((c) => c.category === activeCategory.value),
@@ -133,18 +140,33 @@ const selectedCourse = computed<ClassicalCourseCatalogItem | null>(
   () => CLASSICAL_COURSES_CATALOG.find((c) => c.id === selectedCourseId.value) ?? null,
 )
 
+function resolveCourseVolumeLabel(course: ClassicalCourseCatalogItem): string {
+  if (course.status !== 'ready') return 'В разработке'
+  if (
+    store.tacticsCourseCurriculum &&
+    store.tacticsCourseCurriculum.course_slug === course.id &&
+    store.tacticsCourseCurriculum.total_puzzles > 0
+  ) {
+    return `${store.tacticsCourseCurriculum.total_puzzles} позиций`
+  }
+  return '16 батчей'
+}
+
 function handleSelectCategory(cat: CourseCategoryKey): void {
   activeCategory.value = cat
   const firstInCat = CLASSICAL_COURSES_CATALOG.find((c) => c.category === cat)
   if (firstInCat) {
     selectedCourseId.value = firstInCat.id
+    if (firstInCat.status === 'ready') {
+      store.selectTacticsCourse(firstInCat.id)
+    }
   }
 }
 
 function handleSelectCourse(course: ClassicalCourseCatalogItem): void {
   selectedCourseId.value = course.id
-  if (course.category === 'tactics' && course.status === 'ready') {
-    store.selectTacticsCourse(course.id as TacticsCourseSlug)
+  if (course.status === 'ready') {
+    store.selectTacticsCourse(course.id)
   }
 }
 
@@ -356,7 +378,7 @@ onUnmounted(() => {
 
           <div class="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] font-condensed text-text-secondary">
             <span>{{ course.scheduleLabel }}</span>
-            <span class="font-bold text-text-primary">{{ course.volumeLabel }}</span>
+            <span class="font-bold text-text-primary">{{ resolveCourseVolumeLabel(course) }}</span>
           </div>
         </button>
       </div>
@@ -364,8 +386,8 @@ onUnmounted(() => {
 
     <!-- Active Course Curriculum Cabinet OR Coming Soon Placeholder -->
     <div class="rounded-lg bg-surface border border-border p-6">
-      <template v-if="selectedCourse?.category === 'tactics' && selectedCourse?.status === 'ready'">
-        <TacticsCourseCurriculumView :course-slug="selectedCourse.id as TacticsCourseSlug" />
+      <template v-if="selectedCourse?.status === 'ready'">
+        <TacticsCourseCurriculumView :course-slug="selectedCourse.id" />
       </template>
 
       <div v-else-if="selectedCourse" class="py-10 flex flex-col items-center justify-center text-center gap-3">

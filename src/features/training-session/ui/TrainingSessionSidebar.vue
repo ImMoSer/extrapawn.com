@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  isClassicalCourseDiscipline,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -151,7 +152,7 @@ function handleItemClick(item: HydratedSessionItem): void {
         <span
           class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated border border-border text-text-primary"
         >
-          <template v-if="summary.discipline === 'tactics_course'">
+          <template v-if="isClassicalCourseDiscipline(summary.discipline)">
             {{
               summary.mode === 'crashtest'
                 ? 'КРЭШ-ТЕСТ'
@@ -170,7 +171,7 @@ function handleItemClick(item: HydratedSessionItem): void {
       </div>
 
       <div class="flex items-center justify-between text-xs text-text-secondary">
-        <span v-if="summary.discipline === 'tactics_course'">Режим: BlunderSpy</span>
+        <span v-if="summary.discipline === 'tactics_course'">Классический курс</span>
         <span v-else>{{ t('features.trainingCenter.sidebar.sparringBot') }}: {{ botName }}</span>
         <span class="font-condensed font-bold text-text-primary">
           {{ completedCount }} / {{ store.sessionItems.length }} ({{ progressPercent }}%)

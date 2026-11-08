@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  isEndgameCourseSlug,
   resolveScopeLabel,
   type CourseBatchStatusDTO,
   type TacticsCourseSlug,
@@ -44,21 +45,29 @@ const authStore = useAuthStore()
 const store = useTrainingSessionStore()
 const { report: crashTestReport, anomaliesCount } = useCrashTestReport()
 
+const isEndgameCourse = computed(() => isEndgameCourseSlug(props.courseSlug))
+
 const COURSE_TITLES: Readonly<Record<TacticsCourseSlug, string>> = {
   tactics_classical_1: 'КУРС ТАКТИКИ I · ГЕОМЕТРИЯ И МАТОВЫЕ КОНСТРУКЦИИ',
   tactics_classical_2: 'КУРС ТАКТИКИ II · ЖЕРТВЫ И КОМБИНАЦИОННЫЙ ВЗРЫВ',
   tactics_classical_3: 'КУРС ТАКТИКИ III · СТРАТЕГИЧЕСКАЯ ТАКТИКА И СПАСЕНИЕ',
+  endgame_course_1_pawn: 'КУРС ЭНДШПИЛЯ I · БАЗОВЫЕ МАТЫ И ПЕШЕЧНАЯ ГЕОМЕТРИЯ',
+  endgame_course_2_minor: 'КУРС ЭНДШПИЛЯ II · ЛЕГКОФИГУРНЫЕ ОКОНЧАНИЯ И КРЕПОСТИ',
+  endgame_course_3_rook: 'КУРС ЭНДШПИЛЯ III · ЛАДЕЙНАЯ ШКОЛА (ОТ ЛЮСЕНЫ ДО МНОГОПЕШЕЧНЫХ)',
+  endgame_course_4_heavy: 'КУРС ЭНДШПИЛЯ IV · ТЯЖЁЛЫЕ ФИГУРЫ И МНОГОФИГУРНЫЙ СИНТЕЗ',
 }
 
 const activeCourseTitle = computed(
-  () => COURSE_TITLES[props.courseSlug] ?? 'КЛАССИЧЕСКИЙ КУРС ТАКТИКИ',
+  () => COURSE_TITLES[props.courseSlug] ?? 'КЛАССИЧЕСКИЙ КУРС',
 )
 
 const jumpIndexInput = ref<number | null>(1)
 const showFlagsPanel = ref<boolean>(false)
 
 const curriculum = computed(() => store.tacticsCourseCurriculum)
-const crashTestTotal = computed(() => curriculum.value?.crash_test_total || 3771)
+const crashTestTotal = computed(
+  () => curriculum.value?.crash_test_total || (isEndgameCourse.value ? 2485 : 2353),
+)
 
 const totalProgressPercent = computed(() => {
   const c = curriculum.value
@@ -110,6 +119,30 @@ const WEEK_TITLES_BY_COURSE: Readonly<Record<TacticsCourseSlug, Readonly<Record<
     3: 'Неделя 3 · Цугцванг, Активная блокада, Крепости и Спасение патом',
     4: 'Неделя 4 · Искусство выживания: «Бешеная фигура», Вечный шах и Выпускной экзамен трилогии',
   },
+  endgame_course_1_pawn: {
+    1: 'Неделя 1 · Матование одинокого короля, Король и пешка, Защита королём',
+    2: 'Неделя 2 · Оппозиция, Квадрат пешки и Отдалённая проходная',
+    3: 'Неделя 3 · Взаимный цугцванг, Защищённая проходная и Пешечный прорыв',
+    4: 'Неделя 4 · Многопешечные окончания, Игра на двух флангах и Выпускной экзамен Курса I',
+  },
+  endgame_course_2_minor: {
+    1: 'Неделя 1 · Коневые окончания: Барьеры против пешек, Спринт и Поля соответствия',
+    2: 'Неделя 2 · Одноцветные слоны: Блокада, Прорыв, Клин и Игра на двух флангах',
+    3: 'Неделя 3 · Разноцветные слоны: Непробиваемые крепости, Слон против пешек и Штурм',
+    4: 'Неделя 4 · Слон против коня, Преимущество двух слонов и Выпускной экзамен Курса II',
+  },
+  endgame_course_3_rook: {
+    1: 'Неделя 1 · Ладейная база: Мост Люсены, Отрезание короля и Защита Филидора',
+    2: 'Неделя 2 · Ладья и пешка против ладьи: Тыл, Короткая/длинная сторона и Ладейные пешки',
+    3: 'Неделя 3 · Ладья с двумя и более пешками: Реализация, Блокада, Связки и Открытые линии',
+    4: 'Неделя 4 · Сложные многопешечные ладейные и Двухладейные бои, Выпускной экзамен Курса III',
+  },
+  endgame_course_4_heavy: {
+    1: 'Неделя 1 · Ферзевые окончания: Ферзь против пешки на 7-й и Многопешечные ферзевые',
+    2: 'Неделя 2 · Ферзь против ладьи (Филидор и крепости) и Ладья против лёгкой фигуры',
+    3: 'Неделя 3 · Ладья и фигура против ладьи, Синтез ладьи с лёгкими фигурами',
+    4: 'Неделя 4 · Ферзь с фигурой и Элитные многофигурные окончания, Выпускной экзамен Курса IV',
+  },
 }
 
 const weeksList = computed<WeekGroup[]>(() => {
@@ -143,7 +176,7 @@ const weeksList = computed<WeekGroup[]>(() => {
 watch(
   () => props.courseSlug,
   async (newSlug) => {
-    if (newSlug && store.tacticsCourseCurriculum?.course_slug !== newSlug) {
+    if (newSlug) {
       try {
         await store.fetchTacticsCourseCurriculum(newSlug)
       } catch {
@@ -154,15 +187,10 @@ watch(
 )
 
 onMounted(async () => {
-  if (
-    !store.tacticsCourseCurriculum ||
-    store.tacticsCourseCurriculum.course_slug !== props.courseSlug
-  ) {
-    try {
-      await store.fetchTacticsCourseCurriculum(props.courseSlug)
-    } catch {
-      // Handled by store
-    }
+  try {
+    await store.fetchTacticsCourseCurriculum(props.courseSlug)
+  } catch {
+    // Handled by store
   }
   if (store.tacticsCourseCurriculum && store.tacticsCourseCurriculum.crash_test_index > 0) {
     jumpIndexInput.value = store.tacticsCourseCurriculum.crash_test_index + 1
@@ -191,7 +219,7 @@ async function handleLaunchWoodpecker(wp: WoodpeckerCheckpointDTO): Promise<void
 
 async function handleStartOrResumeCrashTest(): Promise<void> {
   if (!authStore.isMo3ep) return
-  await store.startCrashTestSession(false)
+  await store.startCrashTestSession(false, undefined, props.courseSlug)
 }
 
 async function handleJumpCrashTest(): Promise<void> {
@@ -199,12 +227,12 @@ async function handleJumpCrashTest(): Promise<void> {
   const maxIdx = Math.max(0, crashTestTotal.value - 1)
   const targetOneBased = jumpIndexInput.value ?? 1
   const zeroBased = Math.max(0, Math.min(maxIdx, Math.floor(targetOneBased) - 1))
-  await store.startCrashTestSession(false, zeroBased)
+  await store.startCrashTestSession(false, zeroBased, props.courseSlug)
 }
 
 async function handleRestartCrashTest(): Promise<void> {
   if (!authStore.isMo3ep) return
-  await store.startCrashTestSession(true, 0)
+  await store.startCrashTestSession(true, 0, props.courseSlug)
 }
 
 function handleDownloadCrashTestReport(): void {
@@ -233,8 +261,11 @@ async function handleResetCourseProgress(): Promise<void> {
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
               {{ weeksList.length || 4 }} недели · {{ curriculum?.batches?.length ?? 16 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 8 }} Дней Дятла
             </span>
-            <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ curriculum?.total_puzzles ?? 1211 }} задач · BlunderSpy Engine
+            <span
+              v-if="curriculum && curriculum.total_puzzles > 0"
+              class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary"
+            >
+              {{ curriculum.total_puzzles }} позиций<template v-if="isEndgameCourse"> · Спарринг с MOZERO</template>
             </span>
           </div>
 
@@ -344,7 +375,11 @@ async function handleResetCourseProgress(): Promise<void> {
         <div class="flex flex-col gap-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40">
-              КРЭШ-ТЕСТ ТРИЛОГИИ · {{ crashTestTotal }} ЗАДАЧ В 1 ДАМП
+              {{
+                isEndgameCourse
+                  ? `КРЭШ-ТЕСТ 4 КУРСОВ ЭНДШПИЛЯ · ${crashTestTotal} ПОЗИЦИЙ В 1 ДАМП`
+                  : `КРЭШ-ТЕСТ 3 КУРСОВ ТАКТИКИ · ${crashTestTotal} ЗАДАЧ В 1 ДАМП`
+              }}
             </span>
             <span
               v-if="curriculum"
@@ -360,7 +395,12 @@ async function handleResetCourseProgress(): Promise<void> {
             </span>
           </div>
           <p class="text-xs text-text-secondary">
-            Сквозной прогон всех {{ crashTestTotal }} задач 3 курсов в одном дампе (BlunderSpy 100/110 → 111 + userLastMove). Все ошибки и cache-промахи сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
+            <template v-if="isEndgameCourse">
+              Сквозной прогон всех {{ crashTestTotal }} позиций 4 курсов эндшпиля в одном дампе (разыгрывание против MOZERO по правилам FIDE). Все ошибки сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
+            </template>
+            <template v-else>
+              Сквозной прогон всех {{ crashTestTotal }} задач 3 курсов тактики в одном дампе. Все ошибки и cache-промахи сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
+            </template>
           </p>
         </div>
 

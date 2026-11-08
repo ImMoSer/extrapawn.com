@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { resolveDisciplineLabel, resolveScopeLabel } from '@/entities/training'
+import {
+  isClassicalCourseDiscipline,
+  resolveDisciplineLabel,
+  resolveScopeLabel,
+} from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
@@ -29,7 +33,12 @@ const formattedTimer = computed(() => store.formatDurationMs(store.currentTimeMs
 
 const isTacticsCourse = computed(() => {
   const disc = store.activeSessionSummary?.discipline ?? store.activeDiscipline
-  return disc === 'tactics_course' || activePuzzle.value?.puzzle_type === 'tactics_course'
+  const pt = activePuzzle.value?.puzzle_type
+  return (
+    isClassicalCourseDiscipline(disc) ||
+    pt === 'tactics_course' ||
+    pt === 'endgame_course'
+  )
 })
 
 const isExamPuzzle = computed(() => {

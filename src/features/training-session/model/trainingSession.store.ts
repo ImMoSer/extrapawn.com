@@ -9,8 +9,10 @@ import {
   type PuzzlePuzzle,
 } from '@/entities/game'
 import {
+  isClassicalCourseDiscipline,
   isDisciplineVisibleForUser,
   resolveBotEngineForDifficulty,
+  resolveDisciplineForCourseSlug,
   trainingApi,
   validateBotLadderEngine,
   type AttemptFailStage,
@@ -466,9 +468,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
     const humanColor = determineHumanColor(puzzle)
     const effectiveBotEngine: BotLadderEngineId =
-      puzzle.puzzle_type === 'tactics_course' &&
-      puzzle.strategy === 'playOutOnly' &&
-      puzzle.objective === 'hold_draw'
+      puzzle.puzzle_type === 'endgame_course' ||
+      (puzzle.puzzle_type === 'tactics_course' &&
+        puzzle.strategy === 'playOutOnly' &&
+        puzzle.objective === 'hold_draw')
         ? 'mozero'
         : botEngine
     if (effectiveBotEngine !== botEngine) {
@@ -767,7 +770,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       if (!isDisciplineVisibleForUser(activeDiscipline.value, authStore.isMo3ep)) {
         activeDiscipline.value = 'tactics'
       }
-      if (activeDiscipline.value === 'tactics_course') {
+      if (isClassicalCourseDiscipline(activeDiscipline.value)) {
         void fetchTacticsCourseCurriculum()
       }
       return data
@@ -815,8 +818,8 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       const data = await trainingApi.resetTacticsCourse(slug)
       tacticsCourseCurriculum.value = data
       if (
-        hydratedSession.value?.session.discipline === 'tactics_course' &&
-        hydratedSession.value.session.mode === 'course'
+        isClassicalCourseDiscipline(hydratedSession.value?.session.discipline) &&
+        hydratedSession.value?.session.mode === 'course'
       ) {
         clearAutoNextTimeout()
         stopTimer()
@@ -854,7 +857,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       ? discipline
       : 'tactics'
     activeDiscipline.value = safeDiscipline
-    if (safeDiscipline === 'tactics_course') {
+    if (isClassicalCourseDiscipline(safeDiscipline)) {
       void fetchTacticsCourseCurriculum()
     }
   }
@@ -931,12 +934,13 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     courseSlug?: TacticsCourseSlug,
   ): Promise<HydratedSessionDTO> {
     const slug = courseSlug ?? activeCourseSlug.value
+    const discipline = resolveDisciplineForCourseSlug(slug)
     activeCourseSlug.value = slug
     isStartingSession.value = true
     error.value = null
     try {
       const dto = await trainingApi.composeCourseSession({
-        discipline: 'tactics_course',
+        discipline,
         course_slug: slug,
         batch_size: batchId,
         force_new: forceNew,
@@ -958,19 +962,25 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   async function startCrashTestSession(
     forceRestart: boolean = false,
     jumpToIndex?: number,
+    courseSlug?: TacticsCourseSlug,
   ): Promise<HydratedSessionDTO> {
     if (!authStore.isMo3ep) {
       throw new Error(
         '[TrainingSessionStore] Crash-Test mode is restricted to developer (mo3ep). Fail-Fast!',
       )
     }
+    const slug = courseSlug ?? activeCourseSlug.value
+    const discipline = resolveDisciplineForCourseSlug(slug)
     isStartingSession.value = true
     error.value = null
     try {
+      const defaultTotal = discipline === 'endgame_course' ? 2485 : 2353
       if (forceRestart && jumpToIndex === undefined) {
-        resetCrashTestReport(tacticsCourseCurriculum.value?.crash_test_total ?? 6147)
+        resetCrashTestReport(tacticsCourseCurriculum.value?.crash_test_total ?? defaultTotal)
       }
       const dto = await trainingApi.composeCrashTestSession({
+        discipline,
+        course_slug: slug,
         force_restart: forceRestart,
         jump_to_index: jumpToIndex,
       })
@@ -1098,6 +1108,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       gameStore.stop()
       viewState.value = 'report'
       void fetchOverview()
+      if (isClassicalCourseDiscipline(sess.session.discipline)) {
+        void fetchTacticsCourseCurriculum(activeCourseSlug.value)
+      }
       return
     }
 
@@ -1181,6 +1194,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   }
 
   function pauseToHub(): void {
+    const wasClassicalCourse = isClassicalCourseDiscipline(hydratedSession.value?.session.discipline)
     clearAutoNextTimeout()
     activePlayToken++
     stopTimer()
@@ -1188,12 +1202,16 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     gameStore.stop()
     viewState.value = 'hub'
     void fetchOverview()
+    if (wasClassicalCourse) {
+      void fetchTacticsCourseCurriculum(activeCourseSlug.value)
+    }
   }
 
   async function dismissActiveSession(sessionId?: string): Promise<void> {
     const targetId = sessionId ?? hydratedSession.value?.session.id
     if (!targetId) return
 
+    const wasClassicalCourse = isClassicalCourseDiscipline(hydratedSession.value?.session.discipline)
     clearAutoNextTimeout()
     activePlayToken++
     stopTimer()
@@ -1208,6 +1226,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
         viewState.value = 'hub'
       }
       await fetchOverview()
+      if (wasClassicalCourse) {
+        await fetchTacticsCourseCurriculum(activeCourseSlug.value)
+      }
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to dismiss session')
       error.value = msg
