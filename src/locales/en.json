@@ -949,7 +949,7 @@
       }
     },
     "trainingCenter": {
-      "title": "Training Center",
+      "title": "Training",
       "subtitle": "Unified Glicko-2 Courses, Woodpecker Method (24h / 3×) & Targeted WarmUp",
       "disciplines": {
         "tactics": "Tactics",
@@ -1349,7 +1349,7 @@
       "login": "Login",
       "logout": "Logout",
       "loginWithLichess": "Login with Lichess",
-      "trainingCenter": "Training Center",
+      "trainingCenter": "Training",
       "warmup": "WarmUp",
       "courses": "Courses"
     },

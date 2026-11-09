@@ -478,7 +478,7 @@
         "warmupDesc": "Разминка простыми задачами"
       },
       "macro": {
-        "goToTrainingCenter": "В Тренировочный Центр",
+        "goToTrainingCenter": "В Качалку",
         "woodpeckerRuleHint": "Пауза 24ч · 3 безошибочных цикла подряд до полного усвоения",
         "timelineTitle": "Динамика мастерства за 12 месяцев (Glicko-2 и точность EMA)",
         "rolling52Weeks": "Скользящее окно 52 недель по выбранной дисциплине",
@@ -949,7 +949,7 @@
       }
     },
     "trainingCenter": {
-      "title": "Тренировочный Центр",
+      "title": "Качалка",
       "subtitle": "Единая система курсов Glicko-2, Метод Дятла (24ч / 3×) и целевая разминка",
       "disciplines": {
         "tactics": "Тактика",
@@ -961,7 +961,7 @@
       },
       "modes": {
         "courseTab": "Курсы (7 / 30 дней)",
-        "warmupTab": "Быстрая разминка (WarmUp)",
+        "warmupTab": "Быстрая Разминка",
         "courseBadge": "КУРС",
         "warmupBadge": "РАЗМИНКА"
       },
@@ -1244,7 +1244,7 @@
         }
       },
       "warmupPage": {
-        "title": "Целевая Разминка (WarmUp)",
+        "title": "Целевая Разминка",
         "subtitle": "Свободный выбор любой сложности, мотивов, доменов и классов с полным учетом Glicko-2 и Метода Дятла"
       },
       "challenge": {
@@ -1349,8 +1349,8 @@
       "login": "Вход",
       "logout": "Выход",
       "loginWithLichess": "Войти через Lichess",
-      "trainingCenter": "Тренировочный Центр",
-      "warmup": "Разминка (WarmUp)",
+      "trainingCenter": "Качалка",
+      "warmup": "Разминка",
       "courses": "Курсы"
     },
     "errors": {
