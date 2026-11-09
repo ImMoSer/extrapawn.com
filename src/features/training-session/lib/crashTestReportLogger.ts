@@ -63,7 +63,7 @@ export interface CrashTestReportData {
 const STORAGE_KEY = 'extrapawn_crashtest_report_v1'
 const MAX_ANOMALIES = 3000
 
-function createDefaultReport(totalInDump: number = 6147): CrashTestReportData {
+function createDefaultReport(totalInDump: number = 2252): CrashTestReportData {
   const now = new Date().toISOString()
   return {
     report_version: '1.0',
@@ -95,7 +95,7 @@ function loadFromStorage(): CrashTestReportData {
       return createDefaultReport()
     }
     return {
-      ...createDefaultReport(parsed.total_puzzles_in_dump ?? 6147),
+      ...createDefaultReport(parsed.total_puzzles_in_dump ?? 2252),
       ...parsed,
       anomalies: parsed.anomalies,
     }
@@ -148,7 +148,7 @@ if (typeof window !== 'undefined') {
   })
 }
 
-export function resetCrashTestReport(totalInDump: number = 6147): void {
+export function resetCrashTestReport(totalInDump: number = 2252): void {
   reportState.value = createDefaultReport(totalInDump)
   persistToStorageImmediate()
 }
