@@ -64,9 +64,8 @@ const CLASSICAL_COURSE_SCOPE_FALLBACKS: Readonly<Record<string, string>> = {
   asymmetricMaterialBalance: 'Борьба разнородных фигур (Ферзь против фигур, Ладья против двух лёгких)',
   endgameStrategyAndSavingArt: 'Универсальные стратегические и тактические идеи эндшпиля',
 
-  // Canonical SubClasses of endgame_course (72 subclasses)
+  // Canonical SubClasses of endgame_course (71 subclasses)
   queenAndRookMates: 'Мат ферзём и ладьёй (оттеснение короля)',
-  twoKnightsVsPawnMate: 'Матование двумя конями и одним конём (при наличии пешек)',
   bishopAndKnightMate: 'Мат слоном и конём',
   twoBishopsMate: 'Мат двумя слонами',
   keySquaresBasic: 'Ключевые поля и проход с помощью короля',
