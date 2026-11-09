@@ -132,13 +132,13 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 </script>
 
 <template>
-  <section class="rounded-xl border border-border bg-surface p-5 shadow-md">
-    <!-- Top Header & Sort Controls -->
-    <div class="flex flex-col justify-between gap-4 border-b border-border pb-4 md:flex-row md:items-center">
+  <section class="flex flex-col gap-4">
+    <!-- Top Header & Sort Controls (No outer mega-card) -->
+    <div class="flex flex-col justify-between gap-3 px-0.5 md:flex-row md:items-center">
       <div>
         <div class="flex items-center gap-2">
-          <NIcon :component="LayersOutline" class="text-lg text-text-secondary" />
-          <h2 class="font-display text-lg font-bold tracking-wider text-text-primary uppercase">
+          <NIcon :component="LayersOutline" class="text-lg text-text-secondary shrink-0" />
+          <h2 class="font-display text-base sm:text-lg font-bold tracking-wider text-text-primary uppercase">
             {{ t('pages.userCabinet.map.tacticsTitle') }}
           </h2>
         </div>
@@ -148,13 +148,13 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Sort Selector -->
-      <div class="inline-flex rounded-lg border border-border bg-elevated p-1">
+      <div class="inline-flex self-start md:self-auto rounded-lg border border-border bg-surface p-1">
         <button
           type="button"
-          class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
+          class="cursor-pointer rounded-md px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'weakest'
-              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              ? 'bg-elevated text-text-primary border border-border-hover shadow-xs'
               : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'weakest'"
@@ -163,10 +163,10 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
         </button>
         <button
           type="button"
-          class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
+          class="cursor-pointer rounded-md px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'blind_spots'
-              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              ? 'bg-elevated text-text-primary border border-border-hover shadow-xs'
               : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'blind_spots'"
@@ -175,10 +175,10 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
         </button>
         <button
           type="button"
-          class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition-all"
+          class="cursor-pointer rounded-md px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all"
           :class="
             sortMode === 'strongest'
-              ? 'bg-surface text-text-primary border border-border-hover shadow-xs'
+              ? 'bg-elevated text-text-primary border border-border-hover shadow-xs'
               : 'text-text-secondary hover:text-text-primary border border-transparent'
           "
           @click="sortMode = 'strongest'"
@@ -189,9 +189,9 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     </div>
 
     <!-- Main 2-Column Split: Left Structural Compass + Right 4 Motif Contours -->
-    <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-12">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <!-- Left Column: Structural Compass (Phases, Lengths, Goals, Cognitive, Master Game) -->
-      <div class="space-y-4 rounded-xl border border-border bg-canvas p-4 lg:col-span-5">
+      <div class="space-y-3.5 rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-5">
         <div class="flex items-center justify-between border-b border-border pb-2.5">
           <div class="flex items-center gap-2">
             <NIcon :component="CompassOutline" class="text-base text-accent" />
@@ -204,37 +204,37 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
           </span>
         </div>
 
-        <div v-for="section in structuralSections" :key="section.id" class="space-y-2">
+        <div v-for="section in structuralSections" :key="section.id" class="space-y-1.5">
           <div class="text-[11px] font-bold tracking-wider text-text-secondary uppercase">
             {{ t(section.titleKey) }}
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <div
               v-for="stat in section.items"
               :key="`${section.id}-${stat.key}`"
-              class="rounded-lg border border-border bg-surface p-2.5 transition-colors hover:border-border-hover"
+              class="rounded-lg border border-border bg-canvas px-2.5 py-2 transition-colors hover:border-border-hover"
             >
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
+              <div class="flex items-center justify-between gap-1.5">
+                <div class="flex items-center gap-1.5 min-w-0">
                   <span class="truncate text-xs font-bold text-text-primary">
                     {{ resolveScopeLabel(section.focusGroup, stat.key, t, te) }}
                   </span>
                   <span
-                    class="rounded border px-1.5 py-0.5 font-condensed text-[10px] font-bold"
+                    class="shrink-0 rounded border px-1.5 py-0.5 font-condensed text-[10px] font-bold"
                     :class="resolveStatusSemanticClass(stat).badgeClass"
                   >
                     {{ Math.round(stat.ema_accuracy * 100) }}%
                   </span>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-1.5 shrink-0">
                   <span class="font-condensed text-sm font-bold text-text-primary">
                     {{ Math.round(stat.rating) }}
                   </span>
                   <button
                     type="button"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded border border-brand/40 bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand transition-colors hover:bg-brand/20"
+                    class="inline-flex cursor-pointer items-center gap-0.5 rounded border border-brand/40 bg-brand/10 px-1.5 py-0.5 text-[11px] font-bold text-brand transition-colors hover:bg-brand/20"
                     @click="
                       emit('trainScope', {
                         focusGroup: section.focusGroup,
@@ -266,7 +266,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Right Column: 4 Combat Motif Contour Tabs -->
-      <div class="rounded-xl border border-border bg-canvas p-4 lg:col-span-7">
+      <div class="rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-7">
         <!-- 4 Contour Selector Tabs -->
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div
@@ -276,7 +276,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
             :class="
               activeContour === contour
                 ? 'border-border-hover bg-elevated text-text-primary shadow-sm'
-                : 'border-border bg-surface text-text-secondary hover:border-border-hover hover:text-text-primary'
+                : 'border-border bg-canvas text-text-secondary hover:border-border-hover hover:text-text-primary'
             "
             @click="activeContour = contour"
           >
@@ -306,14 +306,14 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
         </div>
 
         <!-- Motif Bullet-Bars List -->
-        <div class="mt-4 space-y-2.5">
+        <div class="mt-3.5 space-y-2">
           <div
             v-for="item in activeMotifList"
             :key="item.motif.key"
-            class="rounded-lg border border-border bg-surface p-3 transition-colors hover:border-border-hover"
+            class="rounded-lg border border-border bg-canvas p-2.5 sm:p-3 transition-colors hover:border-border-hover"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-sm font-bold text-text-primary">
                   {{ resolveScopeLabel(activeContour, item.motif.key, t, te) }}
                 </span>
@@ -328,7 +328,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
                 </span>
               </div>
 
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
                 <span class="font-condensed text-base font-bold text-text-primary">
                   {{ Math.round(item.motif.rating) }}
                   <span class="text-xs font-normal text-text-disabled">
@@ -338,7 +338,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 
                 <button
                   type="button"
-                  class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
+                  class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-brand/40 bg-brand/10 px-2 py-1 text-xs font-bold text-brand transition-colors hover:bg-brand/20"
                   @click="
                     emit('trainScope', {
                       focusGroup: 'motif',

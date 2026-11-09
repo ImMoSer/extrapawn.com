@@ -222,10 +222,10 @@ onUnmounted(() => {
   <!-- 1. HUB / SHOWCASE & ACTIVE COURSE CURRICULUM (DEVELOPER MO3EP ONLY) -->
   <div
     v-else-if="store.viewState === 'hub'"
-    class="w-full max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 text-text-primary select-none"
+    class="w-full max-w-6xl mx-auto px-2.5 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 text-text-primary select-none"
   >
     <!-- Top Header Banner -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 rounded-lg bg-surface border border-border">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3.5 sm:p-5 rounded-lg bg-surface border border-border">
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-2.5">
           <NIcon size="26" class="text-warning">
@@ -384,21 +384,23 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Active Course Curriculum Cabinet OR Coming Soon Placeholder -->
-    <div class="rounded-lg bg-surface border border-border p-6">
-      <template v-if="selectedCourse?.status === 'ready'">
-        <TacticsCourseCurriculumView :course-slug="selectedCourse.id" />
-      </template>
+    <!-- Active Course Curriculum Cabinet OR Coming Soon Placeholder (No outer wrapper card) -->
+    <TacticsCourseCurriculumView
+      v-if="selectedCourse?.status === 'ready'"
+      :course-slug="selectedCourse.id"
+    />
 
-      <div v-else-if="selectedCourse" class="py-10 flex flex-col items-center justify-center text-center gap-3">
-        <NIcon size="36" class="text-text-secondary"><LockClosedOutline /></NIcon>
-        <div class="font-display font-bold text-lg text-text-primary">
-          {{ selectedCourse.title }}
-        </div>
-        <p class="text-xs text-text-secondary max-w-xl">
-          {{ selectedCourse.subtitle }} Курс готовится к выпуску по стандарту «2 тематических батча → 1 выделенный День Дятла».
-        </p>
+    <div
+      v-else-if="selectedCourse"
+      class="rounded-lg bg-surface border border-border p-6 py-10 flex flex-col items-center justify-center text-center gap-3"
+    >
+      <NIcon size="36" class="text-text-secondary"><LockClosedOutline /></NIcon>
+      <div class="font-display font-bold text-lg text-text-primary">
+        {{ selectedCourse.title }}
       </div>
+      <p class="text-xs text-text-secondary max-w-xl">
+        {{ selectedCourse.subtitle }} Курс готовится к выпуску по стандарту «2 тематических батча → 1 выделенный День Дятла».
+      </p>
     </div>
   </div>
 

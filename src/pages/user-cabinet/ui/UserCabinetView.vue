@@ -351,20 +351,20 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
         <!-- Recent Courses History Strip -->
         <section
           v-if="visibleRecentCourses.length > 0"
-          class="rounded-xl border border-border bg-surface p-5 shadow-md"
+          class="flex flex-col gap-3"
         >
-          <div class="flex items-center gap-2 border-b border-border pb-3">
-            <NIcon :component="CalendarOutline" class="text-lg text-accent" />
+          <div class="flex items-center gap-2 px-0.5">
+            <NIcon :component="CalendarOutline" class="text-lg text-accent shrink-0" />
             <h2 class="font-display text-base font-bold tracking-wider text-text-primary uppercase">
               {{ t('pages.userCabinet.macro.recentCoursesTitle') }}
             </h2>
           </div>
 
-          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div
               v-for="course in visibleRecentCourses"
               :key="course.id"
-              class="flex flex-col justify-between rounded-lg border bg-canvas p-4 transition-all"
+              class="flex flex-col justify-between rounded-xl border bg-surface p-3.5 sm:p-4 transition-all"
               :class="
                 course.status === 'completed'
                   ? 'border-border hover:border-border-hover cursor-pointer'

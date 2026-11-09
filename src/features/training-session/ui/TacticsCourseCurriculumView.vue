@@ -249,21 +249,21 @@ async function handleResetCourseProgress(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-4 sm:gap-5">
     <!-- Top Hero Card: Overall Course Progress + Current Step CTA -->
-    <div class="p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-4">
+    <div class="p-3.5 sm:p-5 rounded-lg bg-surface border border-border flex flex-col gap-4">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div class="flex flex-col gap-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
               {{ activeCourseTitle }}
             </span>
-            <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
+            <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-elevated border border-border text-text-secondary">
               {{ weeksList.length || 4 }} недели · {{ curriculum?.batches?.length ?? 16 }} батчей · {{ curriculum?.woodpecker_days?.length ?? 8 }} Дней Дятла
             </span>
             <span
               v-if="curriculum && curriculum.total_puzzles > 0"
-              class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary"
+              class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-elevated border border-border text-text-secondary"
             >
               {{ curriculum.total_puzzles }} позиций<template v-if="isEndgameCourse"> · Спарринг с MOZERO</template>
             </span>
@@ -349,15 +349,15 @@ async function handleResetCourseProgress(): Promise<void> {
 
       <!-- Overall 3822 Progress Bar -->
       <div v-if="curriculum" class="flex flex-col gap-1.5">
-        <div class="flex items-baseline justify-between text-xs">
+        <div class="flex items-baseline justify-between gap-2 text-xs">
           <span class="text-text-secondary uppercase font-display font-semibold">
             Общий прогресс курса (Диплом по закрытию {{ curriculum?.batches?.length ?? 28 }} батчей)
           </span>
-          <span class="font-condensed font-bold text-base text-text-primary">
+          <span class="font-condensed font-bold text-base text-text-primary shrink-0">
             {{ curriculum.solved_total }} / {{ curriculum.total_puzzles }} ({{ totalProgressPercent }}%)
           </span>
         </div>
-        <div class="w-full h-2 rounded-xs bg-surface overflow-hidden border border-border">
+        <div class="w-full h-2 rounded-xs bg-elevated overflow-hidden border border-border">
           <div
             class="h-full bg-brand transition-all duration-300"
             :style="{ width: `${totalProgressPercent}%` }"
@@ -369,7 +369,7 @@ async function handleResetCourseProgress(): Promise<void> {
     <!-- Crash-Test (все 6147 задач трилогии в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
     <div
       v-if="authStore.isMo3ep"
-      class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
+      class="p-3.5 sm:p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
     >
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div class="flex flex-col gap-1">
@@ -529,18 +529,18 @@ async function handleResetCourseProgress(): Promise<void> {
       </div>
     </div>
 
-    <!-- 6-Week / 24-Batch + 12-Woodpecker Curriculum Roadmap -->
+    <!-- 6-Week / 24-Batch + 12-Woodpecker Curriculum Roadmap (No outer box per week) -->
     <div v-if="weeksList.length > 0" class="flex flex-col gap-5">
       <div
         v-for="wg in weeksList"
         :key="wg.week"
-        class="p-4 rounded-lg bg-elevated/30 border border-border flex flex-col gap-3"
+        class="flex flex-col gap-3"
       >
-        <div class="flex items-center justify-between border-b border-border pb-2">
+        <div class="flex items-center justify-between gap-2 border-b border-border pb-2 px-0.5">
           <span class="font-display font-bold text-sm uppercase tracking-wider text-text-primary">
             {{ wg.title }}
           </span>
-          <span class="text-xs font-condensed text-text-secondary">
+          <span class="text-xs font-condensed text-text-secondary shrink-0">
             4 батча + 2 Дня Дятла
           </span>
         </div>
