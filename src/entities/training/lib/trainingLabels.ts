@@ -24,56 +24,149 @@ const CLASSICAL_COURSE_SCOPE_FALLBACKS: Readonly<Record<string, string>> = {
   SAVING_DRAW: 'Активная защита: пат и вечный шах',
   EXAMS: 'Экзамены вслепую («Как бы вы сыграли?»)',
 
-  // 8 Domains of endgame_course (plus EXAMS)
+  // 9 Domains of endgame_course (plus legacy aliases)
+  ELEMENTARY_MATES: 'Базовые маты и алгоритмы доминации',
   FUNDAMENTAL_MATES: 'Базовые маты одинокому королю',
-  PAWN_ENDGAMES: 'Пешечные эндшпили (K+P)',
-  KNIGHT_ENDGAMES: 'Коневые эндшпили',
-  BISHOP_ENDGAMES: 'Слоновые эндшпили',
-  BISHOP_VS_KNIGHT: 'Борьба слона против коня',
-  ROOK_ENDGAMES: 'Ладейные эндшпили',
-  QUEEN_ENDGAMES: 'Ферзевые эндшпили',
+  PAWN_ENDGAMES: 'Пешечные окончания',
+  KNIGHT_ENDGAMES: 'Коневые окончания и конь против пешек',
+  BISHOP_ENDGAMES: 'Слоновые окончания (одноцветные и разноцветные)',
+  BISHOP_VS_KNIGHT: 'Слон против коня (борьба лёгких фигур)',
+  ROOK_ENDGAMES: 'Ладейные окончания',
+  QUEEN_ENDGAMES: 'Ферзевые окончания и борьба ферзя против пешек',
+  ASYMMETRIC_AND_STRATEGY: 'Нестандартный баланс и синтез эндшпильной стратегии',
   COMPLEX_ENDGAMES: 'Сложные и многофигурные эндшпили',
 
-  // 26 Classes of endgame_course
+  // Canonical Classes of endgame_course (26 classes)
+  linearAndHeavyMates: 'Линейные и тяжёлые маты',
+  minorPieceMates: 'Матование лёгкими фигурами',
+  keySquaresAndOpposition: 'Король и пешка против короля (Геометрия ключевых полей)',
+  squaresAndPawnRaces: 'Пространственно-временная геометрия (Квадраты и гонки)',
+  kingManeuversAndReserveTempi: 'Маневрирование короля и борьба за темпы',
+  pawnBreakthroughsAndStalemate: 'Пешечный прорыв, структура и патовые ресурсы',
+  courseFinalExam: 'Экзаменационный практикум',
+  knightVsPawns: 'Конь против пешек (Блокада и угловые механизмы)',
+  knightEndgames: 'Собственно коневые окончания',
+  bishopVsPawns: 'Слон против пешек',
+  sameColoredBishops: 'Одноцветные слоны',
+  oppositeColoredBishops: 'Разноцветные слоны',
+  minorVsMinorMinimal: 'Малочисленные окончания (Слон и пешка против коня и наоборот)',
+  bishopAdvantageOverKnight: 'Преимущество слона над конём',
+  knightAdvantageOverBishop: 'Преимущество коня над слоном',
+  rookVsPawns: 'Ладья против пешек',
+  rookAndPawnVsRookTheory: 'Ладья и пешка против ладьи (Базовая теория)',
+  rookAndRookPawnVsRook: 'Ладья и ладейная пешка против ладьи',
+  rookTwoPawnsAndCounters: 'Ладья и две пешки против ладьи (и окончания 2 на 1)',
+  multipawnRookEndgames: 'Многопешечные ладейные окончания',
+  queenVsPawns: 'Ферзь против пешек',
+  queenEndgames: 'Ферзевые окончания',
+  queenVsRook: 'Ферзь против ладьи (с пешками и без)',
+  rookVsMinorPiece: 'Ладья против лёгкой фигуры (Качество)',
+  asymmetricMaterialBalance: 'Борьба разнородных фигур (Ферзь против фигур, Ладья против двух лёгких)',
+  endgameStrategyAndSavingArt: 'Универсальные стратегические и тактические идеи эндшпиля',
+
+  // Canonical SubClasses of endgame_course (72 subclasses)
+  queenAndRookMates: 'Мат ферзём и ладьёй (оттеснение короля)',
+  twoKnightsVsPawnMate: 'Матование двумя конями и одним конём (при наличии пешек)',
+  bishopAndKnightMate: 'Мат слоном и конём',
+  twoBishopsMate: 'Мат двумя слонами',
+  keySquaresBasic: 'Ключевые поля и проход с помощью короля',
+  rookPawnKingInCorner: 'Ладейная пешка (Король в углу и запирание)',
+  oppositionAndOutflanking: 'Оппозиция и обход',
+  correspondingSquaresAndTriangle: 'Поля соответствия, минированные поля и треугольник',
+  ruleOfTheSquare: 'Правило квадрата и помехи на пути короля',
+  retiIdeaDualPursuit: 'Идея Рети («погоня за двумя зайцами»)',
+  wanderingSquareAndConnectedPawns: 'Блуждающий квадрат и связанные пешки против короля',
+  pawnRacesAndCrossChecks: 'Пешечные гонки',
+  activeKingAndOutflanking: 'Активный король и расширение плацдарма',
+  zigzagPendulumShouldering: 'Маршруты короля (Зигзаг, Маятник, Отталкивание плечом)',
+  reserveTempiAndSteinitzRule: 'Запасные темпы и правило Стейница',
+  ghAndFhPawnsReserveTempi: 'Типовые окончания с запасными темпами (пешки g+h и f+h против h)',
+  pawnBreakthroughAndUndermining: 'Пешечный прорыв и подрыв',
+  outsideAndProtectedPassedPawn: 'Отдалённая и защищённая проходная',
+  pairOfRookPawns: 'Пара ладейных пешек при лишней пешке на другом фланге',
+  connectedPassedPawnsAndStructures: 'Две связанные проходные и многопешечные структуры',
+  pawnStalemateRefuge: 'Патовое убежище и полупат',
+  kingActivityPassedPawnsZugzwang: 'Активность короля, сила проходных пешек и цугцванг в сложных окончаниях',
+  stalemateCombinationsAndMadPiece: 'Патовые комбинации, «бешеная фигура» и вечное преследование',
+  endgameMatingNetAndDomination: 'Эндшпильный мат и доминация над фигурами',
+  fortressConstructionAndBreakthrough: 'Построение и разрушение крепостей',
+  knightBarrierVsPassedPawn: 'Конь против ладейной и проходной пешки',
+  knightKingInCorner: 'Король в углу доски (Мат и ничейные позиции)',
+  knightSupportingPawn: 'Защита пешки конём (Конь и пешка против короля/пешек)',
+  knightAndPawnVsKnight: 'Конь и пешка против коня (Отвлекающая жертва коня)',
+  botvinnikFormulaKnightEndgame: 'Формула Ботвинника и отдалённая проходная',
+  multipawnKnightEndgames: 'Многопешечные коневые окончания и пешки на одном фланге',
+  wrongColoredBishopFortress: 'Элементарные крепости (Слон и ладейная пешка, угол не того цвета)',
+  cornerBishopFortresses: 'Угловые крепости (Пара пешек h6/h7, g6/g7, слон h7 + пешка g6)',
+  bishopVsMultiplePawns: 'Слон против разрозненных и связанных пешек',
+  centuriniAndShortDiagonal: 'Слон и пешка против слона (Минимальный материал)',
+  badBishopAndPawnFixation: 'Плохой слон, фиксация пешек и цугцванг',
+  barrierInBishopEndgames: 'Барьер в слоновых окончаниях',
+  oppositeBishopsFortressLaws: 'Крепости и важнейшие закономерности разноцвета',
+  oppositeBishopsSeparatedPawns: 'Разрозненные проходные пешки при разноцвете',
+  oppositeBishopsConnectedPawns: 'Слон и две связанные пешки против слона',
+  oppositeBishopsDefenseSystems: 'Системы обороны (Король блокирует пешку vs Слон задерживает пешку)',
+  bishopAndPawnVsKnight: 'Слон и пешка против коня',
+  knightAndPawnVsBishop: 'Конь и пешка против слона',
+  cuttingOffKnightTwoWings: 'Отрезание коня и борьба на два фланга',
+  openPositionBishopSuperiority: 'Фиксация пешек, открытая позиция и активный король',
+  knightDefenseAgainstBishop: 'Приёмы защиты с конём против слона',
+  knightDominationAndForks: 'Доминация, коневые вилки и ударные поля',
+  closedPositionGoodKnightBadBishop: 'Закрытая позиция и плохой слон',
+  rookVsSinglePawn: 'Ладья против одной пешки',
+  rookVsMultiplePawns: 'Ладья против связанных и разрозненных пешек',
+  philidorPositionDefense: 'Позиция Филидора и защита пассивной/активной ладьёй',
+  frontalAttackAndUmbrella: 'Фронтальная атака (защита лобовым ударом) и Зонтик',
+  lucenaPositionBuildingBridge: 'Позиция Лусены и построение моста',
+  shortAndLongSideFlankChecks: 'Короткая и длинная сторона, фланговые шахи',
+  rookPawnSeventhAndSixthRank: 'Король перед пешкой и ладья перед пешкой (7-й и 6-й ряд)',
+  vancuraPositionDefense: 'Позиция Ванчуры и боковая защита',
+  rookAndTwoPawnsVsRook: 'Сдвоенные, связанные и разрозненные пешки (вкл. f и h)',
+  rookAndPawnVsRookAndPawnLasker: 'Ладья и пешка против ладьи и пешки (Идея Ласкера)',
+  rookTwoPawnsVsOnePawn: 'Ладья и две пешки против ладьи и пешки (на одном и разных флангах)',
+  rookExtraPassedPawnOtherWing: 'Равновесие на одном фланге, лишняя пешка на другом',
+  rookAndKingActivityMultipawn: 'Активность ладьи и короля в многопешечном эндшпиле (Шедевр Рубинштейна)',
+  rookFourPawnsVsThreeSameWing: 'Четыре пешки против трёх на одном фланге',
+  queenVsPawnOnSeventhRank: 'Ферзь против пешки на 7-й горизонтали',
+  queenVsPawnOnSixthRankAndMultiple: 'Ферзь против пешки на 6-й горизонтали и против нескольких пешек',
+  multipawnQueenEndgames: 'Многопешечные ферзевые окончания (Проходная пешка и активный ферзь)',
+  queenAndPawnVsQueen: 'Ферзь и пешка против ферзя (Тактика выигрыша и защиты)',
+  queenVsLoneRookPhilidor: 'Ферзь против одинокой ладьи (Позиция Филидора)',
+  queenVsRookAndPawnsFortress: 'Ферзь против ладьи и пешки (Крепости и их разрушение)',
+  rookVsKnightAndPawns: 'Ладья против коня (без пешек и с пешками)',
+  rookVsBishopSafeAndWrongCorner: 'Ладья против слона (Опасный и безопасный угол, с пешками)',
+  rookAndMinorVsRook: 'Ладья и лёгкая фигура против ладьи (Ладья и слон, Ладья и конь)',
+  rookVsTwoMinorsAndQueenVsPieces: 'Ладья против двух лёгких фигур и Ферзь против фигур/двух ладей',
+
+  // Legacy endgame_course Classes & SubClasses
   elementaryMates: 'Элементарные линейные и тяжелые маты',
-  minorPieceMates: 'Маты лёгкими фигурами',
   kingAndPawnBasics: 'База: Король и пешка против короля (KPK)',
   oppositionAndKeySquares: 'Оппозиция, ключевые поля и цугцванг',
   pawnRacesAndBreakthroughs: 'Пешечные гонки, штаны и прорывы',
   multipawnEndgames: 'Многопешечный технический эндшпиль',
-  knightVsPawns: 'Конь против пешек (борьба с проходными)',
   knightWithPawns: 'Коневой эндшпиль с пешками',
   twoKnightsEndgame: 'Два коня против пешек и фигур',
-  bishopVsPawns: 'Слон против пешек',
   sameColorBishops: 'Одноцветные слоны',
   oppositeColorBishops: 'Разноцветные слоны',
   twoBishopsEndgame: 'Преимущество двух слонов в эндшпиле',
   bishopVsKnightTechnical: 'Слон против коня (техническая борьба)',
   rookVsPawn: 'Ладья против пешки (Мосты, Филидор, позиция Лусены)',
-  rookVsMultiplePawns: 'Ладья против пешек',
   rookAndPawnEndgame: 'Ладья и пешка против ладьи (RP vs R)',
   multirookEndgame: 'Многопешечный ладейный и двухладейный эндшпиль',
   queenVsPawn: 'Ферзь против пешки на предпоследней горизонтали',
   queenWithPawns: 'Ферзевый эндшпиль с пешками',
-  queenVsRook: 'Ферзь против ладьи (Филидор и защита)',
   queenVsMinors: 'Ферзь против лёгких фигур и двух ладей',
   rookVsMinor: 'Ладья против лёгкой фигуры (качество)',
-  rookAndMinorVsRook: 'Ладья и лёгкая фигура против ладьи (R+M vs R)',
   rookAndMinorCombat: 'Ладья с лёгкой фигурой против ладьи с лёгкой фигурой',
   queenAndPieceCombat: 'Ферзь с фигурой и микс-эндшпиль',
-
-  // Endgame Course Exam Classes
   examPawnAndMates: 'Экзамен Курса I: Базовые маты и пешечный эндшпиль',
   examMinorPieces: 'Экзамен Курса II: Легкофигурный эндшпиль',
   examRookEndgames: 'Экзамен Курса III: Ладейный эндшпиль',
   examHeavyAndComplex: 'Экзамен Курса IV: Ферзевые и многофигурные эндшпили',
-
-  // SubClasses of endgame_course
   mateWithQueenOrTwoRooks: 'Мат ферзём или двумя ладьями',
   mateWithOneRook: 'Мат одной ладьёй',
   mateWithTwoBishops: 'Мат двумя слонами',
   mateWithBishopAndKnight: 'Мат слоном и конём (метод Делетанга и треугольник)',
-  ruleOfTheSquare: 'Правило квадрата и догоняющий король',
   kpkPromotionWin: 'Проведение пешки при поддержке короля',
   kpkRookPawnAndStalemateDraw: 'Ладейная пешка и патовые убежища (защита)',
   directAndDistantOpposition: 'Прямая, дальняя и диагональная оппозиция',
@@ -343,4 +436,44 @@ export function formatElapsedDuration(seconds: number, t: TranslateFn): string {
   }
   return `${minutes}${t('features.trainingCenter.units.minShort')}`
 }
+
+export function resolveTwinShortTag(twinRole?: string): string {
+  switch (twinRole) {
+    case 'part_1_win':
+    case 'part_1_hold_draw':
+    case 'part_1_attack':
+      return '1/2'
+    case 'part_2_hold_draw':
+    case 'part_2_win':
+    case 'part_2_counterattack':
+      return '2/2'
+    default:
+      return ''
+  }
+}
+
+export function resolveTwinBadgeLabel(twinRole?: string): string {
+  const tag = resolveTwinShortTag(twinRole)
+  return tag ? `ПЕРЕВЁРТЫШ ${tag}` : ''
+}
+
+export function resolveTwinPedagogicalPrompt(twinRole?: string): string {
+  switch (twinRole) {
+    case 'part_1_win':
+      return 'Золотой перевёртыш (Часть 1/2): Оценка зависит от очереди хода! Сначала докажите на практике, что ваша сторона побеждает.'
+    case 'part_2_hold_draw':
+      return 'Золотой перевёртыш (Часть 2/2): Та же позиция при смене очереди хода становится ничейной! Теперь ваша задача — удержать здесь ничью.'
+    case 'part_1_hold_draw':
+      return 'Золотой перевёртыш (Часть 1/2): Оценка зависит от очереди хода! Сначала проверьте оборону — удержите здесь ничью.'
+    case 'part_2_win':
+      return 'Золотой перевёртыш (Часть 2/2): Та же позиция при смене очереди хода выигрывается! А теперь доведите её до победы.'
+    case 'part_1_attack':
+      return 'Взаимный цугцванг (Часть 1/2): Кто ходит первым — тот побеждает! Реализуйте право первого хода и выиграйте.'
+    case 'part_2_counterattack':
+      return 'Взаимный цугцванг (Часть 2/2): Та же позиция, но теперь первый ход за противоположной стороной — докажите победу!'
+    default:
+      return ''
+  }
+}
+
 

@@ -62,6 +62,8 @@ export interface PuzzlePuzzle {
   is_exam?: boolean
   is_woodpecker?: boolean
   woodpecker_streak?: number
+  twin_group_id?: string
+  twin_role?: string
   initial_fen: string
   tactical_solution?: string
   puzzle_fen?: string

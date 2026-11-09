@@ -5,6 +5,7 @@ import {
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
+  resolveTwinBadgeLabel,
   type HydratedSessionItem,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
@@ -340,6 +341,13 @@ function handleGoToCabinet(): void {
 
             <span class="font-medium text-sm text-text-primary truncate">
               {{ itemCategory(item) }}
+            </span>
+
+            <span
+              v-if="item.course_puzzle?.twin_role"
+              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40"
+            >
+              {{ resolveTwinBadgeLabel(item.course_puzzle.twin_role) }}
             </span>
 
             <span

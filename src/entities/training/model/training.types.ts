@@ -301,6 +301,17 @@ export function resolveDisciplineForCourseSlug(
   return 'tactics_course'
 }
 
+export const COURSE_TWIN_ROLES = [
+  'part_1_win',
+  'part_2_hold_draw',
+  'part_1_hold_draw',
+  'part_2_win',
+  'part_1_attack',
+  'part_2_counterattack',
+] as const
+
+export type CourseTwinRole = (typeof COURSE_TWIN_ROLES)[number]
+
 export interface CoursePuzzleV2 {
   puzzle_id: string
   base_id: string
@@ -330,6 +341,8 @@ export interface CoursePuzzleV2 {
   concept_motifs?: string[]
   trigger_motifs?: string[]
   meta_themes?: string[]
+  twin_group_id?: string
+  twin_role?: CourseTwinRole | string
   tactical_fen: string
   tactical_solution: string
 }

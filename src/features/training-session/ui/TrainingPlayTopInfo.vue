@@ -3,6 +3,8 @@ import {
   isClassicalCourseDiscipline,
   resolveDisciplineLabel,
   resolveScopeLabel,
+  resolveTwinBadgeLabel,
+  resolveTwinPedagogicalPrompt,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
@@ -68,6 +70,16 @@ const categoryTitle = computed(() => {
 })
 
 const isHoldDraw = computed(() => activePuzzle.value?.objective === 'hold_draw')
+
+const twinBadgeLabel = computed(() => {
+  if (isExamPuzzle.value && !store.isAnalysisMode) return ''
+  return resolveTwinBadgeLabel(activePuzzle.value?.twin_role)
+})
+
+const twinPrompt = computed(() => {
+  if (isExamPuzzle.value && !store.isAnalysisMode) return ''
+  return resolveTwinPedagogicalPrompt(activePuzzle.value?.twin_role)
+})
 
 async function handleFlagSubmit(preset?: string): Promise<void> {
   if (!authStore.isMo3ep) return
@@ -170,6 +182,15 @@ function handleBackAction(): void {
         class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40"
       >
         {{ t('features.trainingCenter.badges.winTarget') }}
+      </span>
+
+      <!-- Golden Twin Badge -->
+      <span
+        v-if="twinBadgeLabel"
+        :title="twinPrompt"
+        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40 cursor-help"
+      >
+        {{ twinBadgeLabel }}
       </span>
 
       <!-- Woodpecker Badge -->

@@ -166,6 +166,8 @@ export function adaptCoursePuzzleV2(
     objective,
     is_woodpecker: wpMeta.isWoodpecker,
     woodpecker_streak: wpMeta.woodpeckerStreak,
+    twin_group_id: cp.twin_group_id || undefined,
+    twin_role: cp.twin_role || undefined,
     initial_fen: cp.tactical_fen,
     tactical_solution: cp.tactical_solution,
     puzzle_fen: cp.tactical_fen,

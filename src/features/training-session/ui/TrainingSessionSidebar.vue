@@ -4,6 +4,9 @@ import {
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
+  resolveTwinBadgeLabel,
+  resolveTwinPedagogicalPrompt,
+  resolveTwinShortTag,
   type HydratedSessionItem,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
@@ -126,6 +129,27 @@ function itemObjective(item: HydratedSessionItem): 'win' | 'hold_draw' {
   return item.endgame?.objective ?? 'win'
 }
 
+function itemTwinShortTag(item: HydratedSessionItem): string {
+  if (!item.course_puzzle?.twin_role) return ''
+  if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') return ''
+  return resolveTwinShortTag(item.course_puzzle.twin_role)
+}
+
+const activeTwinBanner = computed(() => {
+  const p = store.analysisPuzzle ?? store.currentPuzzle
+  if (!p?.twin_role) return null
+  if (p.is_exam && !store.isAnalysisMode) return null
+  const badge = resolveTwinBadgeLabel(p.twin_role)
+  const prompt = resolveTwinPedagogicalPrompt(p.twin_role)
+  if (!badge || !prompt) return null
+  const isPart2 = p.twin_role.startsWith('part_2_')
+  return {
+    badge,
+    prompt,
+    isPart2,
+  }
+})
+
 function formatDelta(delta?: number): string {
   if (delta === undefined) return ''
   const rounded = Math.round(delta * 10) / 10
@@ -184,6 +208,36 @@ function handleItemClick(item: HydratedSessionItem): void {
           :style="{ width: `${progressPercent}%` }"
         />
       </div>
+    </div>
+
+    <!-- Golden Twin Pedagogical Banner -->
+    <div
+      v-if="activeTwinBanner"
+      class="p-2.5 rounded-md border flex flex-col gap-1 shrink-0"
+      :class="
+        activeTwinBanner.isPart2
+          ? 'bg-warning/10 border-warning/40'
+          : 'bg-accent/10 border-accent/40'
+      "
+    >
+      <div class="flex items-center justify-between gap-2">
+        <span
+          class="px-1.5 py-0.2 rounded-sm text-[10px] font-condensed font-bold uppercase tracking-wider border"
+          :class="
+            activeTwinBanner.isPart2
+              ? 'bg-warning/20 text-warning border-warning/50'
+              : 'bg-accent/20 text-accent border-accent/50'
+          "
+        >
+          {{ activeTwinBanner.badge }}
+        </span>
+        <span class="text-[10px] font-condensed text-text-secondary">
+          Смена очереди хода
+        </span>
+      </div>
+      <p class="text-xs text-text-primary leading-snug">
+        {{ activeTwinBanner.prompt }}
+      </p>
     </div>
 
     <!-- Post-Attempt Feedback Banner (Error / Inspection State Only) -->
@@ -311,6 +365,13 @@ function handleItemClick(item: HydratedSessionItem): void {
                 <div class="flex items-center gap-1.5 min-w-0">
                   <span class="truncate text-text-primary font-medium">
                     {{ itemCategoryLabel(item) }}
+                  </span>
+                  <span
+                    v-if="itemTwinShortTag(item)"
+                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40 shrink-0"
+                    title="Золотой перевёртыш"
+                  >
+                    TWIN {{ itemTwinShortTag(item) }}
                   </span>
                   <span
                     v-if="itemObjective(item) === 'hold_draw'"

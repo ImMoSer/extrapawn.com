@@ -66,7 +66,7 @@ const showFlagsPanel = ref<boolean>(false)
 
 const curriculum = computed(() => store.tacticsCourseCurriculum)
 const crashTestTotal = computed(
-  () => curriculum.value?.crash_test_total || (isEndgameCourse.value ? 2485 : 2252),
+  () => curriculum.value?.crash_test_total || (isEndgameCourse.value ? 3333 : 2252),
 )
 
 const totalProgressPercent = computed(() => {

@@ -3,6 +3,8 @@ import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import { CRASHTEST_ENGINES } from '@/shared/types/api.types'
 import {
   resolveBotEngineForDifficulty,
+  resolveTwinBadgeLabel,
+  resolveTwinPedagogicalPrompt,
   trainingApi,
   type AttemptResultDTO,
   type EndgameDomain,
@@ -156,6 +158,73 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     expect(() => adaptSessionItemToPuzzle('theoretical_endgames', illegalExtraItem)).toThrow(
       /Forbidden EXTRA domain/,
     )
+
+    // 4. Endgame Course Golden Twin pair (PuzzleId + PuzzleId+"R")
+    const twinPart1: HydratedSessionItem = {
+      index: 0,
+      puzzle_id: '0QMrP0Dd',
+      is_woodpecker: false,
+      woodpecker_streak: 0,
+      status: 'pending',
+      course_puzzle: {
+        puzzle_id: '0QMrP0Dd',
+        base_id: 'QF6kssnH',
+        discipline: 'endgame_course',
+        course_slug: 'endgame_course_1_pawn',
+        course_id: 1,
+        batch_id: 1,
+        global_batch_id: 1,
+        batch_slug: 'batch_01_elementary_mates',
+        batch_title: 'Батч 01. Базовые и легкофигурные маты',
+        week_number: 1,
+        schedule_day: 'Mon',
+        order_in_batch: 7,
+        domain: 'ELEMENTARY_MATES',
+        class: 'minorPieceMates',
+        sub_class: 'twoKnightsVsPawnMate',
+        objective: 'win',
+        strategy: 'playOutOnly',
+        first_move: 'user',
+        user_color: 'white',
+        pieces_count: 4,
+        plies_count: 0,
+        twin_group_id: '0QMrP0Dd',
+        twin_role: 'part_1_win',
+        tactical_fen: '8/8/8/8/8/p2N4/k7/2K5 w - - 0 1',
+        tactical_solution: '',
+      },
+    }
+    const twinPart2: HydratedSessionItem = {
+      index: 1,
+      puzzle_id: '0QMrP0DdR',
+      is_woodpecker: false,
+      woodpecker_streak: 0,
+      status: 'pending',
+      course_puzzle: {
+        ...twinPart1.course_puzzle!,
+        puzzle_id: '0QMrP0DdR',
+        order_in_batch: 8,
+        objective: 'hold_draw',
+        first_move: 'bot',
+        user_color: 'white',
+        twin_group_id: '0QMrP0Dd',
+        twin_role: 'part_2_hold_draw',
+        tactical_fen: '8/8/8/8/8/p2N4/k7/2K5 b - - 0 1',
+      },
+    }
+    const adaptedTwin1 = adaptSessionItemToPuzzle('endgame_course', twinPart1)
+    const adaptedTwin2 = adaptSessionItemToPuzzle('endgame_course', twinPart2)
+    expect(adaptedTwin1.twin_group_id).toBe('0QMrP0Dd')
+    expect(adaptedTwin1.twin_role).toBe('part_1_win')
+    expect(adaptedTwin1.objective).toBe('win')
+    expect(resolveTwinBadgeLabel(adaptedTwin1.twin_role)).toBe('ПЕРЕВЁРТЫШ 1/2')
+    expect(resolveTwinPedagogicalPrompt(adaptedTwin1.twin_role)).toContain('Часть 1/2')
+
+    expect(adaptedTwin2.twin_group_id).toBe('0QMrP0Dd')
+    expect(adaptedTwin2.twin_role).toBe('part_2_hold_draw')
+    expect(adaptedTwin2.objective).toBe('hold_draw')
+    expect(resolveTwinBadgeLabel(adaptedTwin2.twin_role)).toBe('ПЕРЕВЁРТЫШ 2/2')
+    expect(resolveTwinPedagogicalPrompt(adaptedTwin2.twin_role)).toContain('Часть 2/2')
   })
 
   it('orchestrates Pro WarmUp session in theoretical_endgames, auto-locks mozero, records single attempt, supports analysis, and builds Session Report', async () => {
