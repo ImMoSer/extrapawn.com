@@ -501,9 +501,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       const preferencesStore = usePreferencesStore()
       boardStore.animationDurationMs = 0
 
-      // Verify the 3 Crashtest engines are registered
+      // Verify the 4 Crashtest engines are registered
       expect(CRASHTEST_ENGINES).toEqual([
         'stockfish',
+        'stockfish_d12',
         'maia-2200',
         'mozero',
       ])

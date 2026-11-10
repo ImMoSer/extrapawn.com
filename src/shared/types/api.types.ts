@@ -6,12 +6,14 @@ export type EngineId =
   | 'maia-2200'
   | 'mozero'
   | 'stockfish'
+  | 'stockfish_d12'
 
 export const ENGINE_NAMES: Record<EngineId, string> = {
   'maia-1500': 'Maia 1500',
   'maia-2200': 'Maia 2200',
   mozero: 'MOZERO',
   stockfish: 'Stockfish',
+  stockfish_d12: 'Stockfish D12',
 }
 
 export const AVAILABLE_ENGINES: EngineId[] = [
@@ -24,17 +26,20 @@ export const AVAILABLE_ENGINES: EngineId[] = [
 // --- Developer Crashtest Engines ---
 export type CrashtestEngineId =
   | 'stockfish'
+  | 'stockfish_d12'
   | 'maia-2200'
   | 'mozero'
 
 export const CRASHTEST_ENGINES: CrashtestEngineId[] = [
   'stockfish',
+  'stockfish_d12',
   'maia-2200',
   'mozero',
 ]
 
 export const CRASHTEST_ENGINE_NAMES: Record<CrashtestEngineId, string> = {
-  stockfish: 'Stockfish',
+  stockfish: 'Stockfish (SF_SmartControl V2.0)',
+  stockfish_d12: 'Stockfish D12 (1 Core + Syzygy/Gaviota)',
   'maia-2200': 'Maia 2200 (maia-2200.pb.gz)',
   mozero: 'MOZERO (Elite-Leela-v2 + Syzygy/Gaviota)',
 }
