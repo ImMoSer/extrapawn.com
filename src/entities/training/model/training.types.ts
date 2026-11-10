@@ -728,62 +728,6 @@ export interface CabinetDTO {
 }
 
 // ============================================================================
-// Challenge Mode & Leaderboard DTOs
-// ============================================================================
-
-export type ChallengeStatus = 'in_progress' | 'solved' | 'surrendered'
-
-export interface ChallengeParticipantDTO {
-  rank: number
-  user_id: string
-  username: string
-  status: ChallengeStatus
-  solved: boolean
-  attempts: number
-  score_text: string
-  solved_time_ms?: number
-  uci_moves?: string
-  pgn_moves?: string
-  updated_at: string
-  completed_at?: string
-}
-
-export interface ChallengeStateDTO {
-  discipline: TrainingDiscipline
-  puzzle_id: string
-  edition?: string
-  difficulty: TrainingDifficulty
-  bot_engine: BotLadderEngineId
-  tactical?: TacticalPuzzleV2
-  endgame?: EndgamePuzzleV2
-  my_entry?: ChallengeParticipantDTO
-  leaderboard: ChallengeParticipantDTO[]
-}
-
-export interface ChallengeAttemptRequest {
-  solved: boolean
-  time_ms: number
-  uci_moves?: string
-  pgn_moves?: string
-}
-
-export interface ChallengeRecordEntryDTO {
-  rank: number
-  user_id: string
-  username: string
-  total_points: number
-  tactics_points: number
-  finishhim_points: number
-  practical_points: number
-  theoretical_points: number
-  total_time_ms: number
-  total_seconds: number
-  solved_count: number
-  attempted_puzzles: number
-  total_attempts: number
-}
-
-// ============================================================================
 // Classical Tactics Course (3 Courses × 20 Batches, 10 Woodpecker Days & Crash-Test)
 // ============================================================================
 

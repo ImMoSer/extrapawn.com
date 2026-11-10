@@ -36,20 +36,9 @@ const router = createRouter({
       meta: { isGame: true, requiresAuth: true, game: 'warmup' },
     },
     {
-      path: '/challenge/records',
-      name: 'challenge-records',
-      component: () => import('@/pages/challenge').then((m) => m.ChallengeRecordsPage),
-    },
-    {
       path: '/kursdiplom/:courseId',
       name: 'course-diploma',
       component: () => import('@/pages/course-diploma').then((m) => m.CourseDiplomaPage),
-    },
-    {
-      path: '/challenge/:discipline/:puzzleId/:edition?/:userId?',
-      name: 'challenge',
-      component: () => import('@/pages/challenge').then((m) => m.ChallengePage),
-      meta: { isGame: true, requiresAuth: true, game: 'challenge' },
     },
     {
       path: '/task-today/:pathMatch(.*)*',

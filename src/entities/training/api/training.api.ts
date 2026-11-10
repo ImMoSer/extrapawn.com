@@ -7,9 +7,6 @@ import type {
   BlunderSpyStepResponse,
   CabinetDTO,
   CatalogManifestDTO,
-  ChallengeAttemptRequest,
-  ChallengeRecordEntryDTO,
-  ChallengeStateDTO,
   CourseDiplomaDTO,
   CourseDTO,
   CourseHistoryResponseDTO,
@@ -293,74 +290,5 @@ export const trainingApi = {
     return apiClient<EndgamePuzzleV2>(
       `/training/puzzle/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`,
     )
-  },
-
-  getChallengeState(
-    discipline: TrainingDiscipline,
-    puzzleId: string,
-    edition?: string,
-  ): Promise<ChallengeStateDTO> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    const trimmedEdition = edition?.trim() ?? ''
-    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
-    return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}${query}`,
-    )
-  },
-
-  submitChallengeAttempt(
-    discipline: TrainingDiscipline,
-    puzzleId: string,
-    payload: ChallengeAttemptRequest,
-    edition?: string,
-  ): Promise<ChallengeStateDTO> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    if (payload.time_ms < 0 || !Number.isFinite(payload.time_ms)) {
-      throw new Error(
-        `[trainingApi] Invalid challenge attempt time_ms (${String(payload.time_ms)}) for puzzle ${id}. Fail-Fast!`,
-      )
-    }
-    const trimmedEdition = edition?.trim() ?? ''
-    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
-    const uciMoves = payload.uci_moves?.trim()
-    const pgnMoves = payload.pgn_moves?.trim()
-    return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/attempt${query}`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          solved: payload.solved,
-          time_ms: Math.round(payload.time_ms),
-          ...(uciMoves ? { uci_moves: uciMoves } : {}),
-          ...(pgnMoves ? { pgn_moves: pgnMoves } : {}),
-        }),
-      },
-    )
-  },
-
-  surrenderChallenge(
-    discipline: TrainingDiscipline,
-    puzzleId: string,
-    edition?: string,
-  ): Promise<ChallengeStateDTO> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    const trimmedEdition = edition?.trim() ?? ''
-    const query = trimmedEdition ? `?edition=${encodeURIComponent(trimmedEdition)}` : ''
-    return apiClient<ChallengeStateDTO>(
-      `/training/challenges/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}/surrender${query}`,
-      {
-        method: 'POST',
-      },
-    )
-  },
-
-  async getChallengeRecords(): Promise<ChallengeRecordEntryDTO[]> {
-    const raw = await apiClient<unknown>('/training/challenges/records')
-    if (!Array.isArray(raw)) {
-      throw new Error(
-        '[trainingApi] Invalid ChallengeRecordEntryDTO[] payload: expected array. Fail-Fast!',
-      )
-    }
-    return raw as ChallengeRecordEntryDTO[]
   },
 }
