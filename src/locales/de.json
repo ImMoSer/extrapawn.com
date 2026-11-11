@@ -99,11 +99,11 @@
           "Zweck: Bereitstellung der Kernfunktionen (Analyse deiner Partien und Speicherung deines Trainingsfortschritts).",
           "Rechtsgrundlage: Art. 6 Abs. 1 lit. b & f DSGVO."
         ],
-        "telegramTitle": "5. Nutzung in der Telegram-Umgebung (@ExtraPawnTeleBot & Telegram Mini App)",
+        "telegramTitle": "5. Nutzung in der Telegram-Umgebung ({'@'}ExtraPawnTeleBot & Telegram Mini App)",
         "telegramParagraphs": [
-          "Wenn du unsere Telegram Mini App oder den Bot @ExtraPawnTeleBot innerhalb des Messengers Telegram nutzt, agiert die Plattform Telegram als eigenständiger datenschutzrechtlicher Verantwortlicher gemäß deren Nutzungsbedingungen (https://telegram.org/tos) und Datenschutzerklärung (https://telegram.org/privacy).",
+          "Wenn du unsere Telegram Mini App oder den Bot {'@'}ExtraPawnTeleBot innerhalb des Messengers Telegram nutzt, agiert die Plattform Telegram als eigenständiger datenschutzrechtlicher Verantwortlicher gemäß deren Nutzungsbedingungen (https://telegram.org/tos) und Datenschutzerklärung (https://telegram.org/privacy).",
           "Datenverarbeitung durch EXTRAPAWN: Für den Betrieb der Klub-Challenges und Ranglisten erhalten wir über das Telegram WebApp SDK bzw. die Bot API ausschließlich technisch notwendige öffentliche Profil-Metadaten: telegram_id, first_name, last_name (sofern angegeben), username (sofern angegeben), language_code sowie die chat_id und topic_thread_id verbundener Schach-Supergruppen und die Ergebnisse deiner Lösungsversuche.",
-          "Datenlöschung: Administratoren verbundener Klubs können den Bot jederzeit mit einem Klick in den Einstellungen der Mini App trennen und sämtliche Daten ihres Klubs unwiderruflich aus unserer PostgreSQL-Datenbank löschen. Jeder Nutzer kann zudem jederzeit die vollständige Löschung seiner persönlichen Statistik per E-Mail (immozerai{'@'}gmail.com) oder über Telegram (@ProfessorMozer) anfordern.",
+          "Datenlöschung: Administratoren verbundener Klubs können den Bot jederzeit mit einem Klick in den Einstellungen der Mini App trennen und sämtliche Daten ihres Klubs unwiderruflich aus unserer PostgreSQL-Datenbank löschen. Jeder Nutzer kann zudem jederzeit die vollständige Löschung seiner persönlichen Statistik per E-Mail (immozerai{'@'}gmail.com) oder über Telegram ({'@'}ProfessorMozer) anfordern.",
           "Rechtsgrundlage: Art. 6 Abs. 1 lit. b & f DSGVO."
         ],
         "paymentTitle": "6. Freiwillige Unterstützung / Spenden (Externe Drittanbieter)",
@@ -141,11 +141,11 @@
       "sections": {
         "introTitle": "1. Geltungsbereich und Anbieter",
         "introParagraphs": [
-          "Diese Nutzungsbedingungen gelten für die gesamte Plattform EXTRAPAWN (einschließlich der Web-Plattform extrapawn.com, des Telegram-Bots @ExtraPawnTeleBot und der Telegram Mini App), betrieben durch:\n\nSergej Siemens, M.Eng.\nSchuhbauerstraße 19\n84166 Adlkofen\nE-Mail: immozerai{'@'}gmail.com\n\n(nachfolgend „Anbieter“)."
+          "Diese Nutzungsbedingungen gelten für die gesamte Plattform EXTRAPAWN (einschließlich der Web-Plattform extrapawn.com, des Telegram-Bots {'@'}ExtraPawnTeleBot und der Telegram Mini App), betrieben durch:\n\nSergej Siemens, M.Eng.\nSchuhbauerstraße 19\n84166 Adlkofen\nE-Mail: immozerai{'@'}gmail.com\n\n(nachfolgend „Anbieter“)."
         ],
         "subjectTitle": "2. Leistungsbeschreibung und unentgeltliche Nutzung („As Is“)",
         "subjectParagraphs": [
-          "(1) EXTRAPAWN (einschließlich extrapawn.com, @ExtraPawnTeleBot und der Telegram Mini App) ist eine kostenfreie Analyse-, Trainings- und Wettbewerbsplattform für Schachspieler und Schachklubs.",
+          "(1) EXTRAPAWN (einschließlich extrapawn.com, {'@'}ExtraPawnTeleBot und der Telegram Mini App) ist eine kostenfreie Analyse-, Trainings- und Wettbewerbsplattform für Schachspieler und Schachklubs.",
           "(2) Sämtliche Funktionen, Trainingsmodule, Statistiken und KI-Auswertungen werden vollständig unentgeltlich (kostenlos) nach dem Prinzip „wie besehen“ („as is“) bereitgestellt. Nutzer haben keinen Rechtsanspruch auf eine ununterbrochene Verfügbarkeit, den Erhalt bestimmter Funktionen oder einen fehlerfreien Betrieb.",
           "(3) Der Anbieter behält sich das Recht vor, Funktionen im Rahmen der technischen Weiterentwicklung jederzeit zu ändern, zu erweitern, zu pausieren oder einzustellen."
         ],
@@ -157,7 +157,7 @@
         "terminationTitle": "4. Regeln für Telegram-Klubs und Beendigung der Nutzung",
         "terminationParagraphs": [
           "(1) Nutzer können die Nutzung des Dienstes jederzeit beenden.",
-          "(2) Der Administrator einer Telegram-Supergruppe, der @ExtraPawnTeleBot hinzufügt, bestätigt, über Administratorrechte für die jeweilige Gruppe (ab 30 Mitgliedern mit aktivierten Themen / Topics) zu verfügen, und erklärt sich damit einverstanden, dass im dedizierten Bot-Thema neben Schach-Challenges und Klub-Ranglisten gelegentlich informative Ankündigungen des EXTRAPAWN-Ökosystems veröffentlicht werden können.",
+          "(2) Der Administrator einer Telegram-Supergruppe, der {'@'}ExtraPawnTeleBot hinzufügt, bestätigt, über Administratorrechte für die jeweilige Gruppe (ab 30 Mitgliedern mit aktivierten Themen / Topics) zu verfügen, und erklärt sich damit einverstanden, dass im dedizierten Bot-Thema neben Schach-Challenges und Klub-Ranglisten gelegentlich informative Ankündigungen des EXTRAPAWN-Ökosystems veröffentlicht werden können.",
           "(3) Ein Klub-Administrator kann den Bot jederzeit pausieren oder sämtliche Daten des Klubs mit einem Klick in den Einstellungen der Mini App vollständig und unwiderruflich aus der Datenbank löschen. Der Anbieter ist berechtigt, den Zugang für Klubs oder Nutzer bei Missbrauch oder Verstößen gegen diese Regeln zu sperren."
         ],
         "dataTitle": "5. Plattformdaten und Statistiken",

@@ -51,21 +51,21 @@ const techStackItems = [
 </script>
 
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-transparent pb-15 text-text-primary">
+  <div class="min-h-screen overflow-x-hidden bg-transparent pb-8 text-text-primary sm:pb-15">
     <!-- Hero Section -->
     <header
-      class="relative flex h-72 items-center justify-center overflow-hidden border-b border-border bg-surface px-5 text-center md:h-88"
+      class="relative flex items-center justify-center overflow-hidden border-b border-border bg-surface px-2.5 py-6 text-center sm:h-72 sm:px-5 md:h-88"
     >
       <div class="relative z-10">
         <h1
-          class="m-0 font-display text-[clamp(2rem,5vw,4.2rem)] font-black tracking-[2px] text-text-primary uppercase"
+          class="m-0 font-display text-lg font-black tracking-[1px] text-text-primary uppercase sm:text-[clamp(2rem,5vw,4.2rem)] sm:tracking-[2px]"
         >
           {{ t('about.hero.title') }}
         </h1>
-        <p class="mt-4 text-xl tracking-[1px] text-text-secondary">
+        <p class="mt-2 text-xs tracking-[0.5px] text-text-secondary sm:mt-4 sm:text-xl sm:tracking-[1px]">
           {{ t('about.hero.subtitle') }}
           <span
-            class="ml-1 rounded-full border border-brand/40 bg-brand/15 px-2.5 py-0.5 align-middle font-condensed text-xs font-bold text-brand"
+            class="ml-1 rounded-full border border-brand/40 bg-brand/15 px-2 py-0.5 align-middle font-condensed text-[10px] font-bold text-brand sm:px-2.5 sm:text-xs"
           >
             v{{ appVersion }}
           </span>
@@ -73,21 +73,22 @@ const techStackItems = [
       </div>
     </header>
 
-    <div class="relative z-20 mx-auto mt-8 max-w-[1200px] px-5">
+    <div class="relative z-20 mx-auto mt-3 max-w-[1200px] px-1.5 sm:mt-8 sm:px-5">
       <!-- Concept Section -->
       <section>
-        <n-grid cols="1 s:1 m:3" responsive="screen" :x-gap="24" :y-gap="24">
+        <n-grid cols="1 s:1 m:3" responsive="screen" :x-gap="16" :y-gap="12">
           <n-gi v-for="key in conceptKeys" :key="key">
             <n-card
-              class="glass relative h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover"
+              size="small"
+              class="glass relative h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-3 sm:[&>.n-card__content]:!px-5 sm:[&>.n-card__content]:!py-4"
             >
               <div
                 class="absolute top-0 left-0 h-[2px] w-full bg-brand"
               ></div>
-              <h2 class="m-0 mb-3 font-display text-lg font-bold text-text-primary">
+              <h2 class="m-0 mb-1.5 font-display text-sm font-bold text-text-primary sm:mb-3 sm:text-lg">
                 {{ t(`about.concept.${key}.title`) }}
               </h2>
-              <n-text class="text-[1.05rem] leading-relaxed">
+              <n-text class="text-xs leading-snug sm:text-[1.05rem] sm:leading-relaxed">
                 <span
                   v-html="
                     t(`about.concept.${key}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -99,41 +100,42 @@ const techStackItems = [
         </n-grid>
       </section>
 
-      <n-divider class="!my-15 !border-border" />
+      <n-divider class="!my-6 !border-border sm:!my-15" />
 
       <!-- Modules Section -->
       <section>
         <h2
-          class="mb-8 text-center font-display text-4xl font-black tracking-[1px] text-text-primary"
+          class="mb-4 text-center font-display text-xl font-black tracking-[1px] text-text-primary sm:mb-8 sm:text-4xl"
         >
           {{ t('about.hero.title').split(' — ')[0] }} Pillars
         </h2>
-        <n-grid cols="1 s:1 m:2 l:2" responsive="screen" :x-gap="24" :y-gap="24">
+        <n-grid cols="1 s:1 m:2 l:2" responsive="screen" :x-gap="16" :y-gap="12">
           <n-gi v-for="mod in modules" :key="mod">
             <n-card
-              class="glass group h-full transition-all duration-300 hover:-translate-y-1 hover:border-[var(--hover-border-color)] hover:shadow-[0_12px_40px_var(--hover-glow-color)]"
+              size="small"
+              class="glass group h-full transition-all duration-300 hover:-translate-y-1 hover:border-[var(--hover-border-color)] hover:shadow-[0_12px_40px_var(--hover-glow-color)] [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-3 sm:[&>.n-card__content]:!px-5 sm:[&>.n-card__content]:!py-4"
               :style="{
                 '--hover-glow-color': moduleVisuals[mod].glow,
                 '--hover-border-color': moduleVisuals[mod].color,
               }"
             >
-              <div class="flex items-center gap-4 pb-3 border-b border-border/60">
+              <div class="flex items-center gap-2.5 border-b border-border/60 pb-2 sm:gap-4 sm:pb-3">
                 <div
-                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-elevated/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated/40 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 sm:h-12 sm:w-12 sm:rounded-xl"
                   :style="{
                     color: moduleVisuals[mod].color,
                     boxShadow: 'inset 0 0 10px ' + moduleVisuals[mod].glow,
                     border: '1px solid ' + moduleVisuals[mod].color,
                   }"
                 >
-                  <span class="text-2xl">{{ moduleVisuals[mod].icon }}</span>
+                  <span class="text-lg sm:text-2xl">{{ moduleVisuals[mod].icon }}</span>
                 </div>
-                <h3 class="m-0 font-display text-xl font-extrabold tracking-[0.5px] text-text-primary">
+                <h3 class="m-0 font-display text-sm font-extrabold tracking-[0.5px] text-text-primary sm:text-xl">
                   {{ t(`about.modules.${mod}.title`) }}
                 </h3>
               </div>
-              <div class="pt-3">
-                <n-text depth="3" class="text-[0.95rem] leading-[1.7] whitespace-pre-wrap text-text-secondary">
+              <div class="pt-2 sm:pt-3">
+                <n-text depth="3" class="text-xs leading-snug whitespace-pre-wrap text-text-secondary sm:text-[0.95rem] sm:leading-[1.7]">
                   <span
                     v-html="
                       t(`about.modules.${mod}.text`).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -146,31 +148,31 @@ const techStackItems = [
         </n-grid>
       </section>
 
-      <n-divider class="!my-15 !border-border" />
+      <n-divider class="!my-6 !border-border sm:!my-15" />
 
       <!-- Tech Stack -->
-      <section class="glass p-5 md:p-10">
+      <section class="glass p-3 sm:p-5 md:p-10">
         <h2
-          class="mb-8 text-center font-display text-4xl font-black tracking-[1px] text-text-primary"
+          class="mb-4 text-center font-display text-xl font-black tracking-[1px] text-text-primary sm:mb-8 sm:text-4xl"
         >
           {{ t('about.techStack.title') }}
         </h2>
-        <n-grid cols="1 s:2 m:3" responsive="screen" :x-gap="40" :y-gap="24">
+        <n-grid cols="1 s:2 m:3" responsive="screen" :x-gap="20" :y-gap="12">
           <n-gi v-for="item in techStackItems" :key="item.labelKey">
             <div
-              class="flex items-start gap-4 rounded-xl border border-border bg-elevated/30 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-border-hover hover:bg-elevated/60"
+              class="flex items-start gap-2.5 rounded-lg border border-border bg-elevated/30 p-2.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-border-hover hover:bg-elevated/60 sm:gap-4 sm:rounded-xl sm:p-4"
             >
               <div class="flex items-center justify-center pt-1">
                 <span
-                  class="inline-block h-2.5 w-2.5 rounded-full"
+                  class="inline-block h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5"
                   :style="{ backgroundColor: item.color, boxShadow: '0 0 8px ' + item.color }"
                 ></span>
               </div>
-              <div class="flex flex-col gap-1">
-                <span class="text-[0.9rem] font-bold text-text-primary">
+              <div class="flex flex-col gap-0.5 sm:gap-1">
+                <span class="text-xs font-bold text-text-primary sm:text-[0.9rem]">
                   {{ t('about.techStack.' + item.labelKey) }}
                 </span>
-                <span class="text-[0.85rem] leading-[1.4] text-text-secondary">
+                <span class="text-[11px] leading-snug text-text-secondary sm:text-[0.85rem] sm:leading-[1.4]">
                   {{ t('about.techStack.' + item.stackKey) }}
                 </span>
               </div>
@@ -179,30 +181,30 @@ const techStackItems = [
         </n-grid>
       </section>
 
-      <n-divider class="!my-15 !border-border" />
+      <n-divider class="!my-6 !border-border sm:!my-15" />
 
       <!-- Licensing & Acknowledgements -->
-      <section class="mt-15">
+      <section class="mt-6 sm:mt-15">
         <h2
-          class="mb-8 text-center font-display text-4xl font-black tracking-[1px] text-text-primary"
+          class="mb-3 text-center font-display text-xl font-black tracking-[1px] text-text-primary sm:mb-8 sm:text-4xl"
         >
           {{ t('about.licenseAndAcknowledgements.title') }}
         </h2>
-        <p class="mb-7.5 text-center text-[1.05rem] text-text-secondary">
+        <p class="mb-4 text-center text-xs text-text-secondary sm:mb-7.5 sm:text-[1.05rem]">
           {{ t('about.licenseAndAcknowledgements.gplIntro') }}
         </p>
 
-        <n-grid cols="1 s:1 m:2" responsive="screen" :x-gap="24" :y-gap="24">
+        <n-grid cols="1 s:1 m:2" responsive="screen" :x-gap="16" :y-gap="12">
           <!-- Stockfish -->
           <n-gi>
             <n-card
               size="small"
-              class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
+              class="h-full rounded-xl border border-border bg-surface/60 text-xs transition-colors hover:border-border-hover hover:bg-elevated/50 sm:text-sm [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-2.5 sm:[&>.n-card__content]:!px-4 sm:[&>.n-card__content]:!py-3.5"
             >
-              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+              <h3 class="m-0 mb-1.5 font-display text-sm font-bold text-text-primary sm:mb-2 sm:text-base">
                 {{ t('about.licenseAndAcknowledgements.stockfish.title') }}
               </h3>
-              <n-text depth="3">
+              <n-text depth="3" class="text-xs sm:text-sm">
                 {{ t('about.licenseAndAcknowledgements.stockfish.text1') }}
                 <strong>Stockfish</strong>
                 {{ t('about.licenseAndAcknowledgements.stockfish.text2') }}
@@ -211,7 +213,7 @@ const techStackItems = [
                 <n-tag type="warning" size="small" :bordered="false">
                   {{ t('about.licenseAndAcknowledgements.stockfish.gplNoteTitle') }}
                 </n-tag>
-                <n-text depth="3" class="mt-1 block text-xs">
+                <n-text depth="3" class="mt-1 block text-[11px] sm:text-xs">
                   {{ t('about.licenseAndAcknowledgements.stockfish.gplNote') }}
                 </n-text>
               </div>
@@ -222,12 +224,12 @@ const techStackItems = [
           <n-gi>
             <n-card
               size="small"
-              class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
+              class="h-full rounded-xl border border-border bg-surface/60 text-xs transition-colors hover:border-border-hover hover:bg-elevated/50 sm:text-sm [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-2.5 sm:[&>.n-card__content]:!px-4 sm:[&>.n-card__content]:!py-3.5"
             >
-              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+              <h3 class="m-0 mb-1.5 font-display text-sm font-bold text-text-primary sm:mb-2 sm:text-base">
                 {{ t('about.licenseAndAcknowledgements.neuralNetworks.title') }}
               </h3>
-              <n-text depth="3">
+              <n-text depth="3" class="text-xs sm:text-sm">
                 <span
                   v-html="
                     t('about.licenseAndAcknowledgements.neuralNetworks.text').replace(
@@ -254,12 +256,12 @@ const techStackItems = [
           <n-gi>
             <n-card
               size="small"
-              class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
+              class="h-full rounded-xl border border-border bg-surface/60 text-xs transition-colors hover:border-border-hover hover:bg-elevated/50 sm:text-sm [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-2.5 sm:[&>.n-card__content]:!px-4 sm:[&>.n-card__content]:!py-3.5"
             >
-              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+              <h3 class="m-0 mb-1.5 font-display text-sm font-bold text-text-primary sm:mb-2 sm:text-base">
                 {{ t('about.licenseAndAcknowledgements.lcZero.title') }}
               </h3>
-              <n-text depth="3">
+              <n-text depth="3" class="text-xs sm:text-sm">
                 <span
                   v-html="
                     t('about.licenseAndAcknowledgements.lcZero.text').replace(
@@ -276,12 +278,12 @@ const techStackItems = [
           <n-gi>
             <n-card
               size="small"
-              class="h-full rounded-xl border border-border bg-surface/60 transition-colors hover:border-border-hover hover:bg-elevated/50"
+              class="h-full rounded-xl border border-border bg-surface/60 text-xs transition-colors hover:border-border-hover hover:bg-elevated/50 sm:text-sm [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-2.5 sm:[&>.n-card__content]:!px-4 sm:[&>.n-card__content]:!py-3.5"
             >
-              <h3 class="m-0 mb-2 font-display text-base font-bold text-text-primary">
+              <h3 class="m-0 mb-1.5 font-display text-sm font-bold text-text-primary sm:mb-2 sm:text-base">
                 Chessground & Chessops
               </h3>
-              <n-text depth="3">
+              <n-text depth="3" class="text-xs sm:text-sm">
                 {{ t('about.licenseAndAcknowledgements.chessground.text1') }}
                 <strong>Chessground</strong> & <strong>Chessops</strong>.
                 {{ t('about.licenseAndAcknowledgements.chessground.gratitude') }}
@@ -292,20 +294,20 @@ const techStackItems = [
       </section>
 
       <!-- Author Section -->
-      <section class="glass mt-20 p-5 md:p-10">
-        <div class="flex flex-col items-center gap-7.5 text-center md:flex-row md:gap-10 md:text-left">
+      <section class="glass mt-8 p-3.5 sm:mt-20 sm:p-5 md:p-10">
+        <div class="flex flex-col items-center gap-4 text-center md:flex-row md:gap-10 md:text-left">
           <div class="relative shrink-0">
             <img
-              class="relative z-10 h-[180px] w-[180px] rounded-full border-2 border-border-hover object-cover"
+              class="relative z-10 h-[110px] w-[110px] rounded-full border-2 border-border-hover object-cover sm:h-[180px] sm:w-[180px]"
               src="/jpg/me.jpg"
               :alt="t('about.author.photoAlt')"
             />
           </div>
           <div class="grow">
-            <h2 class="m-0 mb-4 font-display text-3xl font-extrabold text-text-primary">
+            <h2 class="m-0 mb-2 font-display text-lg font-extrabold text-text-primary sm:mb-4 sm:text-3xl">
               {{ t('about.author.title') }}
             </h2>
-            <div class="space-y-3 leading-relaxed text-text-secondary">
+            <div class="space-y-2 text-xs leading-snug text-text-secondary sm:space-y-3 sm:text-sm sm:leading-relaxed">
               <p>{{ t('about.author.bioPart1') }}</p>
               <p>{{ t('about.author.bioPart2') }}</p>
               <p>{{ t('about.author.bioPart3') }}</p>

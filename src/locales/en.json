@@ -99,11 +99,11 @@
           "Purpose: Provision of core functions (analysis of your games and saving your training progress).",
           "Legal basis: Art. 6 Para. 1 lit. b & f GDPR."
         ],
-        "telegramTitle": "5. Use in the Telegram Environment (@ExtraPawnTeleBot & Telegram Mini App)",
+        "telegramTitle": "5. Use in the Telegram Environment ({'@'}ExtraPawnTeleBot & Telegram Mini App)",
         "telegramParagraphs": [
-          "When you launch our Telegram Mini App or use @ExtraPawnTeleBot inside the Telegram messenger, the Telegram platform acts as an independent data controller in accordance with its Terms of Service (https://telegram.org/tos) and Privacy Policy (https://telegram.org/privacy).",
+          "When you launch our Telegram Mini App or use {'@'}ExtraPawnTeleBot inside the Telegram messenger, the Telegram platform acts as an independent data controller in accordance with its Terms of Service (https://telegram.org/tos) and Privacy Policy (https://telegram.org/privacy).",
           "Data processed by EXTRAPAWN: To operate club challenges and leaderboards, our application receives only technically required public profile metadata from the Telegram WebApp SDK / Bot API: telegram_id, first_name, last_name (if provided), username (if provided), language_code, as well as the chat_id and topic_thread_id of connected chess supergroups and the results of your puzzle attempts.",
-          "Data deletion: Administrators of connected clubs can disconnect the bot and permanently delete all data of their club from our PostgreSQL database at any time with a single click directly in the Mini App settings. Any user can also request the complete deletion of their personal statistics at any time via E-Mail (immozerai{'@'}gmail.com) or via Telegram (@ProfessorMozer).",
+          "Data deletion: Administrators of connected clubs can disconnect the bot and permanently delete all data of their club from our PostgreSQL database at any time with a single click directly in the Mini App settings. Any user can also request the complete deletion of their personal statistics at any time via E-Mail (immozerai{'@'}gmail.com) or via Telegram ({'@'}ProfessorMozer).",
           "Legal basis: Art. 6 Para. 1 lit. b & f GDPR."
         ],
         "paymentTitle": "6. Voluntary Support / Donations (External Third-Party Providers)",
@@ -141,11 +141,11 @@
       "sections": {
         "introTitle": "1. Scope and Provider",
         "introParagraphs": [
-          "These Terms of Use apply to the entire EXTRAPAWN platform (including the web platform extrapawn.com, the Telegram bot @ExtraPawnTeleBot, and the Telegram Mini App), operated by:\n\nSergej Siemens, M.Eng.\nSchuhbauerstraße 19\n84166 Adlkofen, Germany\nE-Mail: immozerai{'@'}gmail.com\n\n(hereinafter \"Provider\")."
+          "These Terms of Use apply to the entire EXTRAPAWN platform (including the web platform extrapawn.com, the Telegram bot {'@'}ExtraPawnTeleBot, and the Telegram Mini App), operated by:\n\nSergej Siemens, M.Eng.\nSchuhbauerstraße 19\n84166 Adlkofen, Germany\nE-Mail: immozerai{'@'}gmail.com\n\n(hereinafter \"Provider\")."
         ],
         "subjectTitle": "2. Description of Services and Free Use (\"As Is\")",
         "subjectParagraphs": [
-          "(1) EXTRAPAWN (including extrapawn.com, @ExtraPawnTeleBot, and the Telegram Mini App) is a free training, analysis, and competition platform for chess players and chess clubs.",
+          "(1) EXTRAPAWN (including extrapawn.com, {'@'}ExtraPawnTeleBot, and the Telegram Mini App) is a free training, analysis, and competition platform for chess players and chess clubs.",
           "(2) All functions, training modules, statistics, and AI evaluations are provided completely free of charge (gratuitously) on an \"as is\" basis. Users have no legal claim to uninterrupted availability, preservation of specific functions, or error-free operation.",
           "(3) The Provider reserves the right to modify, expand, pause, or discontinue functions at any time as part of technical development."
         ],
@@ -157,7 +157,7 @@
         "terminationTitle": "4. Rules for Telegram Clubs and Termination of Use",
         "terminationParagraphs": [
           "(1) Users may stop using the service at any time.",
-          "(2) An administrator of a Telegram supergroup who adds @ExtraPawnTeleBot confirms that they hold administrator rights for the group (minimum 30 members with Topics enabled) and agrees that, in addition to chess challenges and club leaderboards, occasional informational announcements of the EXTRAPAWN ecosystem may be published in the dedicated bot topic.",
+          "(2) An administrator of a Telegram supergroup who adds {'@'}ExtraPawnTeleBot confirms that they hold administrator rights for the group (minimum 30 members with Topics enabled) and agrees that, in addition to chess challenges and club leaderboards, occasional informational announcements of the EXTRAPAWN ecosystem may be published in the dedicated bot topic.",
           "(3) A club administrator can pause the bot or permanently delete all club data from the database at any time with a single click in the Mini App settings. The Provider is entitled to block access for clubs or users in the event of misuse or violation of these rules."
         ],
         "dataTitle": "5. Platform Data and Statistics",
