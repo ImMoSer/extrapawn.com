@@ -15,6 +15,7 @@ const router = createRouter({
       name: 'welcome',
       component: () => import('@/pages/welcome').then((m) => m.WelcomePage),
       meta: {
+        requiresAuth: true,
         seo: {
           titleKey: 'seo.welcome.title',
           descriptionKey: 'seo.welcome.description',
@@ -112,6 +113,7 @@ const router = createRouter({
       name: 'pricing',
       component: () => import('@/pages/pricing').then((m) => m.PricingPage),
       meta: {
+        requiresAuth: true,
         seo: {
           titleKey: 'seo.pricing.title',
           descriptionKey: 'seo.pricing.description',
@@ -122,11 +124,13 @@ const router = createRouter({
       path: '/courses',
       name: 'courses',
       component: () => import('@/pages/courses').then((m) => m.CoursesPage),
+      meta: { requiresAuth: true },
     },
     {
       path: '/club-player',
       name: 'club-player',
       component: () => import('@/pages/club-player').then((m) => m.ClubPlayerPage),
+      meta: { requiresAuth: true },
     },
     {
       path: '/bonus',
@@ -187,7 +191,7 @@ router.beforeEach(async (to, from) => {
       return false
     }
     if (!from.name) {
-      return { name: 'welcome' }
+      return { name: 'about' }
     }
     return false
   }

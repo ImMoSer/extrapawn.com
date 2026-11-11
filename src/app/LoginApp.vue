@@ -66,6 +66,36 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
           </button>
         </template>
       </div>
+
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-text-secondary">
+        <a
+          href="/about"
+          class="text-text-secondary no-underline transition-colors hover:text-brand"
+        >
+          {{ t('shared.nav.about') }}
+        </a>
+        <span class="text-border">•</span>
+        <a
+          href="/legal#imprint"
+          class="text-text-secondary no-underline transition-colors hover:text-brand"
+        >
+          {{ t('legal.tabs.imprint') }}
+        </a>
+        <span class="text-border">•</span>
+        <a
+          href="/legal#privacy"
+          class="text-text-secondary no-underline transition-colors hover:text-brand"
+        >
+          {{ t('legal.tabs.privacy') }}
+        </a>
+        <span class="text-border">•</span>
+        <a
+          href="/legal#terms"
+          class="text-text-secondary no-underline transition-colors hover:text-brand"
+        >
+          {{ t('legal.tabs.terms') }}
+        </a>
+      </div>
     </div>
   </div>
 </template>

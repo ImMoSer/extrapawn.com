@@ -33,6 +33,8 @@ async function boot() {
 
   // Branch A: User not logged in -> Show minimal Login Screen (except on public shareable routes)
   const isPublicShareRoute =
+    /^\/legal\/?$/i.test(window.location.pathname) ||
+    /^\/about\/?$/i.test(window.location.pathname) ||
     /^\/kursdiplom\/[^/]+/.test(window.location.pathname) ||
     /^\/user-cabinet\/mo3ep\/?$/i.test(window.location.pathname)
   if (!authStore.isAuthenticated && !isPublicShareRoute) {
