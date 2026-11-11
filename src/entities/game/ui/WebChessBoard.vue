@@ -132,7 +132,7 @@ const combinedShapes = computed(() => {
     const sym = getNagSymbol(q, boardStore.lastNag.nag)
     const color = getNagColor(q)
     result.push({
-      orig: boardStore.lastNag.square as Key,
+      orig: boardStore.lastNag.square,
       customSvg: {
         html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.canvas}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.canvas}" text-anchor="middle">${sym}</text></g>`,
         center: 'orig',
@@ -148,7 +148,7 @@ const combinedShapes = computed(() => {
       const sym = getNagSymbol(q, s.nag)
       const color = getNagColor(q)
       result.push({
-        orig: s.orig as Key,
+        orig: s.orig,
         customSvg: {
           html: `<g><circle cx="82" cy="18" r="14" fill="${color}" stroke="${tokens.canvas}" stroke-width="2.5"/><text x="82" y="22.5" font-size="13" font-weight="900" font-family="sans-serif" fill="${tokens.canvas}" text-anchor="middle">${sym}</text></g>`,
           center: 'orig',
@@ -159,7 +159,7 @@ const combinedShapes = computed(() => {
       const label = String(s.stepBadge)
       const badgeWidth = Math.max(26, label.length * 11)
       result.push({
-        orig: s.orig as Key,
+        orig: s.orig,
         customSvg: {
           html: `<g><rect x="4" y="4" width="${badgeWidth}" height="20" rx="4" fill="${tokens.warning}" stroke="${tokens.canvas}" stroke-width="1.5"/><text x="${4 + badgeWidth / 2}" y="17.5" font-size="12" font-weight="900" font-family="monospace" fill="${tokens.canvas}" text-anchor="middle">${label}</text></g>`,
           center: 'orig',
@@ -169,8 +169,8 @@ const combinedShapes = computed(() => {
       const brushKey = typeof s.brush === 'string' ? s.brush : undefined
       const safeBrush = brushKey && brushKey in CHESSGROUND_BRUSHES ? brushKey : 'green'
       result.push({
-        orig: s.orig as Key,
-        dest: s.dest as Key | undefined,
+        orig: s.orig,
+        dest: s.dest,
         brush: safeBrush,
         modifiers: s.modifiers,
       })
@@ -227,11 +227,11 @@ onMounted(() => {
       drawable: {
         enabled: true,
         brushes: CHESSGROUND_BRUSHES,
-        shapes: combinedShapes.value as DrawShape[],
+        shapes: combinedShapes.value,
         onChange: (shapes) => {
           const autoKey = (s: DrawShape) => `${s.orig}-${s.dest || ''}-${s.brush || ''}`
           const autoKeys = new Set(boardStore.autoShapes.map(autoKey))
-          const userShapes = (shapes as DrawShape[]).filter(
+          const userShapes = shapes.filter(
             (s) => !s.customSvg && !autoKeys.has(autoKey(s)),
           )
           emit('shapes-change', userShapes)
@@ -276,7 +276,7 @@ watch(
   ]) => {
     if (!ground.value) return
 
-    boardStore.animationDurationMs = animationEnabled ? (animationDuration as number) : 0
+    boardStore.animationDurationMs = animationEnabled ? animationDuration : 0
 
     ground.value.set({
       fen,
@@ -294,9 +294,9 @@ watch(
         duration: animationDuration,
       },
       drawable: {
-        enabled: canEdit as boolean,
+        enabled: canEdit,
         brushes: CHESSGROUND_BRUSHES,
-        shapes: shapes as DrawShape[],
+        shapes: shapes,
       },
     })
   },
