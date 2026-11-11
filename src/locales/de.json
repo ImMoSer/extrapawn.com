@@ -309,7 +309,7 @@
       "bioPart1": "Ich bin Moser, Maschinenbauingenieur und lebenslanger Schachschüler. Geboren in Kasachstan (1985), wohnhaft in Deutschland (2003).",
       "bioPart2": "EXTRAPAWN ist mein Traum von einem professionellen Werkzeug, das es Spielern ermöglicht, effektiv zu lernen.",
       "bioPart3": "Fließend in Russisch und Deutsch, ständig an meinem Englisch feilend. Danke, dass du dabei bist!",
-      "supportButtonText": "Gib mir einen Kaffee aus"
+      "supportButtonText": "Projekt unterstützen"
     },
     "contact": {
       "telegram": "Telegram",
@@ -569,7 +569,7 @@
         "noSubscription": "100% gratis — keine Abonnements"
       },
       "supportTitle": "Projekt unterstützen",
-      "supportDesc": "ExtraPawn wird unabhängig mit Leidenschaft für die Schach-Community entwickelt. Wenn dir das Training gefällt und du das Projekt oder die Serverkosten unterstützen möchtest, kannst du dem Entwickler gerne einen Kaffee ausgeben!",
+      "supportDesc": "ExtraPawn wird unabhängig mit Leidenschaft für die Schach-Community entwickelt. Wenn dir das Training gefällt, kannst du die Weiterentwicklung und Serverkosten gerne unterstützen!",
       "clubBtn": "Club Top 20"
     },
     "bonus": {

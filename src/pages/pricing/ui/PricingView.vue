@@ -13,7 +13,6 @@ import {
   NGi,
 } from 'naive-ui'
 import {
-  CafeOutline,
   CheckmarkCircleOutline,
   HeartOutline,
   TrophyOutline,
@@ -103,7 +102,7 @@ const freeFeatures = [
           </div>
         </n-card>
 
-        <!-- Support / Buy Me a Coffee Card -->
+        <!-- Support the Project Card -->
         <n-card class="glass overflow-hidden" :bordered="false">
           <n-space vertical align="center" :size="16" class="py-4 text-center">
             <div
@@ -128,14 +127,14 @@ const freeFeatures = [
                 size="large"
                 round
                 tag="a"
-                href="https://buymeacoffee.com/extrapawn.com"
+                href="https://ko-fi.com/extrapawn"
                 target="_blank"
                 class="px-7 font-bold"
               >
                 <template #icon>
-                  <n-icon><CafeOutline /></n-icon>
+                  <n-icon><HeartOutline /></n-icon>
                 </template>
-                {{ t('about.author.supportButtonText') || 'Buy me a coffee' }}
+                {{ t('about.author.supportButtonText') }}
               </n-button>
 
               <router-link to="/club-player" custom v-slot="{ navigate }">

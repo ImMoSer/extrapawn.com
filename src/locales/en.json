@@ -309,7 +309,7 @@
       "bioPart1": "I'm Moser, a mechanical engineer and lifelong chess student. Born in Kazakhstan (1985), living in Germany (2003).",
       "bioPart2": "EXTRAPAWN is my dream of a professional tool that empowers players to study effectively, which only became possible through modern AI and workflow automation.",
       "bioPart3": "Fluent in Russian and German, always polishing my English. Thank you for joining this journey!",
-      "supportButtonText": "Buy me a coffee"
+      "supportButtonText": "Support the Project"
     },
     "contact": {
       "telegram": "Telegram",
@@ -569,7 +569,7 @@
         "noSubscription": "100% free — no subscriptions"
       },
       "supportTitle": "Support the Project",
-      "supportDesc": "ExtraPawn is developed independently with passion for the chess community. If you enjoy training here and want to show appreciation or support hosting costs, you are welcome to buy me a coffee! More voluntary donation options will be available soon.",
+      "supportDesc": "ExtraPawn is developed independently with passion for the chess community. If you enjoy training here and want to show appreciation, you are welcome to support the project and server infrastructure!",
       "clubBtn": "Club Top 20"
     },
     "bonus": {
