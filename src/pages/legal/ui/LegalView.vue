@@ -50,6 +50,7 @@ const orderedPrivacyKeys = [
   'logfiles',
   'hosting',
   'lichess',
+  'telegram',
   'payment',
   'storage',
   'fonts',
@@ -180,19 +181,6 @@ const showPrecedenceNotice = computed(() => {
                 class="!mb-4 !text-text-secondary"
               >
                 <span class="whitespace-pre-wrap">{{ para }}</span>
-              </n-p>
-              <n-p
-                v-if="key === 'payment' && te('legal.privacy.sections.paymentLink')"
-                class="!mb-4"
-              >
-                <a
-                  :href="t('legal.privacy.sections.paymentLink')"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="break-all text-brand underline transition-opacity hover:opacity-80"
-                >
-                  {{ t('legal.privacy.sections.paymentLink') }}
-                </a>
               </n-p>
             </div>
           </div>

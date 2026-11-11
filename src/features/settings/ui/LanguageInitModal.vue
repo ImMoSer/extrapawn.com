@@ -33,6 +33,7 @@ const handleSelectLanguage = async (lang: 'ru' | 'de' | 'en') => {
 
     if (authStore.userProfile) {
       authStore.userProfile.language = lang
+      localStorage.setItem('user_profile', JSON.stringify(authStore.userProfile))
     }
   } catch (err) {
     logger.error('[LanguageInitModal] Error saving language choice:', err)

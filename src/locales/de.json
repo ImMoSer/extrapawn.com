@@ -31,8 +31,8 @@
       "description": "Erfahre mehr über die Philosophie hinter ExtraPawn. Ein professionelles Schach-Gym für Spieler, die das nächste Level erreichen wollen."
     },
     "pricing": {
-      "title": "Preise & Pläne — Werde Teil des ExtraPawn Clubs",
-      "description": "Entdecke unsere Abonnements: Pawn, Knight, Bishop, Rook, Queen und King. Wähle den besten Plan für dein Wachstum."
+      "title": "Projekt unterstützen — 100% Kostenlos für Alle",
+      "description": "Alle Funktionen auf ExtraPawn sind komplett kostenlos. Unterstütze das Projekt freiwillig und tritt dem ExtraPawn-Klub bei."
     },
     "repertoireTraining": {
       "title": "Repertoire-Training — Spaced Repetition",
@@ -96,29 +96,36 @@
           "Du kannst dich bei EXTRAPAWN über deinen Lichess-Account anmelden. Hierbei nutzen wir das OAuth 2.0 Verfahren.",
           "Ablauf: Du wirst zu Lichess weitergeleitet und autorisierst dort den Zugriff.",
           "Daten: Wir erhalten von Lichess deinen Benutzernamen (Username) und verknüpfen diesen mit deinem EXTRAPAWN-Profil.",
-          "Zweck: Bereitstellung der Kernfunktionen (Analyse deiner Partien).",
-          "Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)."
+          "Zweck: Bereitstellung der Kernfunktionen (Analyse deiner Partien und Speicherung deines Trainingsfortschritts).",
+          "Rechtsgrundlage: Art. 6 Abs. 1 lit. b & f DSGVO."
         ],
-        "paymentTitle": "5. Zahlungsabwicklung (Polar.sh / Stripe)",
+        "telegramTitle": "5. Nutzung in der Telegram-Umgebung (@ExtraPawnTeleBot & Telegram Mini App)",
+        "telegramParagraphs": [
+          "Wenn du unsere Telegram Mini App oder den Bot @ExtraPawnTeleBot innerhalb des Messengers Telegram nutzt, agiert die Plattform Telegram als eigenständiger datenschutzrechtlicher Verantwortlicher gemäß deren Nutzungsbedingungen (https://telegram.org/tos) und Datenschutzerklärung (https://telegram.org/privacy).",
+          "Datenverarbeitung durch EXTRAPAWN: Für den Betrieb der Klub-Challenges und Ranglisten erhalten wir über das Telegram WebApp SDK bzw. die Bot API ausschließlich technisch notwendige öffentliche Profil-Metadaten: telegram_id, first_name, last_name (sofern angegeben), username (sofern angegeben), language_code sowie die chat_id und topic_thread_id verbundener Schach-Supergruppen und die Ergebnisse deiner Lösungsversuche.",
+          "Datenlöschung: Administratoren verbundener Klubs können den Bot jederzeit mit einem Klick in den Einstellungen der Mini App trennen und sämtliche Daten ihres Klubs unwiderruflich aus unserer PostgreSQL-Datenbank löschen. Jeder Nutzer kann zudem jederzeit die vollständige Löschung seiner persönlichen Statistik per E-Mail (immozerai{'@'}gmail.com) oder über Telegram (@ProfessorMozer) anfordern.",
+          "Rechtsgrundlage: Art. 6 Abs. 1 lit. b & f DSGVO."
+        ],
+        "paymentTitle": "6. Freiwillige Unterstützung / Spenden (Externe Drittanbieter)",
         "paymentParagraphs": [
-          "Für den Abschluss von Abos nutzen wir die Dienste von Polar.sh und Stripe.",
-          "Abwicklung: Wenn du ein Upgrade durchführst, werden deine Zahlungsdaten direkt von Polar/Stripe erhoben und verarbeitet. Wir speichern zu keinem Zeitpunkt Kreditkartendaten auf unseren eigenen Servern. Weitere Informationen zur Datenverarbeitung findest du in der Datenschutzerklärung von Polar.sh:"
+          "Alle Funktionen der Plattform EXTRAPAWN und der Telegram Mini App werden vollständig kostenlos zur Verfügung gestellt.",
+          "Nutzer haben die Möglichkeit, den Betrieb und die Weiterentwicklung des Projekts freiwillig über externe Zahlungs- bzw. Spendenplattformen von Drittanbietern finanziell zu unterstützen.",
+          "Wenn du einem externen Unterstützungs-Link folgst, findet die Erhebung und Verarbeitung sämtlicher Zahlungsdaten ausschließlich auf Seiten des jeweiligen externen Dienstleisters nach Maßgabe von dessen eigener Datenschutzerklärung statt. Unsere Server erhalten, verarbeiten oder speichern zu keinem Zeitpunkt Zahlungs- oder Bankdaten von Nutzern."
         ],
-        "paymentLink": "https://polar.sh/legal/privacy",
-        "storageTitle": "6. Lokale Speicherung (Local Storage / Session)",
+        "storageTitle": "7. Lokale Speicherung (Local Storage / Session)",
         "storageParagraphs": [
-          "EXTRAPAWN nutzt keine Marketing-Cookies. Wir verwenden lediglich den „Local Storage“ deines Browsers, um technisch notwendige Einstellungen zu speichern:",
-          "Login-Status (Auth-Token): Damit du eingeloggt bleibst.",
+          "EXTRAPAWN nutzt keine Marketing-Cookies. Wir verwenden lediglich den „Local Storage“ deines Browsers bzw. WebViews, um technisch notwendige Einstellungen zu speichern:",
+          "Login-Status (Session) und Bestätigung der Nutzungsbedingungen.",
           "Spracheinstellungen (i18n): Damit die App in deiner bevorzugten Sprache erscheint.",
           "UI-Einstellungen: Z.B. dein gewähltes Board-Design.",
           "Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Diese Daten sind für den Betrieb der App zwingend erforderlich; eine Einwilligung (Cookie-Banner) ist daher nicht notwendig."
         ],
-        "fontsTitle": "7. Keine Drittanbieter-Inhalte (Fonts & Tracking)",
+        "fontsTitle": "8. Keine Drittanbieter-Inhalte (Fonts & Tracking)",
         "fontsParagraphs": [
-          "Schriftarten: Wir nutzen keine externen Dienste wie Google Fonts. Alle Schriftarten (z.B. Ubuntu) werden lokal von unseren eigenen Servern ausgeliefert.",
+          "Schriftarten: Wir nutzen keine externen Dienste wie Google Fonts. Alle Schriftarten werden lokal von unseren eigenen Servern ausgeliefert.",
           "Tracking: Wir setzen keine Analyse-Tools (wie Google Analytics) oder Marketing-Pixel ein."
         ],
-        "rightsTitle": "8. Deine Rechte",
+        "rightsTitle": "9. Deine Rechte",
         "rightsParagraphs": [
           "Du hast gegenüber uns folgende Rechte hinsichtlich deiner personenbezogenen Daten:",
           "Recht auf Auskunft (Art. 15 DSGVO)",
@@ -130,53 +137,69 @@
       }
     },
     "terms": {
-      "title": "Allgemeine Geschäftsbedingungen (AGB)",
+      "title": "Nutzungsbedingungen (AGB)",
       "sections": {
         "introTitle": "1. Geltungsbereich und Anbieter",
         "introParagraphs": [
-          "Diese AGB gelten für die Nutzung der Plattform EXTRAPAWN, betrieben durch:\n\n**Sergej Siemens, M.Eng.**\nSchuhbauerstraße 19\n84166 Adlkofen\nE-Mail: immozerai{'@'}gmail.com\n\n(nachfolgend „Anbieter“)"
+          "Diese Nutzungsbedingungen gelten für die gesamte Plattform EXTRAPAWN (einschließlich der Web-Plattform extrapawn.com, des Telegram-Bots @ExtraPawnTeleBot und der Telegram Mini App), betrieben durch:\n\nSergej Siemens, M.Eng.\nSchuhbauerstraße 19\n84166 Adlkofen\nE-Mail: immozerai{'@'}gmail.com\n\n(nachfolgend „Anbieter“)."
         ],
-        "subjectTitle": "2. Vertragsgegenstand und Leistungsbeschreibung",
+        "subjectTitle": "2. Leistungsbeschreibung und unentgeltliche Nutzung („As Is“)",
         "subjectParagraphs": [
-          "(1) EXTRAPAWN ist eine Analyse- und Trainingsplattform für Schachspieler. Die Plattform wird im Freemium-Modell betrieben.",
-          "(2) Kostenlose Grundversion: Nutzer können Basisfunktionen ohne Entgelt nutzen. Es besteht kein Anspruch auf dauerhafte Verfügbarkeit dieser Funktionen.",
-          "(3) Kostenpflichtiges Abo (Pro): Die kostenpflichtige Hauptleistung umfasst den Zugang zu erweiterten Trainingsmodulen, insbesondere einer umfangreichen Datenbank für Taktikaufgaben und Endspiel-Training (theoretischer und praktischer Natur).",
-          "(4) Zusatzfunktionen (Statistiken/KI): Der Anbieter stellt im Rahmen des Abos grafische Analysen, Statistiken und KI-gestützte Auswertungen bereit. Diese Funktionen sind ausdrücklich freiwillige Zusatzleistungen und nicht Bestandteil der garantierten Beschaffenheit der Pro-Version. Der Anbieter behält sich vor, diese Funktionen im Rahmen der technischen Weiterentwicklung jederzeit zu ändern, zu erweitern oder zu entfernen."
+          "(1) EXTRAPAWN (einschließlich extrapawn.com, @ExtraPawnTeleBot und der Telegram Mini App) ist eine kostenfreie Analyse-, Trainings- und Wettbewerbsplattform für Schachspieler und Schachklubs.",
+          "(2) Sämtliche Funktionen, Trainingsmodule, Statistiken und KI-Auswertungen werden vollständig unentgeltlich (kostenlos) nach dem Prinzip „wie besehen“ („as is“) bereitgestellt. Nutzer haben keinen Rechtsanspruch auf eine ununterbrochene Verfügbarkeit, den Erhalt bestimmter Funktionen oder einen fehlerfreien Betrieb.",
+          "(3) Der Anbieter behält sich das Recht vor, Funktionen im Rahmen der technischen Weiterentwicklung jederzeit zu ändern, zu erweitern, zu pausieren oder einzustellen."
         ],
-        "contractTitle": "3. Vertragsschluss und Zahlungsabwicklung",
+        "contractTitle": "3. Kostenfreiheit und freiwillige Unterstützung (Spenden)",
         "contractParagraphs": [
-          "(1) Der Erwerb von Abos erfolgt über Polar Signals AB (Polar.sh) als Merchant of Record. Der Verkauf, die Abrechnung sowie alle damit verbundenen gesetzlichen Informationspflichten – einschließlich Widerrufsbelehrung und Verbraucherschutzhinweisen – werden vollständig durch Polar.sh im Rahmen des Checkout-Prozesses übernommen. Es gelten ergänzend die Verkaufsbedingungen von Polar.sh.",
-          "(2) Der Vertrag über das Abo kommt zustande, sobald der Nutzer den Zahlungsprozess bei Polar.sh erfolgreich abgeschlossen hat.",
-          "(3) Vor dem Kauf ist die ausdrückliche Zustimmung zu diesen AGB durch Aktivierung der entsprechenden Checkbox erforderlich. Ohne diese Zustimmung ist ein Kauf nicht möglich."
+          "(1) Die Nutzung der Plattform erfordert keine Bezahlung und kein kostenpflichtiges Abonnement.",
+          "(2) Eine freiwillige finanzielle Unterstützung des Projekts durch Nutzer über externe Dienste oder Spendenplattformen Dritter erfolgt ausschließlich als freiwillige Zuwendung (Spende) zur Unterstützung des Serverbetriebs und der Weiterentwicklung. Hierdurch kommt kein entgeltlicher Leistungsvertrag zustande, und es entstehen keinerlei Sonderrechte, Privilegien oder Gegenleistungspflichten seitens des Anbieters."
         ],
-        "terminationTitle": "4. Laufzeit und Kündigung",
+        "terminationTitle": "4. Regeln für Telegram-Klubs und Beendigung der Nutzung",
         "terminationParagraphs": [
-          "(1) Abos haben eine monatliche Laufzeit.",
-          "(2) Eine Kündigung ist jederzeit ohne Einhaltung einer Frist zum Ende des bezahlten Zeitraums möglich.",
-          "(3) Nach der Kündigung bleiben die Pro-Funktionen bis zum Ablauf des bereits bezahlten Zeitraums vollumfänglich erhalten. Eine Rückerstattung bereits gezahlter Beträge erfolgt nicht."
+          "(1) Nutzer können die Nutzung des Dienstes jederzeit beenden.",
+          "(2) Der Administrator einer Telegram-Supergruppe, der @ExtraPawnTeleBot hinzufügt, bestätigt, über Administratorrechte für die jeweilige Gruppe (ab 30 Mitgliedern mit aktivierten Themen / Topics) zu verfügen, und erklärt sich damit einverstanden, dass im dedizierten Bot-Thema neben Schach-Challenges und Klub-Ranglisten gelegentlich informative Ankündigungen des EXTRAPAWN-Ökosystems veröffentlicht werden können.",
+          "(3) Ein Klub-Administrator kann den Bot jederzeit pausieren oder sämtliche Daten des Klubs mit einem Klick in den Einstellungen der Mini App vollständig und unwiderruflich aus der Datenbank löschen. Der Anbieter ist berechtigt, den Zugang für Klubs oder Nutzer bei Missbrauch oder Verstößen gegen diese Regeln zu sperren."
         ],
         "dataTitle": "5. Plattformdaten und Statistiken",
         "dataParagraphs": [
-          "Spielstatistiken, Analysen und KI-Auswertungen sind vom Anbieter berechnete und vorgehaltene Plattformdaten. Der Anbieter behält sich vor, diese Daten im Rahmen der Weiterentwicklung jederzeit zu ändern, zurückzusetzen oder zu löschen. Hieraus entstehen keine Ansprüche des Nutzers. Die originären Partiedaten des Nutzers verbleiben ausschließlich bei Lichess; der Nutzer ist für die Sicherung dieser Daten selbst verantwortlich."
+          "Spielstatistiken, Ranglisten, Analysen und KI-Auswertungen sind vom Anbieter berechnete und vorgehaltene Plattformdaten. Der Anbieter behält sich vor, diese Daten im Rahmen der Weiterentwicklung jederzeit zu ändern, zurückzusetzen oder zu löschen; hieraus entstehen keine Ansprüche des Nutzers. Die originären Partiedaten des Nutzers auf Lichess verbleiben ausschließlich bei Lichess."
         ],
-        "liabilityTitle": "6. Liability",
+        "liabilityTitle": "6. Haftungsbeschränkung",
         "liabilityParagraphs": [
-          "(1) Der Anbieter haftet unbeschränkt bei Vorsatz oder grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper oder Gesundheit.",
-          "(2) Bei leichter Fahrlässigkeit haftet der Anbieter nur bei Verletzung einer wesentlichen Vertragspflicht (Kardinalpflicht). In diesem Fall ist die Haftung auf den bei Vertragsschluss vorhersehbaren, typischen Schaden begrenzt."
+          "(1) Da sämtliche Dienste von EXTRAPAWN vollständig unentgeltlich bereitgestellt werden, haftet der Anbieter – entsprechend den gesetzlichen Wertungen für unentgeltliche Leistungen (§§ 521, 599 BGB analog) – ausschließlich für Vorsatz und grobe Fahrlässigkeit sowie bei zwingender gesetzlicher Haftung wegen der Verletzung von Leben, Körper oder Gesundheit.",
+          "(2) Eine Haftung für leichte Fahrlässigkeit, für den Verlust von Trainings- oder Spieldaten sowie für eine vorübergehende Nichtverfügbarkeit der Server ist ausgeschlossen.",
+          "(3) Haftungsausschluss für die Telegram-Umgebung: Der Anbieter hat keinen Einfluss auf die Infrastruktur des Messengers Telegram und übernimmt keinerlei Haftung für Störungen oder Ausfälle von Telegram, Kontosperrungen, Handlungen Dritter oder Kompromittierungen von Konten bzw. Gruppen auf Seiten von Telegram."
         ],
-        "changesTitle": "7. Änderungen der Plattform und der AGB",
+        "changesTitle": "7. Änderungen der Plattform und der Nutzungsbedingungen",
         "changesParagraphs": [
-          "Der Anbieter ist berechtigt, die Plattform im Rahmen der technischen Verbesserung und Weiterentwicklung anzupassen. Wesentliche Änderungen der AGB werden dem Nutzer rechtzeitig mitgeteilt."
+          "Der Anbieter ist berechtigt, die Plattform und diese Nutzungsbedingungen jederzeit mit Wirkung für die Zukunft anzupassen."
         ],
         "lawTitle": "8. Anwendbares Recht",
         "lawParagraphs": [
           "Es gilt das Recht der Bundesrepublik Deutschland. Gegenüber Verbrauchern gilt dies nur, soweit keine zwingenden Vorschriften des Rechts des Staates, in dem der Verbraucher seinen gewöhnlichen Aufenthalt hat, entgegenstehen."
         ],
-        "finalTitle": "9. Final Provisions",
+        "finalTitle": "9. Schlussbestimmungen",
         "finalParagraphs": [
-          "Should individual provisions of these T&C be or become invalid, the validity of the remaining provisions remains unaffected."
+          "Sollten einzelne Bestimmungen dieser Nutzungsbedingungen unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen hiervon unberührt."
         ]
       }
+    },
+    "consentModal": {
+      "title": "Nutzungsbedingungen & Datenschutz",
+      "subtitle": "Bitte bestätige kurz die Bedingungen für die kostenfreie Nutzung von ExtraPawn:",
+      "point1Title": "1. 100 % Kostenlos & „Wie besehen“ („As Is“)",
+      "point1Text": "Alle Funktionen der Plattform sind komplett kostenlos. Wir verlangen keine Gebühren und übernehmen keine Haftung für Serverausfälle oder Drittanbieter-Dienste (Lichess / Telegram).",
+      "point2Title": "2. Welche Daten gespeichert werden",
+      "point2Text": "Wir speichern ausschließlich deine öffentliche Profil-ID (Lichess-Username bzw. Telegram-Profil), technisch notwendige Einstellungen und deinen Trainingsfortschritt. Kein Werbe-Tracking und keine Zahlungsdaten.",
+      "point3Title": "3. Volle Kontrolle über deine Daten",
+      "point3Text": "Du nutzt die Plattform freiwillig und kannst jederzeit die vollständige Löschung deiner gespeicherten Daten und Statistiken anfordern.",
+      "checkboxPrefix": "Ich habe die",
+      "termsLinkText": "Nutzungsbedingungen (AGB)",
+      "checkboxMiddle": "und die",
+      "privacyLinkText": "Datenschutzerklärung",
+      "checkboxSuffix": "gelesen und akzeptiere diese",
+      "imprintLinkText": "Impressum",
+      "continueBtn": "Weiter zu ExtraPawn"
     }
   },
   "about": {

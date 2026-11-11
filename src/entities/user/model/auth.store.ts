@@ -122,6 +122,27 @@ export const useAuthStore = defineStore('auth', () => {
     window.location.href = `${BACKEND_API_URL}/auth/lichess/logout`
   }
 
+  async function acceptTerms(): Promise<void> {
+    const response = await fetch(`${BACKEND_API_URL}/users/me/accept-terms`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      throw new Error(`[AuthStore] Failed to accept terms: HTTP ${response.status}`)
+    }
+
+    const payload = (await response.json()) as { ok: true; termsAcceptedAt: string }
+    if (userProfile.value) {
+      userProfile.value = {
+        ...userProfile.value,
+        termsAcceptedAt: payload.termsAcceptedAt,
+      }
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(userProfile.value))
+    }
+    logger.info('[AuthStore] Terms of Use accepted and persisted.')
+  }
+
   return {
     userProfile,
     isAuthenticated,
@@ -137,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
     initialize,
     login,
     logout,
+    acceptTerms,
     checkSession,
     clearAuthDataLocal,
   }

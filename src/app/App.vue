@@ -1,7 +1,7 @@
 <!-- src/app/App.vue -->
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
-import { LanguageInitModal, SettingsMenu } from '@/features/settings'
+import { LanguageInitModal, LegalConsentModal, SettingsMenu } from '@/features/settings'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { isDarkMode, toggleColorMode } from '@/shared/theme/tokens'
@@ -213,6 +213,7 @@ onUnmounted(() => {
 
           <ConfirmationModal />
           <LanguageInitModal />
+          <LegalConsentModal />
           <AppUpdateNotifier />
         </n-layout>
       </n-dialog-provider>

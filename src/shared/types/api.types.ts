@@ -68,6 +68,7 @@ interface LichessUserProfile {
 
 export interface UserSessionProfile extends LichessUserProfile {
   language?: string | null
+  termsAcceptedAt?: string | null
   validatedAt?: number
 }
 
