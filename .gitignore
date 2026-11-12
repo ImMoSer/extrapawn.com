@@ -18,6 +18,7 @@ coverage
 # Local env files
 .env
 .env.production
+.env_dokploy
 *.local
 
 # Cypress output
