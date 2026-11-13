@@ -68,17 +68,16 @@ export function isValidTrainingDifficulty(value: string): value is TrainingDiffi
   return (TRAINING_DIFFICULTIES as readonly string[]).includes(value)
 }
 
-export type BotLadderEngineId = Extract<EngineId, 'maia-1500' | 'maia-2200' | 'mozero'>
+export type BotLadderEngineId = Extract<EngineId, 'mozero'>
 
 export const BOT_ENGINE_BY_DIFFICULTY: Readonly<Record<TrainingDifficulty, BotLadderEngineId>> = {
-  Novice: 'maia-1500',
-  Pro: 'maia-2200',
+  Novice: 'mozero',
+  Pro: 'mozero',
   Master: 'mozero',
 }
 
 export function resolveBotEngineForDifficulty(
   difficulty: TrainingDifficulty,
-  discipline?: TrainingDiscipline,
 ): BotLadderEngineId {
   const engine = BOT_ENGINE_BY_DIFFICULTY[difficulty]
   if (!engine) {
@@ -86,18 +85,15 @@ export function resolveBotEngineForDifficulty(
       `[TrainingTaxonomy] Unknown difficulty "${String(difficulty)}" for Bot Ladder resolution. Fail-Fast!`,
     )
   }
-  if (discipline === 'theoretical_endgames' || discipline === 'endgame_course') {
-    return 'mozero'
-  }
   return engine
 }
 
 export function validateBotLadderEngine(engineId: string): BotLadderEngineId {
-  if (engineId === 'maia-1500' || engineId === 'maia-2200' || engineId === 'mozero') {
+  if (engineId === 'mozero') {
     return engineId
   }
   throw new Error(
-    `[TrainingTaxonomy] Unexpected bot_engine "${engineId}" outside v2 Bot Ladder (maia-1500 | maia-2200 | mozero). Fail-Fast!`,
+    `[TrainingTaxonomy] Unexpected bot_engine "${engineId}" outside v2 Bot Ladder (mozero). Fail-Fast!`,
   )
 }
 

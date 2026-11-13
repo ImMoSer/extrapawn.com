@@ -1,6 +1,6 @@
 # EXTRAPAWN — Professional Chess Training Ecosystem
 
-> EXTRAPAWN is a high-precision chess training and analytics platform built around structured 7-day and 30-day courses, Woodpecker repetition cycles, FIDE endgame simulators against human-like Maia neural network bots, and deep Stockfish 19 + Coach positional explanations.
+> EXTRAPAWN is a high-precision chess training and analytics platform built around structured 7-day and 30-day courses, Woodpecker repetition cycles, FIDE endgame simulators against our hybrid MOZERO neural network system, and deep Stockfish 19 + Coach positional explanations.
 
 ## Core Platform Sections
 
@@ -12,6 +12,6 @@
 - [User Cabinet & Chess DNA Analytics](https://extrapawn.com/user-cabinet/mo3ep): Comprehensive Lichess player telemetry, Glicko-2 training progression, and endgame mastery heatmaps.
 - [Club Top 20 & Tornado Analytics](https://extrapawn.com/club-player): Lichess team leaderboards and tournament performance tracking.
 - [Pricing & Membership Tiers](https://extrapawn.com/pricing): Overview of Free, Club Member, and Pro training capabilities.
-- [About EXTRAPAWN & Methodology](https://extrapawn.com/about): Detailed documentation of the Bot Ladder (Maia 1500, Maia 2200, T-1000 Stockfish), Glicko-2 rating engine, and training architecture.
+- [About EXTRAPAWN & Methodology](https://extrapawn.com/about): Detailed documentation of the MOZERO neural sparring system (LCZero + Elite-Leela-v2 + Syzygy/Gaviota), Glicko-2 rating engine, and training architecture.
 - [Legal & Privacy Information](https://extrapawn.com/legal): Imprint, terms of service, and privacy policy.
 

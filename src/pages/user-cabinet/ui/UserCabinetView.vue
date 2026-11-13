@@ -581,7 +581,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                 {{ resolveDifficultyLabel(tier, t) }}
               </span>
               <span class="font-condensed text-[10px] text-text-secondary">
-                {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, selectedDiscipline)] }}
+                {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
               </span>
             </button>
           </div>

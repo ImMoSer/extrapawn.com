@@ -733,7 +733,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       </NIcon>
                     </div>
                     <span class="font-condensed text-[11px] text-text-secondary">
-                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
+                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
                     </span>
                   </button>
                 </div>
@@ -957,7 +957,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
                       {{ resolveDifficultyLabel(tier, t) }}
                     </span>
                     <span class="font-condensed text-[11px] text-text-secondary">
-                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier, store.activeDiscipline)] }}
+                      {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
                     </span>
                   </button>
                 </div>

@@ -32,7 +32,7 @@ function createSessionSummary(overrides: Partial<SessionSummaryDTO> = {}): Sessi
     discipline,
     mode: 'warmup',
     difficulty,
-    bot_engine: resolveBotEngineForDifficulty(difficulty, discipline),
+    bot_engine: resolveBotEngineForDifficulty(difficulty),
     focus_group: 'objective',
     focus_key: 'hold_draw',
     total_count: 2,
@@ -52,13 +52,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     vi.restoreAllMocks()
   })
 
-  it('resolves Bot Ladder strictly per rank tier and discipline ([D12])', () => {
-    expect(resolveBotEngineForDifficulty('Novice')).toBe('maia-1500')
-    expect(resolveBotEngineForDifficulty('Pro')).toBe('maia-2200')
+  it('resolves Bot Ladder strictly per rank tier ([D12])', () => {
+    expect(resolveBotEngineForDifficulty('Novice')).toBe('mozero')
+    expect(resolveBotEngineForDifficulty('Pro')).toBe('mozero')
     expect(resolveBotEngineForDifficulty('Master')).toBe('mozero')
-    expect(resolveBotEngineForDifficulty('Novice', 'theoretical_endgames')).toBe('mozero')
-    expect(resolveBotEngineForDifficulty('Pro', 'theoretical_endgames')).toBe('mozero')
-    expect(resolveBotEngineForDifficulty('Master', 'theoretical_endgames')).toBe('mozero')
   })
 
   it('adapts HydratedSessionItem accurately across tactics, finishhim, practical_chess, and theoretical_endgames', () => {
@@ -301,8 +298,8 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         woodpecker_mastered_total: 4,
       },
       bot_engines: {
-        Novice: 'maia-1500',
-        Pro: 'maia-2200',
+        Novice: 'mozero',
+        Pro: 'mozero',
         Master: 'mozero',
       },
       disciplines: {
@@ -501,11 +498,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       const preferencesStore = usePreferencesStore()
       boardStore.animationDurationMs = 0
 
-      // Verify the 4 Crashtest engines are registered
+      // Verify the 3 Crashtest engines are registered
       expect(CRASHTEST_ENGINES).toEqual([
         'stockfish',
         'stockfish_d12',
-        'maia-2200',
         'mozero',
       ])
       expect(preferencesStore.preferences.gameplay.crashtestEngine).toBe('stockfish')
@@ -514,7 +510,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         session: createSessionSummary({
           discipline: 'tactics',
           difficulty: 'Novice',
-          bot_engine: 'maia-1500',
+          bot_engine: 'mozero',
           total_count: 3,
         }),
         items: [
@@ -626,8 +622,8 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           woodpecker_mastered_total: 4,
         },
         bot_engines: {
-          Novice: 'maia-1500',
-          Pro: 'maia-2200',
+          Novice: 'mozero',
+          Pro: 'mozero',
           Master: 'mozero',
         },
         disciplines: {

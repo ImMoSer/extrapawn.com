@@ -15,7 +15,7 @@
     },
     "finishHim": {
       "title": "Finish Him — Die Kunst der Realisierung",
-      "description": "Trainiere die Vorteilsverwertung gegen spezialisierte neuronale Netze (Maia 1500, Maia 2200, MOZERO). Lerne, Vorteile sicher nach Hause zu bringen.",
+      "description": "Trainiere die Vorteilsverwertung gegen das hybride neuronale Sparring-System MOZERO. Lerne, Vorteile sicher nach Hause zu bringen.",
       "keywords": "Vorteilsverwertung, Schach-Training, Endspieltechnik"
     },
     "theoryEndings": {
@@ -224,7 +224,7 @@
     "modules": {
       "trainingCenter": {
         "title": "TRAINING CENTER — 7 / 30-Tage-Kurssystem",
-        "text": "Strukturierte Trainingskurse in vier Kerndisziplinen (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) auf drei Leistungsstufen (**Novice, Pro, Master**).\n\n• **Dual-Gate-Zulassung**: Der Aufstieg in die nächste Stufe erfordert das Erfüllen der Kursquote sowie das Erreichen der Glicko-2-Wertungsschwelle in allen Pflichtbereichen.\n• **Intelligenter Coach-Sidebar**: Echtzeit-Zugbewertung, visuelle strategische Pläne und Schutz vor groben Patzern.\n• **Neuronales Ausspielen**: In Endspielen und Finish Him wird die Stellung nach der forcierten Variante gegen menschenähnliche neuronale Systeme (Maia 1500, Maia 2200, MOZERO) zu Ende gespielt."
+        "text": "Strukturierte Trainingskurse in vier Kerndisziplinen (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) auf drei Leistungsstufen (**Novice, Pro, Master**).\n\n• **Dual-Gate-Zulassung**: Der Aufstieg in die nächste Stufe erfordert das Erfüllen der Kursquote sowie das Erreichen der Glicko-2-Wertungsschwelle in allen Pflichtbereichen.\n• **Intelligenter Coach-Sidebar**: Echtzeit-Zugbewertung, visuelle strategische Pläne und Schutz vor groben Patzern.\n• **Neuronales Ausspielen**: In Endspielen und Finish Him wird die Stellung nach der forcierten Variante gegen unser einheitliches neuronales System **MOZERO** zu Ende gespielt."
       },
       "warmup": {
         "title": "TARGETED WARMUP — Gezielte Kalibrierungs-Arena",
@@ -250,7 +250,7 @@
       "boardRendering": "Datenvisualisierung: ",
       "boardRenderingStack": "Apache ECharts für 12-Monats-Analysen & Taktik-Radare",
       "chessEngine": "Analyse- & Sparring-Cluster: ",
-      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia 1500, Maia 2200, MOZERO Neural Hub)",
+      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (MOZERO Neural Hub + Syzygy & Gaviota)",
       "api": "Protokolle: ",
       "apiStack": "Lichess REST API & OAuth 2.0"
     },
@@ -270,7 +270,7 @@
       },
       "neuralNetworks": {
         "title": "MOZERO Sparring-System & Neuronales Hub",
-        "text": "Realistisches Sparring wird durch die menschenähnliche **Maia**-Serie (1500 und 2200 Elo) sowie das hybride **MOZERO**-System auf Basis der Standard-Engine **lc0_32_1**, den Gewichten **Elite-Leela-v2-128x10x8h-1704000.pb.gz** und einer spezialisierten **Python-, Syzygy- & Gaviota**-Orchestrierung ermöglicht. Besonderer Dank gilt dem Autor des **CallOn84/LeelaNets**-Repositorys für die Bereitstellung der Netzgewichte.",
+        "text": "Realistisches Sparring in allen Disziplinen und Leistungsstufen wird durch unser einheitliches hybrides **MOZERO**-System auf Basis der Standard-Engine **lc0_32_1**, den Gewichten **Elite-Leela-v2-128x10x8h-1704000.pb.gz** und einer spezialisierten **Python-, Syzygy- & Gaviota**-Orchestrierung ermöglicht. Besonderer Dank gilt dem Autor des **CallOn84/LeelaNets**-Repositorys für die Bereitstellung der Netzgewichte.",
         "links": {
           "website": "LCZero Hub",
           "github": "LCZero Repo",

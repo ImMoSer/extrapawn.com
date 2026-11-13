@@ -258,7 +258,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       return validateBotLadderEngine(activeSessionSummary.value.bot_engine)
     }
     const tier = activeDisciplineOverview.value?.unlocked_tier ?? 'Novice'
-    return resolveBotEngineForDifficulty(tier, activeDiscipline.value)
+    return resolveBotEngineForDifficulty(tier)
   })
 
   const isPlaying = computed<boolean>(() => viewState.value === 'playing')
@@ -372,7 +372,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   // ==========================================================================
 
   function syncBotLadderForSession(summary: SessionSummaryDTO): BotLadderEngineId {
-    const expectedBot = resolveBotEngineForDifficulty(summary.difficulty, summary.discipline)
+    const expectedBot = resolveBotEngineForDifficulty(summary.difficulty)
     const serverBot = validateBotLadderEngine(summary.bot_engine)
     if (serverBot !== expectedBot) {
       throw new Error(
@@ -467,16 +467,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     const botEngine = syncBotLadderForSession(sess.session)
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
     const humanColor = determineHumanColor(puzzle)
-    const effectiveBotEngine: BotLadderEngineId =
-      puzzle.puzzle_type === 'endgame_course' ||
-      (puzzle.puzzle_type === 'tactics_course' &&
-        puzzle.strategy === 'playOutOnly' &&
-        puzzle.objective === 'hold_draw')
-        ? 'mozero'
-        : botEngine
-    if (effectiveBotEngine !== botEngine) {
-      gameStore.setBotEngineId(effectiveBotEngine)
-    }
+    const effectiveBotEngine: BotLadderEngineId = botEngine
 
     activePlayToken++
     const tokenAtLaunch = activePlayToken

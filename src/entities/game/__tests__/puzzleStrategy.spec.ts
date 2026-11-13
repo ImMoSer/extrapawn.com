@@ -194,7 +194,7 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     const holdPuzzle = createEndgamePuzzle({ initial_fen: fen, objective: 'hold_draw' })
     const strategy = new PuzzleStrategy(holdPuzzle, 'white', 'theoretical_endgames', {
       onSuccess: onHoldSuccess,
-      botEngineOverride: 'maia-2200',
+      botEngineOverride: 'mozero',
       delays: { botDelayMs: 0, initialBotDelayMs: 0 },
     })
 
@@ -208,7 +208,7 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
 
     expect(onHoldSuccess).toHaveBeenCalledTimes(1)
     expect(onHoldSuccess.mock.calls[0]?.[0]).toBe('threefold_repetition')
-    expect(enginePlayService.getBestMove).toHaveBeenCalledWith('maia-2200', expect.any(String))
+    expect(enginePlayService.getBestMove).toHaveBeenCalledWith('mozero', expect.any(String))
   })
 
   it('always treats resignation as LOSS even in hold_draw', () => {

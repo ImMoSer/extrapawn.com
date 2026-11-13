@@ -15,7 +15,7 @@
     },
     "finishHim": {
       "title": "Finish Him — Master Realization",
-      "description": "Convert your winning advantage against human-like neural network models (Maia 1500, Maia 2200, MOZERO). Learn to finish off your opponents.",
+      "description": "Convert your winning advantage against the hybrid MOZERO neural network sparring system. Learn to finish off your opponents.",
       "keywords": "chess realization, neural network sparring, endgame conversion"
     },
     "theoryEndings": {
@@ -224,7 +224,7 @@
     "modules": {
       "trainingCenter": {
         "title": "TRAINING CENTER — 7 / 30-Day Course System",
-        "text": "Structured training courses across four core disciplines (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) divided into three progression tiers (**Novice, Pro, Master**).\n\n• **Dual-Gate Progression**: Unlocking the next tier requires completing the course puzzle quota and clearing the Glicko-2 rating gate across all mandatory scopes.\n• **Intelligent Coach Sidebar**: Live move evaluation, visual strategic plans, and blunder protection.\n• **Neural Playouts**: In Endgames and Finish Him, transition seamlessly from forced lines into full conversion playouts against human-like neural network systems (Maia 1500, Maia 2200, MOZERO)."
+        "text": "Structured training courses across four core disciplines (**Tactics, Theoretical Endgames, Practical Chess, Finish Him**) divided into three progression tiers (**Novice, Pro, Master**).\n\n• **Dual-Gate Progression**: Unlocking the next tier requires completing the course puzzle quota and clearing the Glicko-2 rating gate across all mandatory scopes.\n• **Intelligent Coach Sidebar**: Live move evaluation, visual strategic plans, and blunder protection.\n• **Neural Playouts**: In Endgames and Finish Him, transition seamlessly from forced lines into full conversion playouts against our unified **MOZERO** neural network system."
       },
       "warmup": {
         "title": "TARGETED WARMUP — Precision Calibration Arena",
@@ -250,7 +250,7 @@
       "boardRendering": "Data Visualization: ",
       "boardRenderingStack": "Apache ECharts for 12-month timelines & tactical radars",
       "chessEngine": "Analysis & Sparring Cluster: ",
-      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (Maia 1500, Maia 2200, MOZERO Neural Hub)",
+      "chessEngineStack": "Stockfish 19 (Server & WASM), LCZero (MOZERO Neural Hub + Syzygy & Gaviota)",
       "api": "Protocols: ",
       "apiStack": "Lichess REST API & OAuth 2.0"
     },
@@ -270,7 +270,7 @@
       },
       "neuralNetworks": {
         "title": "MOZERO Sparring System & Neural Hub",
-        "text": "Realistic sparring is powered by the human-like **Maia** series (1500 and 2200 Elo) and the hybrid **MOZERO** system built on the standard **lc0_32_1** engine, **Elite-Leela-v2-128x10x8h-1704000.pb.gz** weights, and a dedicated **Python + Syzygy & Gaviota** orchestration layer. Special thanks to the author of the **CallOn84/LeelaNets** repository for publishing the neural network weights.",
+        "text": "Realistic sparring across all disciplines and difficulty tiers is powered by our unified hybrid **MOZERO** system built on the standard **lc0_32_1** engine, **Elite-Leela-v2-128x10x8h-1704000.pb.gz** weights, and a dedicated **Python + Syzygy & Gaviota** orchestration layer. Special thanks to the author of the **CallOn84/LeelaNets** repository for publishing the neural network weights.",
         "links": {
           "website": "LCZero Hub",
           "github": "LCZero GitHub",

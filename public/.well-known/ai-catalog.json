@@ -12,7 +12,7 @@
       "displayName": "EXTRAPAWN Chess Training & Analytics Guide",
       "type": "text/markdown; profile=\"urn:air:agent-skills\"",
       "url": "https://extrapawn.com/llms.txt",
-      "description": "Structured chess training ecosystem with 7/30-day Woodpecker courses, FIDE endgame playout simulators against Maia neural bots, Stockfish 19 + Coach analysis, and Lichess player analytics.",
+      "description": "Structured chess training ecosystem with 7/30-day Woodpecker courses, FIDE endgame playout simulators against the MOZERO neural sparring system, Stockfish 19 + Coach analysis, and Lichess player analytics.",
       "tags": [
         "chess",
         "tactics",
@@ -30,7 +30,7 @@
       ],
       "representativeQueries": [
         "Train chess tactics and Woodpecker method courses on EXTRAPAWN",
-        "Practice theoretical and practical chess endgames against Maia neural bots",
+        "Practice theoretical and practical chess endgames against the MOZERO neural sparring system",
         "Inspect EXTRAPAWN chess challenge records and Lichess player analytics"
       ],
       "version": "1.0.0",
