@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   isClassicalCourseDiscipline,
+  MAX_PUZZLE_ATTEMPTS,
   resolveDisciplineLabel,
   resolveScopeLabel,
   resolveTwinBadgeLabel,
@@ -11,9 +12,12 @@ import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
   CloseCircleOutline,
+  CloseOutline,
   DownloadOutline,
   EyeOutline,
   FlagOutline,
+  PlayOutline,
+  RefreshOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon, NInput, NPopover } from 'naive-ui'
 import { computed, ref } from 'vue'
@@ -29,7 +33,9 @@ const { anomaliesCount } = useCrashTestReport()
 const showFlagPopover = ref<boolean>(false)
 const flagComment = ref<string>('')
 
-const activePuzzle = computed(() => store.analysisPuzzle ?? store.currentPuzzle)
+const activePuzzle = computed(
+  () => store.analysisPuzzle ?? store.practicePuzzle ?? store.currentPuzzle,
+)
 
 const formattedTimer = computed(() => store.formatDurationMs(store.currentTimeMs))
 
@@ -103,9 +109,22 @@ const deltaText = computed(() => {
   return val >= 0 ? `+${val}` : `${val}`
 })
 
+const isCrashtestSession = computed(() => store.activeSessionSummary?.mode === 'crashtest')
+
+const showAttemptBadge = computed(
+  () =>
+    !isCrashtestSession.value &&
+    (store.isPlaying || store.isAwaitingRetry) &&
+    store.currentItem?.status === 'pending',
+)
+
 function handleBackAction(): void {
   if (store.isAnalysisMode) {
     store.exitPuzzleAnalysis()
+    return
+  }
+  if (store.isPracticeReplay) {
+    store.exitPracticeReplay()
     return
   }
   store.pauseToHub()
@@ -125,13 +144,13 @@ function handleBackAction(): void {
         size="small"
         type="error"
         :title="
-          store.isAnalysisMode
-            ? t('features.trainingCenter.actions.exitAnalysis')
+          store.isAnalysisMode || store.isPracticeReplay
+            ? t('features.trainingCenter.actions.continueSession')
             : t('features.trainingCenter.actions.pauseToHub')
         "
         :aria-label="
-          store.isAnalysisMode
-            ? t('features.trainingCenter.actions.exitAnalysis')
+          store.isAnalysisMode || store.isPracticeReplay
+            ? t('features.trainingCenter.actions.continueSession')
             : t('features.trainingCenter.actions.pauseToHub')
         "
         @click="handleBackAction"
@@ -162,6 +181,14 @@ function handleBackAction(): void {
         {{ t('features.trainingCenter.badges.analysis') }}
       </span>
 
+      <!-- Practice Replay Badge -->
+      <span
+        v-else-if="store.isPracticeReplay"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-success/15 text-success border border-success/40"
+      >
+        {{ t('features.trainingCenter.badges.practiceBadge') }}
+      </span>
+
       <!-- Exam Mode Badge (No Theme or Objective Spoilers) -->
       <span
         v-else-if="isExamPuzzle"
@@ -182,6 +209,26 @@ function handleBackAction(): void {
         class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40"
       >
         {{ t('features.trainingCenter.badges.winTarget') }}
+      </span>
+
+      <!-- Attempt Counter Badge (1/3 .. 3/3) -->
+      <span
+        v-if="showAttemptBadge"
+        class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold border"
+        :class="
+          store.isAwaitingRetry
+            ? 'bg-danger/15 text-danger border-danger/40'
+            : store.displayAttemptNumber > 1
+              ? 'bg-warning/15 text-warning border-warning/40'
+              : 'bg-elevated text-text-secondary border-border'
+        "
+      >
+        {{
+          t('features.trainingCenter.badges.attemptCounter', {
+            current: store.displayAttemptNumber,
+            max: MAX_PUZZLE_ATTEMPTS,
+          })
+        }}
       </span>
 
       <!-- Golden Twin Badge -->
@@ -215,7 +262,7 @@ function handleBackAction(): void {
 
       <!-- Timer -->
       <span
-        v-if="!store.isAnalysisMode"
+        v-if="!store.isAnalysisMode && !store.isPracticeReplay"
         class="font-condensed font-bold text-base text-warning min-w-16 text-right"
       >
         {{ formattedTimer }}
@@ -239,7 +286,7 @@ function handleBackAction(): void {
       </NButton>
 
       <NPopover
-        v-if="authStore.isMo3ep && isTacticsCourse && !store.isAnalysisMode"
+        v-if="authStore.isMo3ep && isTacticsCourse && !store.isAnalysisMode && !store.isPracticeReplay"
         v-model:show="showFlagPopover"
         trigger="click"
         placement="bottom-end"
@@ -303,7 +350,43 @@ function handleBackAction(): void {
         </div>
       </NPopover>
 
-      <template v-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved">
+      <!-- Retry Prompt Controls (Attempt 1/3 or 2/3 failed, engine locked) -->
+      <template v-if="store.isAwaitingRetry">
+        <NButton
+          size="tiny"
+          type="warning"
+          :disabled="!store.canRestartCurrentPuzzle"
+          :loading="store.isPersistingRetry"
+          @click="store.restartCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+          {{
+            t('features.trainingCenter.actions.restartAttempt', {
+              current: store.currentAttemptNumber,
+              max: MAX_PUZZLE_ATTEMPTS,
+            })
+          }}
+        </NButton>
+
+        <NButton
+          size="tiny"
+          secondary
+          type="error"
+          :disabled="!store.canResignCurrentPuzzle"
+          :loading="store.isSubmittingAttempt"
+          @click="store.resignCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><CloseOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.resignToAnalyze') }}
+        </NButton>
+      </template>
+
+      <!-- Finalized Failed / Resigned Controls -->
+      <template v-else-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved">
         <span
           class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm font-condensed font-bold text-xs border"
           :class="
@@ -327,6 +410,13 @@ function handleBackAction(): void {
           {{ t('features.trainingCenter.actions.analyze') }}
         </NButton>
 
+        <NButton size="tiny" secondary @click="store.startPracticeReplay()">
+          <template #icon>
+            <NIcon><PlayOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.practiceReplay') }}
+        </NButton>
+
         <NButton size="tiny" type="primary" @click="store.advanceAfterAttempt()">
           <template #icon>
             <NIcon><ArrowForwardOutline /></NIcon>
@@ -335,7 +425,19 @@ function handleBackAction(): void {
         </NButton>
       </template>
 
+      <!-- Analysis Controls -->
       <template v-else-if="store.isAnalysisMode">
+        <NButton
+          size="tiny"
+          secondary
+          @click="store.startPracticeReplay(store.analysisPuzzle?.puzzle_id)"
+        >
+          <template #icon>
+            <NIcon><PlayOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.practiceReplayFull') }}
+        </NButton>
+
         <NButton size="tiny" type="primary" @click="store.exitPuzzleAnalysis()">
           <template #icon>
             <NIcon><ArrowForwardOutline /></NIcon>
@@ -344,12 +446,73 @@ function handleBackAction(): void {
         </NButton>
       </template>
 
-      <span
-        v-else
-        class="font-condensed text-xs text-text-secondary px-1.5 py-0.5 rounded-sm bg-elevated border border-border"
-      >
-        #{{ store.currentItemIndex + 1 }}/{{ store.sessionItems.length }}
-      </span>
+      <!-- Practice Replay Controls (Sandbox without rating impact) -->
+      <template v-else-if="store.isPracticeReplay">
+        <NButton size="tiny" secondary @click="store.restartCurrentPuzzle()">
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.restartPuzzle') }}
+        </NButton>
+
+        <NButton
+          size="tiny"
+          secondary
+          @click="store.enterPuzzleAnalysis(store.practicePuzzle?.puzzle_id, true)"
+        >
+          <template #icon>
+            <NIcon><EyeOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.analyze') }}
+        </NButton>
+
+        <NButton size="tiny" type="primary" @click="store.exitPracticeReplay()">
+          <template #icon>
+            <NIcon><ArrowForwardOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.continueSession') }}
+        </NButton>
+      </template>
+
+      <!-- Active Play Controls (Restart & Resign + Queue Counter) -->
+      <template v-else>
+        <template v-if="!isCrashtestSession && store.currentItem?.status === 'pending'">
+          <NButton
+            size="tiny"
+            secondary
+            :disabled="!store.canRestartCurrentPuzzle"
+            :loading="store.isPersistingRetry"
+            :title="t('features.trainingCenter.actions.restartPuzzle')"
+            @click="store.restartCurrentPuzzle()"
+          >
+            <template #icon>
+              <NIcon><RefreshOutline /></NIcon>
+            </template>
+            <span class="hidden md:inline">{{ t('features.trainingCenter.actions.restartPuzzle') }}</span>
+          </NButton>
+
+          <NButton
+            size="tiny"
+            quaternary
+            type="error"
+            :disabled="!store.canResignCurrentPuzzle"
+            :loading="store.isSubmittingAttempt"
+            :title="t('features.trainingCenter.actions.resignPuzzle')"
+            @click="store.resignCurrentPuzzle()"
+          >
+            <template #icon>
+              <NIcon><CloseOutline /></NIcon>
+            </template>
+            <span class="hidden md:inline">{{ t('features.trainingCenter.actions.resignPuzzle') }}</span>
+          </NButton>
+        </template>
+
+        <span
+          class="font-condensed text-xs text-text-secondary px-1.5 py-0.5 rounded-sm bg-elevated border border-border"
+        >
+          #{{ store.currentItemIndex + 1 }}/{{ store.sessionItems.length }}
+        </span>
+      </template>
     </div>
   </div>
 </template>

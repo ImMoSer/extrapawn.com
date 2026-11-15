@@ -30,7 +30,7 @@ watch(
 )
 
 onUnmounted(() => {
-  if (store.isPlaying || store.isAwaitingNext || store.isAnalysisMode) {
+  if (store.isBoardSessionActive) {
     store.pauseToHub()
   }
 })

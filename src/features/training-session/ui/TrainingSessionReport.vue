@@ -2,6 +2,7 @@
 import {
   formatRemainingDuration,
   isClassicalCourseDiscipline,
+  MAX_PUZZLE_ATTEMPTS,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -14,7 +15,10 @@ import {
   CheckmarkCircleOutline,
   CloseCircleOutline,
   EyeOutline,
+  FlameOutline,
+  LockClosedOutline,
   PlayOutline,
+  RefreshOutline,
   RibbonOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
@@ -22,6 +26,11 @@ import { NButton, NIcon } from 'naive-ui'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import {
+  canAnalyzeSessionItem,
+  canPracticeReplayItem,
+  getItemAttemptsUsed,
+} from '../lib/sessionItemPolicy'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 
 const { t, te } = useI18n()
@@ -106,10 +115,46 @@ async function handleReturnToHub(): Promise<void> {
   store.pauseToHub()
 }
 
+const isClassicalCourseReport = computed(() =>
+  Boolean(report.value && isClassicalCourseDiscipline(report.value.discipline)),
+)
+
+const isNextClassicalStepWoodpecker = computed(
+  () =>
+    isClassicalCourseReport.value &&
+    store.tacticsCourseCurriculum?.current_step_type === 'woodpecker',
+)
+
+const canLaunchNextCourseStep = computed(() => {
+  if (!report.value || report.value.mode !== 'course') return false
+  if (isClassicalCourseReport.value) {
+    const cur = store.tacticsCourseCurriculum
+    return cur ? cur.current_step_type !== 'completed' : true
+  }
+  return Boolean(activeCourse.value && activeCourse.value.status === 'active')
+})
+
+const nextCourseStepLabel = computed(() => {
+  if (isClassicalCourseReport.value && store.tacticsCourseCurriculum) {
+    const cur = store.tacticsCourseCurriculum
+    if (cur.current_step_type === 'woodpecker') {
+      return t('features.trainingCenter.actions.nextWoodpeckerStep', {
+        id: cur.current_woodpecker_id,
+      })
+    }
+    if (cur.current_step_type === 'batch') {
+      return t('features.trainingCenter.actions.nextClassicalBatch', {
+        id: cur.current_batch_id,
+      })
+    }
+  }
+  return t('features.trainingCenter.actions.nextCourseBatch')
+})
+
 async function handleLaunchNextCourseBatch(): Promise<void> {
   if (!report.value) return
   if (isClassicalCourseDiscipline(report.value.discipline)) {
-    await store.startTacticsCourseBatch(0, true)
+    await store.startClassicalCourseNextStep()
     return
   }
   await store.startOrResumeCourseBatch(report.value.discipline, undefined, true)
@@ -212,15 +257,18 @@ function handleGoToCabinet(): void {
           {{ t('features.trainingCenter.actions.backToHub') }}
         </NButton>
         <NButton
-          v-if="report.mode === 'course' && activeCourse && activeCourse.status === 'active'"
-          type="primary"
+          v-if="canLaunchNextCourseStep"
+          :type="isNextClassicalStepWoodpecker ? 'warning' : 'primary'"
           :loading="store.isStartingSession"
           @click="handleLaunchNextCourseBatch"
         >
           <template #icon>
-            <NIcon><PlayOutline /></NIcon>
+            <NIcon>
+              <FlameOutline v-if="isNextClassicalStepWoodpecker" />
+              <PlayOutline v-else />
+            </NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.nextCourseBatch') }}
+          {{ nextCourseStepLabel }}
         </NButton>
       </div>
     </div>
@@ -333,10 +381,17 @@ function handleGoToCabinet(): void {
 
             <NIcon
               size="18"
-              :class="item.status === 'solved' ? 'text-success' : 'text-danger'"
+              :class="
+                item.status === 'solved'
+                  ? 'text-success'
+                  : item.status === 'failed'
+                    ? 'text-danger'
+                    : 'text-text-disabled'
+              "
             >
               <CheckmarkCircleOutline v-if="item.status === 'solved'" />
-              <CloseCircleOutline v-else />
+              <CloseCircleOutline v-else-if="item.status === 'failed'" />
+              <LockClosedOutline v-else />
             </NIcon>
 
             <span class="font-medium text-sm text-text-primary truncate">
@@ -361,6 +416,19 @@ function handleGoToCabinet(): void {
             </span>
 
             <span
+              v-if="item.status === 'solved' && getItemAttemptsUsed(item) > 1"
+              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40"
+              :title="
+                t('features.trainingCenter.play.solvedWithRetriesNote', {
+                  attempt: getItemAttemptsUsed(item),
+                  max: MAX_PUZZLE_ATTEMPTS,
+                })
+              "
+            >
+              {{ getItemAttemptsUsed(item) }}/{{ MAX_PUZZLE_ATTEMPTS }}
+            </span>
+
+            <span
               v-if="item.is_woodpecker"
               class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40"
             >
@@ -368,7 +436,7 @@ function handleGoToCabinet(): void {
             </span>
           </div>
 
-          <div class="flex items-center gap-4 shrink-0">
+          <div class="flex items-center gap-3 shrink-0">
             <span class="font-condensed text-xs text-text-secondary">
               {{ itemMetaLabel(item) }}
             </span>
@@ -386,6 +454,19 @@ function handleGoToCabinet(): void {
             </span>
 
             <NButton
+              v-if="canPracticeReplayItem(item)"
+              size="tiny"
+              secondary
+              @click="store.startPracticeReplay(item.puzzle_id)"
+            >
+              <template #icon>
+                <NIcon><RefreshOutline /></NIcon>
+              </template>
+              {{ t('features.trainingCenter.actions.practiceReplay') }}
+            </NButton>
+
+            <NButton
+              v-if="canAnalyzeSessionItem(item)"
               size="tiny"
               secondary
               @click="store.enterPuzzleAnalysis(item.puzzle_id, true)"

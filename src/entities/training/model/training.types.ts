@@ -108,6 +108,9 @@ export type AttemptFailStage = '' | 'none' | 'scenario' | 'playout'
 export type WoodpeckerAction = 'none' | 'queued' | 'progressed' | 'reset' | 'graduated'
 export type DiagnosticFocusKind = 'strength' | 'weakness' | 'blind_spot'
 
+export const MAX_PUZZLE_ATTEMPTS = 3 as const
+export type ClassicalCourseSessionStepType = 'next' | 'batch' | 'woodpecker'
+
 // ============================================================================
 // Endgame Domains & Classes ([D9]: EXTRA excluded from theoretical_endgames)
 // ============================================================================
@@ -500,6 +503,9 @@ export interface CourseHistoryResponseDTO {
 export interface CourseSessionRequest {
   discipline: TrainingDiscipline
   course_slug?: TacticsCourseSlug | string
+  step_type?: ClassicalCourseSessionStepType
+  batch_id?: number
+  checkpoint_id?: number
   batch_size?: number
   force_new?: boolean
 }
@@ -538,6 +544,7 @@ export interface HydratedSessionItem {
   is_woodpecker: boolean
   woodpecker_streak: number
   status: SessionItemStatus
+  attempts_used?: number
   time_ms?: number
   rating_delta?: number
   tactical?: TacticalPuzzleV2
@@ -610,6 +617,13 @@ export interface AttemptRequest {
   time_ms: number
   first_move_failed: boolean
   fail_stage: AttemptFailStage
+  attempts_used?: number
+}
+
+export interface ConsumeItemRetryResponseDTO {
+  puzzle_id: string
+  attempts_used: number
+  max_attempts: number
 }
 
 export interface ScopeDeltaDTO {
@@ -758,7 +772,7 @@ export interface WoodpeckerCheckpointDTO {
   batch_ids?: number[]
   due_count: number
   is_completed: boolean
-  is_unlocked?: boolean
+  is_unlocked: boolean
   is_active: boolean
 }
 

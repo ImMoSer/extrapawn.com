@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   isClassicalCourseDiscipline,
+  MAX_PUZZLE_ATTEMPTS,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -16,12 +17,16 @@ import {
   CloseOutline,
   DownloadOutline,
   EyeOutline,
+  LockClosedOutline,
   PauseOutline,
+  PlayOutline,
+  RefreshOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon, NScrollbar } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
+import { canAnalyzeSessionItem } from '../lib/sessionItemPolicy'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 
 const { t, te } = useI18n()
@@ -136,7 +141,7 @@ function itemTwinShortTag(item: HydratedSessionItem): string {
 }
 
 const activeTwinBanner = computed(() => {
-  const p = store.analysisPuzzle ?? store.currentPuzzle
+  const p = store.analysisPuzzle ?? store.practicePuzzle ?? store.currentPuzzle
   if (!p?.twin_role) return null
   if (p.is_exam && !store.isAnalysisMode) return null
   const badge = resolveTwinBadgeLabel(p.twin_role)
@@ -156,10 +161,13 @@ function formatDelta(delta?: number): string {
   return rounded >= 0 ? `+${rounded}` : `${rounded}`
 }
 
+function isItemClickable(item: HydratedSessionItem): boolean {
+  return store.canSwitchSidebarItem && canAnalyzeSessionItem(item)
+}
+
 function handleItemClick(item: HydratedSessionItem): void {
-  if (store.isAnalysisMode || item.status !== 'pending') {
-    store.enterPuzzleAnalysis(item.puzzle_id, true)
-  }
+  if (!isItemClickable(item)) return
+  store.enterPuzzleAnalysis(item.puzzle_id, true)
 }
 </script>
 
@@ -240,9 +248,116 @@ function handleItemClick(item: HydratedSessionItem): void {
       </p>
     </div>
 
+    <!-- Retry Prompt Card (Attempt 1/3 or 2/3 failed, engine locked) -->
+    <div
+      v-if="store.isAwaitingRetry"
+      class="p-3 rounded-md border border-warning/50 bg-warning/10 flex flex-col gap-2 shrink-0"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-display font-bold text-xs uppercase tracking-wider text-warning">
+          {{
+            t('features.trainingCenter.play.retryPromptTitle', {
+              used: store.currentAttemptsUsed,
+              max: MAX_PUZZLE_ATTEMPTS,
+            })
+          }}
+        </span>
+      </div>
+      <p class="text-[11px] text-text-secondary leading-snug">
+        {{ t('features.trainingCenter.play.retryPromptHint') }}
+      </p>
+      <div class="grid grid-cols-2 gap-2 pt-0.5">
+        <NButton
+          size="small"
+          type="warning"
+          :disabled="!store.canRestartCurrentPuzzle"
+          :loading="store.isPersistingRetry"
+          @click="store.restartCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+          {{
+            t('features.trainingCenter.actions.restartAttempt', {
+              current: store.currentAttemptNumber,
+              max: MAX_PUZZLE_ATTEMPTS,
+            })
+          }}
+        </NButton>
+        <NButton
+          size="small"
+          secondary
+          type="error"
+          :disabled="!store.canResignCurrentPuzzle"
+          :loading="store.isSubmittingAttempt"
+          @click="store.resignCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><CloseOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.resignToAnalyze') }}
+        </NButton>
+      </div>
+    </div>
+
+    <!-- Practice Replay Banner (Sandbox Mode without rating impact) -->
+    <div
+      v-else-if="store.isPracticeReplay"
+      class="p-3 rounded-md border flex flex-col gap-2 shrink-0"
+      :class="
+        store.practiceFeedbackState === 'solved'
+          ? 'bg-success/10 border-success/40'
+          : store.practiceFeedbackState === 'failed'
+            ? 'bg-danger/10 border-danger/40'
+            : 'bg-accent/10 border-accent/40'
+      "
+    >
+      <div class="flex items-center justify-between gap-2">
+        <span
+          class="font-display font-bold text-xs uppercase tracking-wider"
+          :class="
+            store.practiceFeedbackState === 'solved'
+              ? 'text-success'
+              : store.practiceFeedbackState === 'failed'
+                ? 'text-danger'
+                : 'text-accent'
+          "
+        >
+          {{ t('features.trainingCenter.badges.practiceBadge') }}
+        </span>
+      </div>
+      <p class="text-[11px] text-text-secondary leading-snug">
+        {{
+          store.practiceFeedbackState === 'solved'
+            ? t('features.trainingCenter.play.practiceSolved')
+            : store.practiceFeedbackState === 'failed'
+              ? t('features.trainingCenter.play.practiceFailed')
+              : t('features.trainingCenter.play.practiceModeHint')
+        }}
+      </p>
+      <div class="grid grid-cols-2 gap-2 pt-0.5">
+        <NButton size="small" secondary @click="store.restartCurrentPuzzle()">
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.restartPuzzle') }}
+        </NButton>
+        <NButton
+          size="small"
+          secondary
+          @click="store.enterPuzzleAnalysis(store.practicePuzzle?.puzzle_id, true)"
+        >
+          <template #icon>
+            <NIcon><EyeOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.analyze') }}
+        </NButton>
+      </div>
+    </div>
+
     <!-- Post-Attempt Feedback Banner (Error / Inspection State Only) -->
     <div
-      v-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved"
+      v-else-if="store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved"
       class="p-3 rounded-md border flex flex-col gap-2 shrink-0"
       :class="
         store.lastAttemptResult.solved
@@ -300,6 +415,61 @@ function handleItemClick(item: HydratedSessionItem): void {
           {{ t('features.trainingCenter.actions.nextPuzzle') }}
         </NButton>
       </div>
+      <NButton block size="tiny" secondary @click="store.startPracticeReplay()">
+        <template #icon>
+          <NIcon><PlayOutline /></NIcon>
+        </template>
+        {{ t('features.trainingCenter.actions.practiceReplayFull') }}
+      </NButton>
+    </div>
+
+    <!-- Active Puzzle Attempt Strip (Restart & Resign during live play) -->
+    <div
+      v-else-if="
+        store.isPlaying &&
+        store.currentItem?.status === 'pending' &&
+        summary?.mode !== 'crashtest'
+      "
+      class="px-2.5 py-2 rounded-md bg-elevated/60 border border-border flex items-center justify-between gap-2 shrink-0"
+    >
+      <span
+        class="font-condensed font-bold text-xs"
+        :class="store.displayAttemptNumber > 1 ? 'text-warning' : 'text-text-secondary'"
+      >
+        {{
+          t('features.trainingCenter.badges.attemptCounter', {
+            current: store.displayAttemptNumber,
+            max: MAX_PUZZLE_ATTEMPTS,
+          })
+        }}
+      </span>
+      <div class="flex items-center gap-1.5">
+        <NButton
+          size="tiny"
+          secondary
+          :disabled="!store.canRestartCurrentPuzzle"
+          :loading="store.isPersistingRetry"
+          @click="store.restartCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.restartPuzzle') }}
+        </NButton>
+        <NButton
+          size="tiny"
+          quaternary
+          type="error"
+          :disabled="!store.canResignCurrentPuzzle"
+          :loading="store.isSubmittingAttempt"
+          @click="store.resignCurrentPuzzle()"
+        >
+          <template #icon>
+            <NIcon><CloseOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.resignPuzzle') }}
+        </NButton>
+      </div>
     </div>
 
     <!-- Puzzle Queue List -->
@@ -327,17 +497,26 @@ function handleItemClick(item: HydratedSessionItem): void {
             v-for="item in visibleSessionItems"
             :key="item.puzzle_id"
             class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
+            :title="
+              !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
+                ? t('features.trainingCenter.sidebar.pendingLockedHint')
+                : undefined
+            "
             :class="[
-              item.index === store.currentItemIndex && !store.isAnalysisMode
+              item.index === store.currentItemIndex &&
+              !store.isAnalysisMode &&
+              !store.isPracticeReplay
                 ? 'bg-elevated border-l-2 border-l-brand'
                 : '',
-              store.isAnalysisMode && store.analysisPuzzle?.puzzle_id === item.puzzle_id
+              (store.isAnalysisMode && store.analysisPuzzle?.puzzle_id === item.puzzle_id) ||
+              (store.isPracticeReplay && store.practicePuzzle?.puzzle_id === item.puzzle_id)
                 ? 'bg-accent/15 border-l-2 border-l-accent'
                 : '',
               item.status === 'solved' ? 'bg-success/5 border-l-2 border-l-success' : '',
               item.status === 'failed' ? 'bg-danger/5 border-l-2 border-l-danger' : '',
-              item.status !== 'pending' || store.isAnalysisMode
-                ? 'cursor-pointer hover:bg-elevated/70'
+              isItemClickable(item) ? 'cursor-pointer hover:bg-elevated/70' : '',
+              !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
+                ? 'opacity-50 cursor-not-allowed'
                 : '',
             ]"
             @click="handleItemClick(item)"
@@ -392,8 +571,17 @@ function handleItemClick(item: HydratedSessionItem): void {
               </div>
             </div>
 
-            <!-- Right: Rating Delta + Time -->
+            <!-- Right: Lock Icon (Pending in Analysis) / Rating Delta + Time -->
             <div class="flex items-center gap-2 shrink-0 ml-2">
+              <NIcon
+                v-if="
+                  !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
+                "
+                size="13"
+                class="text-text-disabled"
+              >
+                <LockClosedOutline />
+              </NIcon>
               <span
                 v-if="item.rating_delta !== undefined"
                 class="font-condensed font-bold text-[11px]"
@@ -461,12 +649,33 @@ function handleItemClick(item: HydratedSessionItem): void {
         Скачать craschTestReport.json ({{ anomaliesCount }})
       </NButton>
 
+      <template v-if="store.isAnalysisMode">
+        <NButton
+          block
+          size="small"
+          secondary
+          @click="store.startPracticeReplay(store.analysisPuzzle?.puzzle_id)"
+        >
+          <template #icon>
+            <NIcon><PlayOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.actions.practiceReplayFull') }}
+        </NButton>
+        <NButton
+          block
+          size="small"
+          type="primary"
+          @click="store.exitPuzzleAnalysis()"
+        >
+          {{ t('features.trainingCenter.actions.continueSession') }}
+        </NButton>
+      </template>
       <NButton
-        v-if="store.isAnalysisMode"
+        v-else-if="store.isPracticeReplay"
         block
         size="small"
         type="primary"
-        @click="store.exitPuzzleAnalysis()"
+        @click="store.exitPracticeReplay()"
       >
         {{ t('features.trainingCenter.actions.continueSession') }}
       </NButton>

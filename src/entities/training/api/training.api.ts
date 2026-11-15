@@ -1,28 +1,30 @@
 import { apiClient } from '@/shared/api/client'
-import type {
-  ActiveSessionResponseDTO,
-  AttemptRequest,
-  AttemptResultDTO,
-  BlunderSpyStepRequest,
-  BlunderSpyStepResponse,
-  CabinetDTO,
-  CatalogManifestDTO,
-  CourseDiplomaDTO,
-  CourseDTO,
-  CourseHistoryResponseDTO,
-  CoursePuzzleV2,
-  CourseSessionRequest,
-  CrashTestSessionRequest,
-  EndgamePuzzleV2,
-  FlagCoursePuzzleRequest,
-  HubOverviewDTO,
-  HydratedSessionDTO,
-  SessionSummaryDTO,
-  StartCourseRequest,
-  TacticalPuzzleV2,
-  TacticsCourseCurriculumDTO,
-  TrainingDiscipline,
-  WarmUpSessionRequest,
+import {
+  MAX_PUZZLE_ATTEMPTS,
+  type ActiveSessionResponseDTO,
+  type AttemptRequest,
+  type AttemptResultDTO,
+  type BlunderSpyStepRequest,
+  type BlunderSpyStepResponse,
+  type CabinetDTO,
+  type CatalogManifestDTO,
+  type ConsumeItemRetryResponseDTO,
+  type CourseDiplomaDTO,
+  type CourseDTO,
+  type CourseHistoryResponseDTO,
+  type CoursePuzzleV2,
+  type CourseSessionRequest,
+  type CrashTestSessionRequest,
+  type EndgamePuzzleV2,
+  type FlagCoursePuzzleRequest,
+  type HubOverviewDTO,
+  type HydratedSessionDTO,
+  type SessionSummaryDTO,
+  type StartCourseRequest,
+  type TacticalPuzzleV2,
+  type TacticsCourseCurriculumDTO,
+  type TrainingDiscipline,
+  type WarmUpSessionRequest,
 } from '../model/training.types'
 
 function assertNonEmptyId(label: string, value: string): string {
@@ -153,6 +155,11 @@ export const trainingApi = {
       body: JSON.stringify({
         discipline: payload.discipline,
         ...(payload.course_slug ? { course_slug: payload.course_slug } : {}),
+        ...(payload.step_type ? { step_type: payload.step_type } : {}),
+        ...(typeof payload.batch_id === 'number' ? { batch_id: payload.batch_id } : {}),
+        ...(typeof payload.checkpoint_id === 'number'
+          ? { checkpoint_id: payload.checkpoint_id }
+          : {}),
         batch_size: payload.batch_size ?? 0,
         force_new: payload.force_new ?? false,
       }),
@@ -196,6 +203,16 @@ export const trainingApi = {
         `[trainingApi] Invalid attempt time_ms (${String(payload.time_ms)}) for puzzle ${puzzleId}. Fail-Fast!`,
       )
     }
+    if (
+      payload.attempts_used !== undefined &&
+      (!Number.isInteger(payload.attempts_used) ||
+        payload.attempts_used < 1 ||
+        payload.attempts_used > MAX_PUZZLE_ATTEMPTS)
+    ) {
+      throw new Error(
+        `[trainingApi] Invalid attempts_used (${String(payload.attempts_used)}) for puzzle ${puzzleId}. Expected integer 1..${MAX_PUZZLE_ATTEMPTS}. Fail-Fast!`,
+      )
+    }
 
     return apiClient<AttemptResultDTO>(`/training/sessions/${encodeURIComponent(id)}/attempt`, {
       method: 'POST',
@@ -205,8 +222,23 @@ export const trainingApi = {
         time_ms: Math.round(payload.time_ms),
         first_move_failed: payload.first_move_failed,
         fail_stage: payload.fail_stage,
+        ...(payload.attempts_used !== undefined ? { attempts_used: payload.attempts_used } : {}),
       }),
     })
+  },
+
+  consumeItemRetry(sessionId: string, puzzleId: string): Promise<ConsumeItemRetryResponseDTO> {
+    const id = assertNonEmptyId('sessionId', sessionId)
+    const pid = assertNonEmptyId('puzzle_id', puzzleId)
+    return apiClient<ConsumeItemRetryResponseDTO>(
+      `/training/sessions/${encodeURIComponent(id)}/retry`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          puzzle_id: pid,
+        }),
+      },
+    )
   },
 
   getTacticalPuzzleById(puzzleId: string): Promise<TacticalPuzzleV2> {

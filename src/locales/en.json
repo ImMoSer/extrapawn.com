@@ -994,18 +994,28 @@
         "continueSession": "Continue",
         "dismissSession": "Dismiss",
         "exitAnalysis": "Exit Analysis",
+        "nextClassicalBatch": "Start Batch #{id}",
         "nextCourseBatch": "Next Course Batch",
         "nextPuzzle": "Next Puzzle",
+        "nextWoodpeckerStep": "Start Woodpecker Day #{id}",
         "openCabinet": "User Cabinet",
         "pauseToHub": "Pause / Hub",
+        "practiceReplay": "Replay",
+        "practiceReplayFull": "Play Again",
+        "resignPuzzle": "Resign",
+        "resignToAnalyze": "Resign · Analyze",
+        "restartAttempt": "Restart ({current}/{max})",
+        "restartPuzzle": "Restart",
         "resumeSession": "Resume Session",
         "showSolution": "Show Solution"
       },
       "badges": {
         "analysis": "ANALYSIS",
+        "attemptCounter": "Attempt {current}/{max}",
         "holdDrawFide": "HOLD DRAW — FIDE",
         "objectiveHoldDraw": "Hold Draw (FIDE)",
         "objectiveWin": "Play for Win",
+        "practiceBadge": "PRACTICE",
         "winTarget": "PLAY FOR WIN",
         "woodpeckerStreak": "Woodpecker {streak}/3"
       },
@@ -1024,6 +1034,9 @@
         "graduated": "Graduated Today (3/3)",
         "mastered": "Mastered Forever",
         "masteredShort": "mastered",
+        "checkpointLocked": "Unlocks after Batch #{batch}",
+        "checkpointClearBtn": "Clear Woodpecker Errors ({count})",
+        "checkpointCleared": "✓ Cleared with zero debt",
         "actions": {
           "queued": "Queued (24h · {streak}/3)",
           "progressed": "Streak {streak}/3 (24h)",
@@ -1127,12 +1140,19 @@
         "solvedShort": "SOLVED",
         "failedShort": "FAILED",
         "playoutStart": "Forced line completed! Finish the position against the sparring bot.",
-        "playoutDeviation": "Off-book move. Prove your evaluation against the sparring bot!"
+        "playoutDeviation": "Off-book move. Prove your evaluation against the sparring bot!",
+        "retryPromptTitle": "Inaccurate move! Attempt {used}/{max} used",
+        "retryPromptHint": "Click Restart to find the solution yourself, or Resign to unlock engine analysis.",
+        "solvedWithRetriesNote": "Solved on attempt {attempt}/{max} · Queued in Woodpecker",
+        "practiceModeHint": "Practice replay without affecting rating or session score",
+        "practiceSolved": "Great! Position reinforced",
+        "practiceFailed": "Mistake in practice replay — restart or open analysis"
       },
       "sidebar": {
         "queueTitle": "Session Queue",
         "solvedRatio": "Accuracy",
-        "sparringBot": "Sparring Bot"
+        "sparringBot": "Sparring Bot",
+        "pendingLockedHint": "Unsolved positions are locked for analysis"
       },
       "promotion": {
         "unlockedTitle": "New Tier Unlocked: {tier}!",

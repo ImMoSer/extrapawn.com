@@ -8,9 +8,11 @@ import {
   trainingApi,
   type AttemptResultDTO,
   type EndgameDomain,
+  type HubOverviewDTO,
   type HydratedSessionDTO,
   type HydratedSessionItem,
   type SessionSummaryDTO,
+  type TacticsCourseCurriculumDTO,
 } from '@/entities/training'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -43,6 +45,78 @@ function createSessionSummary(overrides: Partial<SessionSummaryDTO> = {}): Sessi
     started_at: '2026-11-01T15:00:00Z',
     updated_at: '2026-11-01T15:00:00Z',
     ...overrides,
+  }
+}
+
+function createOverviewStub(): HubOverviewDTO {
+  const makeDisciplineOverview = (discipline: HubOverviewDTO['disciplines'][keyof HubOverviewDTO['disciplines']]['discipline']) => ({
+    discipline,
+    unlocked_tier: 'Novice' as const,
+    global_rating: 1500,
+    global_rd: 350,
+    ema_accuracy: 0.5,
+    solved_total: 0,
+    failed_total: 0,
+    warmup_allowed_sizes: [10, 25, 50],
+    course_batch_sizes: [10, 20, 30],
+    default_course_batch: 20,
+  })
+  return {
+    user: {
+      user_id: 'u1',
+      last_solved_at: '2026-11-01T15:00:00Z',
+      tactics_tier: 'Novice',
+      theoretical_tier: 'Novice',
+      practical_tier: 'Novice',
+      finishhim_tier: 'Novice',
+      woodpecker_mastered_total: 0,
+    },
+    bot_engines: {
+      Novice: 'mozero',
+      Pro: 'mozero',
+      Master: 'mozero',
+    },
+    disciplines: {
+      tactics: makeDisciplineOverview('tactics'),
+      tactics_course: makeDisciplineOverview('tactics_course'),
+      endgame_course: makeDisciplineOverview('endgame_course'),
+      theoretical_endgames: makeDisciplineOverview('theoretical_endgames'),
+      practical_chess: makeDisciplineOverview('practical_chess'),
+      finishhim: makeDisciplineOverview('finishhim'),
+    },
+    woodpecker: {
+      due_now: 0,
+      on_cooldown: 0,
+      mastered_total: 0,
+      by_discipline: {
+        tactics: { due_now: 0, on_cooldown: 0 },
+        tactics_course: { due_now: 0, on_cooldown: 0 },
+        endgame_course: { due_now: 0, on_cooldown: 0 },
+        theoretical_endgames: { due_now: 0, on_cooldown: 0 },
+        practical_chess: { due_now: 0, on_cooldown: 0 },
+        finishhim: { due_now: 0, on_cooldown: 0 },
+      },
+    },
+  }
+}
+
+function createCurriculumStub(): TacticsCourseCurriculumDTO {
+  return {
+    course_slug: 'tactics_classical_1',
+    course_id: 1,
+    total_puzzles: 100,
+    solved_total: 0,
+    failed_total: 0,
+    current_step_type: 'batch',
+    current_batch_id: 1,
+    current_woodpecker_id: 0,
+    batches: [],
+    woodpecker_days: [],
+    crash_test_active: false,
+    crash_test_index: 0,
+    crash_test_solved: 0,
+    crash_test_failed: 0,
+    flagged_puzzles: [],
   }
 }
 
@@ -714,6 +788,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           },
         },
       })
+      vi.spyOn(trainingApi, 'consumeItemRetry').mockImplementation(async (_sessionId, puzzleId) => ({
+        puzzle_id: puzzleId,
+        attempts_used: 1,
+        max_attempts: 3,
+      }))
       vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
         async (_sessionId, payload): Promise<AttemptResultDTO> => ({
           puzzle_id: payload.puzzle_id,
@@ -752,8 +831,16 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(store.currentItemIndex).toBe(1)
       expect(store.currentPuzzle?.puzzle_id).toBe('TAC-2')
 
-      // 2. Fail TAC-2 in normal mode -> should pause in awaiting_next even after timer
+      // 2. Fail TAC-2 on Attempt 1/3 in normal mode -> pauses in 'awaiting_retry' (engine locked!),
+      //    and resigning finalizes 'failed' and pauses in 'awaiting_next' even after timer
       await gameStore.handleUserMove('e1', 'e2')
+      expect(store.viewState).toBe('awaiting_retry')
+      expect(store.isAwaitingRetry).toBe(true)
+      expect(store.currentItem?.status).toBe('pending')
+      expect(store.currentAttemptsUsed).toBe(1)
+      expect(() => store.enterPuzzleAnalysis()).toThrow(/Fair-Play violation/)
+
+      await store.resignCurrentPuzzle()
       expect(store.viewState).toBe('awaiting_next')
       expect(store.isAwaitingNext).toBe(true)
       expect(store.currentItem?.status).toBe('failed')
@@ -800,5 +887,361 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('strictly blocks analyzing or practice-replaying unsolved pending puzzles even in analysis mode, and preserves return state without skipping pending items', async () => {
+    const store = useTrainingSessionStore()
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const makeTacticalItem = (index: number, id: string): HydratedSessionItem => ({
+      index,
+      puzzle_id: id,
+      is_woodpecker: false,
+      woodpecker_streak: 0,
+      status: 'pending',
+      tactical: {
+        puzzle_id: id,
+        discipline: 'tactics',
+        strategy: 'scenarioOnly',
+        first_move: 'user',
+        user_color: 'white',
+        difficulty: 'Novice',
+        phase: 'endgame',
+        length: 'short',
+        goal: 'mate',
+        master_game: false,
+        course_eligible: true,
+        cognitive_profile: 'geometry_only',
+        geometry_motifs: ['backRankMate'],
+        operator_motifs: [],
+        concept_motifs: [],
+        trigger_motifs: [],
+        meta_themes: ['mate'],
+        tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+        tactical_solution: 'e1e8',
+        rating: 1200 + index * 10,
+        popularity: 95,
+        nb_plays: 500,
+      },
+    })
+
+    const sessionDto: HydratedSessionDTO = {
+      session: createSessionSummary({
+        discipline: 'tactics',
+        difficulty: 'Novice',
+        total_count: 3,
+      }),
+      items: [
+        makeTacticalItem(0, 'LOCK-1'),
+        makeTacticalItem(1, 'LOCK-2'),
+        makeTacticalItem(2, 'LOCK-3'),
+      ],
+    }
+
+    vi.spyOn(trainingApi, 'composeWarmupSession').mockResolvedValue(sessionDto)
+    vi.spyOn(trainingApi, 'getOverview').mockResolvedValue(createOverviewStub())
+    vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
+      async (_sid, payload): Promise<AttemptResultDTO> => ({
+        puzzle_id: payload.puzzle_id,
+        solved: payload.solved,
+        global_rating_before: 1500,
+        global_rating_after: payload.solved ? 1510 : 1490,
+        global_rating_delta: payload.solved ? 10 : -10,
+        scope_deltas: [],
+        woodpecker: { action: payload.solved ? 'none' : 'queued', streak: 0 },
+        session: createSessionSummary({
+          discipline: 'tactics',
+          difficulty: 'Novice',
+          total_count: 3,
+          current_index: 1,
+          solved_count: payload.solved ? 1 : 0,
+          failed_count: payload.solved ? 0 : 1,
+          is_completed: false,
+        }),
+      }),
+    )
+
+    await store.startWarmupSession({
+      discipline: 'tactics',
+      difficulty: 'Novice',
+      count: 50,
+    })
+
+    // Cannot analyze current pending puzzle LOCK-1 or future pending puzzle LOCK-2
+    expect(() => store.enterPuzzleAnalysis('LOCK-1', true)).toThrow(/Fair-Play violation/)
+    expect(() => store.enterPuzzleAnalysis('LOCK-2', true)).toThrow(/Fair-Play violation/)
+    expect(() => store.startPracticeReplay('LOCK-1')).toThrow(/Fair-Play violation/)
+
+    // Resign LOCK-1 -> status becomes 'failed', enters 'awaiting_next'
+    await store.resignCurrentPuzzle()
+    expect(store.viewState).toBe('awaiting_next')
+    expect(store.currentItem?.status).toBe('failed')
+
+    // Enter analysis on finalized LOCK-1 -> allowed!
+    store.enterPuzzleAnalysis('LOCK-1', true)
+    expect(store.viewState).toBe('analyzing')
+    expect(store.isAnalysisMode).toBe(true)
+
+    // While ALREADY in analysis mode, clicking unsolved LOCK-2 or LOCK-3 MUST still throw Fail-Fast!
+    expect(() => store.enterPuzzleAnalysis('LOCK-2', true)).toThrow(/Fair-Play violation/)
+    expect(() => store.enterPuzzleAnalysis('LOCK-3', true)).toThrow(/Fair-Play violation/)
+    expect(() => store.startPracticeReplay('LOCK-2')).toThrow(/Fair-Play violation/)
+    expect(store.analysisPuzzle?.puzzle_id).toBe('LOCK-1')
+
+    // Exit analysis -> advances cleanly to LOCK-2 (index 1)
+    store.exitPuzzleAnalysis()
+    expect(store.viewState).toBe('playing')
+    expect(store.currentItemIndex).toBe(1)
+    expect(store.currentPuzzle?.puzzle_id).toBe('LOCK-2')
+
+    // While on LOCK-2 (0 moves played yet), inspect past finalized LOCK-1, then exit ->
+    // MUST return to LOCK-2 (index 1) without skipping LOCK-2!
+    store.enterPuzzleAnalysis('LOCK-1', true)
+    expect(store.viewState).toBe('analyzing')
+    store.exitPuzzleAnalysis()
+    expect(store.viewState).toBe('playing')
+    expect(store.currentItemIndex).toBe(1)
+    expect(store.currentPuzzle?.puzzle_id).toBe('LOCK-2')
+    expect(gameStore.gamePhase).toBe('PLAYING')
+  })
+
+  it('supports 3 attempts (Restart & Resign), submits attempts_used=2 on 2nd-try solve, and runs Practice Replay without submitting attempts', async () => {
+    const store = useTrainingSessionStore()
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const makeTwoMoveItem = (index: number, id: string): HydratedSessionItem => ({
+      index,
+      puzzle_id: id,
+      is_woodpecker: false,
+      woodpecker_streak: 0,
+      status: 'pending',
+      tactical: {
+        puzzle_id: id,
+        discipline: 'tactics',
+        strategy: 'scenarioOnly',
+        first_move: 'user',
+        user_color: 'white',
+        difficulty: 'Novice',
+        phase: 'endgame',
+        length: 'short',
+        goal: 'mate',
+        master_game: false,
+        course_eligible: true,
+        cognitive_profile: 'geometry_only',
+        geometry_motifs: ['backRankMate'],
+        operator_motifs: [],
+        concept_motifs: [],
+        trigger_motifs: [],
+        meta_themes: ['mate'],
+        // White plays 1. Re7+ Kf8 2. Re8#
+        tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+        tactical_solution: 'e1e7 g8f8 e7e8',
+        rating: 1300,
+        popularity: 95,
+        nb_plays: 500,
+      },
+    })
+
+    const sessionDto: HydratedSessionDTO = {
+      session: createSessionSummary({
+        discipline: 'tactics',
+        difficulty: 'Novice',
+        total_count: 2,
+      }),
+      items: [makeTwoMoveItem(0, 'RETRY-1'), makeTwoMoveItem(1, 'RETRY-2')],
+    }
+
+    const retryCounterByPuzzle: Record<string, number> = {}
+    const retrySpy = vi
+      .spyOn(trainingApi, 'consumeItemRetry')
+      .mockImplementation(async (_sid, puzzleId) => {
+        const next = Math.min(2, (retryCounterByPuzzle[puzzleId] ?? 0) + 1)
+        retryCounterByPuzzle[puzzleId] = next
+        return {
+          puzzle_id: puzzleId,
+          attempts_used: next,
+          max_attempts: 3,
+        }
+      })
+
+    const submitSpy = vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
+      async (_sid, payload): Promise<AttemptResultDTO> => ({
+        puzzle_id: payload.puzzle_id,
+        solved: payload.solved,
+        global_rating_before: 1500,
+        global_rating_after: payload.solved ? 1508 : 1490,
+        global_rating_delta: payload.solved ? 8 : -10,
+        scope_deltas: [],
+        woodpecker: {
+          action: !payload.solved || (payload.attempts_used ?? 1) > 1 ? 'queued' : 'none',
+          streak: 0,
+        },
+        session: createSessionSummary({
+          discipline: 'tactics',
+          difficulty: 'Novice',
+          total_count: 2,
+          current_index: payload.puzzle_id === 'RETRY-1' ? 1 : 2,
+          solved_count: payload.solved ? 1 : 1,
+          failed_count: payload.solved ? 0 : 1,
+          is_completed: payload.puzzle_id === 'RETRY-2',
+        }),
+      }),
+    )
+
+    vi.spyOn(trainingApi, 'composeWarmupSession').mockResolvedValue(sessionDto)
+    vi.spyOn(trainingApi, 'getOverview').mockResolvedValue(createOverviewStub())
+
+    await store.startWarmupSession({
+      discipline: 'tactics',
+      difficulty: 'Novice',
+      count: 50,
+    })
+
+    expect(store.displayAttemptNumber).toBe(1)
+    expect(store.canRestartCurrentPuzzle).toBe(false) // 0 moves played on Attempt 1
+
+    // Blunder on Attempt 1/3 -> pauses in 'awaiting_retry', consumes retry #1
+    await gameStore.handleUserMove('e1', 'e2')
+    expect(store.viewState).toBe('awaiting_retry')
+    expect(retrySpy).toHaveBeenCalledTimes(1)
+    expect(store.currentAttemptsUsed).toBe(1)
+    expect(store.currentAttemptNumber).toBe(2)
+
+    // Restart from retry prompt -> launches Attempt 2/3 without charging a 2nd retry
+    await store.restartCurrentPuzzle()
+    expect(store.viewState).toBe('playing')
+    expect(store.displayAttemptNumber).toBe(2)
+    expect(retrySpy).toHaveBeenCalledTimes(1)
+
+    // Solve on Attempt 2/3 (1. Re7+ Kf8 2. Re8#)
+    await gameStore.handleUserMove('e1', 'e7')
+    expect(store.currentPuzzleUserMoves).toBe(1)
+    expect(store.canRestartCurrentPuzzle).toBe(true) // 1 move played and attempt 2 < 3
+    await gameStore.handleUserMove('e7', 'e8')
+
+    expect(submitSpy).toHaveBeenCalledTimes(1)
+    expect(submitSpy.mock.calls[0]?.[1]).toMatchObject({
+      puzzle_id: 'RETRY-1',
+      solved: true,
+      attempts_used: 2,
+    })
+    expect(store.sessionItems[0]?.status).toBe('solved')
+    expect(store.sessionItems[0]?.attempts_used).toBe(2)
+
+    // Advance to RETRY-2 and exhaust all 3 attempts:
+    // 1) Play 1 valid move then mid-play Restart -> consumes Attempt 1/3, launches Attempt 2/3
+    store.advanceAfterAttempt()
+    expect(store.currentPuzzle?.puzzle_id).toBe('RETRY-2')
+    await gameStore.handleUserMove('e1', 'e7')
+    expect(store.canRestartCurrentPuzzle).toBe(true)
+    await store.restartCurrentPuzzle()
+    expect(store.displayAttemptNumber).toBe(2)
+
+    // 2) Blunder on Attempt 2/3 -> pauses in 'awaiting_retry', then Restart -> Attempt 3/3
+    await gameStore.handleUserMove('e1', 'e2')
+    expect(store.viewState).toBe('awaiting_retry')
+    expect(store.currentAttemptNumber).toBe(3)
+    await store.restartCurrentPuzzle()
+    expect(store.displayAttemptNumber).toBe(3)
+    expect(store.canRestartCurrentPuzzle).toBe(false) // No 4th attempt exists!
+
+    // 3) Blunder on Attempt 3/3 -> immediately finalizes 'failed' with attempts_used=3!
+    await gameStore.handleUserMove('e1', 'e2')
+    expect(store.viewState).toBe('awaiting_next')
+    expect(submitSpy).toHaveBeenCalledTimes(2)
+    expect(submitSpy.mock.calls[1]?.[1]).toMatchObject({
+      puzzle_id: 'RETRY-2',
+      solved: false,
+      attempts_used: 3,
+    })
+
+    // Practice Replay on finalized RETRY-2 -> zero extra submitAttempt calls!
+    store.startPracticeReplay('RETRY-2')
+    expect(store.viewState).toBe('practice_replay')
+    expect(store.practiceFeedbackState).toBe('idle')
+    await gameStore.handleUserMove('e1', 'e7')
+    await gameStore.handleUserMove('e7', 'e8')
+    expect(store.practiceFeedbackState).toBe('solved')
+    expect(submitSpy).toHaveBeenCalledTimes(2) // Unchanged!
+  })
+
+  it('sends explicit typed step_type, batch_id, and checkpoint_id for Classical Courses', async () => {
+    const store = useTrainingSessionStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const courseSessionDto: HydratedSessionDTO = {
+      session: createSessionSummary({
+        discipline: 'tactics_course',
+        mode: 'course',
+        difficulty: 'Novice',
+        total_count: 1,
+      }),
+      items: [
+        {
+          index: 0,
+          puzzle_id: 'tc1_b01_001',
+          is_woodpecker: false,
+          woodpecker_streak: 0,
+          status: 'pending',
+          course_puzzle: {
+            puzzle_id: 'tc1_b01_001',
+            base_id: 'base1',
+            discipline: 'tactics_course',
+            course_slug: 'tactics_classical_1',
+            course_id: 1,
+            batch_id: 1,
+            batch_title: 'Mate in 1',
+            week_number: 1,
+            domain: 'TACTICS',
+            class: 'backRankMate',
+            objective: 'win',
+            strategy: 'scenarioOnly',
+            first_move: 'user',
+            user_color: 'white',
+            pieces_count: 8,
+            plies_count: 1,
+            tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+            tactical_solution: 'e1e8',
+          },
+        },
+      ],
+    }
+
+    const composeSpy = vi
+      .spyOn(trainingApi, 'composeCourseSession')
+      .mockResolvedValue(courseSessionDto)
+    vi.spyOn(trainingApi, 'getOverview').mockResolvedValue(createOverviewStub())
+    vi.spyOn(trainingApi, 'getTacticsCourseCurriculum').mockResolvedValue(createCurriculumStub())
+
+    await store.startClassicalCourseNextStep('tactics_classical_1')
+    expect(composeSpy).toHaveBeenNthCalledWith(1, {
+      discipline: 'tactics_course',
+      course_slug: 'tactics_classical_1',
+      step_type: 'next',
+      force_new: false,
+    })
+
+    await store.startClassicalCourseBatch(2, true, 'tactics_classical_1')
+    expect(composeSpy).toHaveBeenNthCalledWith(2, {
+      discipline: 'tactics_course',
+      course_slug: 'tactics_classical_1',
+      step_type: 'batch',
+      batch_id: 2,
+      force_new: true,
+    })
+
+    await store.startClassicalCourseWoodpecker(1, 'endgame_course_1_pawn')
+    expect(composeSpy).toHaveBeenNthCalledWith(3, {
+      discipline: 'endgame_course',
+      course_slug: 'endgame_course_1_pawn',
+      step_type: 'woodpecker',
+      checkpoint_id: 1,
+      force_new: true,
+    })
   })
 })

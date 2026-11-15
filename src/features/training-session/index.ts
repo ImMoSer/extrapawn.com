@@ -1,4 +1,5 @@
 export * from './lib/crashTestReportLogger'
+export * from './lib/sessionItemPolicy'
 export * from './lib/sessionPuzzleAdapter'
 export * from './model/trainingSession.store'
 export { default as TacticsCourseCurriculumView } from './ui/TacticsCourseCurriculumView.vue'

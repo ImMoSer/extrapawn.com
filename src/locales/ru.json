@@ -994,18 +994,28 @@
         "continueSession": "Продолжить",
         "dismissSession": "Сбросить",
         "exitAnalysis": "Выйти из анализа",
+        "nextClassicalBatch": "Начать Батч #{id}",
         "nextCourseBatch": "Следующий батч курса",
         "nextPuzzle": "Далее",
+        "nextWoodpeckerStep": "Начать День Дятла #{id}",
         "openCabinet": "Личный кабинет",
         "pauseToHub": "Пауза / В Центр",
+        "practiceReplay": "Закрепить",
+        "practiceReplayFull": "Разыграть ещё раз",
+        "resignPuzzle": "Сдаться",
+        "resignToAnalyze": "Сдаться · Анализ",
+        "restartAttempt": "Заново ({current}/{max})",
+        "restartPuzzle": "Заново",
         "resumeSession": "Продолжить сессию",
         "showSolution": "Показать решение"
       },
       "badges": {
         "analysis": "АНАЛИЗ",
+        "attemptCounter": "Попытка {current}/{max}",
         "holdDrawFide": "УДЕРЖАТЬ НИЧЬЮ — FIDE",
         "objectiveHoldDraw": "Удержать ничью (FIDE)",
         "objectiveWin": "Игра на победу",
+        "practiceBadge": "ПРАКТИКА",
         "winTarget": "ИГРА НА ПОБЕДУ",
         "woodpeckerStreak": "Дятел {streak}/3"
       },
@@ -1024,6 +1034,9 @@
         "graduated": "Изучено сегодня (3/3)",
         "mastered": "Изучено навсегда",
         "masteredShort": "изучено",
+        "checkpointLocked": "Откроется после Батча #{batch}",
+        "checkpointClearBtn": "Очистить ошибки Дятла ({count})",
+        "checkpointCleared": "✓ Пройдено без долгов",
         "actions": {
           "queued": "В очередь (24ч · {streak}/3)",
           "progressed": "Серия {streak}/3 (24ч)",
@@ -1127,12 +1140,19 @@
         "solvedShort": "ВЕРНО",
         "failedShort": "ОШИБКА",
         "playoutStart": "Форсированная линия пройдена! Доиграйте позицию против спарринг-бота.",
-        "playoutDeviation": "Ход вне главной линии. Докажите свою оценку против спарринг-бота!"
+        "playoutDeviation": "Ход вне главной линии. Докажите свою оценку против спарринг-бота!",
+        "retryPromptTitle": "Неточный ход! Попытка {used}/{max} использована",
+        "retryPromptHint": "Нажмите «Заново», чтобы найти решение самостоятельно, или «Сдаться» для анализа с движком.",
+        "solvedWithRetriesNote": "Решено с попытки {attempt}/{max} · Добавлено в День Дятла",
+        "practiceModeHint": "Закрепление без влияния на рейтинг и зачёт сессии",
+        "practiceSolved": "Отлично! Позиция закреплена",
+        "practiceFailed": "Неточность в тренировочном повторе — попробуйте заново или откройте анализ"
       },
       "sidebar": {
         "queueTitle": "Очередь сессии",
         "solvedRatio": "Точность",
-        "sparringBot": "Спарринг-бот"
+        "sparringBot": "Спарринг-бот",
+        "pendingLockedHint": "Не решённые позиции закрыты для анализа"
       },
       "promotion": {
         "unlockedTitle": "Новый уровень открыт: {tier}!",

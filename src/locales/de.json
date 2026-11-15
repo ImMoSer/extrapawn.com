@@ -994,18 +994,28 @@
         "continueSession": "Fortsetzen",
         "dismissSession": "Verwerfen",
         "exitAnalysis": "Analyse beenden",
+        "nextClassicalBatch": "Batch #{id} starten",
         "nextCourseBatch": "Nächster Kurs-Batch",
         "nextPuzzle": "Weiter",
+        "nextWoodpeckerStep": "Specht-Tag #{id} starten",
         "openCabinet": "Spielerkabinett",
         "pauseToHub": "Pause / Zentrum",
+        "practiceReplay": "Wiederholen",
+        "practiceReplayFull": "Nochmals spielen",
+        "resignPuzzle": "Aufgeben",
+        "resignToAnalyze": "Aufgeben · Analyse",
+        "restartAttempt": "Neu starten ({current}/{max})",
+        "restartPuzzle": "Neu starten",
         "resumeSession": "Sitzung fortsetzen",
         "showSolution": "Lösung zeigen"
       },
       "badges": {
         "analysis": "ANALYSE",
+        "attemptCounter": "Versuch {current}/{max}",
         "holdDrawFide": "REMIS HALTEN — FIDE",
         "objectiveHoldDraw": "Remis halten (FIDE)",
         "objectiveWin": "Auf Gewinn spielen",
+        "practiceBadge": "TRAINING",
         "winTarget": "AUF GEWINN",
         "woodpeckerStreak": "Specht {streak}/3"
       },
@@ -1024,6 +1034,9 @@
         "graduated": "Heute gemeistert (3/3)",
         "mastered": "Dauerhaft gemeistert",
         "masteredShort": "gemeistert",
+        "checkpointLocked": "Öffnet nach Batch #{batch}",
+        "checkpointClearBtn": "Specht-Fehler bereinigen ({count})",
+        "checkpointCleared": "✓ Fehlerfrei abgeschlossen",
         "actions": {
           "queued": "Eingereiht (24h · {streak}/3)",
           "progressed": "Serie {streak}/3 (24h)",
@@ -1127,12 +1140,19 @@
         "solvedShort": "GELÖST",
         "failedShort": "FEHLER",
         "playoutStart": "Forcierte Variante abgeschlossen! Spielen Sie die Stellung gegen den Sparrings-Bot zu Ende.",
-        "playoutDeviation": "Abweichung von der Hauptvariante. Beweisen Sie Ihre Bewertung gegen den Sparrings-Bot!"
+        "playoutDeviation": "Abweichung von der Hauptvariante. Beweisen Sie Ihre Bewertung gegen den Sparrings-Bot!",
+        "retryPromptTitle": "Ungenauer Zug! Versuch {used}/{max} verbraucht",
+        "retryPromptHint": "Klicken Sie auf Neu starten, um die Lösung selbst zu finden, oder auf Aufgeben für die Engine-Analyse.",
+        "solvedWithRetriesNote": "Im Versuch {attempt}/{max} gelöst · Im Specht eingereiht",
+        "practiceModeHint": "Übungswiederholung ohne Einfluss auf Wertung oder Sitzung",
+        "practiceSolved": "Stark! Stellung gefestigt",
+        "practiceFailed": "Ungenauigkeit in der Wiederholung — neu starten oder analysieren"
       },
       "sidebar": {
         "queueTitle": "Sitzungs-Warteschlange",
         "solvedRatio": "Präzision",
-        "sparringBot": "Sparrings-Bot"
+        "sparringBot": "Sparrings-Bot",
+        "pendingLockedHint": "Ungelöste Stellungen sind für die Analyse gesperrt"
       },
       "promotion": {
         "unlockedTitle": "Neue Stufe freigeschaltet: {tier}!",

@@ -105,6 +105,7 @@ export interface PuzzleStrategyCallbacks {
   onGameOver?: (status: GameStatusInfo) => void
   onFeedback?: (message: string) => void
   onUndo?: () => void
+  onUserMovePlayed?: (userMovesCount: number) => void
   onBlunderSpyStep?: (info: BlunderSpyStepTelemetry) => void
   planId?: string
   botEngineOverride?: EngineId
@@ -192,6 +193,10 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   get puzzleObjective(): PuzzleObjective {
     return this.objective
+  }
+
+  get userMovesCount(): number {
+    return this.userMovesPlayed
   }
 
   get config(): GameplayStrategyConfig {
@@ -400,6 +405,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     this.userMovesPlayed++
     this.playedMovesUci.push(uciMove)
+    this.callbacks?.onUserMovePlayed?.(this.userMovesPlayed)
 
     const isCheckmate = this.boardStore.chessPosition.isCheckmate()
 
@@ -599,6 +605,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
       this.playedMovesUci = []
     }
     this.isResolved = false
+    this.callbacks?.onUserMovePlayed?.(this.userMovesPlayed)
     this.callbacks?.onUndo?.()
     if (this.nextPuzzleTimeout !== null) {
       clearTimeout(this.nextPuzzleTimeout)

@@ -199,22 +199,18 @@ onMounted(async () => {
 
 async function handleLaunchCurrentStep(): Promise<void> {
   const c = curriculum.value
-  if (!c) return
-  if (c.current_step_type === 'woodpecker') {
-    await store.startTacticsCourseBatch(0, true, props.courseSlug)
-    return
-  }
-  await store.startTacticsCourseBatch(c.current_batch_id, false, props.courseSlug)
+  if (!c || c.current_step_type === 'completed') return
+  await store.startClassicalCourseNextStep(props.courseSlug)
 }
 
 async function handleLaunchBatch(batch: CourseBatchStatusDTO): Promise<void> {
   if (!batch.is_unlocked) return
-  await store.startTacticsCourseBatch(batch.batch_id, true, props.courseSlug)
+  await store.startClassicalCourseBatch(batch.batch_id, true, props.courseSlug)
 }
 
 async function handleLaunchWoodpecker(wp: WoodpeckerCheckpointDTO): Promise<void> {
-  if (!wp.is_active && wp.due_count <= 0) return
-  await store.startTacticsCourseBatch(0, true, props.courseSlug)
+  if (!wp.is_unlocked || wp.due_count <= 0) return
+  await store.startClassicalCourseWoodpecker(wp.checkpoint_id, props.courseSlug)
 }
 
 async function handleStartOrResumeCrashTest(): Promise<void> {
@@ -655,25 +651,32 @@ async function handleResetCourseProgress(): Promise<void> {
               v-if="batch.batch_id % 2 === 0 && wg.checkpoints[batch.batch_id]"
               class="md:col-span-2 px-3.5 py-2.5 rounded-md border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
               :class="
-                wg.checkpoints[batch.batch_id]?.is_active
-                  ? 'bg-warning/10 border-warning/50'
-                  : wg.checkpoints[batch.batch_id]?.is_completed
-                    ? 'bg-success/5 border-success/30'
-                    : 'bg-surface/60 border-border'
+                !wg.checkpoints[batch.batch_id]?.is_unlocked
+                  ? 'bg-surface/40 border-border opacity-70'
+                  : wg.checkpoints[batch.batch_id]?.is_active
+                    ? 'bg-warning/10 border-warning/50'
+                    : wg.checkpoints[batch.batch_id]?.is_completed
+                      ? 'bg-success/5 border-success/30'
+                      : 'bg-surface/60 border-border'
               "
             >
               <div class="flex items-center gap-2 text-xs">
                 <NIcon
                   size="16"
                   :class="
-                    wg.checkpoints[batch.batch_id]?.is_completed
-                      ? 'text-success'
-                      : wg.checkpoints[batch.batch_id]?.is_active
-                        ? 'text-warning'
-                        : 'text-text-secondary'
+                    !wg.checkpoints[batch.batch_id]?.is_unlocked
+                      ? 'text-text-disabled'
+                      : wg.checkpoints[batch.batch_id]?.is_completed
+                        ? 'text-success'
+                        : wg.checkpoints[batch.batch_id]?.is_active
+                          ? 'text-warning'
+                          : 'text-text-secondary'
                   "
                 >
-                  <CheckmarkCircleOutline v-if="wg.checkpoints[batch.batch_id]?.is_completed" />
+                  <LockClosedOutline v-if="!wg.checkpoints[batch.batch_id]?.is_unlocked" />
+                  <CheckmarkCircleOutline
+                    v-else-if="wg.checkpoints[batch.batch_id]?.is_completed"
+                  />
                   <FlameOutline v-else />
                 </NIcon>
                 <span class="font-display font-semibold text-text-primary">
@@ -694,11 +697,19 @@ async function handleResetCourseProgress(): Promise<void> {
                 </span>
               </div>
 
+              <span
+                v-if="!wg.checkpoints[batch.batch_id]?.is_unlocked"
+                class="inline-flex items-center gap-1 font-condensed text-xs text-text-disabled"
+              >
+                <NIcon size="13"><LockClosedOutline /></NIcon>
+                {{
+                  t('features.trainingCenter.woodpecker.checkpointLocked', {
+                    batch: batch.batch_id,
+                  })
+                }}
+              </span>
               <NButton
-                v-if="
-                  wg.checkpoints[batch.batch_id]?.is_active ||
-                  (wg.checkpoints[batch.batch_id]?.due_count ?? 0) > 0
-                "
+                v-else-if="(wg.checkpoints[batch.batch_id]?.due_count ?? 0) > 0"
                 size="tiny"
                 type="warning"
                 :loading="store.isStartingSession"
@@ -707,13 +718,17 @@ async function handleResetCourseProgress(): Promise<void> {
                 <template #icon>
                   <NIcon><FlameOutline /></NIcon>
                 </template>
-                Очистить ошибки Дятла ({{ wg.checkpoints[batch.batch_id]?.due_count }})
+                {{
+                  t('features.trainingCenter.woodpecker.checkpointClearBtn', {
+                    count: wg.checkpoints[batch.batch_id]?.due_count ?? 0,
+                  })
+                }}
               </NButton>
               <span
                 v-else-if="wg.checkpoints[batch.batch_id]?.is_completed"
                 class="font-condensed font-bold text-xs text-success"
               >
-                ✓ Пройдено без долгов
+                {{ t('features.trainingCenter.woodpecker.checkpointCleared') }}
               </span>
             </div>
           </template>

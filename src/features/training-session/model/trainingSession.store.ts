@@ -11,6 +11,7 @@ import {
 import {
   isClassicalCourseDiscipline,
   isDisciplineVisibleForUser,
+  MAX_PUZZLE_ATTEMPTS,
   resolveBotEngineForDifficulty,
   resolveDisciplineForCourseSlug,
   trainingApi,
@@ -18,6 +19,7 @@ import {
   type AttemptFailStage,
   type AttemptResultDTO,
   type BotLadderEngineId,
+  type ConsumeItemRetryResponseDTO,
   type CourseDTO,
   type DisciplineOverviewDTO,
   type HubOverviewDTO,
@@ -35,6 +37,7 @@ import {
 import { useAuthStore, usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
+import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import { defineStore } from 'pinia'
@@ -45,9 +48,34 @@ import {
   recordCrashTestStepHit,
   resetCrashTestReport,
 } from '../lib/crashTestReportLogger'
+import {
+  canAnalyzeSessionItem,
+  canPracticeReplayItem,
+  canRestartDuringPlay,
+  canRestartFromRetryPrompt,
+  getCurrentAttemptNumber,
+  getItemAttemptsUsed,
+} from '../lib/sessionItemPolicy'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 
-export type TrainingViewState = 'hub' | 'playing' | 'awaiting_next' | 'analyzing' | 'report'
+export type TrainingViewState =
+  | 'hub'
+  | 'playing'
+  | 'awaiting_retry'
+  | 'awaiting_next'
+  | 'practice_replay'
+  | 'analyzing'
+  | 'report'
+
+export type PracticeFeedbackState = 'idle' | 'solved' | 'failed'
+
+type InspectionReturnState = 'playing' | 'awaiting_retry' | 'awaiting_next' | 'report'
+
+interface RetryBoardSnapshot {
+  puzzleId: string
+  fen: string
+  orientation: ChessgroundColor
+}
 
 export interface SessionReportSummary {
   sessionId: string
@@ -116,7 +144,12 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const runningSessionTimeMs = ref<number>(0)
 
   const analysisPuzzle = ref<PuzzlePuzzle | null>(null)
-  const analysisReturnState = ref<'awaiting_next' | 'report'>('awaiting_next')
+  const practicePuzzle = ref<PuzzlePuzzle | null>(null)
+  const practiceFeedbackState = ref<PracticeFeedbackState>('idle')
+  const currentPuzzleUserMoves = ref<number>(0)
+  const isPersistingRetry = ref<boolean>(false)
+  const analysisReturnState = ref<InspectionReturnState>('awaiting_next')
+  let savedRetrySnapshot: RetryBoardSnapshot | null = null
 
   // ==========================================================================
   // Timer & Transition Guards
@@ -262,9 +295,49 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   })
 
   const isPlaying = computed<boolean>(() => viewState.value === 'playing')
+  const isAwaitingRetry = computed<boolean>(() => viewState.value === 'awaiting_retry')
   const isAwaitingNext = computed<boolean>(() => viewState.value === 'awaiting_next')
+  const isPracticeReplay = computed<boolean>(() => viewState.value === 'practice_replay')
   const isAnalysisMode = computed<boolean>(() => viewState.value === 'analyzing')
   const isFinished = computed<boolean>(() => viewState.value === 'report')
+  const isBoardSessionActive = computed<boolean>(
+    () => viewState.value !== 'hub' && viewState.value !== 'report',
+  )
+
+  const currentAttemptsUsed = computed<number>(() => getItemAttemptsUsed(currentItem.value))
+  const currentAttemptNumber = computed<number>(() => getCurrentAttemptNumber(currentItem.value))
+  const displayAttemptNumber = computed<number>(() =>
+    viewState.value === 'awaiting_retry'
+      ? Math.max(1, getItemAttemptsUsed(currentItem.value))
+      : getCurrentAttemptNumber(currentItem.value),
+  )
+
+  const canRestartCurrentPuzzle = computed<boolean>(() => {
+    if (isSubmittingAttempt.value || isPersistingRetry.value) return false
+    if (viewState.value === 'practice_replay') return Boolean(practicePuzzle.value)
+    if (viewState.value === 'awaiting_retry') return canRestartFromRetryPrompt(currentItem.value)
+    if (viewState.value === 'playing') {
+      return canRestartDuringPlay(currentItem.value, currentPuzzleUserMoves.value)
+    }
+    return false
+  })
+
+  const canResignCurrentPuzzle = computed<boolean>(() => {
+    if (isSubmittingAttempt.value || isPersistingRetry.value) return false
+    return (
+      (viewState.value === 'playing' || viewState.value === 'awaiting_retry') &&
+      currentItem.value?.status === 'pending'
+    )
+  })
+
+  const canSwitchSidebarItem = computed<boolean>(
+    () =>
+      !(
+        viewState.value === 'playing' &&
+        currentItem.value?.status === 'pending' &&
+        currentPuzzleUserMoves.value > 0
+      ),
+  )
 
   const sessionReportSummary = computed<SessionReportSummary | null>(() => {
     const sess = hydratedSession.value
@@ -334,7 +407,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       const recorded = sessionAttemptResults.value[item.puzzle_id]
       if (recorded) {
         if (recorded.woodpecker.action === 'graduated') woodpeckerGraduatedCount++
-        if (recorded.woodpecker.action === 'queued') woodpeckerQueuedCount++
+        if (recorded.woodpecker.action === 'queued' || recorded.woodpecker.action === 'reset') {
+          woodpeckerQueuedCount++
+        }
       }
     }
 
@@ -432,6 +507,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     lastAttemptTelemetry.value = null
     feedbackMessage.value = null
     analysisPuzzle.value = null
+    practicePuzzle.value = null
+    practiceFeedbackState.value = 'idle'
+    currentPuzzleUserMoves.value = 0
+    savedRetrySnapshot = null
     sessionAttemptResults.value = {}
 
     const preferredStart =
@@ -451,7 +530,27 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     launchCurrentPuzzle()
   }
 
-  function launchCurrentPuzzle(): void {
+  async function persistItemRetry(
+    sessionId: string,
+    item: HydratedSessionItem,
+  ): Promise<ConsumeItemRetryResponseDTO> {
+    isPersistingRetry.value = true
+    error.value = null
+    try {
+      const res = await trainingApi.consumeItemRetry(sessionId, item.puzzle_id)
+      item.attempts_used = res.attempts_used
+      return res
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to persist puzzle retry')
+      error.value = msg
+      logger.error('[TrainingSessionStore] consumeItemRetry failed:', err)
+      throw err
+    } finally {
+      isPersistingRetry.value = false
+    }
+  }
+
+  function launchCurrentPuzzle(options?: { preserveTimer?: boolean }): void {
     clearAutoNextTimeout()
     const sess = hydratedSession.value
     const item = currentItem.value
@@ -475,12 +574,21 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     lastAttemptTelemetry.value = null
     feedbackMessage.value = null
     analysisPuzzle.value = null
+    practicePuzzle.value = null
+    practiceFeedbackState.value = 'idle'
+    currentPuzzleUserMoves.value = 0
+    savedRetrySnapshot = null
     lastBlunderSpyStep = null
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
       planId: sess.session.id.slice(0, 12),
       botEngineOverride: effectiveBotEngine,
       delays: preferencesStore.preferences.delays,
+      onUserMovePlayed: (userMovesCount: number) => {
+        if (activePlayToken === tokenAtLaunch) {
+          currentPuzzleUserMoves.value = userMovesCount
+        }
+      },
       onBlunderSpyStep: (stepInfo: BlunderSpyStepTelemetry) => {
         if (activePlayToken !== tokenAtLaunch) return
         lastBlunderSpyStep = stepInfo
@@ -532,7 +640,15 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
           failStage: 'none',
           outcomeReason: reason ?? 'solved',
         }
-        await handleAttemptOutcome(tokenAtLaunch, sess.session.id, item.puzzle_id, true, resolvedTelemetry)
+        const attemptsUsedOnSolve = Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+        await handleAttemptOutcome(
+          tokenAtLaunch,
+          sess.session.id,
+          item.puzzle_id,
+          true,
+          resolvedTelemetry,
+          attemptsUsedOnSolve,
+        )
       },
       onFailure: async (telemetry?: PuzzleAttemptTelemetry) => {
         if (activePlayToken !== tokenAtLaunch) return
@@ -544,13 +660,46 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
               : 'playout',
           outcomeReason: 'failed',
         }
-        await handleAttemptOutcome(tokenAtLaunch, sess.session.id, item.puzzle_id, false, resolvedTelemetry)
+
+        const isCrashtestMode =
+          sess.session.mode === 'crashtest' ||
+          (authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest)
+
+        const nextSpentAttempts = Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+
+        if (!isCrashtestMode && nextSpentAttempts < MAX_PUZZLE_ATTEMPTS) {
+          pauseTimer()
+          GameAudioEngine.playFeatureError()
+          item.attempts_used = nextSpentAttempts
+          lastAttemptTelemetry.value = resolvedTelemetry
+          savedRetrySnapshot = {
+            puzzleId: item.puzzle_id,
+            fen: boardStore.fen,
+            orientation: humanColor,
+          }
+          viewState.value = 'awaiting_retry'
+          await persistItemRetry(sess.session.id, item)
+          return
+        }
+
+        await handleAttemptOutcome(
+          tokenAtLaunch,
+          sess.session.id,
+          item.puzzle_id,
+          false,
+          resolvedTelemetry,
+          nextSpentAttempts,
+        )
       },
     })
 
     viewState.value = 'playing'
     gameStore.startWithStrategy(puzzle.initial_fen, strategy, humanColor)
-    startTimer()
+    if (options?.preserveTimer) {
+      resumeTimer()
+    } else {
+      startTimer()
+    }
   }
 
   async function handleAttemptOutcome(
@@ -559,6 +708,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     puzzleId: string,
     solved: boolean,
     telemetry: PuzzleAttemptTelemetry,
+    attemptsUsedOverride?: number,
   ): Promise<void> {
     const attemptKey = `${sessionId}:${puzzleId}`
     if (inFlightAttemptKey === attemptKey) return
@@ -622,12 +772,20 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
 
     try {
+      const effectiveAttemptsUsed = Math.max(
+        1,
+        Math.min(
+          MAX_PUZZLE_ATTEMPTS,
+          attemptsUsedOverride ?? getItemAttemptsUsed(targetItem) + 1,
+        ),
+      )
       const attemptPayload = {
         puzzle_id: puzzleId,
         solved,
         time_ms: elapsedMs,
         first_move_failed: solved ? false : telemetry.firstMoveFailed,
         fail_stage: failStage,
+        attempts_used: effectiveAttemptsUsed,
       }
       const retryDelaysMs = [250, 600, 1200]
       let result: Awaited<ReturnType<typeof trainingApi.submitAttempt>> | null = null
@@ -658,6 +816,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       }
 
       targetItem.status = solved ? 'solved' : 'failed'
+      targetItem.attempts_used = effectiveAttemptsUsed
       targetItem.time_ms = elapsedMs
       targetItem.rating_delta = result.global_rating_delta
       runningSessionTimeMs.value += elapsedMs
@@ -919,9 +1078,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
   }
 
-  async function startTacticsCourseBatch(
-    batchId: number = 0,
-    forceNew: boolean = false,
+  async function startClassicalCourseNextStep(
     courseSlug?: TacticsCourseSlug,
   ): Promise<HydratedSessionDTO> {
     const slug = courseSlug ?? activeCourseSlug.value
@@ -933,7 +1090,44 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       const dto = await trainingApi.composeCourseSession({
         discipline,
         course_slug: slug,
-        batch_size: batchId,
+        step_type: 'next',
+        force_new: false,
+      })
+      applyHydratedSessionAndLaunch(dto)
+      void fetchOverview()
+      void fetchTacticsCourseCurriculum(slug)
+      return dto
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to start Classical Course step')
+      error.value = msg
+      logger.error('[TrainingSessionStore] startClassicalCourseNextStep failed:', err)
+      throw err
+    } finally {
+      isStartingSession.value = false
+    }
+  }
+
+  async function startClassicalCourseBatch(
+    batchId: number,
+    forceNew: boolean = true,
+    courseSlug?: TacticsCourseSlug,
+  ): Promise<HydratedSessionDTO> {
+    if (!Number.isInteger(batchId) || batchId <= 0) {
+      throw new Error(
+        `[TrainingSessionStore] Invalid Classical Course batchId (${String(batchId)}). Fail-Fast!`,
+      )
+    }
+    const slug = courseSlug ?? activeCourseSlug.value
+    const discipline = resolveDisciplineForCourseSlug(slug)
+    activeCourseSlug.value = slug
+    isStartingSession.value = true
+    error.value = null
+    try {
+      const dto = await trainingApi.composeCourseSession({
+        discipline,
+        course_slug: slug,
+        step_type: 'batch',
+        batch_id: batchId,
         force_new: forceNew,
       })
       applyHydratedSessionAndLaunch(dto)
@@ -943,11 +1137,58 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     } catch (err) {
       const msg = extractErrorText(err, 'Failed to start Classical Course batch')
       error.value = msg
-      logger.error('[TrainingSessionStore] startTacticsCourseBatch failed:', err)
+      logger.error('[TrainingSessionStore] startClassicalCourseBatch failed:', err)
       throw err
     } finally {
       isStartingSession.value = false
     }
+  }
+
+  async function startClassicalCourseWoodpecker(
+    checkpointId: number,
+    courseSlug?: TacticsCourseSlug,
+  ): Promise<HydratedSessionDTO> {
+    if (!Number.isInteger(checkpointId) || checkpointId <= 0) {
+      throw new Error(
+        `[TrainingSessionStore] Invalid Classical Course Woodpecker checkpointId (${String(checkpointId)}). Fail-Fast!`,
+      )
+    }
+    const slug = courseSlug ?? activeCourseSlug.value
+    const discipline = resolveDisciplineForCourseSlug(slug)
+    activeCourseSlug.value = slug
+    isStartingSession.value = true
+    error.value = null
+    try {
+      const dto = await trainingApi.composeCourseSession({
+        discipline,
+        course_slug: slug,
+        step_type: 'woodpecker',
+        checkpoint_id: checkpointId,
+        force_new: true,
+      })
+      applyHydratedSessionAndLaunch(dto)
+      void fetchOverview()
+      void fetchTacticsCourseCurriculum(slug)
+      return dto
+    } catch (err) {
+      const msg = extractErrorText(err, 'Failed to start Classical Course Woodpecker checkpoint')
+      error.value = msg
+      logger.error('[TrainingSessionStore] startClassicalCourseWoodpecker failed:', err)
+      throw err
+    } finally {
+      isStartingSession.value = false
+    }
+  }
+
+  async function startTacticsCourseBatch(
+    batchId: number = 0,
+    forceNew: boolean = false,
+    courseSlug?: TacticsCourseSlug,
+  ): Promise<HydratedSessionDTO> {
+    if (batchId > 0) {
+      return startClassicalCourseBatch(batchId, forceNew, courseSlug)
+    }
+    return startClassicalCourseNextStep(courseSlug)
   }
 
   async function startCrashTestSession(
@@ -1138,26 +1379,292 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     gameStore.syncPgnVisualCuesToBoard()
   }
 
-  function enterPuzzleAnalysis(puzzleId?: string, loadCanonicalSolution: boolean = false): void {
-    clearAutoNextTimeout()
-    stopTimer()
+  function captureInspectionReturnState(): void {
+    if (viewState.value === 'analyzing' || viewState.value === 'practice_replay') {
+      return
+    }
+    if (viewState.value === 'report') {
+      analysisReturnState.value = 'report'
+      return
+    }
+    if (viewState.value === 'awaiting_retry') {
+      analysisReturnState.value = 'awaiting_retry'
+      return
+    }
+    if (viewState.value === 'playing' && currentItem.value?.status === 'pending') {
+      analysisReturnState.value = 'playing'
+      return
+    }
+    analysisReturnState.value = 'awaiting_next'
+  }
 
-    const sess = hydratedSession.value
-    if (!sess) {
-      throw new Error('[TrainingSessionStore] Cannot enter analysis without hydrated session. Fail-Fast!')
+  function restoreFromInspectionMode(): void {
+    analysisPuzzle.value = null
+    practicePuzzle.value = null
+    practiceFeedbackState.value = 'idle'
+
+    if (analysisReturnState.value === 'report') {
+      gameStore.stop()
+      viewState.value = 'report'
+      return
     }
 
-    analysisReturnState.value = viewState.value === 'report' ? 'report' : 'awaiting_next'
+    if (analysisReturnState.value === 'awaiting_retry' && currentItem.value?.status === 'pending') {
+      const sess = hydratedSession.value
+      const item = currentItem.value
+      if (sess && item) {
+        const adapted = adaptSessionItemToPuzzle(sess.session.discipline, item)
+        const fallbackOrientation = determineHumanColor(adapted)
+        const snap =
+          savedRetrySnapshot && savedRetrySnapshot.puzzleId === item.puzzle_id
+            ? savedRetrySnapshot
+            : { puzzleId: item.puzzle_id, fen: adapted.initial_fen, orientation: fallbackOrientation }
+        gameStore.setGamePhase('GAMEOVER')
+        boardStore.setupPosition(snap.fen, snap.orientation)
+        viewState.value = 'awaiting_retry'
+        return
+      }
+    }
 
-    const targetItem = puzzleId
-      ? itemByPuzzleId.get(puzzleId) ?? sess.items.find((it) => it.puzzle_id === puzzleId) ?? null
+    if (analysisReturnState.value === 'playing' && currentItem.value?.status === 'pending') {
+      launchCurrentPuzzle({ preserveTimer: true })
+      return
+    }
+
+    advanceAfterAttempt()
+  }
+
+  async function restartCurrentPuzzle(): Promise<void> {
+    clearAutoNextTimeout()
+
+    if (viewState.value === 'practice_replay') {
+      if (!practicePuzzle.value) {
+        throw new Error(
+          '[TrainingSessionStore] Cannot restart practice replay without active practicePuzzle. Fail-Fast!',
+        )
+      }
+      startPracticeReplay(practicePuzzle.value.puzzle_id)
+      return
+    }
+
+    const sess = hydratedSession.value
+    const item = currentItem.value
+    if (!sess || !item) {
+      throw new Error(
+        '[TrainingSessionStore] Cannot restart puzzle without active session item. Fail-Fast!',
+      )
+    }
+
+    if (viewState.value === 'awaiting_retry') {
+      if (!canRestartFromRetryPrompt(item)) {
+        throw new Error(
+          `[TrainingSessionStore] Cannot restart puzzle "${item.puzzle_id}" from retry prompt (status="${item.status}", attempts_used=${getItemAttemptsUsed(item)}). Fail-Fast!`,
+        )
+      }
+      launchCurrentPuzzle({ preserveTimer: true })
+      return
+    }
+
+    if (viewState.value === 'playing') {
+      if (!canRestartDuringPlay(item, currentPuzzleUserMoves.value)) {
+        throw new Error(
+          `[TrainingSessionStore] Cannot restart puzzle "${item.puzzle_id}" during play (userMoves=${currentPuzzleUserMoves.value}, attempts_used=${getItemAttemptsUsed(item)}). Fail-Fast!`,
+        )
+      }
+      pauseTimer()
+      activePlayToken++
+      item.attempts_used = Math.min(MAX_PUZZLE_ATTEMPTS - 1, getItemAttemptsUsed(item) + 1)
+      await persistItemRetry(sess.session.id, item)
+      launchCurrentPuzzle({ preserveTimer: true })
+      return
+    }
+
+    throw new Error(
+      `[TrainingSessionStore] Cannot restart puzzle in state "${viewState.value}". Fail-Fast!`,
+    )
+  }
+
+  async function resignCurrentPuzzle(): Promise<void> {
+    clearAutoNextTimeout()
+    const sess = hydratedSession.value
+    const item = currentItem.value
+    if (!sess || !item) {
+      throw new Error(
+        '[TrainingSessionStore] Cannot resign puzzle without active session item. Fail-Fast!',
+      )
+    }
+    if (
+      (viewState.value !== 'playing' && viewState.value !== 'awaiting_retry') ||
+      item.status !== 'pending'
+    ) {
+      throw new Error(
+        `[TrainingSessionStore] Cannot resign puzzle "${item.puzzle_id}" in state "${viewState.value}" (status="${item.status}"). Fail-Fast!`,
+      )
+    }
+
+    const wasAwaitingRetry = viewState.value === 'awaiting_retry'
+    const attemptsUsedAtResign = wasAwaitingRetry
+      ? Math.max(1, getItemAttemptsUsed(item))
+      : Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+
+    const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
+    const fallbackStage: 'scenario' | 'playout' =
+      puzzle.strategy === 'scenarioOnly' || puzzle.strategy === 'blunderSpy'
+        ? 'scenario'
+        : 'playout'
+
+    const telemetry: PuzzleAttemptTelemetry =
+      wasAwaitingRetry && lastAttemptTelemetry.value
+        ? {
+            ...lastAttemptTelemetry.value,
+            outcomeReason: 'resign',
+          }
+        : {
+            firstMoveFailed: currentPuzzleUserMoves.value <= 1,
+            failStage: fallbackStage,
+            outcomeReason: 'resign',
+          }
+
+    activePlayToken++
+    const resignToken = activePlayToken
+    gameStore.setGamePhase('GAMEOVER')
+
+    await handleAttemptOutcome(
+      resignToken,
+      sess.session.id,
+      item.puzzle_id,
+      false,
+      telemetry,
+      attemptsUsedAtResign,
+    )
+  }
+
+  function startPracticeReplay(puzzleId?: string): void {
+    const sess = hydratedSession.value
+    if (!sess) {
+      throw new Error(
+        '[TrainingSessionStore] Cannot start practice replay without hydrated session. Fail-Fast!',
+      )
+    }
+    if (
+      viewState.value === 'playing' &&
+      currentItem.value?.status === 'pending' &&
+      currentPuzzleUserMoves.value > 0
+    ) {
+      throw new Error(
+        `[TrainingSessionStore] Fair-Play lock: cannot start practice replay while moves are in progress on pending puzzle "${currentItem.value.puzzle_id}". Fail-Fast!`,
+      )
+    }
+
+    const resolvedId =
+      puzzleId ?? practicePuzzle.value?.puzzle_id ?? analysisPuzzle.value?.puzzle_id
+    const targetItem = resolvedId
+      ? itemByPuzzleId.get(resolvedId) ?? sess.items.find((it) => it.puzzle_id === resolvedId) ?? null
       : currentItem.value
 
     if (!targetItem) {
       throw new Error(
-        `[TrainingSessionStore] Puzzle "${puzzleId ?? ''}" not found in current session for analysis. Fail-Fast!`,
+        `[TrainingSessionStore] Puzzle "${resolvedId ?? ''}" not found in session for practice replay. Fail-Fast!`,
       )
     }
+    if (!canPracticeReplayItem(targetItem)) {
+      throw new Error(
+        `[TrainingSessionStore] Fair-Play violation: cannot practice-replay unsolved puzzle "${targetItem.puzzle_id}" (status="${targetItem.status}"). Fail-Fast!`,
+      )
+    }
+
+    clearAutoNextTimeout()
+    pauseTimer()
+    captureInspectionReturnState()
+
+    const botEngine = syncBotLadderForSession(sess.session)
+    const adapted = adaptSessionItemToPuzzle(sess.session.discipline, targetItem)
+    const humanColor = determineHumanColor(adapted)
+
+    activePlayToken++
+    const tokenAtPractice = activePlayToken
+    analysisPuzzle.value = null
+    practicePuzzle.value = adapted
+    practiceFeedbackState.value = 'idle'
+    feedbackMessage.value = null
+
+    const strategy = new PuzzleStrategy(adapted, humanColor, sess.session.discipline, {
+      planId: `practice-${sess.session.id.slice(0, 8)}`,
+      botEngineOverride: botEngine,
+      delays: preferencesStore.preferences.delays,
+      onFeedback: (msg: string) => {
+        if (activePlayToken === tokenAtPractice) {
+          feedbackMessage.value = msg
+        }
+      },
+      onSuccess: () => {
+        if (activePlayToken !== tokenAtPractice) return
+        GameAudioEngine.playFeatureSuccess()
+        practiceFeedbackState.value = 'solved'
+      },
+      onFailure: () => {
+        if (activePlayToken !== tokenAtPractice) return
+        GameAudioEngine.playFeatureError()
+        practiceFeedbackState.value = 'failed'
+      },
+    })
+
+    viewState.value = 'practice_replay'
+    gameStore.startWithStrategy(adapted.initial_fen, strategy, humanColor)
+  }
+
+  function exitPracticeReplay(): void {
+    activePlayToken++
+    restoreFromInspectionMode()
+  }
+
+  function enterPuzzleAnalysis(puzzleId?: string, loadCanonicalSolution: boolean = false): void {
+    const sess = hydratedSession.value
+    if (!sess) {
+      throw new Error('[TrainingSessionStore] Cannot enter analysis without hydrated session. Fail-Fast!')
+    }
+    if (
+      viewState.value === 'playing' &&
+      currentItem.value?.status === 'pending' &&
+      currentPuzzleUserMoves.value > 0
+    ) {
+      throw new Error(
+        `[TrainingSessionStore] Fair-Play lock: cannot enter analysis while moves are in progress on pending puzzle "${currentItem.value.puzzle_id}". Fail-Fast!`,
+      )
+    }
+
+    const resolvedId =
+      puzzleId ?? analysisPuzzle.value?.puzzle_id ?? practicePuzzle.value?.puzzle_id
+    const targetItem = resolvedId
+      ? itemByPuzzleId.get(resolvedId) ?? sess.items.find((it) => it.puzzle_id === resolvedId) ?? null
+      : currentItem.value
+
+    if (!targetItem) {
+      throw new Error(
+        `[TrainingSessionStore] Puzzle "${resolvedId ?? ''}" not found in current session for analysis. Fail-Fast!`,
+      )
+    }
+
+    if (!canAnalyzeSessionItem(targetItem)) {
+      throw new Error(
+        `[TrainingSessionStore] Fair-Play violation: cannot analyze unsolved puzzle "${targetItem.puzzle_id}" (status="${targetItem.status}"). Fail-Fast!`,
+      )
+    }
+
+    const wasDirectCurrentPostGameOver =
+      !puzzleId &&
+      !analysisPuzzle.value &&
+      !practicePuzzle.value &&
+      (viewState.value === 'awaiting_next' ||
+        (viewState.value === 'playing' && currentItem.value?.status !== 'pending'))
+
+    clearAutoNextTimeout()
+    pauseTimer()
+    captureInspectionReturnState()
+
+    activePlayToken++
+    practicePuzzle.value = null
+    practiceFeedbackState.value = 'idle'
 
     const adapted = adaptSessionItemToPuzzle(sess.session.discipline, targetItem)
     analysisPuzzle.value = adapted
@@ -1165,7 +1672,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     // If entering immediately from post-puzzle GAMEOVER without requesting canonical reset,
     // preserve the actual played moves in PGN so the user can inspect their own game first.
-    if (!puzzleId && !loadCanonicalSolution && analysisReturnState.value === 'awaiting_next') {
+    if (!loadCanonicalSolution && wasDirectCurrentPostGameOver) {
       gameStore.enterAnalysisMode()
       gameStore.syncPgnVisualCuesToBoard()
       return
@@ -1175,13 +1682,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   }
 
   function exitPuzzleAnalysis(): void {
-    analysisPuzzle.value = null
-    if (analysisReturnState.value === 'report') {
-      gameStore.stop()
-      viewState.value = 'report'
-      return
-    }
-    advanceAfterAttempt()
+    restoreFromInspectionMode()
   }
 
   function pauseToHub(): void {
@@ -1190,6 +1691,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     activePlayToken++
     stopTimer()
     analysisPuzzle.value = null
+    practicePuzzle.value = null
+    practiceFeedbackState.value = 'idle'
+    currentPuzzleUserMoves.value = 0
+    savedRetrySnapshot = null
     gameStore.stop()
     viewState.value = 'hub'
     void fetchOverview()
@@ -1212,6 +1717,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       if (hydratedSession.value?.session.id === targetId) {
         hydratedSession.value = null
         analysisPuzzle.value = null
+        practicePuzzle.value = null
+        practiceFeedbackState.value = 'idle'
+        currentPuzzleUserMoves.value = 0
+        savedRetrySnapshot = null
         sessionAttemptResults.value = {}
         gameStore.stop()
         viewState.value = 'hub'
@@ -1252,6 +1761,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     isLoadingCurriculum,
     isStartingSession,
     isSubmittingAttempt,
+    isPersistingRetry,
     isFlaggingPuzzle,
     error,
     feedbackMessage,
@@ -1260,6 +1770,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     sessionAttemptResults,
     promotionBannerTier,
     analysisPuzzle,
+    practicePuzzle,
+    practiceFeedbackState,
+    currentPuzzleUserMoves,
 
     // Getters
     activeDisciplineOverview,
@@ -1269,9 +1782,18 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     currentPuzzle,
     activeBotEngine,
     isPlaying,
+    isAwaitingRetry,
     isAwaitingNext,
+    isPracticeReplay,
     isAnalysisMode,
     isFinished,
+    isBoardSessionActive,
+    currentAttemptsUsed,
+    currentAttemptNumber,
+    displayAttemptNumber,
+    canRestartCurrentPuzzle,
+    canResignCurrentPuzzle,
+    canSwitchSidebarItem,
     sessionReportSummary,
 
     // Actions
@@ -1285,12 +1807,19 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     startCourse,
     abortCourse,
     startOrResumeCourseBatch,
+    startClassicalCourseNextStep,
+    startClassicalCourseBatch,
+    startClassicalCourseWoodpecker,
     startTacticsCourseBatch,
     startCrashTestSession,
     flagCurrentCoursePuzzle,
     startWarmupSession,
     resumeDisciplineSession,
     advanceAfterAttempt,
+    restartCurrentPuzzle,
+    resignCurrentPuzzle,
+    startPracticeReplay,
+    exitPracticeReplay,
     enterPuzzleAnalysis,
     exitPuzzleAnalysis,
     pauseToHub,
