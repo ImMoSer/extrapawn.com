@@ -1,4 +1,8 @@
 import type { EngineDownloadProgress } from '@/shared/lib/engine/types'
+import {
+  evictStockfishWasmCache,
+  resolveStockfishWasmAsset,
+} from '@/shared/lib/engine/wasmCache'
 import logger from '@/shared/lib/logger'
 
 const STOCKFISH_SINGLE_WORKER_PATH = '/stockfish/stockfish-19-single.js'
@@ -9,77 +13,54 @@ export interface EngineController {
   terminate?(): void
 }
 
-export function loadLocalEngine(
+export async function loadLocalEngine(
   onProgress?: (progress: EngineDownloadProgress) => void,
 ): Promise<EngineController> {
+  const wasmAsset = await resolveStockfishWasmAsset({ onProgress })
   logger.info(
-    `[EngineLoader] Initializing Single-Thread Web Worker from ${STOCKFISH_SINGLE_WORKER_PATH}`,
+    `[EngineLoader] Initializing Stockfish 19 Worker (${wasmAsset.fromCache ? 'Cache Storage HIT, 0 B network' : 'downloaded & cached'}, ${(wasmAsset.byteLength / 1_048_576).toFixed(1)} MB)`,
   )
 
-  return new Promise((resolve, reject) => {
-    try {
-      const worker = new Worker(STOCKFISH_SINGLE_WORKER_PATH)
-      const listeners: ((message: string) => void)[] = []
-      let progressPort: MessagePort | null = null
+  try {
+    const workerUrl = `${STOCKFISH_SINGLE_WORKER_PATH}#${encodeURIComponent(wasmAsset.wasmUrl)}`
+    const worker = new Worker(workerUrl)
+    const listeners: ((message: string) => void)[] = []
+    let uciInitialized = false
 
-      if (onProgress && typeof MessageChannel !== 'undefined') {
-        const channel = new MessageChannel()
-        progressPort = channel.port1
-        progressPort.onmessage = (event: MessageEvent<unknown>) => {
-          const data = event.data as Partial<EngineDownloadProgress> | null
-          if (
-            data &&
-            typeof data.percent === 'number' &&
-            typeof data.loaded === 'number' &&
-            typeof data.total === 'number'
-          ) {
-            onProgress({
-              percent: Math.min(1, Math.max(0, data.percent)),
-              loaded: data.loaded,
-              total: data.total,
-              speedBytesPerSec:
-                typeof data.speedBytesPerSec === 'number' ? data.speedBytesPerSec : 0,
-              speedText: typeof data.speedText === 'string' ? data.speedText : '',
-              eta: typeof data.eta === 'number' ? data.eta : 0,
-              etaText: typeof data.etaText === 'string' ? data.etaText : '',
-            })
-          }
-        }
-        worker.postMessage({ progressPort: channel.port2 }, [channel.port2])
+    worker.onmessage = (event: MessageEvent<unknown>) => {
+      const message = typeof event.data === 'string' ? event.data : String(event.data)
+      if (message === 'uciok' && !uciInitialized) {
+        uciInitialized = true
+        wasmAsset.revoke()
       }
-
-      worker.onmessage = (event: MessageEvent) => {
-        const message = typeof event.data === 'string' ? event.data : String(event.data)
-        listeners.forEach((callback) => callback(message))
-      }
-
-      worker.onerror = (error) => {
-        logger.error('[EngineLoader] Worker execution error:', error)
-        reject(error)
-      }
-
-      const engineAdapter: EngineController = {
-        postMessage: (command: string) => {
-          worker.postMessage(command)
-        },
-        addMessageListener: (callback: (message: string) => void) => {
-          listeners.push(callback)
-        },
-        terminate: () => {
-          if (progressPort) {
-            progressPort.close()
-            progressPort = null
-          }
-          worker.terminate()
-          listeners.length = 0
-          logger.info('[EngineLoader] Engine Worker terminated.')
-        },
-      }
-
-      resolve(engineAdapter)
-    } catch (error) {
-      logger.error('[EngineLoader] Failed to spawn engine worker.', error)
-      reject(error)
+      listeners.forEach((callback) => callback(message))
     }
-  })
+
+    worker.onerror = (error) => {
+      wasmAsset.revoke()
+      if (!uciInitialized && wasmAsset.fromCache) {
+        void evictStockfishWasmCache()
+      }
+      logger.error('[EngineLoader] Worker execution error:', error)
+    }
+
+    return {
+      postMessage: (command: string) => {
+        worker.postMessage(command)
+      },
+      addMessageListener: (callback: (message: string) => void) => {
+        listeners.push(callback)
+      },
+      terminate: () => {
+        wasmAsset.revoke()
+        worker.terminate()
+        listeners.length = 0
+        logger.info('[EngineLoader] Engine Worker terminated.')
+      },
+    }
+  } catch (error) {
+    wasmAsset.revoke()
+    logger.error('[EngineLoader] Failed to spawn engine worker.', error)
+    throw error
+  }
 }

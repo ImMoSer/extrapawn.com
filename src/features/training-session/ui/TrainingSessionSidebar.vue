@@ -270,32 +270,36 @@ function handleItemClick(item: HydratedSessionItem): void {
         <NButton
           size="small"
           type="warning"
+          class="min-w-0 overflow-hidden"
           :disabled="!store.canRestartCurrentPuzzle"
           :loading="store.isPersistingRetry"
           @click="store.restartCurrentPuzzle()"
         >
           <template #icon>
-            <NIcon><RefreshOutline /></NIcon>
+            <NIcon class="shrink-0"><RefreshOutline /></NIcon>
           </template>
-          {{
-            t('features.trainingCenter.actions.restartAttempt', {
-              current: store.currentAttemptNumber,
-              max: MAX_PUZZLE_ATTEMPTS,
-            })
-          }}
+          <span class="truncate">
+            {{
+              t('features.trainingCenter.actions.restartAttempt', {
+                current: store.currentAttemptNumber,
+                max: MAX_PUZZLE_ATTEMPTS,
+              })
+            }}
+          </span>
         </NButton>
         <NButton
           size="small"
           secondary
           type="error"
+          class="min-w-0 overflow-hidden"
           :disabled="!store.canResignCurrentPuzzle"
           :loading="store.isSubmittingAttempt"
           @click="store.resignCurrentPuzzle()"
         >
           <template #icon>
-            <NIcon><CloseOutline /></NIcon>
+            <NIcon class="shrink-0"><CloseOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.resignToAnalyze') }}
+          <span class="truncate">{{ t('features.trainingCenter.actions.resignToAnalyze') }}</span>
         </NButton>
       </div>
     </div>
@@ -336,21 +340,27 @@ function handleItemClick(item: HydratedSessionItem): void {
         }}
       </p>
       <div class="grid grid-cols-2 gap-2 pt-0.5">
-        <NButton size="small" secondary @click="store.restartCurrentPuzzle()">
+        <NButton
+          size="small"
+          secondary
+          class="min-w-0 overflow-hidden"
+          @click="store.restartCurrentPuzzle()"
+        >
           <template #icon>
-            <NIcon><RefreshOutline /></NIcon>
+            <NIcon class="shrink-0"><RefreshOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.restartPuzzle') }}
+          <span class="truncate">{{ t('features.trainingCenter.actions.restartPuzzle') }}</span>
         </NButton>
         <NButton
           size="small"
           secondary
+          class="min-w-0 overflow-hidden"
           @click="store.enterPuzzleAnalysis(store.practicePuzzle?.puzzle_id, true)"
         >
           <template #icon>
-            <NIcon><EyeOutline /></NIcon>
+            <NIcon class="shrink-0"><EyeOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.analyze') }}
+          <span class="truncate">{{ t('features.trainingCenter.actions.analyze') }}</span>
         </NButton>
       </div>
     </div>
@@ -402,17 +412,27 @@ function handleItemClick(item: HydratedSessionItem): void {
       </div>
 
       <div class="grid grid-cols-2 gap-2 pt-1">
-        <NButton size="small" secondary @click="store.enterPuzzleAnalysis()">
+        <NButton
+          size="small"
+          secondary
+          class="min-w-0 overflow-hidden"
+          @click="store.enterPuzzleAnalysis()"
+        >
           <template #icon>
-            <NIcon><EyeOutline /></NIcon>
+            <NIcon class="shrink-0"><EyeOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.analyze') }}
+          <span class="truncate">{{ t('features.trainingCenter.actions.analyze') }}</span>
         </NButton>
-        <NButton size="small" type="primary" @click="store.advanceAfterAttempt()">
+        <NButton
+          size="small"
+          type="primary"
+          class="min-w-0 overflow-hidden"
+          @click="store.advanceAfterAttempt()"
+        >
           <template #icon>
-            <NIcon><ArrowForwardOutline /></NIcon>
+            <NIcon class="shrink-0"><ArrowForwardOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.nextPuzzle') }}
+          <span class="truncate">{{ t('features.trainingCenter.actions.nextPuzzle') }}</span>
         </NButton>
       </div>
       <NButton block size="tiny" secondary @click="store.startPracticeReplay()">

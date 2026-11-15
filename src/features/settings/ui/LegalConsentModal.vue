@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { I18nT, useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { ShieldCheckmarkOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
@@ -100,32 +100,33 @@ const handleConfirmTerms = async () => {
             type="checkbox"
             class="mt-0.5 h-4 w-4 shrink-0 accent-brand"
           />
-          <span>
-            {{ t('legal.consentModal.checkboxPrefix') }}
-            <RouterLink
-              to="/legal#terms"
-              class="font-semibold text-brand underline hover:opacity-80"
-              @click.stop
-            >
-              {{ t('legal.consentModal.termsLinkText') }}
-            </RouterLink>
-            {{ t('legal.consentModal.checkboxMiddle') }}
-            <RouterLink
-              to="/legal#privacy"
-              class="font-semibold text-brand underline hover:opacity-80"
-              @click.stop
-            >
-              {{ t('legal.consentModal.privacyLinkText') }}
-            </RouterLink>
-            <template v-if="t('legal.consentModal.checkboxSuffix')">
-              {{ ' ' + t('legal.consentModal.checkboxSuffix') }}
+          <I18nT keypath="legal.consentModal.checkboxLabel" tag="span">
+            <template #terms>
+              <RouterLink
+                to="/legal#terms"
+                class="font-semibold text-brand underline hover:opacity-80"
+                @click.stop
+              >
+                {{ t('legal.consentModal.termsLinkText') }}
+              </RouterLink>
             </template>
-            (<RouterLink
-              to="/legal#imprint"
-              class="text-brand underline hover:opacity-80"
-              @click.stop
-            >{{ t('legal.consentModal.imprintLinkText') }}</RouterLink>).
-          </span>
+            <template #privacy>
+              <RouterLink
+                to="/legal#privacy"
+                class="font-semibold text-brand underline hover:opacity-80"
+                @click.stop
+              >
+                {{ t('legal.consentModal.privacyLinkText') }}
+              </RouterLink>
+            </template>
+            <template #imprint>
+              <RouterLink
+                to="/legal#imprint"
+                class="text-brand underline hover:opacity-80"
+                @click.stop
+              >{{ t('legal.consentModal.imprintLinkText') }}</RouterLink>
+            </template>
+          </I18nT>
         </label>
 
         <!-- Confirm Button -->
