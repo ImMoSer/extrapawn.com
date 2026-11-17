@@ -387,7 +387,7 @@ async function handleResetCourseProgress(): Promise<void> {
             <span
               class="px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated border border-border text-text-secondary"
             >
-              Лог в браузере: проверено {{ crashTestReport.processed_count }} · аномалий {{ anomaliesCount }} · cache misses {{ crashTestReport.cache_misses_healed_count }}
+              Лог в браузере: проверено {{ crashTestReport.processed_count }} · аномалий {{ anomaliesCount }}
             </span>
           </div>
           <p class="text-xs text-text-secondary">
@@ -395,7 +395,7 @@ async function handleResetCourseProgress(): Promise<void> {
               Сквозной прогон всех {{ crashTestTotal }} позиций 4 курсов эндшпиля в одном дампе (разыгрывание против MOZERO по правилам FIDE). Все ошибки сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
             </template>
             <template v-else>
-              Сквозной прогон всех {{ crashTestTotal }} задач 3 курсов тактики в одном дампе. Все ошибки и cache-промахи сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
+              Сквозной прогон всех {{ crashTestTotal }} задач 3 курсов тактики в одном дампе. Все ошибки сохраняются в браузере (`localStorage`) для выгрузки `craschTestReport.json`.
             </template>
           </p>
         </div>

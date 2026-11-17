@@ -1,5 +1,4 @@
 import type {
-  BlunderSpyStepTelemetry,
   PuzzleAttemptTelemetry,
   PuzzlePuzzle,
 } from '@/entities/game'
@@ -81,7 +80,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
   let activePlayToken = 0
   let savedRetrySnapshot: RetryBoardSnapshot | null = null
-  let lastBlunderSpyStep: BlunderSpyStepTelemetry | null = null
   const itemByPuzzleId = new Map<string, HydratedSessionItem>()
 
   const clock = usePuzzleClock(viewState)
@@ -211,10 +209,6 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
       getSavedRetrySnapshot: () => savedRetrySnapshot,
       setSavedRetrySnapshot: (snapshot) => {
         savedRetrySnapshot = snapshot
-      },
-      getLastBlunderSpyStep: () => lastBlunderSpyStep,
-      setLastBlunderSpyStep: (step) => {
-        lastBlunderSpyStep = step
       },
     },
   }

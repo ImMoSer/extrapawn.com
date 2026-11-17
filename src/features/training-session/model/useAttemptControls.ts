@@ -138,9 +138,7 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
 
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
     const fallbackStage: 'scenario' | 'playout' =
-      puzzle.strategy === 'scenarioOnly' || puzzle.strategy === 'blunderSpy'
-        ? 'scenario'
-        : 'playout'
+      puzzle.strategy === 'scenarioOnly' ? 'scenario' : 'playout'
 
     const telemetry: PuzzleAttemptTelemetry =
       wasAwaitingRetry && state.lastAttemptTelemetry.value

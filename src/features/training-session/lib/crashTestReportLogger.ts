@@ -2,7 +2,6 @@ import { computed, ref } from 'vue'
 
 export type CrashTestAnomalyType =
   | 'blunder_in_crashtest'
-  | 'cache_miss_healed'
   | 'api_error'
   | 'unexpected_failure'
   | 'manual_flag'
@@ -29,10 +28,7 @@ export interface CrashTestAnomalyEntry {
   game_pgn?: string
   canonical_solution?: string
   crashtest_engine?: string
-  blunderspy_state?: string
-  blunderspy_next_state?: string
-  blunderspy_source?: string
-  blunderspy_reason?: string
+  outcome_reason?: string
   best_move_uci?: string
   allowed_moves?: string[]
   eval?: {
@@ -51,8 +47,6 @@ export interface CrashTestReportData {
   processed_count: number
   solved_count: number
   failed_count: number
-  cache_hits_count: number
-  cache_misses_healed_count: number
   api_errors_count: number
   flagged_count: number
   last_puzzle_id: string | null
@@ -73,8 +67,6 @@ function createDefaultReport(totalInDump: number = 2252): CrashTestReportData {
     processed_count: 0,
     solved_count: 0,
     failed_count: 0,
-    cache_hits_count: 0,
-    cache_misses_healed_count: 0,
     api_errors_count: 0,
     flagged_count: 0,
     last_puzzle_id: null,
@@ -160,15 +152,6 @@ export function setCrashTestTotalPuzzles(totalInDump: number): void {
   }
 }
 
-export function recordCrashTestStepHit(source: 'cache' | 'engine_healed' | string): void {
-  if (source === 'engine_healed') {
-    reportState.value.cache_misses_healed_count += 1
-  } else {
-    reportState.value.cache_hits_count += 1
-  }
-  schedulePersistToStorage()
-}
-
 export function recordCrashTestPuzzleOutcome(
   puzzleId: string,
   indexInSession: number,
@@ -228,8 +211,7 @@ export function useCrashTestReport() {
   const hasReportData = computed(
     () =>
       reportState.value.processed_count > 0 ||
-      reportState.value.anomalies.length > 0 ||
-      reportState.value.cache_hits_count > 0,
+      reportState.value.anomalies.length > 0,
   )
 
   return {

@@ -115,7 +115,6 @@ export function adaptCoursePuzzleV2(
     )
   }
   if (
-    cp.strategy !== 'blunderSpy' &&
     cp.strategy !== 'scenarioOnly' &&
     cp.strategy !== 'scenarioPlus' &&
     cp.strategy !== 'playOutOnly'

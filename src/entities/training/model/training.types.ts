@@ -328,7 +328,7 @@ export interface CoursePuzzleV2 {
   class: string
   sub_class?: string
   objective: TrainingObjective
-  strategy: 'scenarioOnly' | 'scenarioPlus' | 'playOutOnly' | 'blunderSpy'
+  strategy: 'scenarioOnly' | 'scenarioPlus' | 'playOutOnly'
   first_move: 'bot' | 'user'
   user_color: 'white' | 'black'
   pieces_count: number
@@ -818,26 +818,6 @@ export interface FlagCoursePuzzleRequest {
   puzzle_id: string
   comment: string
   session_id?: string
-}
-
-export interface BlunderSpyStepRequest {
-  puzzle_id?: string
-  fen: string
-  move_uci: string
-  objective: TrainingObjective
-  user_move_number?: number
-}
-
-export interface BlunderSpyStepResponse {
-  status: 'solved' | 'continue' | 'blunder'
-  quality: 'Best' | 'Good' | 'Inaccuracy' | 'Blunder' | string
-  node_state: '100' | '110' | '111' | 'terminal' | string
-  is_user_last_move: boolean
-  bot_reply: string | null
-  next_fen4: string | null
-  next_state: string | null
-  best_move_uci: string | null
-  cache_source: 'ram_hit' | 'self_healed_111' | 'self_healed_node' | 'terminal' | string
 }
 
 

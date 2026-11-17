@@ -1,4 +1,4 @@
-import type { BlunderSpyStepTelemetry, PuzzleAttemptTelemetry, PuzzlePuzzle } from '@/entities/game'
+import type { PuzzleAttemptTelemetry, PuzzlePuzzle } from '@/entities/game'
 import type {
   AttemptResultDTO,
   BotLadderEngineId,
@@ -62,8 +62,6 @@ export interface PlayRuntimeTracker {
   getPlayToken: () => number
   getSavedRetrySnapshot: () => RetryBoardSnapshot | null
   setSavedRetrySnapshot: (snapshot: RetryBoardSnapshot | null) => void
-  getLastBlunderSpyStep: () => BlunderSpyStepTelemetry | null
-  setLastBlunderSpyStep: (step: BlunderSpyStepTelemetry | null) => void
 }
 
 export interface TrainingSessionSharedState {

@@ -116,10 +116,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
-    logger.info('[AuthStore] Redirecting to backend for logout...')
+    logger.info('[AuthStore] Sending POST logout request to backend...')
     isLoading.value = true
     clearAuthDataLocal()
-    window.location.href = `${BACKEND_API_URL}/auth/lichess/logout`
+    try {
+      await fetch(`${BACKEND_API_URL}/auth/lichess/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (err) {
+      logger.warn('[AuthStore] Logout POST failed, redirecting home anyway:', err)
+    }
+    window.location.href = '/'
   }
 
   async function acceptTerms(): Promise<void> {

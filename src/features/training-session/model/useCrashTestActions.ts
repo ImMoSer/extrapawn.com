@@ -1,4 +1,4 @@
-import type { BlunderSpyStepTelemetry, PuzzleAttemptTelemetry, PuzzlePuzzle } from '@/entities/game'
+import type { PuzzleAttemptTelemetry } from '@/entities/game'
 import { useBoardStore } from '@/entities/game'
 import {
   resolveDisciplineForCourseSlug,
@@ -15,7 +15,6 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 import {
   recordCrashTestAnomaly,
   recordCrashTestPuzzleOutcome,
-  recordCrashTestStepHit,
   resetCrashTestReport,
 } from '../lib/crashTestReportLogger'
 import { extractErrorText, type TrainingSessionSharedState } from './trainingSession.types'
@@ -62,47 +61,6 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
     )
   }
 
-  function handleCrashTestBlunderSpyStep(
-    session: SessionSummaryDTO,
-    puzzle: PuzzlePuzzle,
-    itemIndex: number,
-    stepInfo: BlunderSpyStepTelemetry,
-  ): void {
-    state.runtime.setLastBlunderSpyStep(stepInfo)
-
-    const isCrashtestMode = isCrashtestActiveForSession(session)
-    if (isCrashtestMode) {
-      recordCrashTestStepHit(stepInfo.cacheHit ? 'cache' : 'engine_healed')
-    }
-
-    if (stepInfo.status === 'error' && isCrashtestMode) {
-      const gameHistory = captureCurrentGameMoveHistory()
-      recordCrashTestAnomaly({
-        type: 'api_error',
-        puzzle_id: puzzle.puzzle_id,
-        course_slug: puzzle.course_slug,
-        global_batch_id: puzzle.global_batch_id,
-        batch_id: puzzle.batch_id,
-        index_in_session: itemIndex,
-        domain: puzzle.domain,
-        class: puzzle.category,
-        objective: puzzle.objective,
-        initial_fen: puzzle.initial_fen,
-        current_fen: stepInfo.fenBefore,
-        move_uci: stepInfo.moveUci,
-        user_move_number: stepInfo.userMoveNumber,
-        played_moves_uci: stepInfo.playedMovesUci,
-        ...gameHistory,
-        canonical_solution: puzzle.tactical_solution,
-        crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
-        blunderspy_state: stepInfo.stateMask,
-        best_move_uci: stepInfo.allowedMoves[0],
-        allowed_moves: stepInfo.allowedMoves,
-        error_message: stepInfo.errorMessage || 'blunderspy API error',
-      })
-    }
-  }
-
   function recordCrashTestOutcomeIfActive(
     targetItem: HydratedSessionItem,
     solved: boolean,
@@ -111,13 +69,9 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
   ): void {
     recordCrashTestPuzzleOutcome(targetItem.puzzle_id, targetItem.index, solved)
     if (!solved) {
-      const lastStep = state.runtime.getLastBlunderSpyStep()
       const gameHistory = captureCurrentGameMoveHistory()
       recordCrashTestAnomaly({
-        type:
-          telemetry.outcomeReason === 'blunderspy_api_error'
-            ? 'api_error'
-            : 'blunder_in_crashtest',
+        type: 'blunder_in_crashtest',
         puzzle_id: targetItem.puzzle_id,
         course_slug: targetItem.course_puzzle?.course_slug,
         global_batch_id: targetItem.course_puzzle?.global_batch_id,
@@ -127,24 +81,18 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
         class: targetItem.course_puzzle?.class,
         objective: targetItem.course_puzzle?.objective,
         initial_fen: targetItem.course_puzzle?.tactical_fen || '',
-        current_fen: lastStep?.fenBefore || boardStore.fen,
-        move_uci: lastStep?.moveUci,
-        user_move_number: lastStep?.userMoveNumber,
-        played_moves_uci: lastStep?.playedMovesUci ?? [],
+        current_fen: boardStore.fen,
+        played_moves_uci: gameHistory.game_moves_uci,
         ...gameHistory,
         canonical_solution: targetItem.course_puzzle?.tactical_solution,
         crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
-        blunderspy_state: lastStep?.stateMask,
-        blunderspy_reason: telemetry.outcomeReason,
-        best_move_uci: lastStep?.allowedMoves?.[0],
-        allowed_moves: lastStep?.allowedMoves,
+        outcome_reason: telemetry.outcomeReason,
         error_message: `Outcome reason: ${telemetry.outcomeReason} (failStage: ${telemetry.failStage}, timeMs: ${elapsedMs})`,
       })
     }
   }
 
   function recordCrashTestSubmitError(targetItem: HydratedSessionItem, errorMessage: string): void {
-    const lastStep = state.runtime.getLastBlunderSpyStep()
     const gameHistory = captureCurrentGameMoveHistory()
     recordCrashTestAnomaly({
       type: 'api_error',
@@ -158,7 +106,7 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
       objective: targetItem.course_puzzle?.objective,
       initial_fen: targetItem.course_puzzle?.tactical_fen || '',
       current_fen: boardStore.fen,
-      played_moves_uci: lastStep?.playedMovesUci ?? [],
+      played_moves_uci: gameHistory.game_moves_uci,
       ...gameHistory,
       canonical_solution: targetItem.course_puzzle?.tactical_solution,
       crashtest_engine: preferencesStore.preferences.gameplay.crashtestEngine,
@@ -216,7 +164,6 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
     state.isFlaggingPuzzle.value = true
     state.error.value = null
     try {
-      const lastStep = state.runtime.getLastBlunderSpyStep()
       const gameHistory = captureCurrentGameMoveHistory()
       recordCrashTestAnomaly({
         type: 'manual_flag',
@@ -230,7 +177,7 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
         objective: item.course_puzzle?.objective,
         initial_fen: item.course_puzzle?.tactical_fen || '',
         current_fen: boardStore.fen,
-        played_moves_uci: lastStep?.playedMovesUci ?? [],
+        played_moves_uci: gameHistory.game_moves_uci,
         ...gameHistory,
         canonical_solution: item.course_puzzle?.tactical_solution,
         error_message: comment.trim() || 'Помечено во время прохождения',
@@ -264,7 +211,6 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
 
   return {
     isCrashtestActiveForSession,
-    handleCrashTestBlunderSpyStep,
     recordCrashTestOutcomeIfActive,
     recordCrashTestSubmitError,
     startCrashTestSession,

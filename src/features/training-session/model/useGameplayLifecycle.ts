@@ -4,7 +4,6 @@ import {
   PuzzleStrategy,
   useBoardStore,
   useGameStore,
-  type BlunderSpyStepTelemetry,
   type PuzzleAttemptTelemetry,
 } from '@/entities/game'
 import {
@@ -151,7 +150,6 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     state.practiceFeedbackState.value = 'idle'
     state.currentPuzzleUserMoves.value = 0
     state.runtime.setSavedRetrySnapshot(null)
-    state.runtime.setLastBlunderSpyStep(null)
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
       planId: sess.session.id.slice(0, 12),
@@ -161,10 +159,6 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         if (state.runtime.getPlayToken() === tokenAtLaunch) {
           state.currentPuzzleUserMoves.value = userMovesCount
         }
-      },
-      onBlunderSpyStep: (stepInfo: BlunderSpyStepTelemetry) => {
-        if (state.runtime.getPlayToken() !== tokenAtLaunch) return
-        crashTest.handleCrashTestBlunderSpyStep(sess.session, puzzle, item.index, stepInfo)
       },
       onFeedback: (msg: string) => {
         if (state.runtime.getPlayToken() === tokenAtLaunch) {
@@ -192,10 +186,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         if (state.runtime.getPlayToken() !== tokenAtLaunch) return
         const resolvedTelemetry: PuzzleAttemptTelemetry = telemetry ?? {
           firstMoveFailed: false,
-          failStage:
-            puzzle.strategy === 'scenarioOnly' || puzzle.strategy === 'blunderSpy'
-              ? 'scenario'
-              : 'playout',
+          failStage: puzzle.strategy === 'scenarioOnly' ? 'scenario' : 'playout',
           outcomeReason: 'failed',
         }
 

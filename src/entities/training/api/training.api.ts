@@ -4,8 +4,6 @@ import {
   type ActiveSessionResponseDTO,
   type AttemptRequest,
   type AttemptResultDTO,
-  type BlunderSpyStepRequest,
-  type BlunderSpyStepResponse,
   type CabinetDTO,
   type CatalogManifestDTO,
   type ConsumeItemRetryResponseDTO,
@@ -265,19 +263,6 @@ export const trainingApi = {
       ...(trimmed ? { body: JSON.stringify({ course_slug: trimmed }) } : {}),
     })
     return assertTacticsCourseCurriculumDTO(raw)
-  },
-
-  stepBlunderSpy(payload: BlunderSpyStepRequest): Promise<BlunderSpyStepResponse> {
-    return apiClient<BlunderSpyStepResponse>('/coach-engine/blunderspy/step', {
-      method: 'POST',
-      body: JSON.stringify({
-        puzzle_id: payload.puzzle_id ?? '',
-        fen: payload.fen,
-        move_uci: payload.move_uci,
-        objective: payload.objective ?? 'win',
-        user_move_number: payload.user_move_number ?? 1,
-      }),
-    })
   },
 
   composeCrashTestSession(payload: CrashTestSessionRequest = {}): Promise<HydratedSessionDTO> {
