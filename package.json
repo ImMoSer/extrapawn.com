@@ -1,6 +1,6 @@
 {
   "name": "extrapawn.com",
-  "version": "26.11.18-01",
+  "version": "26.11.18-0952",
   "private": true,
   "type": "module",
   "engines": {
@@ -27,7 +27,7 @@
     "lint": "eslint . --fix",
     "type-check:watch": "vue-tsc --watch",
     "format": "prettier --write src/",
-    "postinstall": "node -e \"import fs from 'fs'; fs.rmSync('public/stockfish', { recursive: true, force: true }); fs.mkdirSync('public/stockfish', { recursive: true }); for (const f of ['stockfish-19-single.js', 'stockfish-19-single.wasm']) { fs.cpSync('node_modules/stockfish/bin/' + f, 'public/stockfish/' + f); }\""
+    "postinstall": "node -e \"import fs from 'node:fs'; import { execFileSync } from 'node:child_process'; fs.rmSync('public/stockfish', { recursive: true, force: true }); fs.mkdirSync('public/stockfish', { recursive: true }); for (const f of ['stockfish-19-single.js', 'stockfish-19-single.wasm']) { fs.cpSync('node_modules/stockfish/bin/' + f, 'public/stockfish/' + f); } if (fs.existsSync('.git')) { execFileSync('git', ['config', 'core.hooksPath', '.githooks']); }\""
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.5.0",

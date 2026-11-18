@@ -1,3 +1,4 @@
+import { STOCKFISH_CACHE_PREFIX } from '@/shared/lib/engine/wasmCache'
 import { useDialog } from 'naive-ui'
 import { onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -52,16 +53,17 @@ export function useVersionUpdate() {
   }
 
   const handleHardReload = async () => {
-    // 1. Service Worker Caches löschen (falls vorhanden)
+    // 1. Service Worker / Asset Caches löschen, aber den 99-MB Stockfish-19-WASM-Cache bewahren!
     if ('caches' in window) {
       const keys = await caches.keys()
-      await Promise.all(keys.map((key) => caches.delete(key)))
+      await Promise.all(
+        keys
+          .filter((key) => !key.startsWith(STOCKFISH_CACHE_PREFIX))
+          .map((key) => caches.delete(key)),
+      )
     }
 
-    // 2. LocalStorage Cache Keys löschen (falls du welche nutzt)
-    // localStorage.clear() // Optional: Zu radikal?
-
-    // 3. Harter Reload
+    // 2. Harter Reload
     window.location.reload()
   }
 

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/shared/lib/zod'
 
 import { ApiError, RateLimitError } from './errors'
 export { ApiError, RateLimitError }

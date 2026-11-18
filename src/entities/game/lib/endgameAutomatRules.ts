@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
+import { z } from '@/shared/lib/zod'
 import { parseFen } from 'chessops/fen'
-import { z } from 'zod'
 import type { PuzzleObjective, PuzzlePuzzle } from '../model/puzzle.types'
 
 export const GaviotaAutomatLineSchema = z.object({

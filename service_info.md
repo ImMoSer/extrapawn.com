@@ -9,7 +9,7 @@
 
 Импорты разрешены **строго сверху вниз** (`app` → `pages` → `widgets` → `features` → `entities` → `shared`). Обратные импорты (например, `entities` → `features`) категорически запрещены.
 
-- **`src/app/`** — инициализация приложения, роутера, Pinia, Naive UI провайдеров темы (`App.vue`, `LoginApp.vue`).
+- **`src/app/`** — инициализация приложения, роутера, Pinia, Naive UI провайдеров темы (`App.vue`, `LoginApp.vue`) и фонового контроля релизов (`AppUpdateNotifier.vue` / `useVersionUpdate.ts`: опрашивает `/version.json`, выводит модалку обновления без удаления `extrapawn-stockfish-wasm-*` из `Cache Storage`; сама версия `YY.MM.DD-HHMM` в `package.json` проставляется автоматически при каждом `git commit` через `.githooks/pre-commit` → `scripts/bump-version.mjs`).
 - **`src/pages/`** — маршрутные экраны:
   - `training-center` (`/training`, `/warmup`), `courses` (`/courses`), `user-cabinet` (`/user-cabinet`), `course-diploma` (`/kursdiplom/:courseId` — публичный диплом без авторизации), `analysis`, `club-player`, `welcome`, `about`, `pricing`, `legal`.
 - **`src/widgets/`** — композиционные раскладки экрана:
