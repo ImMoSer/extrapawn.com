@@ -11,6 +11,7 @@ import type { PuzzleObjective, PuzzleStrategyType } from './puzzle.types'
 
 export interface EndgameHopelessPromptRequest {
   verdict: HopelessTablebaseVerdict
+  source: 'gaviota' | 'syzygy'
   suffer: () => void
 }
 
@@ -158,6 +159,7 @@ export class EndgameHopelessController {
 
     this.hooks.onPromptOpen({
       verdict,
+      source: playerTablebase.source ?? 'gaviota',
       suffer: () => {
         if (tokenAtEval !== this.runToken || !this.promptOpen) return
         this.promptOpen = false

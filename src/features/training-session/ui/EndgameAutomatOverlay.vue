@@ -123,7 +123,9 @@ function handleHopelessChoice(choice: 'restart' | 'resign' | 'suffer'): void {
         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase tracking-wider bg-danger/15 text-danger border border-danger/40"
       >
         <NIcon size="13"><WarningOutline /></NIcon>
-        <span>GAVIOTA WDL</span>
+        <span>{{
+          store.hopelessPrompt.source === 'syzygy' ? 'SYZYGY WDL' : 'GAVIOTA WDL'
+        }}</span>
       </span>
 
       <span class="font-condensed font-bold text-xs text-text-secondary">
@@ -138,8 +140,12 @@ function handleHopelessChoice(choice: 'restart' | 'resign' | 'suffer'): void {
       <p class="text-xs leading-snug text-text-secondary">
         {{
           store.hopelessPrompt.verdict === 'draw_when_win_required'
-            ? t('features.trainingCenter.hopeless.subtitleDraw')
-            : t('features.trainingCenter.hopeless.subtitleLost')
+            ? store.hopelessPrompt.source === 'syzygy'
+              ? t('features.trainingCenter.hopeless.subtitleDrawSyzygy')
+              : t('features.trainingCenter.hopeless.subtitleDraw')
+            : store.hopelessPrompt.source === 'syzygy'
+              ? t('features.trainingCenter.hopeless.subtitleLostSyzygy')
+              : t('features.trainingCenter.hopeless.subtitleLost')
         }}
       </p>
     </div>

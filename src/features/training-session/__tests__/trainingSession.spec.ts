@@ -1329,7 +1329,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
 
     // 1. Suffer -> plays coach_your_move
     const sufferCb = vi.fn()
-    store.hopelessPrompt = { verdict: 'draw_when_win_required', suffer: sufferCb }
+    store.hopelessPrompt = {
+      verdict: 'draw_when_win_required',
+      source: 'syzygy',
+      suffer: sufferCb,
+    }
     vi.mocked(soundService.play).mockClear()
     await store.resolveHopelessPrompt('suffer')
     expect(sufferCb).toHaveBeenCalledTimes(1)
@@ -1340,7 +1344,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
 
     // 2. Restart -> plays coach_hopeless_restart (random pool think_deeper_next_time / try_again)
     store.currentPuzzleUserMoves = 1
-    store.hopelessPrompt = { verdict: 'draw_when_win_required', suffer: vi.fn() }
+    store.hopelessPrompt = {
+      verdict: 'draw_when_win_required',
+      source: 'gaviota',
+      suffer: vi.fn(),
+    }
     vi.mocked(soundService.play).mockClear()
     await store.resolveHopelessPrompt('restart')
     expect(soundService.stopCoachVoice).toHaveBeenCalled()
@@ -1351,7 +1359,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
 
     // 3. Resign -> plays coach_hopeless_resign (ist_das_wirklich_alles) and suppresses tactics_error buzzer
     store.currentPuzzleUserMoves = 1
-    store.hopelessPrompt = { verdict: 'lost_position', suffer: vi.fn() }
+    store.hopelessPrompt = {
+      verdict: 'lost_position',
+      source: 'gaviota',
+      suffer: vi.fn(),
+    }
     vi.mocked(soundService.play).mockClear()
     await store.resolveHopelessPrompt('resign')
     expect(soundService.play).toHaveBeenCalledWith(

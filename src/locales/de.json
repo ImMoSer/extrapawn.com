@@ -1035,6 +1035,8 @@
         "title": "Weiterer Widerstand ist zwecklos",
         "subtitleDraw": "Gaviota-Datenbank: theoretisches Remis — kein Gewinn mehr möglich.",
         "subtitleLost": "Gaviota-Datenbank: diese Stellung ist forciert verloren.",
+        "subtitleDrawSyzygy": "Syzygy-Datenbank: forciertes Remis am Horizont — kein Gewinn mehr möglich.",
+        "subtitleLostSyzygy": "Syzygy-Datenbank: forcierter Verlust am Horizont.",
         "restartBtn": "Neustart",
         "resignBtn": "Aufgeben",
         "sufferBtn": "Leiden"

@@ -11,6 +11,7 @@ export const PlayerTablebaseSchema = z.object({
   wdl: z.number().int().min(-1).max(1),
   dtm: z.number().int().nullable(),
   fideLost: z.boolean(),
+  source: z.enum(['gaviota', 'syzygy']).optional(),
 })
 
 export type PlayerTablebaseDTO = z.infer<typeof PlayerTablebaseSchema>

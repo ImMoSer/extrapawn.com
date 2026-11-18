@@ -15,7 +15,8 @@ export interface HopelessCandidateCheckParams {
 
 /**
  * Checks whether the current board position after the bot's move is eligible
- * for a hopeless tablebase verdict (`3 <= totalPieces <= 5`, human turn, >= 1 user move played).
+ * for an authoritative `playerTablebase` verdict (`totalPieces >= 3`, human turn, >= 1 user move played).
+ * Covers both direct `<= 5`-piece Gaviota/Syzygy truth and `>= 6`-piece Syzygy TB-Proven Horizons.
  */
 export function isCandidateForHopelessProbe(params: HopelessCandidateCheckParams): boolean {
   const { currentFen, humanColor, isPlayoutMode, strategy, isGameOver, userMovesPlayed } = params
@@ -34,7 +35,7 @@ export function isCandidateForHopelessProbe(params: HopelessCandidateCheckParams
   }
 
   const totalPieces = setup.board.occupied.size()
-  return totalPieces >= 3 && totalPieces <= 5
+  return totalPieces >= 3
 }
 
 export interface EvaluateHopelessVerdictParams {

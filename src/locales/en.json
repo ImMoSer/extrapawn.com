@@ -1035,6 +1035,8 @@
         "title": "Further resistance is futile",
         "subtitleDraw": "Gaviota tablebases: theoretical draw — a win is no longer possible.",
         "subtitleLost": "Gaviota tablebases: this position is a forced loss.",
+        "subtitleDrawSyzygy": "Syzygy tablebases: forced tablebase draw ahead — a win is no longer possible.",
+        "subtitleLostSyzygy": "Syzygy tablebases: forced tablebase loss ahead.",
         "restartBtn": "Restart",
         "resignBtn": "Resign",
         "sufferBtn": "Suffer"

@@ -368,4 +368,41 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     expect(capturedHopeless).toBeNull()
     expect(bestMoveSpy).toHaveBeenCalledTimes(2)
   })
+
+  it('opens Hopeless modal with source="syzygy" at >= 6 pieces when backend proves a Syzygy horizon draw', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // 6-piece pawn endgame from live test: after 1. f4 gxf4+ -> White plays 2. Kf3??, Black replies 2... Ke5!
+    const fen6 = '8/8/8/p4k2/P4p2/6K1/5P2/8 w - - 0 2'
+    const puzzle = createPuzzle({ initial_fen: fen6, puzzle_fen: fen6, objective: 'win' })
+
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce({
+      bestMove: 'f5e5',
+      mode: 'leelaHoldDraw',
+      source: 'mozero_vetted',
+      playerTablebase: { wdl: 0, dtm: 0, fideLost: false, source: 'syzygy' },
+    })
+
+    let capturedHopeless: EndgameHopelessPromptRequest | null = null
+    const strategy = new PuzzleStrategy(puzzle, 'white', 'theoretical_endgames', {
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      hopeless: {
+        isEnabled: () => true,
+        onPromptOpen: (prompt) => {
+          capturedHopeless = prompt
+        },
+      },
+    })
+
+    gameStore.startWithStrategy(fen6, strategy, 'white')
+    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('g3f3')
+
+    await gameStore.handleUserMove('g3', 'f3')
+
+    expect(capturedHopeless).not.toBeNull()
+    expect(capturedHopeless!.verdict).toBe('draw_when_win_required')
+    expect(capturedHopeless!.source).toBe('syzygy')
+  })
 })
