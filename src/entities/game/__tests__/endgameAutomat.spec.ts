@@ -142,60 +142,88 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     ).toBe(true)
   })
 
-  it('opens prompt in "unknown" mode and delivers Gaviota checkmate on accept', async () => {
-    const gameStore = useGameStore()
-    const boardStore = useBoardStore()
-    boardStore.animationDurationMs = 0
+  it('computes monotonically accelerating step delays from 750ms down to 250ms', () => {
+    // 1-ply mate in 1 -> 750ms
+    expect(automatRules.computeAutomatStepDelayMs(0, 1)).toBe(750)
 
-    // White: Kg6, Pe7 vs Black: Kh8 (bot plays Kg8? No: let's use White Kf6, Pd7 vs Black Kh7)
-    // 1. d8=Q -> bot Kh6 -> 2. Qh8# (mate in 1 move = 1 ply from post-bot position!)
-    const startFen = '8/3P3k/5K2/8/8/8/8/8 w - - 0 1'
-    const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen })
+    // 5-ply mate in 3 -> 750, 625, 500, 375, 250
+    const delays5 = [0, 1, 2, 3, 4].map((idx) => automatRules.computeAutomatStepDelayMs(idx, 5))
+    expect(delays5).toEqual([750, 625, 500, 375, 250])
 
-    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('h7h6')
-    vi.spyOn(automatRules, 'fetchGaviotaAutomatLine').mockResolvedValueOnce({
-      eligible: true,
-      mate_in_moves: 1,
-      dtm_plies: 1,
-      uci_line: ['d8h8'],
-      source: 'gaviota',
-    })
+    // Strict Fail-Fast on out-of-range indices
+    expect(() => automatRules.computeAutomatStepDelayMs(-1, 5)).toThrow()
+    expect(() => automatRules.computeAutomatStepDelayMs(5, 5)).toThrow()
+    expect(() => automatRules.computeAutomatStepDelayMs(0, 0)).toThrow()
+  })
 
-    let capturedPrompt: EndgameAutomatPromptRequest | null = null
-    const onSuccess = vi.fn()
+  it('opens prompt in "unknown" mode, enforces 200ms piece animation override, and delivers Gaviota checkmate', async () => {
+    vi.useFakeTimers()
+    try {
+      const gameStore = useGameStore()
+      const boardStore = useBoardStore()
+      boardStore.animationDurationMs = 0
 
-    const strategy = new PuzzleStrategy(puzzle, 'white', 'theoretical_endgames', {
-      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
-      onSuccess,
-      automat: {
-        getMode: () => 'unknown',
-        getMoveDelayMs: () => 0,
-        onPromptOpen: (prompt) => {
-          capturedPrompt = prompt
+      // White Kf6, Pd7 vs Black Kh7: 1. d8=Q -> bot Kh6 -> 2. Qh8# (mate in 1 move = 1 ply)
+      const startFen = '8/3P3k/5K2/8/8/8/8/8 w - - 0 1'
+      const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen })
+
+      vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('h7h6')
+      vi.spyOn(automatRules, 'fetchGaviotaAutomatLine').mockResolvedValueOnce({
+        eligible: true,
+        mate_in_moves: 1,
+        dtm_plies: 1,
+        uci_line: ['d8h8'],
+        source: 'gaviota',
+      })
+
+      let capturedPrompt: EndgameAutomatPromptRequest | null = null
+      const onSuccess = vi.fn()
+
+      const strategy = new PuzzleStrategy(puzzle, 'white', 'theoretical_endgames', {
+        delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+        onSuccess,
+        automat: {
+          getMode: () => 'unknown',
+          onPromptOpen: (prompt) => {
+            capturedPrompt = prompt
+          },
         },
-      },
-    })
+      })
 
-    gameStore.startWithStrategy(startFen, strategy, 'white')
-    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('d7d8q')
+      gameStore.startWithStrategy(startFen, strategy, 'white')
+      vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('d7d8q')
 
-    await gameStore.handleUserMove('d7', 'd8')
+      await gameStore.handleUserMove('d7', 'd8')
 
-    expect(capturedPrompt).not.toBeNull()
-    expect(capturedPrompt!.mateInMoves).toBe(1)
-    expect(strategy.validateUserMove()).toBe(false)
-    expect(onSuccess).not.toHaveBeenCalled()
+      expect(capturedPrompt).not.toBeNull()
+      expect(capturedPrompt!.mateInMoves).toBe(1)
+      expect(strategy.validateUserMove()).toBe(false)
+      expect(boardStore.animationDurationOverrideMs).toBeNull()
+      expect(onSuccess).not.toHaveBeenCalled()
 
-    capturedPrompt!.accept()
+      capturedPrompt!.accept()
 
-    await vi.waitFor(() => {
+      // Immediately after accept, 200ms animation override is active while waiting 750ms pre-move delay
+      expect(boardStore.animationDurationOverrideMs).toBe(automatRules.AUTOMAT_ANIMATION_MS)
+      await vi.advanceTimersByTimeAsync(749)
+      expect(boardStore.chessPosition.isCheckmate()).toBe(false)
+
+      // At 750ms the mating move executes on the board, then waits 200ms for the piece slide
+      await vi.advanceTimersByTimeAsync(1)
+      expect(boardStore.chessPosition.isCheckmate()).toBe(true)
+      expect(boardStore.animationDurationOverrideMs).toBe(automatRules.AUTOMAT_ANIMATION_MS)
+      expect(onSuccess).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(automatRules.AUTOMAT_ANIMATION_MS)
+      expect(boardStore.animationDurationOverrideMs).toBeNull()
       expect(onSuccess).toHaveBeenCalledWith('checkmate_automat', {
         firstMoveFailed: false,
         failStage: 'none',
         outcomeReason: 'checkmate_automat',
       })
-    })
-    expect(boardStore.chessPosition.isCheckmate()).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('silently falls back to manual playout when Gaviota is unavailable (Zero-Fallback)', async () => {
@@ -217,7 +245,6 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
       onSuccess,
       automat: {
         getMode: () => 'on',
-        getMoveDelayMs: () => 0,
         onPromptOpen,
       },
     })

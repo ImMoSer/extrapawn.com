@@ -310,23 +310,6 @@ const handleAuthAction = () => {
                   <span class="truncate block">{{ t(`features.settings.endgameAutomatModes.${mode}`) }}</span>
                 </button>
               </div>
-
-              <div v-if="draftPreferences.gameplay.endgameAutomat !== 'off'">
-                <div class="text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary mb-1.5">
-                  {{ t('features.settings.endgameAutomatSpeed') }}
-                </div>
-                <div class="flex items-center gap-3.5">
-                  <NSlider
-                    v-model:value="draftPreferences.delays.automatMoveDelayMs"
-                    :min="100"
-                    :max="800"
-                    :step="50"
-                  />
-                  <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
-                    {{ draftPreferences.delays.automatMoveDelayMs }}ms
-                  </span>
-                </div>
-              </div>
             </div>
 
             <!-- Developer Crashtest Section (Restricted to developer / owner roles) -->

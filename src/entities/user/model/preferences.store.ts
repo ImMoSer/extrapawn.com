@@ -52,7 +52,6 @@ export interface DelayPreferences {
   nextPuzzleDelayMs: number
   restartDelayMs: number
   crashtestDelayMs: number
-  automatMoveDelayMs: number
 }
 
 export interface PuzzlePreferences {
@@ -118,7 +117,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
     nextPuzzleDelayMs: 100,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
-    automatMoveDelayMs: 250,
   },
   puzzle: {
     autoNext: true,
@@ -204,7 +202,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: rawPreferences.value.delays.nextPuzzleDelayMs,
             restartDelayMs: 500,
             crashtestDelayMs: 100,
-            automatMoveDelayMs: rawPreferences.value.delays.automatMoveDelayMs,
           },
         }
       }
@@ -218,7 +215,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: rawPreferences.value.delays.nextPuzzleDelayMs,
             restartDelayMs: speed,
             crashtestDelayMs: speed,
-            automatMoveDelayMs: speed,
           },
         }
       }
@@ -251,9 +247,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
       }
       merged.gameplay.endgameAutomat = normalizeEndgameAutomatMode(merged.gameplay.endgameAutomat)
       merged.delays.nextPuzzleDelayMs = normalizeNextPuzzleDelayMs(merged.delays.nextPuzzleDelayMs)
-      if (!merged.delays.automatMoveDelayMs || merged.delays.automatMoveDelayMs < 50) {
-        merged.delays.automatMoveDelayMs = DEFAULT_USER_PREFERENCES.delays.automatMoveDelayMs
-      }
       // Migrate legacy coach settings if present
       const legacyCoach = localStorage.getItem(LEGACY_COACH_STORAGE_KEY)
       if (legacyCoach) {
@@ -321,9 +314,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
           crashtestDelayMs:
             rawBackendPrefs.delays?.crashtestDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
-          automatMoveDelayMs:
-            rawBackendPrefs.delays?.automatMoveDelayMs ??
-            DEFAULT_USER_PREFERENCES.delays.automatMoveDelayMs,
         },
         puzzle: {
           autoNext: rawBackendPrefs.puzzle?.autoNext ?? DEFAULT_USER_PREFERENCES.puzzle.autoNext,
@@ -339,10 +329,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
       }
 
       rawPreferences.value = deepMerge(rawPreferences.value, mappedPrefs)
-      if (rawPreferences.value.delays.automatMoveDelayMs < 50) {
-        rawPreferences.value.delays.automatMoveDelayMs =
-          DEFAULT_USER_PREFERENCES.delays.automatMoveDelayMs
-      }
       if (rawPreferences.value.gameplay.language) {
         changeLang(rawPreferences.value.gameplay.language)
       }
@@ -392,7 +378,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
               nextPuzzleDelayMs: current.delays.nextPuzzleDelayMs,
               restartDelayMs: current.delays.restartDelayMs,
               crashtestDelayMs: current.delays.crashtestDelayMs,
-              automatMoveDelayMs: current.delays.automatMoveDelayMs,
             },
             puzzle: current.puzzle,
             analysis: {

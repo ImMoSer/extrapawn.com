@@ -3,6 +3,8 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import {
+  AUTOMAT_ANIMATION_MS,
+  computeAutomatStepDelayMs,
   fetchGaviotaAutomatLine,
   isEligibleForEndgameAutomat,
 } from '../lib/endgameAutomatRules'
@@ -21,7 +23,6 @@ export interface EndgameAutomatPromptRequest {
 
 export interface EndgameAutomatCallbacks {
   getMode: () => EndgameAutomatPolicyMode
-  getMoveDelayMs: () => number
   onPromptOpen?: (prompt: EndgameAutomatPromptRequest) => void
   onRolloutStart?: (mateInMoves: number) => void
   onRolloutStep?: (remainingMoves: number) => void
@@ -86,9 +87,13 @@ export class EndgameAutomatController {
   destroy(): void {
     this.runToken++
     const wasActive = this.promptOpen || this.runningRollout
+    const wasRollingOut = this.runningRollout
     this.promptOpen = false
     this.runningRollout = false
     this.clearSleepTimer()
+    if (wasRollingOut) {
+      useBoardStore().setAnimationDurationOverride(null)
+    }
     if (wasActive) {
       this.hooks?.onCleanup?.()
     }
@@ -188,17 +193,19 @@ export class EndgameAutomatController {
   ): Promise<void> {
     const boardStore = useBoardStore()
     const gameStore = useGameStore()
+    const totalSteps = uciLine.length
 
     this.runningRollout = true
+    boardStore.setAnimationDurationOverride(AUTOMAT_ANIMATION_MS)
     this.hooks?.onRolloutStart?.(mateInMoves)
 
     try {
-      for (let idx = 0; idx < uciLine.length; idx++) {
+      for (let idx = 0; idx < totalSteps; idx++) {
         const uci = uciLine[idx]
         if (!uci) continue
 
-        const stepDelayMs = this.hooks?.getMoveDelayMs() ?? 250
-        await this.sleep(idx === 0 ? Math.max(160, stepDelayMs) : stepDelayMs)
+        const stepDelayMs = computeAutomatStepDelayMs(idx, totalSteps)
+        await this.sleep(stepDelayMs)
 
         if (
           token !== this.runToken ||
@@ -209,7 +216,7 @@ export class EndgameAutomatController {
           return
         }
 
-        const remainingMoves = Math.max(1, Math.ceil((uciLine.length - idx) / 2))
+        const remainingMoves = Math.max(1, Math.ceil((totalSteps - idx) / 2))
         this.hooks?.onRolloutStep?.(remainingMoves)
 
         const fenBefore = boardStore.fen
@@ -233,6 +240,9 @@ export class EndgameAutomatController {
         this.host.recordAutomatMove(uci)
       }
 
+      // Let the final mating piece complete its 200ms slide before transitioning to GAMEOVER
+      await this.sleep(AUTOMAT_ANIMATION_MS)
+
       if (token !== this.runToken || !this.runningRollout || !this.host.isActiveAndUnresolved()) {
         return
       }
@@ -245,12 +255,16 @@ export class EndgameAutomatController {
 
       logger.info('[EndgameAutomat] Gaviota DTM checkmate delivered.')
       this.runningRollout = false
+      boardStore.setAnimationDurationOverride(null)
       this.hooks?.onCleanup?.()
       await this.host.deliverAutomatSuccess()
     } finally {
-      if (token === this.runToken && this.runningRollout) {
-        this.runningRollout = false
-        this.hooks?.onCleanup?.()
+      if (token === this.runToken) {
+        boardStore.setAnimationDurationOverride(null)
+        if (this.runningRollout) {
+          this.runningRollout = false
+          this.hooks?.onCleanup?.()
+        }
       }
     }
   }

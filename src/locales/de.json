@@ -878,7 +878,6 @@
       "board": "Brett-Design",
       "pieces": "Figuren-Stil",
       "endgameAutomatTitle": "Endspiel-Automat",
-      "endgameAutomatSpeed": "Automat-Zugtempo",
       "endgameAutomatModes": {
         "off": "Aus",
         "unknown": "Fragen",

@@ -23,7 +23,6 @@ export function buildEndgameAutomatCallbacks(
       }
       return preferencesStore.preferences.gameplay.endgameAutomat
     },
-    getMoveDelayMs: () => preferencesStore.preferences.delays.automatMoveDelayMs,
     onPromptOpen: (prompt: EndgameAutomatPromptRequest) => {
       if (pauseClock) {
         clock.pauseTimer()

@@ -878,7 +878,6 @@
       "board": "Дизайн доски",
       "pieces": "Стиль фигур",
       "endgameAutomatTitle": "Автомат в тривиальных эндшпилях",
-      "endgameAutomatSpeed": "Скорость ходов автомата",
       "endgameAutomatModes": {
         "off": "Выкл",
         "unknown": "Спрашивать",

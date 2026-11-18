@@ -14,6 +14,35 @@ export const GaviotaAutomatLineSchema = z.object({
 
 export type GaviotaAutomatLineDTO = z.infer<typeof GaviotaAutomatLineSchema>
 
+export const AUTOMAT_INITIAL_DELAY_MS = 750
+export const AUTOMAT_FINAL_DELAY_MS = 250
+export const AUTOMAT_ANIMATION_MS = 200
+
+/**
+ * Computes the pre-move delay (ms) for half-move `stepIndex` in a Gaviota rollout of `totalSteps` plies.
+ * Starts calmly at `750 ms` and linearly accelerates on each consecutive ply down to `250 ms` on `#`.
+ */
+export function computeAutomatStepDelayMs(stepIndex: number, totalSteps: number): number {
+  if (
+    !Number.isInteger(totalSteps) ||
+    totalSteps <= 0 ||
+    !Number.isInteger(stepIndex) ||
+    stepIndex < 0 ||
+    stepIndex >= totalSteps
+  ) {
+    throw new Error(
+      `[endgameAutomatRules] Invalid step bounds stepIndex=${stepIndex}, totalSteps=${totalSteps}. Fail-Fast!`,
+    )
+  }
+  if (totalSteps === 1) {
+    return AUTOMAT_INITIAL_DELAY_MS
+  }
+  const progress = stepIndex / (totalSteps - 1)
+  return Math.round(
+    AUTOMAT_INITIAL_DELAY_MS - (AUTOMAT_INITIAL_DELAY_MS - AUTOMAT_FINAL_DELAY_MS) * progress,
+  )
+}
+
 /**
  * Universal material predicate for trivial checkmates via Gaviota DTM:
  * 1. Total pieces on board: 3 <= totalPieces <= 5 (100% Gaviota DTM coverage).

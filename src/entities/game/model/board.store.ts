@@ -55,6 +55,7 @@ export const useBoardStore = defineStore('board', () => {
   const lastNag = ref<NagMarker | null>(null)
   const lastMoveTimestamp = ref<number>(0)
   const animationDurationMs = ref<number>(200)
+  const animationDurationOverrideMs = ref<number | null>(null)
 
   const isGameOver = computed(() => {
     return !!chessPosition.value.outcome()
@@ -235,8 +236,13 @@ export const useBoardStore = defineStore('board', () => {
     analysisShapes.value = []
   }
 
+  function setAnimationDurationOverride(durationMs: number | null) {
+    animationDurationOverrideMs.value = durationMs
+  }
+
   function resetBoardState() {
     cancelPromotion()
+    animationDurationOverrideMs.value = null
     setupPosition(INITIAL_FEN)
     orientation.value = 'white'
     drawableShapes.value = []
@@ -269,11 +275,13 @@ export const useBoardStore = defineStore('board', () => {
     setCoachShapes,
     setAnalysisShapes,
     clearAutoShapes,
+    setAnimationDurationOverride,
     resetBoardState,
     lastNag,
     chessPosition,
     lastMoveTimestamp,
     animationDurationMs,
+    animationDurationOverrideMs,
     syncVisualCues,
   }
 })

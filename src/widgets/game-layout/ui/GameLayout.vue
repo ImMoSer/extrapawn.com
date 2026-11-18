@@ -36,7 +36,11 @@ onUnmounted(() => {
   gameStore.stop()
 })
 
-const isAnimationEnabled = computed(() => preferencesStore.preferences.theme.animationDuration > 0)
+const effectiveAnimationDuration = computed(
+  () =>
+    boardStore.animationDurationOverrideMs ?? preferencesStore.preferences.theme.animationDuration,
+)
+const isAnimationEnabled = computed(() => effectiveAnimationDuration.value > 0)
 const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.dests))
 
 const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS')
@@ -126,7 +130,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
                   :drawable-shapes="boardStore.drawableShapes"
                   :is-analysis-mode="isAnalysisMode"
                   :animation-enabled="isAnimationEnabled"
-                  :animation-duration="preferencesStore.preferences.theme.animationDuration"
+                  :animation-duration="effectiveAnimationDuration"
                   :can-edit="true"
                   @user-move="handleUserMove"
                   @complete-promotion="boardStore.completePromotion"

@@ -878,7 +878,6 @@
       "board": "Board Design",
       "pieces": "Pieces Style",
       "endgameAutomatTitle": "Trivial Endgame Automat",
-      "endgameAutomatSpeed": "Automat Move Delay",
       "endgameAutomatModes": {
         "off": "Off",
         "unknown": "Ask",
