@@ -12,7 +12,10 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import { canAnalyzeSessionItem, canPracticeReplayItem } from '../lib/sessionItemPolicy'
-import { buildEndgameAutomatCallbacks } from '../lib/buildAutomatCallbacks'
+import {
+  buildEndgameAutomatCallbacks,
+  buildEndgameHopelessCallbacks,
+} from '../lib/buildAutomatCallbacks'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 import type { TrainingSessionSharedState } from './trainingSession.types'
 import type { PuzzleClockController } from './usePuzzleClock'
@@ -177,6 +180,7 @@ export function useInspectionAndReplay(deps: InspectionDependencies) {
     state.feedbackMessage.value = null
     state.automatPrompt.value = null
     state.automatRemainingMoves.value = null
+    state.hopelessPrompt.value = null
 
     const strategy = new PuzzleStrategy(adapted, humanColor, sess.session.discipline, {
       planId: `practice-${sess.session.id.slice(0, 8)}`,
@@ -188,6 +192,16 @@ export function useInspectionAndReplay(deps: InspectionDependencies) {
         preferencesStore,
         pauseClock: false,
       }),
+      hopeless: buildEndgameHopelessCallbacks({
+        state,
+        clock,
+        pauseClock: false,
+      }),
+      onUserMovePlayed: (userMovesCount: number) => {
+        if (state.runtime.getPlayToken() === tokenAtPractice) {
+          state.currentPuzzleUserMoves.value = userMovesCount
+        }
+      },
       onFeedback: (msg: string) => {
         if (state.runtime.getPlayToken() === tokenAtPractice) {
           state.feedbackMessage.value = msg

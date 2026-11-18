@@ -2,6 +2,7 @@ import type { EngineId } from '@/shared/types/api.types'
 import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
 import { parseFen } from 'chessops/fen'
 import type { EndgameAutomatCallbacks } from './EndgameAutomatController'
+import type { EndgameHopelessCallbacks } from './EndgameHopelessController'
 import type { GameplayStrategyConfig, GameStatusInfo } from './strategy.types'
 
 export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
@@ -59,6 +60,7 @@ export interface PuzzleStrategyCallbacks {
   botEngineOverride?: EngineId
   delays?: Partial<GameplayStrategyConfig>
   automat?: EndgameAutomatCallbacks
+  hopeless?: EndgameHopelessCallbacks
 }
 
 export function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {

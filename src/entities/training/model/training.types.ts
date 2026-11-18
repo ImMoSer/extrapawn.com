@@ -108,7 +108,7 @@ export type AttemptFailStage = '' | 'none' | 'scenario' | 'playout'
 export type WoodpeckerAction = 'none' | 'queued' | 'progressed' | 'reset' | 'graduated'
 export type DiagnosticFocusKind = 'strength' | 'weakness' | 'blind_spot'
 
-export const MAX_PUZZLE_ATTEMPTS = 3 as const
+export const MAX_SANITY_ATTEMPTS = 10000 as const
 export type ClassicalCourseSessionStepType = 'next' | 'batch' | 'woodpecker'
 
 // ============================================================================
@@ -623,7 +623,6 @@ export interface AttemptRequest {
 export interface ConsumeItemRetryResponseDTO {
   puzzle_id: string
   attempts_used: number
-  max_attempts: number
 }
 
 export interface ScopeDeltaDTO {

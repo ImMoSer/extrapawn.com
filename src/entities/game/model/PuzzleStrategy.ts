@@ -5,6 +5,7 @@ import { soundService } from '@/shared/lib/sound'
 import { enginePlayService } from '../lib/EnginePlayService'
 import { useBoardStore } from './board.store'
 import { EndgameAutomatController } from './EndgameAutomatController'
+import { EndgameHopelessController } from './EndgameHopelessController'
 import { isFideDrawReason, useGameStore } from './game.store'
 import {
   determineHumanColor,
@@ -41,6 +42,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private isPlayoutMode: boolean
   private callbacks?: PuzzleStrategyCallbacks
   private automatController: EndgameAutomatController
+  private hopelessController: EndgameHopelessController
 
   private userMovesPlayed = 0
   private deviatedInScenario = false
@@ -112,6 +114,17 @@ export class PuzzleStrategy implements IGameplayStrategy {
       },
       callbacks?.automat,
     )
+    this.hopelessController = new EndgameHopelessController(
+      {
+        strategy: this.puzzle.strategy,
+        humanColor: this.humanColor,
+        objective: this.objective,
+        isPlayoutMode: () => this.isPlayoutMode,
+        getUserMovesPlayed: () => this.userMovesPlayed,
+        isActiveAndUnresolved: () => !this.isDestroyed && !this.isResolved,
+      },
+      callbacks?.hopeless,
+    )
   }
 
   get sessionId(): string {
@@ -158,6 +171,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   onDestroy() {
     this.isDestroyed = true
     this.automatController.destroy()
+    this.hopelessController.destroy()
     if (this.nextPuzzleTimeout !== null) {
       clearTimeout(this.nextPuzzleTimeout)
       this.nextPuzzleTimeout = null
@@ -165,7 +179,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   validateUserMove(): boolean {
-    return !this.automatController.isLocked
+    return !this.automatController.isLocked && !this.hopelessController.isLocked
   }
 
   checkWinCondition(status: GameStatusInfo): boolean {
@@ -354,6 +368,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   onUserMoveUndone() {
     this.automatController.resetOnUndo()
+    this.hopelessController.resetOnUndo()
     this.scenarioIndex = this.prevScenarioIndex
     this.isPlayoutMode = this.prevPlayoutMode
     this.userMovesPlayed = this.prevUserMovesPlayed
@@ -403,6 +418,9 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     if (this.isPlayoutMode && !this.isDestroyed && !this.isResolved) {
       await this.automatController.evaluateAfterBotTurn()
+      if (!this.automatController.isLocked && !this.isDestroyed && !this.isResolved) {
+        await this.hopelessController.evaluateAfterBotTurn()
+      }
     }
   }
 

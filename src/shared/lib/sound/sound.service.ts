@@ -17,6 +17,7 @@ export const soundDefinitions: Record<SoundEffect, string | string[]> = {
   chpock: '/sounds/sfx_chpock.mp3',
   tactics_error: '/sounds/sfx_tactics_error.mp3',
   tactics_success: '/sounds/sfx_tactics_success.mp3',
+  you_will_never_win: '/sounds/coach/you_will_never_win.mp3',
   applause: [
     '/sounds/applause/applause_1.mp3',
     '/sounds/applause/applause_2.mp3',

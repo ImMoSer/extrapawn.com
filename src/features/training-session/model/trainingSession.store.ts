@@ -1,9 +1,12 @@
-import type {
-  EndgameAutomatPromptRequest,
-  PuzzleAttemptTelemetry,
-  PuzzlePuzzle,
+import {
+  useGameStore,
+  type EndgameAutomatPromptRequest,
+  type EndgameHopelessPromptRequest,
+  type PuzzleAttemptTelemetry,
+  type PuzzlePuzzle,
 } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
+import { soundService } from '@/shared/lib/sound'
 import {
   resolveBotEngineForDifficulty,
   validateBotLadderEngine,
@@ -81,6 +84,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const analysisReturnState = ref<InspectionReturnState>('awaiting_next')
   const automatPrompt = ref<EndgameAutomatPromptRequest | null>(null)
   const automatRemainingMoves = ref<number | null>(null)
+  const hopelessPrompt = ref<EndgameHopelessPromptRequest | null>(null)
   const preferencesStore = usePreferencesStore()
 
   let activePlayToken = 0
@@ -88,7 +92,10 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const itemByPuzzleId = new Map<string, HydratedSessionItem>()
 
   const isAutomatLocked = computed<boolean>(
-    () => automatPrompt.value !== null || automatRemainingMoves.value !== null,
+    () =>
+      automatPrompt.value !== null ||
+      automatRemainingMoves.value !== null ||
+      hopelessPrompt.value !== null,
   )
 
   const clock = usePuzzleClock(viewState, () => isAutomatLocked.value)
@@ -209,6 +216,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     analysisReturnState,
     automatPrompt,
     automatRemainingMoves,
+    hopelessPrompt,
     currentItem,
     itemByPuzzleId,
     runtime: {
@@ -289,6 +297,34 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     }
   }
 
+  async function resolveHopelessPrompt(choice: 'restart' | 'resign' | 'suffer'): Promise<void> {
+    const prompt = hopelessPrompt.value
+    if (!prompt) return
+    hopelessPrompt.value = null
+
+    if (choice === 'suffer') {
+      prompt.suffer()
+      if (viewState.value === 'playing') {
+        clock.resumeTimer()
+      }
+      return
+    }
+
+    soundService.stopAll()
+    if (choice === 'restart') {
+      await attemptControls.restartCurrentPuzzle()
+      return
+    }
+
+    if (viewState.value === 'practice_replay') {
+      useGameStore().setGamePhase('GAMEOVER')
+      practiceFeedbackState.value = 'failed'
+      return
+    }
+
+    await attemptControls.resignCurrentPuzzle()
+  }
+
   return {
     // State
     overview,
@@ -318,6 +354,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     currentPuzzleUserMoves,
     automatPrompt,
     automatRemainingMoves,
+    hopelessPrompt,
 
     // Getters
     activeDisciplineOverview,
@@ -356,6 +393,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     pauseToHub: attemptControls.pauseToHub,
     dismissActiveSession: attemptControls.dismissActiveSession,
     resolveAutomatPrompt,
+    resolveHopelessPrompt,
     formatDurationMs,
   }
 })

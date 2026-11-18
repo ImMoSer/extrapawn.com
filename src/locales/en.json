@@ -1008,14 +1008,14 @@
         "practiceReplayFull": "Play Again",
         "resignPuzzle": "Resign",
         "resignToAnalyze": "Resign",
-        "restartAttempt": "Retry ({current}/{max})",
+        "restartAttempt": "Retry (#{current})",
         "restartPuzzle": "Retry",
         "resumeSession": "Resume Session",
         "showSolution": "Show Solution"
       },
       "badges": {
         "analysis": "ANALYSIS",
-        "attemptCounter": "Attempt {current}/{max}",
+        "attemptCounter": "Attempt #{current}",
         "holdDrawFide": "HOLD DRAW — FIDE",
         "objectiveHoldDraw": "Hold Draw (FIDE)",
         "objectiveWin": "Play for Win",
@@ -1030,6 +1030,14 @@
         "playManualBtn": "Manual",
         "runAutomatBtn": "Automat",
         "runningBadge": "AUTOMAT · MATE IN {moves}"
+      },
+      "hopeless": {
+        "title": "Further resistance is futile",
+        "subtitleDraw": "Gaviota tablebases: theoretical draw — a win is no longer possible.",
+        "subtitleLost": "Gaviota tablebases: this position is a forced loss.",
+        "restartBtn": "Restart",
+        "resignBtn": "Resign",
+        "sufferBtn": "Suffer"
       },
       "units": {
         "dayShort": "d",
@@ -1153,9 +1161,9 @@
         "failedShort": "FAILED",
         "playoutStart": "Forced line completed! Finish the position against the sparring bot.",
         "playoutDeviation": "Off-book move. Prove your evaluation against the sparring bot!",
-        "retryPromptTitle": "Inaccurate move! Attempt {used}/{max} used",
+        "retryPromptTitle": "Inaccurate move! Attempt #{used} used",
         "retryPromptHint": "Click Retry to find the solution yourself, or Resign to unlock engine analysis.",
-        "solvedWithRetriesNote": "Solved on attempt {attempt}/{max} · Queued in Woodpecker",
+        "solvedWithRetriesNote": "Solved on attempt #{attempt} · Queued in Woodpecker",
         "practiceModeHint": "Practice replay without affecting rating or session score",
         "practiceSolved": "Great! Position reinforced",
         "practiceFailed": "Mistake in practice replay — restart or open analysis"

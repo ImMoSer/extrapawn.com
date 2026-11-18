@@ -8,7 +8,7 @@ import {
 } from '@/entities/game'
 import {
   isClassicalCourseDiscipline,
-  MAX_PUZZLE_ATTEMPTS,
+  MAX_SANITY_ATTEMPTS,
   resolveBotEngineForDifficulty,
   trainingApi,
   validateBotLadderEngine,
@@ -26,7 +26,10 @@ import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { markRaw } from 'vue'
 import { getItemAttemptsUsed } from '../lib/sessionItemPolicy'
-import { buildEndgameAutomatCallbacks } from '../lib/buildAutomatCallbacks'
+import {
+  buildEndgameAutomatCallbacks,
+  buildEndgameHopelessCallbacks,
+} from '../lib/buildAutomatCallbacks'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 import { findNextPendingIndex } from './buildSessionReport'
 import { extractErrorText, type TrainingSessionSharedState } from './trainingSession.types'
@@ -152,6 +155,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     state.currentPuzzleUserMoves.value = 0
     state.automatPrompt.value = null
     state.automatRemainingMoves.value = null
+    state.hopelessPrompt.value = null
     state.runtime.setSavedRetrySnapshot(null)
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
@@ -162,6 +166,12 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         state,
         clock,
         preferencesStore,
+        isCrashtest: () => crashTest.isCrashtestActiveForSession(sess.session),
+        pauseClock: true,
+      }),
+      hopeless: buildEndgameHopelessCallbacks({
+        state,
+        clock,
         isCrashtest: () => crashTest.isCrashtestActiveForSession(sess.session),
         pauseClock: true,
       }),
@@ -182,7 +192,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
           failStage: 'none',
           outcomeReason: reason ?? 'solved',
         }
-        const attemptsUsedOnSolve = Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+        const attemptsUsedOnSolve = Math.min(MAX_SANITY_ATTEMPTS, getItemAttemptsUsed(item) + 1)
         await handleAttemptOutcome(
           tokenAtLaunch,
           sess.session.id,
@@ -201,9 +211,9 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         }
 
         const isCrashtestMode = crashTest.isCrashtestActiveForSession(sess.session)
-        const nextSpentAttempts = Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+        const nextSpentAttempts = Math.min(MAX_SANITY_ATTEMPTS, getItemAttemptsUsed(item) + 1)
 
-        if (!isCrashtestMode && nextSpentAttempts < MAX_PUZZLE_ATTEMPTS) {
+        if (!isCrashtestMode && nextSpentAttempts < MAX_SANITY_ATTEMPTS) {
           clock.pauseTimer()
           GameAudioEngine.playFeatureError()
           item.attempts_used = nextSpentAttempts
@@ -276,7 +286,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
       const effectiveAttemptsUsed = Math.max(
         1,
         Math.min(
-          MAX_PUZZLE_ATTEMPTS,
+          MAX_SANITY_ATTEMPTS,
           attemptsUsedOverride ?? getItemAttemptsUsed(targetItem) + 1,
         ),
       )

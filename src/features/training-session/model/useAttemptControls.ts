@@ -2,7 +2,7 @@ import type { PuzzleAttemptTelemetry } from '@/entities/game'
 import { useGameStore } from '@/entities/game'
 import {
   isClassicalCourseDiscipline,
-  MAX_PUZZLE_ATTEMPTS,
+  MAX_SANITY_ATTEMPTS,
   trainingApi,
   type ConsumeItemRetryResponseDTO,
   type HubOverviewDTO,
@@ -102,7 +102,7 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
       }
       clock.pauseTimer()
       state.runtime.nextPlayToken()
-      item.attempts_used = Math.min(MAX_PUZZLE_ATTEMPTS - 1, getItemAttemptsUsed(item) + 1)
+      item.attempts_used = Math.min(MAX_SANITY_ATTEMPTS - 1, getItemAttemptsUsed(item) + 1)
       await persistItemRetry(sess.session.id, item)
       deps.launchCurrentPuzzle({ preserveTimer: true })
       return
@@ -134,7 +134,7 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
     const wasAwaitingRetry = state.viewState.value === 'awaiting_retry'
     const attemptsUsedAtResign = wasAwaitingRetry
       ? Math.max(1, getItemAttemptsUsed(item))
-      : Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+      : Math.min(MAX_SANITY_ATTEMPTS, getItemAttemptsUsed(item) + 1)
 
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
     const fallbackStage: 'scenario' | 'playout' =

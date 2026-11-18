@@ -1008,14 +1008,14 @@
         "practiceReplayFull": "Повторить",
         "resignPuzzle": "Сдаться",
         "resignToAnalyze": "Сдаться",
-        "restartAttempt": "Заново ({current}/{max})",
+        "restartAttempt": "Заново (#{current})",
         "restartPuzzle": "Заново",
         "resumeSession": "Продолжить сессию",
         "showSolution": "Показать решение"
       },
       "badges": {
         "analysis": "АНАЛИЗ",
-        "attemptCounter": "Попытка {current}/{max}",
+        "attemptCounter": "Попытка #{current}",
         "holdDrawFide": "УДЕРЖАТЬ НИЧЬЮ — FIDE",
         "objectiveHoldDraw": "Удержать ничью (FIDE)",
         "objectiveWin": "Игра на победу",
@@ -1030,6 +1030,14 @@
         "playManualBtn": "Вручную",
         "runAutomatBtn": "Автомат",
         "runningBadge": "АВТОМАТ · МАТ В {moves}"
+      },
+      "hopeless": {
+        "title": "Дальнейшее сопротивление бессмысленно",
+        "subtitleDraw": "Таблицы Gaviota: теоретическая ничья — победа уже невозможна.",
+        "subtitleLost": "Таблицы Gaviota: позиция форсированно проиграна.",
+        "restartBtn": "Рестарт",
+        "resignBtn": "Сдаться",
+        "sufferBtn": "Страдать"
       },
       "units": {
         "dayShort": "д",
@@ -1153,9 +1161,9 @@
         "failedShort": "ОШИБКА",
         "playoutStart": "Форсированная линия пройдена! Доиграйте позицию против спарринг-бота.",
         "playoutDeviation": "Ход вне главной линии. Докажите свою оценку против спарринг-бота!",
-        "retryPromptTitle": "Неточный ход! Попытка {used}/{max} использована",
+        "retryPromptTitle": "Неточный ход! Попытка #{used} использована",
         "retryPromptHint": "Нажмите «Заново», чтобы найти решение самостоятельно, или «Сдаться» для анализа с движком.",
-        "solvedWithRetriesNote": "Решено с попытки {attempt}/{max} · Добавлено в День Дятла",
+        "solvedWithRetriesNote": "Решено с попытки #{attempt} · Добавлено в День Дятла",
         "practiceModeHint": "Закрепление без влияния на рейтинг и зачёт сессии",
         "practiceSolved": "Отлично! Позиция закреплена",
         "practiceFailed": "Неточность в тренировочном повторе — попробуйте заново или откройте анализ"

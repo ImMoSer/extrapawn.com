@@ -18,6 +18,7 @@ export type SoundEffect =
   | 'tactics_error'
   | 'tactics_success'
   | 'applause'
+  | 'you_will_never_win'
   // Timer SFX
   | 'timer_10s'
   | 'timer_8s'

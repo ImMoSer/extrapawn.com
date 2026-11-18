@@ -2,7 +2,6 @@
 import {
   formatRemainingDuration,
   isClassicalCourseDiscipline,
-  MAX_PUZZLE_ATTEMPTS,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -421,11 +420,10 @@ function handleGoToCabinet(): void {
               :title="
                 t('features.trainingCenter.play.solvedWithRetriesNote', {
                   attempt: getItemAttemptsUsed(item),
-                  max: MAX_PUZZLE_ATTEMPTS,
                 })
               "
             >
-              {{ getItemAttemptsUsed(item) }}/{{ MAX_PUZZLE_ATTEMPTS }}
+              #{{ getItemAttemptsUsed(item) }}
             </span>
 
             <span

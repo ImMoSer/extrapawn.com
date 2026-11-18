@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   isClassicalCourseDiscipline,
-  MAX_PUZZLE_ATTEMPTS,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -248,7 +247,7 @@ function handleItemClick(item: HydratedSessionItem): void {
       </p>
     </div>
 
-    <!-- Retry Prompt Card (Attempt 1/3 or 2/3 failed, engine locked) -->
+    <!-- Retry Prompt Card (Unlimited retries until Solved or Resigned) -->
     <div
       v-if="store.isAwaitingRetry"
       class="p-3 rounded-md border border-warning/50 bg-warning/10 flex flex-col gap-2 shrink-0"
@@ -258,7 +257,6 @@ function handleItemClick(item: HydratedSessionItem): void {
           {{
             t('features.trainingCenter.play.retryPromptTitle', {
               used: store.currentAttemptsUsed,
-              max: MAX_PUZZLE_ATTEMPTS,
             })
           }}
         </span>
@@ -282,7 +280,6 @@ function handleItemClick(item: HydratedSessionItem): void {
             {{
               t('features.trainingCenter.actions.restartAttempt', {
                 current: store.currentAttemptNumber,
-                max: MAX_PUZZLE_ATTEMPTS,
               })
             }}
           </span>
@@ -459,7 +456,6 @@ function handleItemClick(item: HydratedSessionItem): void {
         {{
           t('features.trainingCenter.badges.attemptCounter', {
             current: store.displayAttemptNumber,
-            max: MAX_PUZZLE_ATTEMPTS,
           })
         }}
       </span>

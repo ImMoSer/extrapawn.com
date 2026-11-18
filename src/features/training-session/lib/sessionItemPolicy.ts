@@ -1,4 +1,4 @@
-import { MAX_PUZZLE_ATTEMPTS, type HydratedSessionItem } from '@/entities/training'
+import { MAX_SANITY_ATTEMPTS, type HydratedSessionItem } from '@/entities/training'
 
 export function isItemVerdictFinalized(item: HydratedSessionItem | null | undefined): boolean {
   if (!item) return false
@@ -17,14 +17,14 @@ export function getItemAttemptsUsed(item: HydratedSessionItem | null | undefined
   if (!item || typeof item.attempts_used !== 'number' || !Number.isFinite(item.attempts_used)) {
     return 0
   }
-  return Math.max(0, Math.min(MAX_PUZZLE_ATTEMPTS, Math.trunc(item.attempts_used)))
+  return Math.max(0, Math.min(MAX_SANITY_ATTEMPTS, Math.trunc(item.attempts_used)))
 }
 
 export function getCurrentAttemptNumber(item: HydratedSessionItem | null | undefined): number {
   if (isItemVerdictFinalized(item)) {
     return Math.max(1, getItemAttemptsUsed(item))
   }
-  return Math.min(MAX_PUZZLE_ATTEMPTS, getItemAttemptsUsed(item) + 1)
+  return Math.min(MAX_SANITY_ATTEMPTS, getItemAttemptsUsed(item) + 1)
 }
 
 export function canRestartDuringPlay(
@@ -32,11 +32,11 @@ export function canRestartDuringPlay(
   userMovesPlayed: number,
 ): boolean {
   if (!item || isItemVerdictFinalized(item)) return false
-  return userMovesPlayed > 0 && getItemAttemptsUsed(item) < MAX_PUZZLE_ATTEMPTS - 1
+  return userMovesPlayed > 0 && getItemAttemptsUsed(item) < MAX_SANITY_ATTEMPTS - 1
 }
 
 export function canRestartFromRetryPrompt(item: HydratedSessionItem | null | undefined): boolean {
   if (!item || isItemVerdictFinalized(item)) return false
   const used = getItemAttemptsUsed(item)
-  return used > 0 && used < MAX_PUZZLE_ATTEMPTS
+  return used > 0 && used < MAX_SANITY_ATTEMPTS
 }

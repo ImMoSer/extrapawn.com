@@ -1008,14 +1008,14 @@
         "practiceReplayFull": "Wiederholen",
         "resignPuzzle": "Aufgeben",
         "resignToAnalyze": "Aufgeben",
-        "restartAttempt": "Nochmal ({current}/{max})",
+        "restartAttempt": "Nochmal (#{current})",
         "restartPuzzle": "Nochmal",
         "resumeSession": "Sitzung fortsetzen",
         "showSolution": "Lösung zeigen"
       },
       "badges": {
         "analysis": "ANALYSE",
-        "attemptCounter": "Versuch {current}/{max}",
+        "attemptCounter": "Versuch #{current}",
         "holdDrawFide": "REMIS HALTEN — FIDE",
         "objectiveHoldDraw": "Remis halten (FIDE)",
         "objectiveWin": "Auf Gewinn spielen",
@@ -1030,6 +1030,14 @@
         "playManualBtn": "Selbst",
         "runAutomatBtn": "Automat",
         "runningBadge": "AUTOMAT · MATT IN {moves}"
+      },
+      "hopeless": {
+        "title": "Weiterer Widerstand ist zwecklos",
+        "subtitleDraw": "Gaviota-Datenbank: theoretisches Remis — kein Gewinn mehr möglich.",
+        "subtitleLost": "Gaviota-Datenbank: diese Stellung ist forciert verloren.",
+        "restartBtn": "Neustart",
+        "resignBtn": "Aufgeben",
+        "sufferBtn": "Leiden"
       },
       "units": {
         "dayShort": "T",
@@ -1153,9 +1161,9 @@
         "failedShort": "FEHLER",
         "playoutStart": "Forcierte Variante abgeschlossen! Spielen Sie die Stellung gegen den Sparrings-Bot zu Ende.",
         "playoutDeviation": "Abweichung von der Hauptvariante. Beweisen Sie Ihre Bewertung gegen den Sparrings-Bot!",
-        "retryPromptTitle": "Ungenauer Zug! Versuch {used}/{max} verbraucht",
+        "retryPromptTitle": "Ungenauer Zug! Versuch #{used} verbraucht",
         "retryPromptHint": "Klicke auf „Nochmal“, um die Lösung selbst zu finden, oder auf „Aufgeben“ für die Engine-Analyse.",
-        "solvedWithRetriesNote": "Im Versuch {attempt}/{max} gelöst · Im Specht eingereiht",
+        "solvedWithRetriesNote": "Im Versuch #{attempt} gelöst · Im Specht eingereiht",
         "practiceModeHint": "Übungswiederholung ohne Einfluss auf Wertung oder Sitzung",
         "practiceSolved": "Stark! Stellung gefestigt",
         "practiceFailed": "Ungenauigkeit in der Wiederholung — neu starten oder analysieren"

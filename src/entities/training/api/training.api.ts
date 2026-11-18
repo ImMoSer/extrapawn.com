@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api/client'
 import {
-  MAX_PUZZLE_ATTEMPTS,
+  MAX_SANITY_ATTEMPTS,
   type ActiveSessionResponseDTO,
   type AttemptRequest,
   type AttemptResultDTO,
@@ -205,10 +205,10 @@ export const trainingApi = {
       payload.attempts_used !== undefined &&
       (!Number.isInteger(payload.attempts_used) ||
         payload.attempts_used < 1 ||
-        payload.attempts_used > MAX_PUZZLE_ATTEMPTS)
+        payload.attempts_used > MAX_SANITY_ATTEMPTS)
     ) {
       throw new Error(
-        `[trainingApi] Invalid attempts_used (${String(payload.attempts_used)}) for puzzle ${puzzleId}. Expected integer 1..${MAX_PUZZLE_ATTEMPTS}. Fail-Fast!`,
+        `[trainingApi] Invalid attempts_used (${String(payload.attempts_used)}) for puzzle ${puzzleId}. Expected integer 1..${MAX_SANITY_ATTEMPTS}. Fail-Fast!`,
       )
     }
 

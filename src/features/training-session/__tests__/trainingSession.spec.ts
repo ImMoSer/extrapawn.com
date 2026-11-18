@@ -791,7 +791,6 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       vi.spyOn(trainingApi, 'consumeItemRetry').mockImplementation(async (_sessionId, puzzleId) => ({
         puzzle_id: puzzleId,
         attempts_used: 1,
-        max_attempts: 3,
       }))
       vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
         async (_sessionId, payload): Promise<AttemptResultDTO> => ({
@@ -1008,7 +1007,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     expect(gameStore.gamePhase).toBe('PLAYING')
   })
 
-  it('supports 3 attempts (Restart & Resign), submits attempts_used=2 on 2nd-try solve, and runs Practice Replay without submitting attempts', async () => {
+  it('supports unlimited attempts (Restart & Resign), queues retries in Woodpecker, and runs Practice Replay without submitting attempts', async () => {
     const store = useTrainingSessionStore()
     const gameStore = useGameStore()
     const boardStore = useBoardStore()
@@ -1060,12 +1059,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     const retrySpy = vi
       .spyOn(trainingApi, 'consumeItemRetry')
       .mockImplementation(async (_sid, puzzleId) => {
-        const next = Math.min(2, (retryCounterByPuzzle[puzzleId] ?? 0) + 1)
+        const next = (retryCounterByPuzzle[puzzleId] ?? 0) + 1
         retryCounterByPuzzle[puzzleId] = next
         return {
           puzzle_id: puzzleId,
           attempts_used: next,
-          max_attempts: 3,
         }
       })
 
@@ -1105,23 +1103,23 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     expect(store.displayAttemptNumber).toBe(1)
     expect(store.canRestartCurrentPuzzle).toBe(false) // 0 moves played on Attempt 1
 
-    // Blunder on Attempt 1/3 -> pauses in 'awaiting_retry', consumes retry #1
+    // Blunder on Attempt #1 -> pauses in 'awaiting_retry', consumes retry #1
     await gameStore.handleUserMove('e1', 'e2')
     expect(store.viewState).toBe('awaiting_retry')
     expect(retrySpy).toHaveBeenCalledTimes(1)
     expect(store.currentAttemptsUsed).toBe(1)
     expect(store.currentAttemptNumber).toBe(2)
 
-    // Restart from retry prompt -> launches Attempt 2/3 without charging a 2nd retry
+    // Restart from retry prompt -> launches Attempt #2 without charging a 2nd retry
     await store.restartCurrentPuzzle()
     expect(store.viewState).toBe('playing')
     expect(store.displayAttemptNumber).toBe(2)
     expect(retrySpy).toHaveBeenCalledTimes(1)
 
-    // Solve on Attempt 2/3 (1. Re7+ Kf8 2. Re8#)
+    // Solve on Attempt #2 (1. Re7+ Kf8 2. Re8#)
     await gameStore.handleUserMove('e1', 'e7')
     expect(store.currentPuzzleUserMoves).toBe(1)
-    expect(store.canRestartCurrentPuzzle).toBe(true) // 1 move played and attempt 2 < 3
+    expect(store.canRestartCurrentPuzzle).toBe(true)
     await gameStore.handleUserMove('e7', 'e8')
 
     expect(submitSpy).toHaveBeenCalledTimes(1)
@@ -1133,8 +1131,8 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     expect(store.sessionItems[0]?.status).toBe('solved')
     expect(store.sessionItems[0]?.attempts_used).toBe(2)
 
-    // Advance to RETRY-2 and exhaust all 3 attempts:
-    // 1) Play 1 valid move then mid-play Restart -> consumes Attempt 1/3, launches Attempt 2/3
+    // Advance to RETRY-2 and verify > 3 attempts (unlimited retries until Resign):
+    // 1) Play 1 valid move then mid-play Restart -> consumes Attempt #1, launches Attempt #2
     store.advanceAfterAttempt()
     expect(store.currentPuzzle?.puzzle_id).toBe('RETRY-2')
     await gameStore.handleUserMove('e1', 'e7')
@@ -1142,22 +1140,30 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
     await store.restartCurrentPuzzle()
     expect(store.displayAttemptNumber).toBe(2)
 
-    // 2) Blunder on Attempt 2/3 -> pauses in 'awaiting_retry', then Restart -> Attempt 3/3
+    // 2) Blunder on Attempt #2 -> 'awaiting_retry' -> Restart -> Attempt #3
     await gameStore.handleUserMove('e1', 'e2')
     expect(store.viewState).toBe('awaiting_retry')
     expect(store.currentAttemptNumber).toBe(3)
     await store.restartCurrentPuzzle()
     expect(store.displayAttemptNumber).toBe(3)
-    expect(store.canRestartCurrentPuzzle).toBe(false) // No 4th attempt exists!
 
-    // 3) Blunder on Attempt 3/3 -> immediately finalizes 'failed' with attempts_used=3!
+    // 3) Blunder on Attempt #3 -> STILL 'awaiting_retry' (no 3-attempt hard cap!), Restart -> Attempt #4
     await gameStore.handleUserMove('e1', 'e2')
+    expect(store.viewState).toBe('awaiting_retry')
+    expect(store.currentAttemptNumber).toBe(4)
+    await store.restartCurrentPuzzle()
+    expect(store.displayAttemptNumber).toBe(4)
+
+    // 4) Blunder on Attempt #4 -> 'awaiting_retry', then explicit Resign finalizes 'failed' with attempts_used=4
+    await gameStore.handleUserMove('e1', 'e2')
+    expect(store.viewState).toBe('awaiting_retry')
+    await store.resignCurrentPuzzle()
     expect(store.viewState).toBe('awaiting_next')
     expect(submitSpy).toHaveBeenCalledTimes(2)
     expect(submitSpy.mock.calls[1]?.[1]).toMatchObject({
       puzzle_id: 'RETRY-2',
       solved: false,
-      attempts_used: 3,
+      attempts_used: 4,
     })
 
     // Practice Replay on finalized RETRY-2 -> zero extra submitAttempt calls!

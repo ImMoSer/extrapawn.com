@@ -1,9 +1,12 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { soundService } from '@/shared/lib/sound'
 import * as automatRules from '../lib/endgameAutomatRules'
+import * as hopelessRules from '../lib/endgameHopelessRules'
 import { enginePlayService } from '../lib/EnginePlayService'
 import { useBoardStore } from '../model/board.store'
 import type { EndgameAutomatPromptRequest } from '../model/EndgameAutomatController'
+import type { EndgameHopelessPromptRequest } from '../model/EndgameHopelessController'
 import { useGameStore } from '../model/game.store'
 import { PuzzleStrategy, type PuzzlePuzzle } from '../model/PuzzleStrategy'
 
@@ -258,5 +261,102 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     expect(onSuccess).not.toHaveBeenCalled()
     expect(strategy.validateUserMove()).toBe(true)
     expect(gameStore.gamePhase).toBe('PLAYING')
+  })
+
+  it('evaluates Gaviota hopeless WDL verdicts accurately (including 50-move rescue guard)', () => {
+    const fen = '8/8/4k3/8/4P3/4K3/8/8 w - - 4 10'
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'win',
+        wdl: 0,
+        dtm: 0,
+        currentFen: fen,
+      }),
+    ).toBe('draw_when_win_required')
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'win',
+        wdl: -1,
+        dtm: -14,
+        currentFen: fen,
+      }),
+    ).toBe('lost_position')
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'hold_draw',
+        wdl: 0,
+        dtm: 0,
+        currentFen: fen,
+      }),
+    ).toBeNull()
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'hold_draw',
+        wdl: -1,
+        dtm: -20,
+        currentFen: fen,
+      }),
+    ).toBe('lost_position')
+
+    // Cursed win where halfmoves (85) + |dtm| (20) >= 100 -> player can still claim FIDE 50-move draw!
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'hold_draw',
+        wdl: -1,
+        dtm: -20,
+        currentFen: '8/8/4k3/8/8/2B1N3/8/4K3 w - - 85 60',
+      }),
+    ).toBeNull()
+  })
+
+  it('plays you_will_never_win and opens Hopeless modal once, then unlocks on "suffer"', async () => {
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    // White plays Ke3->Ke4?? allowing Black Ke7! opposition draw (3 pieces, objective=win)
+    const startFen = '4k3/8/8/8/4P3/4K3/8/8 w - - 0 1'
+    const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen, objective: 'win' })
+
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue('e8e7')
+    const probeSpy = vi.spyOn(hopelessRules, 'fetchGaviotaProbe').mockResolvedValue({
+      wdl: 0,
+      dtm: 0,
+    })
+
+    let capturedHopeless: EndgameHopelessPromptRequest | null = null
+
+    const strategy = new PuzzleStrategy(puzzle, 'white', 'theoretical_endgames', {
+      delays: { botDelayMs: 0, initialBotDelayMs: 0 },
+      hopeless: {
+        isEnabled: () => true,
+        onPromptOpen: (prompt) => {
+          capturedHopeless = prompt
+        },
+      },
+    })
+
+    gameStore.startWithStrategy(startFen, strategy, 'white')
+    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('e3d4')
+
+    await gameStore.handleUserMove('e3', 'd4')
+
+    expect(probeSpy).toHaveBeenCalledTimes(1)
+    expect(soundService.play).toHaveBeenCalledWith('you_will_never_win', 'EndgameHopelessController')
+    expect(capturedHopeless).not.toBeNull()
+    expect(capturedHopeless!.verdict).toBe('draw_when_win_required')
+    expect(strategy.validateUserMove()).toBe(false)
+
+    // User clicks "Страдать" -> unlocks board and suppresses repeat modal on next turn
+    capturedHopeless!.suffer()
+    capturedHopeless = null
+    expect(strategy.validateUserMove()).toBe(true)
+
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('e7e6')
+    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('e4e5')
+    await gameStore.handleUserMove('e4', 'e5')
+
+    expect(capturedHopeless).toBeNull()
+    expect(probeSpy).toHaveBeenCalledTimes(1)
   })
 })

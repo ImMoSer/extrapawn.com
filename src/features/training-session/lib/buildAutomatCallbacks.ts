@@ -1,4 +1,9 @@
-import type { EndgameAutomatCallbacks, EndgameAutomatPromptRequest } from '@/entities/game'
+import type {
+  EndgameAutomatCallbacks,
+  EndgameAutomatPromptRequest,
+  EndgameHopelessCallbacks,
+  EndgameHopelessPromptRequest,
+} from '@/entities/game'
 import type { usePreferencesStore } from '@/entities/user'
 import type { TrainingSessionSharedState } from '../model/trainingSession.types'
 import type { PuzzleClockController } from '../model/usePuzzleClock'
@@ -7,6 +12,13 @@ export interface AutomatCallbackBuildOptions {
   state: TrainingSessionSharedState
   clock: PuzzleClockController
   preferencesStore: ReturnType<typeof usePreferencesStore>
+  isCrashtest?: () => boolean
+  pauseClock?: boolean
+}
+
+export interface HopelessCallbackBuildOptions {
+  state: TrainingSessionSharedState
+  clock: PuzzleClockController
   isCrashtest?: () => boolean
   pauseClock?: boolean
 }
@@ -43,6 +55,25 @@ export function buildEndgameAutomatCallbacks(
     onCleanup: () => {
       state.automatPrompt.value = null
       state.automatRemainingMoves.value = null
+    },
+  }
+}
+
+export function buildEndgameHopelessCallbacks(
+  opts: HopelessCallbackBuildOptions,
+): EndgameHopelessCallbacks {
+  const { state, clock, isCrashtest, pauseClock = true } = opts
+
+  return {
+    isEnabled: () => !isCrashtest?.(),
+    onPromptOpen: (prompt: EndgameHopelessPromptRequest) => {
+      if (pauseClock) {
+        clock.pauseTimer()
+      }
+      state.hopelessPrompt.value = prompt
+    },
+    onCleanup: () => {
+      state.hopelessPrompt.value = null
     },
   }
 }

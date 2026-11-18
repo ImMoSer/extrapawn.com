@@ -1,5 +1,6 @@
 import type {
   EndgameAutomatPromptRequest,
+  EndgameHopelessPromptRequest,
   PuzzleAttemptTelemetry,
   PuzzlePuzzle,
 } from '@/entities/game'
@@ -97,6 +98,7 @@ export interface TrainingSessionSharedState {
   analysisReturnState: Ref<InspectionReturnState>
   automatPrompt: Ref<EndgameAutomatPromptRequest | null>
   automatRemainingMoves: Ref<number | null>
+  hopelessPrompt: Ref<EndgameHopelessPromptRequest | null>
   currentItem: ComputedRef<HydratedSessionItem | null>
   itemByPuzzleId: Map<string, HydratedSessionItem>
   runtime: PlayRuntimeTracker

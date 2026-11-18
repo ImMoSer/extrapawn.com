@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { FlashOutline, HandLeftOutline } from '@vicons/ionicons5'
+import {
+  CloseOutline,
+  FlameOutline,
+  FlashOutline,
+  HandLeftOutline,
+  RefreshOutline,
+  WarningOutline,
+} from '@vicons/ionicons5'
 import { NCheckbox, NIcon } from 'naive-ui'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -21,6 +28,10 @@ watch(
 
 function handleChoose(choice: 'automat' | 'manual'): void {
   store.resolveAutomatPrompt(choice, rememberChoice.value)
+}
+
+function handleHopelessChoice(choice: 'restart' | 'resign' | 'suffer'): void {
+  void store.resolveHopelessPrompt(choice)
 }
 </script>
 
@@ -98,5 +109,68 @@ function handleChoose(choice: 'automat' | 'manual'): void {
         })
       }}
     </span>
+  </div>
+
+  <!-- 3. Hopeless 5-Piece Tablebase Position Modal (Restart / Resign / Suffer) -->
+  <div
+    v-else-if="store.hopelessPrompt"
+    class="w-full max-w-sm mx-3 p-4 rounded-lg bg-overlay border border-danger/50 shadow-xl flex flex-col gap-3.5 select-none text-text-primary"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex items-center justify-between gap-2">
+      <span
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase tracking-wider bg-danger/15 text-danger border border-danger/40"
+      >
+        <NIcon size="13"><WarningOutline /></NIcon>
+        <span>GAVIOTA WDL</span>
+      </span>
+
+      <span class="font-condensed font-bold text-xs text-text-secondary">
+        {{ store.hopelessPrompt.verdict === 'draw_when_win_required' ? '1/2-1/2' : '0-1' }}
+      </span>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <p class="font-display font-bold text-sm leading-snug text-text-primary">
+        {{ t('features.trainingCenter.hopeless.title') }}
+      </p>
+      <p class="text-xs leading-snug text-text-secondary">
+        {{
+          store.hopelessPrompt.verdict === 'draw_when_win_required'
+            ? t('features.trainingCenter.hopeless.subtitleDraw')
+            : t('features.trainingCenter.hopeless.subtitleLost')
+        }}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+      <button
+        type="button"
+        class="min-w-0 overflow-hidden py-2 px-2 rounded-md bg-warning/15 hover:bg-warning/25 border border-warning/50 text-warning font-display font-bold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
+        @click="handleHopelessChoice('restart')"
+      >
+        <NIcon class="shrink-0" size="13"><RefreshOutline /></NIcon>
+        <span class="truncate">{{ t('features.trainingCenter.hopeless.restartBtn') }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="min-w-0 overflow-hidden py-2 px-2 rounded-md bg-danger/15 hover:bg-danger/25 border border-danger/50 text-danger font-display font-bold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
+        @click="handleHopelessChoice('resign')"
+      >
+        <NIcon class="shrink-0" size="13"><CloseOutline /></NIcon>
+        <span class="truncate">{{ t('features.trainingCenter.hopeless.resignBtn') }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="min-w-0 overflow-hidden py-2 px-2 rounded-md bg-elevated hover:bg-surface border border-border hover:border-border-hover text-text-secondary hover:text-text-primary font-display font-semibold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
+        @click="handleHopelessChoice('suffer')"
+      >
+        <NIcon class="shrink-0" size="13"><FlameOutline /></NIcon>
+        <span class="truncate">{{ t('features.trainingCenter.hopeless.sufferBtn') }}</span>
+      </button>
+    </div>
   </div>
 </template>

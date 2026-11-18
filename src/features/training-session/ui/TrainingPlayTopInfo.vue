@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   isClassicalCourseDiscipline,
-  MAX_PUZZLE_ATTEMPTS,
   resolveDisciplineLabel,
   resolveScopeLabel,
   resolveTwinBadgeLabel,
@@ -211,7 +210,7 @@ function handleBackAction(): void {
         {{ t('features.trainingCenter.badges.winTarget') }}
       </span>
 
-      <!-- Attempt Counter Badge (1/3 .. 3/3) -->
+      <!-- Attempt Counter Badge (#1, #2, ...) -->
       <span
         v-if="showAttemptBadge"
         class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold border"
@@ -226,7 +225,6 @@ function handleBackAction(): void {
         {{
           t('features.trainingCenter.badges.attemptCounter', {
             current: store.displayAttemptNumber,
-            max: MAX_PUZZLE_ATTEMPTS,
           })
         }}
       </span>
@@ -365,7 +363,6 @@ function handleBackAction(): void {
           {{
             t('features.trainingCenter.actions.restartAttempt', {
               current: store.currentAttemptNumber,
-              max: MAX_PUZZLE_ATTEMPTS,
             })
           }}
         </NButton>
