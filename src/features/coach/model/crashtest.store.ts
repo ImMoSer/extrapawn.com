@@ -92,9 +92,9 @@ export const useCrashtestStore = defineStore('crashtest', () => {
     engineId: CrashtestEngineId,
   ): Promise<string | null> {
     try {
-      const move = await enginePlayService.getBestMove(engineId, targetFen)
+      const res = await enginePlayService.getBestMove(engineId, targetFen)
       if (token !== currentCycleToken) return null
-      return move
+      return res?.bestMove ?? null
     } catch (err) {
       logger.error(`[Crashtest] Engine "${engineId}" move fetch failed:`, err)
       return null

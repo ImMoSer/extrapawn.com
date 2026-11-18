@@ -187,7 +187,10 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     let botToggle = false
     vi.spyOn(enginePlayService, 'getBestMove').mockImplementation(async () => {
       botToggle = !botToggle
-      return botToggle ? 'g8h8' : 'h8g8'
+      return {
+        bestMove: botToggle ? 'g8h8' : 'h8g8',
+        playerTablebase: null,
+      }
     })
 
     const onHoldSuccess = vi.fn()
@@ -283,7 +286,10 @@ describe('PuzzleStrategy — FIDE Hold Draw, Telemetry & Bot Ladder', () => {
     })
 
     // Case B: User deviates on first move (plays Kh6->g5 instead of f5d5) and then resigns -> failStage: 'scenario', firstMoveFailed: true
-    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue('g8h8')
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue({
+      bestMove: 'g8h8',
+      playerTablebase: null,
+    })
 
     let capturedTelemetryB: PuzzleAttemptTelemetry | undefined
     gameStore.startWithStrategy(

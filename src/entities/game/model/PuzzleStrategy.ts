@@ -2,7 +2,10 @@ import i18n from '@/shared/config/i18n'
 import { areMovesEqual, extractPrimaryUciMove } from '@/shared/lib/chess-utils'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
-import { enginePlayService } from '../lib/EnginePlayService'
+import {
+  enginePlayService,
+  type PlayerTablebaseDTO,
+} from '../lib/EnginePlayService'
 import { useBoardStore } from './board.store'
 import { EndgameAutomatController } from './EndgameAutomatController'
 import { EndgameHopelessController } from './EndgameHopelessController'
@@ -58,6 +61,11 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private nextPuzzleTimeout: number | null = null
   private isDestroyed = false
   private isResolved = false
+  private pendingBotTablebase: {
+    botMoveUci: string
+    fenBeforeBotMove: string
+    tablebase: PlayerTablebaseDTO | null
+  } | null = null
 
   constructor(
     puzzle: PuzzlePuzzle,
@@ -170,6 +178,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   onDestroy() {
     this.isDestroyed = true
+    this.pendingBotTablebase = null
     this.automatController.destroy()
     this.hopelessController.destroy()
     if (this.nextPuzzleTimeout !== null) {
@@ -367,6 +376,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onUserMoveUndone() {
+    this.pendingBotTablebase = null
     this.automatController.resetOnUndo()
     this.hopelessController.resetOnUndo()
     this.scenarioIndex = this.prevScenarioIndex
@@ -388,7 +398,19 @@ export class PuzzleStrategy implements IGameplayStrategy {
     }
   }
 
-  async onBotMoveExecuted(uciMove?: string): Promise<void> {
+  async onBotMoveExecuted(
+    uciMove?: string,
+    _fenAfter?: string,
+    fenBefore?: string,
+  ): Promise<void> {
+    const matchedTablebase =
+      this.pendingBotTablebase &&
+      this.pendingBotTablebase.botMoveUci === uciMove &&
+      (!fenBefore || this.pendingBotTablebase.fenBeforeBotMove === fenBefore)
+        ? this.pendingBotTablebase.tablebase
+        : null
+    this.pendingBotTablebase = null
+
     if (uciMove) {
       this.playedMovesUci.push(uciMove)
     }
@@ -419,12 +441,13 @@ export class PuzzleStrategy implements IGameplayStrategy {
     if (this.isPlayoutMode && !this.isDestroyed && !this.isResolved) {
       await this.automatController.evaluateAfterBotTurn()
       if (!this.automatController.isLocked && !this.isDestroyed && !this.isResolved) {
-        await this.hopelessController.evaluateAfterBotTurn()
+        await this.hopelessController.evaluateAfterBotTurn(matchedTablebase)
       }
     }
   }
 
   async requestBotMove(fen: string): Promise<string | null> {
+    this.pendingBotTablebase = null
     if (!this.isPlayoutMode && this.scenarioIndex < this.scenarioMoves.length) {
       const move = this.scenarioMoves[this.scenarioIndex] || null
       return move ? extractPrimaryUciMove(move) : null
@@ -435,7 +458,16 @@ export class PuzzleStrategy implements IGameplayStrategy {
     const targetEngineId = this.callbacks?.botEngineOverride ?? this.gameStore.botEngineId
 
     try {
-      return await enginePlayService.getBestMove(targetEngineId, fen)
+      const res = await enginePlayService.getBestMove(targetEngineId, fen)
+      if (!res) {
+        return null
+      }
+      this.pendingBotTablebase = {
+        botMoveUci: res.bestMove,
+        fenBeforeBotMove: fen,
+        tablebase: res.playerTablebase,
+      }
+      return res.bestMove
     } catch (error) {
       logger.error(`[PuzzleStrategy] Engine "${targetEngineId}" failed to generate move.`, error)
       return null

@@ -1,4 +1,10 @@
-export { enginePlayService } from './lib/EnginePlayService'
+export {
+  BestMoveResponseSchema,
+  enginePlayService,
+  PlayerTablebaseSchema,
+  type BestMoveResult,
+  type PlayerTablebaseDTO,
+} from './lib/EnginePlayService'
 export { useBoardStore } from './model/board.store'
 export type { GameEndOutcome } from './model/board.store'
 export { GameAudioEngine } from './model/GameAudioEngine'

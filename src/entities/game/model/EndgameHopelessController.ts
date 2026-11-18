@@ -1,6 +1,6 @@
+import type { PlayerTablebaseDTO } from '../lib/EnginePlayService'
 import {
   evaluateHopelessVerdict,
-  fetchGaviotaProbe,
   isCandidateForHopelessProbe,
   type HopelessTablebaseVerdict,
 } from '../lib/endgameHopelessRules'
@@ -89,8 +89,9 @@ export class EndgameHopelessController {
     this.destroy()
   }
 
-  async evaluateAfterBotTurn(): Promise<void> {
+  async evaluateAfterBotTurn(playerTablebase: PlayerTablebaseDTO | null): Promise<void> {
     if (
+      !playerTablebase ||
       !this.hooks ||
       !this.hooks.onPromptOpen ||
       !this.hooks.isEnabled() ||
@@ -123,28 +124,16 @@ export class EndgameHopelessController {
       return
     }
 
-    const tokenAtProbe = ++this.runToken
-    const probeDto = await fetchGaviotaProbe(currentFen)
-    if (
-      !probeDto ||
-      tokenAtProbe !== this.runToken ||
-      !this.host.isActiveAndUnresolved() ||
-      gameStore.gamePhase !== 'PLAYING' ||
-      boardStore.fen !== currentFen
-    ) {
-      return
-    }
-
     const verdict = evaluateHopelessVerdict({
       objective: this.host.objective,
-      wdl: probeDto.wdl,
-      dtm: probeDto.dtm,
-      currentFen,
+      tablebase: playerTablebase,
     })
 
     if (!verdict) {
       return
     }
+
+    const tokenAtEval = ++this.runToken
 
     // Let the bot's refutation move finish sliding onto its target square before locking
     const elapsedSinceBotMove = Date.now() - boardStore.lastMoveTimestamp
@@ -154,7 +143,7 @@ export class EndgameHopelessController {
     }
 
     if (
-      tokenAtProbe !== this.runToken ||
+      tokenAtEval !== this.runToken ||
       !this.hooks.isEnabled() ||
       this.sufferChosenInAttempt ||
       !this.host.isActiveAndUnresolved() ||
@@ -170,7 +159,7 @@ export class EndgameHopelessController {
     this.hooks.onPromptOpen({
       verdict,
       suffer: () => {
-        if (tokenAtProbe !== this.runToken || !this.promptOpen) return
+        if (tokenAtEval !== this.runToken || !this.promptOpen) return
         this.promptOpen = false
         this.sufferChosenInAttempt = true
         this.hooks?.onCleanup?.()

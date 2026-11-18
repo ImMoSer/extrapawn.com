@@ -170,7 +170,10 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
       const startFen = '8/3P3k/5K2/8/8/8/8/8 w - - 0 1'
       const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen })
 
-      vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('h7h6')
+      vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce({
+        bestMove: 'h7h6',
+        playerTablebase: { wdl: 1, dtm: 1, fideLost: false },
+      })
       vi.spyOn(automatRules, 'fetchGaviotaAutomatLine').mockResolvedValueOnce({
         eligible: true,
         mate_in_moves: 1,
@@ -237,7 +240,10 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     const startFen = '8/3P3k/5K2/8/8/8/8/8 w - - 0 1'
     const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen })
 
-    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('h7h6')
+    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce({
+      bestMove: 'h7h6',
+      playerTablebase: { wdl: 1, dtm: 1, fideLost: false },
+    })
     vi.spyOn(automatRules, 'fetchGaviotaAutomatLine').mockResolvedValueOnce(null)
 
     const onPromptOpen = vi.fn()
@@ -263,65 +269,61 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     expect(gameStore.gamePhase).toBe('PLAYING')
   })
 
-  it('evaluates Gaviota hopeless WDL verdicts accurately (including 50-move rescue guard)', () => {
-    const fen = '8/8/4k3/8/4P3/4K3/8/8 w - - 4 10'
+  it('evaluates playerTablebase hopeless WDL verdicts accurately (including FIDE 50-move fideLost flag)', () => {
     expect(
       hopelessRules.evaluateHopelessVerdict({
         objective: 'win',
-        wdl: 0,
-        dtm: 0,
-        currentFen: fen,
+        tablebase: { wdl: 0, dtm: 0, fideLost: false },
       }),
     ).toBe('draw_when_win_required')
     expect(
       hopelessRules.evaluateHopelessVerdict({
         objective: 'win',
-        wdl: -1,
-        dtm: -14,
-        currentFen: fen,
+        tablebase: { wdl: -1, dtm: -14, fideLost: true },
       }),
     ).toBe('lost_position')
     expect(
       hopelessRules.evaluateHopelessVerdict({
-        objective: 'hold_draw',
-        wdl: 0,
-        dtm: 0,
-        currentFen: fen,
+        objective: 'win',
+        tablebase: { wdl: 1, dtm: null, fideLost: false },
       }),
     ).toBeNull()
     expect(
       hopelessRules.evaluateHopelessVerdict({
         objective: 'hold_draw',
-        wdl: -1,
-        dtm: -20,
-        currentFen: fen,
+        tablebase: { wdl: 0, dtm: 0, fideLost: false },
       }),
-    ).toBe('lost_position')
-
-    // Cursed win where halfmoves (85) + |dtm| (20) >= 100 -> player can still claim FIDE 50-move draw!
+    ).toBeNull()
     expect(
       hopelessRules.evaluateHopelessVerdict({
         objective: 'hold_draw',
-        wdl: -1,
-        dtm: -20,
-        currentFen: '8/8/4k3/8/8/2B1N3/8/4K3 w - - 85 60',
+        tablebase: { wdl: -1, dtm: -20, fideLost: true },
+      }),
+    ).toBe('lost_position')
+
+    // Blessed loss (fideLost: false) -> player can claim FIDE 50-move draw, so NOT hopeless!
+    expect(
+      hopelessRules.evaluateHopelessVerdict({
+        objective: 'hold_draw',
+        tablebase: { wdl: -1, dtm: -20, fideLost: false },
       }),
     ).toBeNull()
   })
 
-  it('plays you_will_never_win and opens Hopeless modal once, then unlocks on "suffer"', async () => {
+  it('plays you_will_never_win and opens Hopeless modal directly from /bestmove playerTablebase, then unlocks on "suffer"', async () => {
     const gameStore = useGameStore()
     const boardStore = useBoardStore()
     boardStore.animationDurationMs = 0
 
-    // White plays Ke3->Ke4?? allowing Black Ke7! opposition draw (3 pieces, objective=win)
+    // White plays Ke3->d4?? allowing Black Ke7! opposition draw (3 pieces, objective=win)
     const startFen = '4k3/8/8/8/4P3/4K3/8/8 w - - 0 1'
     const puzzle = createPuzzle({ initial_fen: startFen, puzzle_fen: startFen, objective: 'win' })
 
-    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue('e8e7')
-    const probeSpy = vi.spyOn(hopelessRules, 'fetchGaviotaProbe').mockResolvedValue({
-      wdl: 0,
-      dtm: 0,
+    const bestMoveSpy = vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValue({
+      bestMove: 'e8e7',
+      mode: 'leelaHoldDraw',
+      source: 'tablebase_only_move',
+      playerTablebase: { wdl: 0, dtm: 0, fideLost: false },
     })
 
     let capturedHopeless: EndgameHopelessPromptRequest | null = null
@@ -341,7 +343,7 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
 
     await gameStore.handleUserMove('e3', 'd4')
 
-    expect(probeSpy).toHaveBeenCalledTimes(1)
+    expect(bestMoveSpy).toHaveBeenCalledTimes(1)
     expect(soundService.play).toHaveBeenCalledWith(
       'coach_never_win',
       'GameAudioEngine.hopelessVerdict',
@@ -355,11 +357,15 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     capturedHopeless = null
     expect(strategy.validateUserMove()).toBe(true)
 
-    vi.spyOn(enginePlayService, 'getBestMove').mockResolvedValueOnce('e7e6')
-    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('e4e5')
-    await gameStore.handleUserMove('e4', 'e5')
+    bestMoveSpy.mockResolvedValueOnce({
+      bestMove: 'e7d7',
+      mode: 'leelaHoldDraw',
+      playerTablebase: { wdl: 0, dtm: 0, fideLost: false },
+    })
+    vi.spyOn(boardStore, 'prepareUserUciMove').mockResolvedValueOnce('d4d5')
+    await gameStore.handleUserMove('d4', 'd5')
 
     expect(capturedHopeless).toBeNull()
-    expect(probeSpy).toHaveBeenCalledTimes(1)
+    expect(bestMoveSpy).toHaveBeenCalledTimes(2)
   })
 })

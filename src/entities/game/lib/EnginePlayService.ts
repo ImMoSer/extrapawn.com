@@ -2,18 +2,45 @@
 import { apiClient } from '@/shared/api/client'
 import logger from '@/shared/lib/logger'
 import { pgnService } from '@/shared/lib/pgn/PgnService'
+import { z } from '@/shared/lib/zod'
 import type { EngineId } from '@/shared/types/api.types'
 import { Chess } from 'chessops/chess'
 import { makeFen, parseFen } from 'chessops/fen'
 
+export const PlayerTablebaseSchema = z.object({
+  wdl: z.number().int().min(-1).max(1),
+  dtm: z.number().int().nullable(),
+  fideLost: z.boolean(),
+})
+
+export type PlayerTablebaseDTO = z.infer<typeof PlayerTablebaseSchema>
+
+export const BestMoveResponseSchema = z.object({
+  bestMove: z.string().nullable().optional(),
+  engine: z.string().optional(),
+  mode: z.string().optional(),
+  source: z.string().optional(),
+  dtm: z.number().int().nullable().optional(),
+  timeRealMs: z.number().optional(),
+  playerTablebase: PlayerTablebaseSchema.nullable().optional(),
+})
+
+export interface BestMoveResult {
+  bestMove: string
+  mode?: string
+  source?: string
+  playerTablebase: PlayerTablebaseDTO | null
+}
+
 class EnginePlayServiceController {
   /**
-   * Generates the best move for the given engineId and position FEN via backend API (POST /api/bestmove).
-   * Sends start_fen and move history from pgnService for native threefold repetition protection.
+   * Generates the best move and optional <= 5-piece post-move tablebase verdict (`playerTablebase`)
+   * for the given engineId and position FEN via backend API (`POST /api/bestmove`).
+   * Sends `start_fen` and move history from `pgnService` for native threefold repetition protection.
    *
    * @throws {Error} Fail-Fast principle: throws immediately if FEN is invalid, PGN is out of sync, or network fails.
    */
-  public async getBestMove(engineId: EngineId, fen: string): Promise<string | null> {
+  public async getBestMove(engineId: EngineId, fen: string): Promise<BestMoveResult | null> {
     const parsedSetup = parseFen(fen)
     if (parsedSetup.isErr) {
       throw new Error(`[EnginePlayService] Invalid FEN provided: "${fen}". Fail-Fast!`)
@@ -49,21 +76,30 @@ class EnginePlayServiceController {
         logger.info(
           `[EnginePlayService] Requesting move from Engine Hub for ${engineId} (moves: ${moves.length})...`,
         )
-        const data = await apiClient<{ bestMove?: string | null }>('/bestmove', {
-          method: 'POST',
-          body: JSON.stringify({
-            engine: engineId,
-            start_fen: startFen,
-            moves,
-          }),
-        })
+        const data = await apiClient<z.infer<typeof BestMoveResponseSchema>>(
+          '/bestmove',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              engine: engineId,
+              start_fen: startFen,
+              moves,
+            }),
+          },
+          BestMoveResponseSchema,
+        )
         if (!data || !data.bestMove) {
           logger.warn(`[EnginePlayService] Engine Hub returned empty bestMove for FEN: ${fen}`)
           return null
         }
 
         logger.info(`[EnginePlayService] Move received for ${engineId}: ${data.bestMove}`)
-        return data.bestMove
+        return {
+          bestMove: data.bestMove,
+          mode: data.mode,
+          source: data.source,
+          playerTablebase: data.playerTablebase ?? null,
+        }
       } catch (error) {
         lastError = error
         if (attempt >= retryDelaysMs.length) {
