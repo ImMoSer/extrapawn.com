@@ -14,6 +14,7 @@ import {
   type SessionSummaryDTO,
   type TacticsCourseCurriculumDTO,
 } from '@/entities/training'
+import { soundService } from '@/shared/lib/sound'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
@@ -22,6 +23,8 @@ import { useTrainingSessionStore } from '../model/trainingSession.store'
 vi.mock('@/shared/lib/sound', () => ({
   soundService: {
     play: vi.fn(),
+    stopCoachVoice: vi.fn(),
+    stopAll: vi.fn(),
   },
   registerVolumeProvider: vi.fn(),
 }))
@@ -1250,5 +1253,111 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       checkpoint_id: 1,
       force_new: true,
     })
+  })
+
+  it('plays dedicated coach voice SFX for Suffer, Restart, and Resign in Hopeless modal', async () => {
+    const store = useTrainingSessionStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const sessionDto: HydratedSessionDTO = {
+      session: createSessionSummary({
+        discipline: 'theoretical_endgames',
+        difficulty: 'Novice',
+        total_count: 1,
+      }),
+      items: [
+        {
+          index: 0,
+          puzzle_id: 'HOPE-1',
+          is_woodpecker: false,
+          woodpecker_streak: 0,
+          status: 'pending',
+          endgame: {
+            puzzle_id: 'HOPE-1',
+            discipline: 'theoretical_endgames',
+            ending_fen: '4k3/8/8/8/4P3/4K3/8/8 w - - 0 1',
+            difficulty: 'Novice',
+            ending_rating: 1200,
+            effective_rating: 1200,
+            pieces_count: 3,
+            domain: 'PAWN',
+            class: 'pawnEnding',
+            strategy: 'playOutOnly',
+            first_move: 'user',
+            user_color: 'white',
+            objective: 'win',
+          },
+        },
+      ],
+    }
+
+    vi.spyOn(trainingApi, 'composeWarmupSession').mockResolvedValue(sessionDto)
+    vi.spyOn(trainingApi, 'getOverview').mockResolvedValue(createOverviewStub())
+    vi.spyOn(trainingApi, 'consumeItemRetry').mockResolvedValue({
+      puzzle_id: 'HOPE-1',
+      attempts_used: 1,
+    })
+    vi.spyOn(trainingApi, 'submitAttempt').mockImplementation(
+      async (_sid, payload): Promise<AttemptResultDTO> => ({
+        puzzle_id: payload.puzzle_id,
+        solved: payload.solved,
+        global_rating_before: 1500,
+        global_rating_after: 1490,
+        global_rating_delta: -10,
+        scope_deltas: [],
+        woodpecker: { action: 'queued', streak: 0 },
+        session: createSessionSummary({
+          discipline: 'theoretical_endgames',
+          difficulty: 'Novice',
+          total_count: 1,
+          current_index: 1,
+          solved_count: 0,
+          failed_count: 1,
+          is_completed: true,
+        }),
+      }),
+    )
+
+    await store.startWarmupSession({
+      discipline: 'theoretical_endgames',
+      difficulty: 'Novice',
+      count: 10,
+    })
+
+    store.currentPuzzleUserMoves = 1
+
+    // 1. Suffer -> plays coach_your_move
+    const sufferCb = vi.fn()
+    store.hopelessPrompt = { verdict: 'draw_when_win_required', suffer: sufferCb }
+    vi.mocked(soundService.play).mockClear()
+    await store.resolveHopelessPrompt('suffer')
+    expect(sufferCb).toHaveBeenCalledTimes(1)
+    expect(soundService.play).toHaveBeenCalledWith(
+      'coach_your_move',
+      'GameAudioEngine.hopelessSuffer',
+    )
+
+    // 2. Restart -> plays coach_hopeless_restart (random pool think_deeper_next_time / try_again)
+    store.currentPuzzleUserMoves = 1
+    store.hopelessPrompt = { verdict: 'draw_when_win_required', suffer: vi.fn() }
+    vi.mocked(soundService.play).mockClear()
+    await store.resolveHopelessPrompt('restart')
+    expect(soundService.stopCoachVoice).toHaveBeenCalled()
+    expect(soundService.play).toHaveBeenCalledWith(
+      'coach_hopeless_restart',
+      'GameAudioEngine.hopelessRestart',
+    )
+
+    // 3. Resign -> plays coach_hopeless_resign (ist_das_wirklich_alles) and suppresses tactics_error buzzer
+    store.currentPuzzleUserMoves = 1
+    store.hopelessPrompt = { verdict: 'lost_position', suffer: vi.fn() }
+    vi.mocked(soundService.play).mockClear()
+    await store.resolveHopelessPrompt('resign')
+    expect(soundService.play).toHaveBeenCalledWith(
+      'coach_hopeless_resign',
+      'GameAudioEngine.hopelessResign',
+    )
+    expect(soundService.play).not.toHaveBeenCalledWith('tactics_error')
   })
 })

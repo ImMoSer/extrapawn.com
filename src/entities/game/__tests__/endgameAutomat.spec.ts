@@ -342,7 +342,10 @@ describe('Endgame Automat — Universal Material & EndingFEN Rules', () => {
     await gameStore.handleUserMove('e3', 'd4')
 
     expect(probeSpy).toHaveBeenCalledTimes(1)
-    expect(soundService.play).toHaveBeenCalledWith('you_will_never_win', 'EndgameHopelessController')
+    expect(soundService.play).toHaveBeenCalledWith(
+      'coach_never_win',
+      'GameAudioEngine.hopelessVerdict',
+    )
     expect(capturedHopeless).not.toBeNull()
     expect(capturedHopeless!.verdict).toBe('draw_when_win_required')
     expect(strategy.validateUserMove()).toBe(false)

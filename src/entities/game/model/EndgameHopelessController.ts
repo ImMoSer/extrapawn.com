@@ -1,4 +1,3 @@
-import { soundService } from '@/shared/lib/sound'
 import {
   evaluateHopelessVerdict,
   fetchGaviotaProbe,
@@ -6,6 +5,7 @@ import {
   type HopelessTablebaseVerdict,
 } from '../lib/endgameHopelessRules'
 import { useBoardStore } from './board.store'
+import { GameAudioEngine } from './GameAudioEngine'
 import { useGameStore } from './game.store'
 import type { PuzzleObjective, PuzzleStrategyType } from './puzzle.types'
 
@@ -165,7 +165,7 @@ export class EndgameHopelessController {
     }
 
     this.promptOpen = true
-    void soundService.play('you_will_never_win', 'EndgameHopelessController')
+    GameAudioEngine.playHopelessVerdict()
 
     this.hooks.onPromptOpen({
       verdict,

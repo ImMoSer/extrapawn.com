@@ -66,6 +66,26 @@ class GameAudioEngineController {
   public playSpeedrunFinished() {
     soundService.play('applause')
   }
+
+  public playHopelessVerdict() {
+    void soundService.play('coach_never_win', 'GameAudioEngine.hopelessVerdict')
+  }
+
+  public playHopelessSuffer() {
+    void soundService.play('coach_your_move', 'GameAudioEngine.hopelessSuffer')
+  }
+
+  public playHopelessRestart() {
+    void soundService.play('coach_hopeless_restart', 'GameAudioEngine.hopelessRestart')
+  }
+
+  public playHopelessResign() {
+    void soundService.play('coach_hopeless_resign', 'GameAudioEngine.hopelessResign')
+  }
+
+  public stopCoachVoice() {
+    soundService.stopCoachVoice?.()
+  }
 }
 
 export const GameAudioEngine = new GameAudioEngineController()

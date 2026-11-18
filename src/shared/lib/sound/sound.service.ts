@@ -17,7 +17,13 @@ export const soundDefinitions: Record<SoundEffect, string | string[]> = {
   chpock: '/sounds/sfx_chpock.mp3',
   tactics_error: '/sounds/sfx_tactics_error.mp3',
   tactics_success: '/sounds/sfx_tactics_success.mp3',
-  you_will_never_win: '/sounds/coach/you_will_never_win.mp3',
+  coach_never_win: '/sounds/coach/you_will_never_win.mp3',
+  coach_your_move: '/sounds/coach/your_move.mp3',
+  coach_hopeless_restart: [
+    '/sounds/coach/think_deeper_next_time.mp3',
+    '/sounds/coach/try_again.mp3',
+  ],
+  coach_hopeless_resign: '/sounds/coach/ist_das_wirklich_alles.mp3',
   applause: [
     '/sounds/applause/applause_1.mp3',
     '/sounds/applause/applause_2.mp3',
@@ -35,9 +41,17 @@ export const soundDefinitions: Record<SoundEffect, string | string[]> = {
   timer_times_up: '/sounds/timer/timer_times_up.mp3',
 }
 
+const COACH_VOICE_EVENTS: ReadonlySet<SoundEffect> = new Set<SoundEffect>([
+  'coach_never_win',
+  'coach_your_move',
+  'coach_hopeless_restart',
+  'coach_hopeless_resign',
+])
+
 export class SoundServiceController {
   private audioPool: Map<string, HTMLAudioElement[]> = new Map()
   private activeSounds: Set<HTMLAudioElement> = new Set()
+  private activeCoachSounds: Set<HTMLAudioElement> = new Set()
 
   public get volume(): number {
     return volumeProvider ? volumeProvider.getVolume() : 1.0
@@ -92,6 +106,11 @@ export class SoundServiceController {
       return Promise.resolve()
     }
 
+    const isCoachVoice = COACH_VOICE_EVENTS.has(event)
+    if (isCoachVoice) {
+      this.stopCoachVoice()
+    }
+
     if (typeof Audio === 'undefined') {
       return Promise.resolve()
     }
@@ -107,6 +126,7 @@ export class SoundServiceController {
 
       const cleanup = () => {
         this.activeSounds.delete(audio)
+        this.activeCoachSounds.delete(audio)
         audio.onended = null
         audio.onerror = null
         resolve()
@@ -116,6 +136,9 @@ export class SoundServiceController {
       audio.onerror = cleanup
 
       this.activeSounds.add(audio)
+      if (isCoachVoice) {
+        this.activeCoachSounds.add(audio)
+      }
 
       const playPromise = audio.play()
       if (playPromise && typeof playPromise.catch === 'function') {
@@ -136,12 +159,24 @@ export class SoundServiceController {
     })
   }
 
+  public stopCoachVoice(): void {
+    this.activeCoachSounds.forEach((audio) => {
+      audio.pause()
+      audio.currentTime = 0
+      audio.onended = null
+      audio.onerror = null
+      this.activeSounds.delete(audio)
+    })
+    this.activeCoachSounds.clear()
+  }
+
   public stopAll(): void {
     this.activeSounds.forEach((audio) => {
       audio.pause()
       audio.currentTime = 0
     })
     this.activeSounds.clear()
+    this.activeCoachSounds.clear()
     logger.info('[SoundService] All sounds stopped.')
   }
 }

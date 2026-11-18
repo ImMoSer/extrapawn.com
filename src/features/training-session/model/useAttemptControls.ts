@@ -31,6 +31,7 @@ interface AttemptControlsDependencies {
     solved: boolean,
     telemetry: PuzzleAttemptTelemetry,
     attemptsUsedOverride?: number,
+    options?: { suppressOutcomeSound?: boolean },
   ) => Promise<void>
   startPracticeReplay: (puzzleId?: string) => void
   fetchOverview: () => Promise<HubOverviewDTO>
@@ -113,7 +114,7 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
     )
   }
 
-  async function resignCurrentPuzzle(): Promise<void> {
+  async function resignCurrentPuzzle(options?: { suppressOutcomeSound?: boolean }): Promise<void> {
     clock.clearAutoNextTimeout()
     const sess = state.hydratedSession.value
     const item = state.currentItem.value
@@ -159,6 +160,7 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
       false,
       telemetry,
       attemptsUsedAtResign,
+      options,
     )
   }
 

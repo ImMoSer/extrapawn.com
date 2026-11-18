@@ -18,7 +18,11 @@ export type SoundEffect =
   | 'tactics_error'
   | 'tactics_success'
   | 'applause'
-  | 'you_will_never_win'
+  // Coach Voice SFX (mutually exclusive voice channel)
+  | 'coach_never_win'
+  | 'coach_your_move'
+  | 'coach_hopeless_restart'
+  | 'coach_hopeless_resign'
   // Timer SFX
   | 'timer_10s'
   | 'timer_8s'

@@ -1,4 +1,5 @@
 import {
+  GameAudioEngine,
   useGameStore,
   type EndgameAutomatPromptRequest,
   type EndgameHopelessPromptRequest,
@@ -6,7 +7,6 @@ import {
   type PuzzlePuzzle,
 } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
-import { soundService } from '@/shared/lib/sound'
 import {
   resolveBotEngineForDifficulty,
   validateBotLadderEngine,
@@ -304,25 +304,28 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
 
     if (choice === 'suffer') {
       prompt.suffer()
+      GameAudioEngine.playHopelessSuffer()
       if (viewState.value === 'playing') {
         clock.resumeTimer()
       }
       return
     }
 
-    soundService.stopAll()
     if (choice === 'restart') {
+      GameAudioEngine.stopCoachVoice()
       await attemptControls.restartCurrentPuzzle()
+      GameAudioEngine.playHopelessRestart()
       return
     }
 
+    GameAudioEngine.playHopelessResign()
     if (viewState.value === 'practice_replay') {
       useGameStore().setGamePhase('GAMEOVER')
       practiceFeedbackState.value = 'failed'
       return
     }
 
-    await attemptControls.resignCurrentPuzzle()
+    await attemptControls.resignCurrentPuzzle({ suppressOutcomeSound: true })
   }
 
   return {

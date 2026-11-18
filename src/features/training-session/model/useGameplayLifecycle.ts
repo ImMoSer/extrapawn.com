@@ -255,6 +255,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     solved: boolean,
     telemetry: PuzzleAttemptTelemetry,
     attemptsUsedOverride?: number,
+    options?: { suppressOutcomeSound?: boolean },
   ): Promise<void> {
     const attemptKey = `${sessionId}:${puzzleId}`
     if (inFlightAttemptKey === attemptKey) return
@@ -272,8 +273,10 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     const elapsedMs = clock.consumeElapsedTimeMs()
     const failStage: AttemptFailStage = solved ? 'none' : telemetry.failStage
 
-    if (solved) GameAudioEngine.playFeatureSuccess()
-    else GameAudioEngine.playFeatureError()
+    if (!options?.suppressOutcomeSound) {
+      if (solved) GameAudioEngine.playFeatureSuccess()
+      else GameAudioEngine.playFeatureError()
+    }
 
     const attemptStartedAt = Date.now()
     const isCrashtestActive = crashTest.isCrashtestActiveForSession(sess.session)
