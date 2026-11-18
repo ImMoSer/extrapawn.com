@@ -876,7 +876,14 @@
       },
       "animationDuration": "Длительность анимации",
       "board": "Дизайн доски",
-      "pieces": "Стиль фигур"
+      "pieces": "Стиль фигур",
+      "endgameAutomatTitle": "Автомат в тривиальных эндшпилях",
+      "endgameAutomatSpeed": "Скорость ходов автомата",
+      "endgameAutomatModes": {
+        "off": "Выкл",
+        "unknown": "Спрашивать",
+        "on": "Вкл"
+      }
     },
     "crashtest": {},
     "analysis": {
@@ -1016,6 +1023,14 @@
         "practiceBadge": "ПРАКТИКА",
         "winTarget": "ИГРА НА ПОБЕДУ",
         "woodpeckerStreak": "Дятел {streak}/3"
+      },
+      "automat": {
+        "promptMessage": "Вы достигли тривиальной позиции, мат через {moves} ходов. Хотите поставить мат сами или передать автомату?",
+        "rememberChoice": "Запомнить выбор",
+        "settingsHint": "Решение всегда можно изменить в Настройках",
+        "playManualBtn": "Вручную",
+        "runAutomatBtn": "Автомат",
+        "runningBadge": "АВТОМАТ · МАТ В {moves}"
       },
       "units": {
         "dayShort": "д",

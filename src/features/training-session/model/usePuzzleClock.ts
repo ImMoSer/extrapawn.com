@@ -14,7 +14,10 @@ export interface PuzzleClockController {
   clearAutoNextTimeout: () => void
 }
 
-export function usePuzzleClock(viewState: Ref<TrainingViewState>): PuzzleClockController {
+export function usePuzzleClock(
+  viewState: Ref<TrainingViewState>,
+  isExternallyPaused?: () => boolean,
+): PuzzleClockController {
   const currentTimeMs = ref<number>(0)
   let timerStartedAt = 0
   let accumulatedBeforePauseMs = 0
@@ -66,6 +69,9 @@ export function usePuzzleClock(viewState: Ref<TrainingViewState>): PuzzleClockCo
   }
 
   function resumeTimer(): void {
+    if (isExternallyPaused?.()) {
+      return
+    }
     if (timerIntervalId === null && viewState.value === 'playing') {
       timerStartedAt = Date.now()
       timerIntervalId = setInterval(() => {

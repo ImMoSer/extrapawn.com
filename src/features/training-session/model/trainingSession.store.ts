@@ -1,7 +1,9 @@
 import type {
+  EndgameAutomatPromptRequest,
   PuzzleAttemptTelemetry,
   PuzzlePuzzle,
 } from '@/entities/game'
+import { usePreferencesStore } from '@/entities/user'
 import {
   resolveBotEngineForDifficulty,
   validateBotLadderEngine,
@@ -77,12 +79,19 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const practiceFeedbackState = ref<PracticeFeedbackState>('idle')
   const currentPuzzleUserMoves = ref<number>(0)
   const analysisReturnState = ref<InspectionReturnState>('awaiting_next')
+  const automatPrompt = ref<EndgameAutomatPromptRequest | null>(null)
+  const automatRemainingMoves = ref<number | null>(null)
+  const preferencesStore = usePreferencesStore()
 
   let activePlayToken = 0
   let savedRetrySnapshot: RetryBoardSnapshot | null = null
   const itemByPuzzleId = new Map<string, HydratedSessionItem>()
 
-  const clock = usePuzzleClock(viewState)
+  const isAutomatLocked = computed<boolean>(
+    () => automatPrompt.value !== null || automatRemainingMoves.value !== null,
+  )
+
+  const clock = usePuzzleClock(viewState, () => isAutomatLocked.value)
 
   const activeDisciplineOverview = computed<DisciplineOverviewDTO | null>(() => {
     if (!overview.value) return null
@@ -137,7 +146,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   )
 
   const canRestartCurrentPuzzle = computed<boolean>(() => {
-    if (isSubmittingAttempt.value || isPersistingRetry.value) return false
+    if (isSubmittingAttempt.value || isPersistingRetry.value || isAutomatLocked.value) return false
     if (viewState.value === 'practice_replay') return Boolean(practicePuzzle.value)
     if (viewState.value === 'awaiting_retry') return canRestartFromRetryPrompt(currentItem.value)
     if (viewState.value === 'playing') {
@@ -147,7 +156,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   })
 
   const canResignCurrentPuzzle = computed<boolean>(() => {
-    if (isSubmittingAttempt.value || isPersistingRetry.value) return false
+    if (isSubmittingAttempt.value || isPersistingRetry.value || isAutomatLocked.value) return false
     return (
       (viewState.value === 'playing' || viewState.value === 'awaiting_retry') &&
       currentItem.value?.status === 'pending'
@@ -198,6 +207,8 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     practiceFeedbackState,
     currentPuzzleUserMoves,
     analysisReturnState,
+    automatPrompt,
+    automatRemainingMoves,
     currentItem,
     itemByPuzzleId,
     runtime: {
@@ -254,6 +265,30 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     fetchTacticsCourseCurriculum: hubActions.fetchTacticsCourseCurriculum,
   })
 
+  function resolveAutomatPrompt(choice: 'automat' | 'manual', rememberChoice: boolean): void {
+    const prompt = automatPrompt.value
+    if (!prompt) return
+    automatPrompt.value = null
+
+    if (rememberChoice) {
+      void preferencesStore.updatePreferences({
+        gameplay: {
+          endgameAutomat: choice === 'automat' ? 'on' : 'off',
+        },
+      })
+    }
+
+    if (choice === 'automat') {
+      prompt.accept()
+      return
+    }
+
+    prompt.decline()
+    if (viewState.value === 'playing') {
+      clock.resumeTimer()
+    }
+  }
+
   return {
     // State
     overview,
@@ -281,6 +316,8 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     practicePuzzle,
     practiceFeedbackState,
     currentPuzzleUserMoves,
+    automatPrompt,
+    automatRemainingMoves,
 
     // Getters
     activeDisciplineOverview,
@@ -296,6 +333,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     isAnalysisMode,
     isFinished,
     isBoardSessionActive,
+    isAutomatLocked,
     currentAttemptsUsed,
     currentAttemptNumber,
     displayAttemptNumber,
@@ -317,6 +355,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     exitPuzzleAnalysis: inspection.exitPuzzleAnalysis,
     pauseToHub: attemptControls.pauseToHub,
     dismissActiveSession: attemptControls.dismissActiveSession,
+    resolveAutomatPrompt,
     formatDurationMs,
   }
 })

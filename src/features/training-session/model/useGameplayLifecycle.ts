@@ -26,6 +26,7 @@ import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { markRaw } from 'vue'
 import { getItemAttemptsUsed } from '../lib/sessionItemPolicy'
+import { buildEndgameAutomatCallbacks } from '../lib/buildAutomatCallbacks'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 import { findNextPendingIndex } from './buildSessionReport'
 import { extractErrorText, type TrainingSessionSharedState } from './trainingSession.types'
@@ -149,12 +150,21 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     state.practicePuzzle.value = null
     state.practiceFeedbackState.value = 'idle'
     state.currentPuzzleUserMoves.value = 0
+    state.automatPrompt.value = null
+    state.automatRemainingMoves.value = null
     state.runtime.setSavedRetrySnapshot(null)
 
     const strategy = new PuzzleStrategy(puzzle, humanColor, sess.session.discipline, {
       planId: sess.session.id.slice(0, 12),
       botEngineOverride: botEngine,
       delays: preferencesStore.preferences.delays,
+      automat: buildEndgameAutomatCallbacks({
+        state,
+        clock,
+        preferencesStore,
+        isCrashtest: () => crashTest.isCrashtestActiveForSession(sess.session),
+        pauseClock: true,
+      }),
       onUserMovePlayed: (userMovesCount: number) => {
         if (state.runtime.getPlayToken() === tokenAtLaunch) {
           state.currentPuzzleUserMoves.value = userMovesCount

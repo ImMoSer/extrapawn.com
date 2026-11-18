@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  EndgameAutomatOverlay,
   TrainingHubDashboard,
   TrainingPlayTopInfo,
   TrainingSessionReport,
@@ -39,7 +40,7 @@ onUnmounted(() => {
 <template>
   <TrainingHubDashboard v-if="store.viewState === 'hub'" :mode="props.mode" />
   <TrainingSessionReport v-else-if="store.viewState === 'report'" />
-  <GameLayout v-else>
+  <GameLayout v-else :board-locked="store.isAutomatLocked">
     <template #left-panel>
       <TrainingSessionSidebar />
     </template>
@@ -47,7 +48,7 @@ onUnmounted(() => {
       <TrainingPlayTopInfo />
     </template>
     <template #center-column>
-      <!-- Board rendered by GameLayout -->
+      <EndgameAutomatOverlay />
     </template>
     <template #right-panel>
       <RightSidebarSlot />

@@ -16,15 +16,15 @@
   - `game-layout/ui/GameLayout.vue` и `ControlCenter.vue` — адаптивный трёхколоночный игровой экран с шахматной доской, верхней инфо-полоской и боковой панелью.
 - **`src/features/`** — бизнес-сценарии пользователя:
   - `training-session` — модульная подсистема Тренировочного Центра, Разминки и Классических курсов:
-    - `model/`: компактный Pinia-фасад `trainingSession.store.ts` (`~325` строк) + модули единой ответственности `trainingSession.types.ts`, `usePuzzleClock.ts`, `buildSessionReport.ts`, `useHubAndCurriculumActions.ts`, `useGameplayLifecycle.ts`, `useAttemptControls.ts`, `useInspectionAndReplay.ts`, `useCrashTestActions.ts` (каждый строго `< 500` строк).
-    - `lib/`: `sessionItemPolicy.ts` (3 попытки `Restart / Resign`, блокировка анализа `pending`-задач, `Practice Replay`), `sessionPuzzleAdapter.ts`, `crashTestReportLogger.ts`.
-    - `ui/`: `TrainingHubDashboard.vue` + дочерние секции `TrainingSprintCourseSection.vue` и `TrainingWarmupConfigurator.vue`, а также `TacticsCourseCurriculumView.vue`, `TrainingSessionSidebar.vue`, `TrainingPlayTopInfo.vue`, `TrainingSessionReport.vue`.
+    - `model/`: компактный Pinia-фасад `trainingSession.store.ts` (`~360` строк) + модули единой ответственности `trainingSession.types.ts`, `usePuzzleClock.ts`, `buildSessionReport.ts`, `useHubAndCurriculumActions.ts`, `useGameplayLifecycle.ts`, `useAttemptControls.ts`, `useInspectionAndReplay.ts`, `useCrashTestActions.ts` (каждый строго `< 500` строк).
+    - `lib/`: `sessionItemPolicy.ts` (3 попытки `Restart / Resign`, блокировка анализа `pending`-задач, `Practice Replay`), `sessionPuzzleAdapter.ts`, `buildAutomatCallbacks.ts`, `crashTestReportLogger.ts`.
+    - `ui/`: `TrainingHubDashboard.vue` + дочерние секции `TrainingSprintCourseSection.vue` и `TrainingWarmupConfigurator.vue`, а также `TacticsCourseCurriculumView.vue`, `TrainingSessionSidebar.vue`, `TrainingPlayTopInfo.vue`, `EndgameAutomatOverlay.vue`, `TrainingSessionReport.vue`.
   - `profile` — диагностические виджеты и матрицы Кабинета 2.0 (`ECharts`).
   - `coach` — серверный ИИ-тренер (`coach.store.ts`, визуальные команды доски `mark / route / arrow`) и контроллер краштеста (`crashtest.store.ts`).
   - `analysis` — локальный движковый анализ в браузере (`analysis.store.ts`, `MultiPV`).
-  - `settings` — меню настроек, выбор языка, модалка юридического согласия (`LegalConsentModal.vue`).
+  - `settings` — меню настроек (`SettingsMenu.vue`, `SettingsBoardPiecesSection.vue`), выбор языка, модалка юридического согласия (`LegalConsentModal.vue`).
 - **`src/entities/`** — чистые бизнес-сущности:
-  - `game` — `game.store.ts`, `board.store.ts`, `PuzzleStrategy.ts` (`scenarioOnly`, `playOutOnly`, `scenarioPlus`, ничьи по 4 правилам ФИДЕ), `WebChessBoard.vue`, `PgnTree.vue`.
+  - `game` — `game.store.ts`, `board.store.ts`, `PuzzleStrategy.ts` + `puzzle.types.ts` (`scenarioOnly`, `playOutOnly`, `scenarioPlus`, ничьи по 4 правилам ФИДЕ), `EndgameAutomatController.ts` + `lib/endgameAutomatRules.ts`, `WebChessBoard.vue`, `PgnTree.vue`.
   - `training` — типизированный API-клиент `training.api.ts`, DTO и таксономия `training.types.ts`.
   - `user` — `auth.store.ts` (Lichess OAuth2 сессия), `preferences.store.ts`.
   - `engine` — клиент спарринг-движков `enginePlay.service.ts`.
@@ -44,6 +44,7 @@
 2. **Дизайн и локализация (`DE / EN / RU`):**
    - Строгое соблюдение [`css_info.md`](file:///c:/MY_APPS/CHESS_APP/css_info.md): нулевой хардкод цветов, `font-condensed` для нотации и цифр, короткие глагольные кнопки (`<= 14–16` символов) с защитой `min-w-0` + `truncate`.
    - Стопроцентный паритет ключей и отсутствие пустых строк (`""`) между [`de.json`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/locales/de.json), [`en.json`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/locales/en.json) и [`ru.json`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/locales/ru.json), контролируемый unit-тестом `i18n.spec.ts`.
+3. **Опциональный «Автомат» в тривиальных эндшпилях (`Gaviota-Only`):** в фазе доигрывания на победу (`isPlayoutMode`, `objective === 'win'`, ход игрока) контроллер [`EndgameAutomatController.ts`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/entities/game/model/EndgameAutomatController.ts) проверяет универсальное условие [`endgameAutomatRules.ts`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/entities/game/lib/endgameAutomatRules.ts): на доске `<= 5` фигур, у бота строго одинокий король, у игрока есть хотя бы одна тяжёлая фигура (`Q` или `R`), причём стартовый `EndingFEN` задачи изначально не являлся такой позицией (универсальная защита упражнений на технику матования). При подтверждении мата по 3–5-фигурным таблицам Gaviota (`POST /api/gaviota/automat-line`, `Zero-Fallback`: без сети или при `503` игрок продолжает вручную без уведомлений) система действует по настройке `gameplay.endgameAutomat` (`'unknown'` по умолчанию показывает диалог [`EndgameAutomatOverlay.vue`](file:///c:/MY_APPS/CHESS_APP/app_vue/src/features/training-session/ui/EndgameAutomatOverlay.vue) с галочкой запоминания выбора `'on' | 'off'`; при старте автомата таймер задачи ставится на паузу, ввод блокируется и с шагом `delays.automatMoveDelayMs` разыгрывается кратчайший табличный мат до `#`).
 
 ---
 

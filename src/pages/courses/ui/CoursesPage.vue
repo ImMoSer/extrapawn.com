@@ -5,6 +5,7 @@ import {
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import {
+  EndgameAutomatOverlay,
   TacticsCourseCurriculumView,
   TrainingPlayTopInfo,
   TrainingSessionReport,
@@ -408,7 +409,7 @@ onUnmounted(() => {
   <TrainingSessionReport v-else-if="store.viewState === 'report'" />
 
   <!-- 3. INTERACTIVE BOARD PLAY & ANALYSIS -->
-  <GameLayout v-else>
+  <GameLayout v-else :board-locked="store.isAutomatLocked">
     <template #left-panel>
       <TrainingSessionSidebar />
     </template>
@@ -416,7 +417,7 @@ onUnmounted(() => {
       <TrainingPlayTopInfo />
     </template>
     <template #center-column>
-      <!-- Board rendered by GameLayout -->
+      <EndgameAutomatOverlay />
     </template>
     <template #right-panel>
       <RightSidebarSlot />

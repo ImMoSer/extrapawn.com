@@ -1,98 +1,35 @@
-import { enginePlayService } from '../lib/EnginePlayService'
-import { useBoardStore } from './board.store'
-import { isFideDrawReason, useGameStore } from './game.store'
-import type { GameplayStrategyConfig, GameStatusInfo, IGameplayStrategy } from './strategy.types'
+import i18n from '@/shared/config/i18n'
 import { areMovesEqual, extractPrimaryUciMove } from '@/shared/lib/chess-utils'
 import logger from '@/shared/lib/logger'
 import { soundService } from '@/shared/lib/sound'
-import type { EngineId } from '@/shared/types/api.types'
-import i18n from '@/shared/config/i18n'
-import { parseFen } from 'chessops/fen'
-import type { Color as ChessgroundColor } from '@lichess-org/chessground/types'
+import { enginePlayService } from '../lib/EnginePlayService'
+import { useBoardStore } from './board.store'
+import { EndgameAutomatController } from './EndgameAutomatController'
+import { isFideDrawReason, useGameStore } from './game.store'
+import {
+  determineHumanColor,
+  type PuzzleAttemptTelemetry,
+  type PuzzleFailStage,
+  type PuzzleObjective,
+  type PuzzlePuzzle,
+  type PuzzleStrategyCallbacks,
+  type PuzzleStrategyType,
+  type WorkoutPuzzle,
+} from './puzzle.types'
+import type { GameplayStrategyConfig, GameStatusInfo, IGameplayStrategy } from './strategy.types'
+
+export {
+  determineHumanColor,
+  type PuzzleAttemptTelemetry,
+  type PuzzleFailStage,
+  type PuzzleObjective,
+  type PuzzlePuzzle,
+  type PuzzleStrategyCallbacks,
+  type PuzzleStrategyType,
+  type WorkoutPuzzle,
+}
 
 const t = i18n.global.t
-
-export type PuzzleStrategyType = 'playOutOnly' | 'scenarioOnly' | 'scenarioPlus'
-export type PuzzleObjective = 'win' | 'hold_draw'
-export type PuzzleFailStage = 'none' | 'scenario' | 'playout'
-
-export interface PuzzleAttemptTelemetry {
-  firstMoveFailed: boolean
-  failStage: PuzzleFailStage
-  outcomeReason: string
-}
-
-export interface PuzzlePuzzle {
-  puzzle_id: string
-  puzzle_type: string
-  category: string
-  category_comby?: string[]
-  motifs_pg?: string[]
-  sub_category?: string
-  difficulty?: string
-  rating?: number | string
-  strategy: PuzzleStrategyType
-  first_move: 'bot' | 'user'
-  user_color?: 'white' | 'black'
-  objective?: PuzzleObjective
-  domain?: string
-  course_slug?: string
-  course_id?: number
-  global_batch_id?: number
-  batch_id?: number
-  batch_title?: string
-  week?: number
-  is_exam?: boolean
-  is_woodpecker?: boolean
-  woodpecker_streak?: number
-  twin_group_id?: string
-  twin_role?: string
-  initial_fen: string
-  tactical_solution?: string
-  puzzle_fen?: string
-  is_golden?: boolean
-  userSelectedColor?: boolean
-}
-
-export type WorkoutPuzzle = PuzzlePuzzle
-
-export function determineHumanColor(puzzle: PuzzlePuzzle): ChessgroundColor {
-  const parsed = parseFen(puzzle.initial_fen)
-  if (parsed.isErr) {
-    throw new Error(
-      `[PuzzleStrategy] Invalid initial_fen in puzzle ${puzzle.puzzle_id}: "${puzzle.initial_fen}". Fail-Fast!`,
-    )
-  }
-  if (puzzle.first_move !== 'bot' && puzzle.first_move !== 'user') {
-    throw new Error(
-      `[PuzzleStrategy] Invalid first_move in puzzle ${puzzle.puzzle_id}: "${String(puzzle.first_move)}". Fail-Fast!`,
-    )
-  }
-  const setup = parsed.unwrap()
-  const fenTurn: ChessgroundColor = setup.turn === 'white' ? 'white' : 'black'
-  const derivedColor: ChessgroundColor =
-    puzzle.first_move === 'bot' ? (fenTurn === 'white' ? 'black' : 'white') : fenTurn
-
-  if (puzzle.user_color !== undefined && puzzle.user_color !== derivedColor) {
-    throw new Error(
-      `[PuzzleStrategy] user_color mismatch in puzzle ${puzzle.puzzle_id}: expected "${derivedColor}" from initial_fen/first_move, got "${puzzle.user_color}". Fail-Fast!`,
-    )
-  }
-
-  return derivedColor
-}
-
-export interface PuzzleStrategyCallbacks {
-  onSuccess?: (reason?: string, telemetry?: PuzzleAttemptTelemetry) => void | Promise<void>
-  onFailure?: (telemetry?: PuzzleAttemptTelemetry) => void | Promise<void>
-  onGameOver?: (status: GameStatusInfo) => void
-  onFeedback?: (message: string) => void
-  onUndo?: () => void
-  onUserMovePlayed?: (userMovesCount: number) => void
-  planId?: string
-  botEngineOverride?: EngineId
-  delays?: Partial<GameplayStrategyConfig>
-}
 
 export class PuzzleStrategy implements IGameplayStrategy {
   private puzzle: PuzzlePuzzle
@@ -103,6 +40,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   private scenarioIndex = 0
   private isPlayoutMode: boolean
   private callbacks?: PuzzleStrategyCallbacks
+  private automatController: EndgameAutomatController
 
   private userMovesPlayed = 0
   private deviatedInScenario = false
@@ -158,6 +96,22 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
     this.prevScenarioIndex = this.scenarioIndex
     this.prevPlayoutMode = this.isPlayoutMode
+    this.automatController = new EndgameAutomatController(
+      {
+        puzzle: this.puzzle,
+        humanColor: this.humanColor,
+        objective: this.objective,
+        isPlayoutMode: () => this.isPlayoutMode,
+        isActiveAndUnresolved: () => !this.isDestroyed && !this.isResolved,
+        recordAutomatMove: (uci: string) => {
+          this.playedMovesUci.push(uci)
+        },
+        deliverAutomatSuccess: async () => {
+          await this.triggerSuccess('checkmate_automat')
+        },
+      },
+      callbacks?.automat,
+    )
   }
 
   get sessionId(): string {
@@ -203,10 +157,15 @@ export class PuzzleStrategy implements IGameplayStrategy {
 
   onDestroy() {
     this.isDestroyed = true
+    this.automatController.destroy()
     if (this.nextPuzzleTimeout !== null) {
       clearTimeout(this.nextPuzzleTimeout)
       this.nextPuzzleTimeout = null
     }
+  }
+
+  validateUserMove(): boolean {
+    return !this.automatController.isLocked
   }
 
   checkWinCondition(status: GameStatusInfo): boolean {
@@ -394,6 +353,7 @@ export class PuzzleStrategy implements IGameplayStrategy {
   }
 
   onUserMoveUndone() {
+    this.automatController.resetOnUndo()
     this.scenarioIndex = this.prevScenarioIndex
     this.isPlayoutMode = this.prevPlayoutMode
     this.userMovesPlayed = this.prevUserMovesPlayed
@@ -433,10 +393,16 @@ export class PuzzleStrategy implements IGameplayStrategy {
         isTacticsCourse
       ) {
         await this.triggerSuccess('scenario_complete')
-      } else if (this.puzzle.strategy === 'scenarioPlus') {
+        return
+      }
+      if (this.puzzle.strategy === 'scenarioPlus') {
         this.isPlayoutMode = true
         this.callbacks?.onFeedback?.(t('features.trainingCenter.play.playoutStart'))
       }
+    }
+
+    if (this.isPlayoutMode && !this.isDestroyed && !this.isResolved) {
+      await this.automatController.evaluateAfterBotTurn()
     }
   }
 

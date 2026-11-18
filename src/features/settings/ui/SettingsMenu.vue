@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import {
-  AVAILABLE_BOARDS,
-  AVAILABLE_PIECE_SETS,
   NEXT_PUZZLE_DELAY_STEPS,
   normalizeNextPuzzleDelayMs,
   useAuthStore,
   usePreferencesStore,
+  type EndgameAutomatMode,
   type UserPreferencesDto,
 } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
@@ -16,7 +15,7 @@ import {
   type CrashtestEngineId,
 } from '@/shared/types/api.types'
 import {
-  ColorPaletteOutline,
+  FlashOutline,
   GameControllerOutline,
   LogInOutline,
   LogOutOutline,
@@ -27,8 +26,6 @@ import {
 } from '@vicons/ionicons5'
 import {
   NButton,
-  NCollapse,
-  NCollapseItem,
   NDrawer,
   NDrawerContent,
   NIcon,
@@ -39,6 +36,7 @@ import {
 import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SettingsBoardPiecesSection from './SettingsBoardPiecesSection.vue'
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
@@ -47,8 +45,8 @@ const { isAuthenticated } = storeToRefs(authStore)
 const { t } = useI18n()
 
 const isOpen = ref(false)
-const boardTabRef = ref<HTMLElement | null>(null)
-const expandedCollapseNames = ref<string[]>([])
+
+const automatModes: readonly EndgameAutomatMode[] = ['off', 'unknown', 'on']
 
 const crashtestEngineOptions = computed(() =>
   CRASHTEST_ENGINES.map((id) => ({
@@ -56,14 +54,6 @@ const crashtestEngineOptions = computed(() =>
     value: id,
   })),
 )
-
-const handleCollapseChange = (expandedNames: string[]) => {
-  if (expandedNames.includes('board_pieces')) {
-    setTimeout(() => {
-      boardTabRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }, 150)
-  }
-}
 
 const draftPreferences = ref<UserPreferencesDto>(
   JSON.parse(JSON.stringify(preferencesStore.preferences)),
@@ -298,6 +288,47 @@ const handleAuthAction = () => {
               </div>
             </div>
 
+            <!-- Endgame Automat (Gaviota DTM) -->
+            <div class="pt-2 border-t border-border/60 flex flex-col gap-2.5">
+              <div class="flex items-center gap-1.5 text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary">
+                <NIcon class="text-brand"><FlashOutline /></NIcon>
+                <span>{{ t('features.settings.endgameAutomatTitle') }}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 p-1 rounded-md bg-canvas border border-border">
+                <button
+                  v-for="mode in automatModes"
+                  :key="mode"
+                  type="button"
+                  class="min-w-0 overflow-hidden py-1.5 px-2 rounded-sm font-display font-medium text-xs transition-colors cursor-pointer border text-center"
+                  :class="
+                    draftPreferences.gameplay.endgameAutomat === mode
+                      ? 'bg-surface text-text-primary border-border-hover shadow-xs'
+                      : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary'
+                  "
+                  @click="draftPreferences.gameplay.endgameAutomat = mode"
+                >
+                  <span class="truncate block">{{ t(`features.settings.endgameAutomatModes.${mode}`) }}</span>
+                </button>
+              </div>
+
+              <div v-if="draftPreferences.gameplay.endgameAutomat !== 'off'">
+                <div class="text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary mb-1.5">
+                  {{ t('features.settings.endgameAutomatSpeed') }}
+                </div>
+                <div class="flex items-center gap-3.5">
+                  <NSlider
+                    v-model:value="draftPreferences.delays.automatMoveDelayMs"
+                    :min="100"
+                    :max="800"
+                    :step="50"
+                  />
+                  <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
+                    {{ draftPreferences.delays.automatMoveDelayMs }}ms
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <!-- Developer Crashtest Section (Only for MO3EP) -->
             <div
               v-if="authStore.isMo3ep"
@@ -347,73 +378,12 @@ const handleAuthAction = () => {
           </div>
 
           <!-- 5. Board & Pieces Tab -->
-          <div ref="boardTabRef">
-            <NCollapse
-              v-model:expanded-names="expandedCollapseNames"
-              @update:expanded-names="handleCollapseChange"
-            >
-              <NCollapseItem name="board_pieces">
-                <template #header>
-                  <div class="flex items-center gap-2.5 font-display font-semibold text-sm text-text-primary">
-                    <NIcon><ColorPaletteOutline /></NIcon>
-                    <span>{{ t('features.settings.selectBoard') }} & {{ t('features.settings.selectPieces') }}</span>
-                  </div>
-                </template>
-
-                <div class="p-3.5 rounded-lg bg-elevated/40 border border-border mb-3">
-                  <div class="text-xs font-display font-semibold uppercase tracking-wider text-text-secondary mb-2.5">
-                    {{ t('features.settings.board') }}
-                  </div>
-                  <div class="grid grid-cols-4 gap-2 max-h-44 overflow-y-auto p-0.5">
-                    <button
-                      v-for="board in AVAILABLE_BOARDS"
-                      :key="board.name"
-                      type="button"
-                      class="p-0.5 rounded-md border-2 bg-canvas cursor-pointer transition-colors"
-                      :class="
-                        board.name === draftPreferences.theme.board
-                          ? 'border-brand'
-                          : 'border-transparent hover:border-border-hover'
-                      "
-                      @click="draftPreferences.theme.board = board.name"
-                    >
-                      <img
-                        :src="`/board/jpg_png/${board.thumbnailFile}`"
-                        :alt="board.name"
-                        class="w-full h-auto block rounded-xs"
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                <div class="p-3.5 rounded-lg bg-elevated/40 border border-border">
-                  <div class="text-xs font-display font-semibold uppercase tracking-wider text-text-secondary mb-2.5">
-                    {{ t('features.settings.pieces') }}
-                  </div>
-                  <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-0.5">
-                    <button
-                      v-for="pieceSet in AVAILABLE_PIECE_SETS"
-                      :key="pieceSet.name"
-                      type="button"
-                      class="aspect-square p-1 rounded-md border-2 bg-canvas cursor-pointer flex items-center justify-center transition-colors"
-                      :class="
-                        pieceSet.name === draftPreferences.theme.pieces
-                          ? 'border-brand'
-                          : 'border-transparent hover:border-border-hover'
-                      "
-                      @click="draftPreferences.theme.pieces = pieceSet.name"
-                    >
-                      <img
-                        :src="pieceSet.previewPieceFile"
-                        :alt="pieceSet.name"
-                        class="max-w-4/5 max-h-4/5"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </NCollapseItem>
-            </NCollapse>
-          </div>
+          <SettingsBoardPiecesSection
+            :board="draftPreferences.theme.board"
+            :pieces="draftPreferences.theme.pieces"
+            @update:board="(val) => (draftPreferences.theme.board = val)"
+            @update:pieces="(val) => (draftPreferences.theme.pieces = val)"
+          />
 
           <!-- Footer Actions -->
           <div class="mt-auto pt-4 border-t border-border flex flex-col gap-2.5">

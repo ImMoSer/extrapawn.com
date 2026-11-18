@@ -876,7 +876,14 @@
       },
       "animationDuration": "Animationsdauer",
       "board": "Brett-Design",
-      "pieces": "Figuren-Stil"
+      "pieces": "Figuren-Stil",
+      "endgameAutomatTitle": "Endspiel-Automat",
+      "endgameAutomatSpeed": "Automat-Zugtempo",
+      "endgameAutomatModes": {
+        "off": "Aus",
+        "unknown": "Fragen",
+        "on": "Ein"
+      }
     },
     "crashtest": {},
     "analysis": {
@@ -1016,6 +1023,14 @@
         "practiceBadge": "TRAINING",
         "winTarget": "AUF GEWINN",
         "woodpeckerStreak": "Specht {streak}/3"
+      },
+      "automat": {
+        "promptMessage": "Triviale Stellung erreicht, Matt in {moves} Zügen. Selbst mattsetzen oder an den Automaten übergeben?",
+        "rememberChoice": "Auswahl merken",
+        "settingsHint": "Jederzeit in den Einstellungen änderbar",
+        "playManualBtn": "Selbst",
+        "runAutomatBtn": "Automat",
+        "runningBadge": "AUTOMAT · MATT IN {moves}"
       },
       "units": {
         "dayShort": "T",

@@ -1,4 +1,8 @@
-import type { PuzzleAttemptTelemetry, PuzzlePuzzle } from '@/entities/game'
+import type {
+  EndgameAutomatPromptRequest,
+  PuzzleAttemptTelemetry,
+  PuzzlePuzzle,
+} from '@/entities/game'
 import type {
   AttemptResultDTO,
   BotLadderEngineId,
@@ -91,6 +95,8 @@ export interface TrainingSessionSharedState {
   practiceFeedbackState: Ref<PracticeFeedbackState>
   currentPuzzleUserMoves: Ref<number>
   analysisReturnState: Ref<InspectionReturnState>
+  automatPrompt: Ref<EndgameAutomatPromptRequest | null>
+  automatRemainingMoves: Ref<number | null>
   currentItem: ComputedRef<HydratedSessionItem | null>
   itemByPuzzleId: Map<string, HydratedSessionItem>
   runtime: PlayRuntimeTracker

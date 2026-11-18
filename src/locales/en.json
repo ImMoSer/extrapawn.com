@@ -876,7 +876,14 @@
       },
       "animationDuration": "Animation Duration",
       "board": "Board Design",
-      "pieces": "Pieces Style"
+      "pieces": "Pieces Style",
+      "endgameAutomatTitle": "Trivial Endgame Automat",
+      "endgameAutomatSpeed": "Automat Move Delay",
+      "endgameAutomatModes": {
+        "off": "Off",
+        "unknown": "Ask",
+        "on": "On"
+      }
     },
     "crashtest": {},
     "analysis": {
@@ -1016,6 +1023,14 @@
         "practiceBadge": "PRACTICE",
         "winTarget": "PLAY FOR WIN",
         "woodpeckerStreak": "Woodpecker {streak}/3"
+      },
+      "automat": {
+        "promptMessage": "You reached a trivial position, mate in {moves} moves. Deliver mate yourself or hand over to the automat?",
+        "rememberChoice": "Remember my choice",
+        "settingsHint": "You can always change this in Settings",
+        "playManualBtn": "Manual",
+        "runAutomatBtn": "Automat",
+        "runningBadge": "AUTOMAT · MATE IN {moves}"
       },
       "units": {
         "dayShort": "d",
