@@ -57,7 +57,7 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
   function isCrashtestActiveForSession(session: SessionSummaryDTO): boolean {
     return (
       session.mode === 'crashtest' ||
-      (authStore.isMo3ep && preferencesStore.preferences.gameplay.global_crashtest)
+      (authStore.isDeveloper && preferencesStore.preferences.gameplay.global_crashtest)
     )
   }
 
@@ -119,9 +119,9 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
     jumpToIndex?: number,
     courseSlug?: TacticsCourseSlug,
   ): Promise<HydratedSessionDTO> {
-    if (!authStore.isMo3ep) {
+    if (!authStore.isDeveloper) {
       throw new Error(
-        '[TrainingSessionStore] Crash-Test mode is restricted to developer (mo3ep). Fail-Fast!',
+        '[TrainingSessionStore] Crash-Test mode is restricted to developer and owner roles. Fail-Fast!',
       )
     }
     const slug = courseSlug ?? state.activeCourseSlug.value
@@ -152,9 +152,9 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
   }
 
   async function flagCurrentCoursePuzzle(comment: string): Promise<void> {
-    if (!authStore.isMo3ep) {
+    if (!authStore.isDeveloper) {
       throw new Error(
-        '[TrainingSessionStore] Course QA flagging is restricted to developer (mo3ep). Fail-Fast!',
+        '[TrainingSessionStore] Course QA flagging is restricted to developer and owner roles. Fail-Fast!',
       )
     }
     const sess = state.hydratedSession.value

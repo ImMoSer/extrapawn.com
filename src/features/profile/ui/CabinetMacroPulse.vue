@@ -34,7 +34,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const authStore = useAuthStore()
-const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.isMo3ep))
+const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.canAccessCourses))
 
 const disciplineTimeline = computed(() => {
   return props.cabinet.weekly_timeline.filter(

@@ -57,7 +57,10 @@ interface LichessUserProfile {
   }
 }
 
+export type UserRole = 'user' | 'testuser' | 'developer' | 'owner'
+
 export interface UserSessionProfile extends LichessUserProfile {
+  role?: UserRole
   language?: string | null
   termsAcceptedAt?: string | null
   validatedAt?: number

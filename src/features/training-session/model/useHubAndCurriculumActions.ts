@@ -53,7 +53,7 @@ export function useHubAndCurriculumActions(deps: HubAndCurriculumDependencies) {
     try {
       const data = await trainingApi.getOverview()
       state.overview.value = data
-      if (!isDisciplineVisibleForUser(state.activeDiscipline.value, authStore.isMo3ep)) {
+      if (!isDisciplineVisibleForUser(state.activeDiscipline.value, authStore.canAccessCourses)) {
         state.activeDiscipline.value = 'tactics'
       }
       if (isClassicalCourseDiscipline(state.activeDiscipline.value)) {
@@ -121,7 +121,7 @@ export function useHubAndCurriculumActions(deps: HubAndCurriculumDependencies) {
   }
 
   function selectDiscipline(discipline: TrainingDiscipline): void {
-    const safeDiscipline = isDisciplineVisibleForUser(discipline, authStore.isMo3ep)
+    const safeDiscipline = isDisciplineVisibleForUser(discipline, authStore.canAccessCourses)
       ? discipline
       : 'tactics'
     state.activeDiscipline.value = safeDiscipline

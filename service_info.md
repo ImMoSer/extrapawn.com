@@ -51,8 +51,8 @@
 ## 3. Продакшен Nginx-маршрутизатор (`nginx.conf`)
 
 В продакшене контейнер `app_vue` (`chess_frontend`) выступает входным HTTP-маршрутизатором за Traefik:
-- Проверяет сессию через внутренний подзапрос `auth_request /api/auth/check` к `fastify-app:3000` и прокидывает проверенный `X-User-Id` напрямую в `puzzle-engine:5000`, `stockfish_server:5000`, `engine-hub:5000` и `tableservice:5000` (на публичных маршрутах принудительно очищает `X-User-Id ""`).
-- Применяет строгий IP-рейтлимит (`api_limit` `15r/s`, `engine_limit` `5r/s` с обходом только для верифицированного `mo3ep`), ограничивает `client_max_body_size` до `1M` глобально (`15M` только для `/api/engine-eval/endgame/analyze`), проксирует в `fastify-app` строго белый список `/api/(auth|users|gaviota)/` и отсекает все неизвестные `/api/*` сканы с `404` (`access_log off`) на уровне Nginx.
+- Проверяет сессию через внутренний подзапрос `auth_request /api/auth/check` к `fastify-app:3000` и прокидывает проверенные `X-User-Id` и `X-User-Role` напрямую в `puzzle-engine:5000`, `stockfish_server:5000`, `engine-hub:5000` и `tableservice:5000` (на публичных маршрутах принудительно очищает `X-User-Id ""` и `X-User-Role ""`).
+- Применяет строгий IP-рейтлимит (`api_limit` `15r/s`, `engine_limit` `5r/s` с обходом только для верифицированных ролей `developer` и `owner`), ограничивает `client_max_body_size` до `1M` глобально (`15M` только для `/api/engine-eval/endgame/analyze`), проксирует в `fastify-app` строго белый список `/api/(auth|users|gaviota)/` и отсекает все неизвестные `/api/*` сканы с `404` (`access_log off`) на уровне Nginx.
 - При добавлении любых `add_header` внутри `location`-блока обязательно повторно подключать `include /etc/nginx/security-headers.conf;` (из-за правила наследования заголовков в Nginx).
 
 ---

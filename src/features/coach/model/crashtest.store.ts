@@ -13,12 +13,12 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   const gameStore = useGameStore()
   const preferencesStore = usePreferencesStore()
 
-  const isMo3ep = computed(() => authStore.isMo3ep)
+  const isDeveloper = computed(() => authStore.isDeveloper)
 
   const isCrashtestEnabled = computed({
-    get: () => isMo3ep.value && preferencesStore.preferences.gameplay.global_crashtest,
+    get: () => isDeveloper.value && preferencesStore.preferences.gameplay.global_crashtest,
     set: (val: boolean) => {
-      if (!isMo3ep.value) return
+      if (!isDeveloper.value) return
       void preferencesStore.updatePreferences({ gameplay: { global_crashtest: val } })
     },
   })
@@ -77,7 +77,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   )
 
   const isReadyForCrashtestMove = computed(() => {
-    if (!isMo3ep.value || !isCrashtestEnabled.value) return false
+    if (!isDeveloper.value || !isCrashtestEnabled.value) return false
     if (gameStore.gamePhase !== 'PLAYING') return false
     if (gameStore.isMoveProcessing) return false
     if (boardStore.turn !== boardStore.orientation) return false
@@ -233,7 +233,7 @@ export const useCrashtestStore = defineStore('crashtest', () => {
   }
 
   return {
-    isMo3ep,
+    isDeveloper,
     isCrashtestEnabled,
     crashtestEngine,
     init,

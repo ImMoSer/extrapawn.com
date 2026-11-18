@@ -214,12 +214,12 @@ async function handleLaunchWoodpecker(wp: WoodpeckerCheckpointDTO): Promise<void
 }
 
 async function handleStartOrResumeCrashTest(): Promise<void> {
-  if (!authStore.isMo3ep) return
+  if (!authStore.isDeveloper) return
   await store.startCrashTestSession(false, undefined, props.courseSlug)
 }
 
 async function handleJumpCrashTest(): Promise<void> {
-  if (!authStore.isMo3ep) return
+  if (!authStore.isDeveloper) return
   const maxIdx = Math.max(0, crashTestTotal.value - 1)
   const targetOneBased = jumpIndexInput.value ?? 1
   const zeroBased = Math.max(0, Math.min(maxIdx, Math.floor(targetOneBased) - 1))
@@ -227,7 +227,7 @@ async function handleJumpCrashTest(): Promise<void> {
 }
 
 async function handleRestartCrashTest(): Promise<void> {
-  if (!authStore.isMo3ep) return
+  if (!authStore.isDeveloper) return
   await store.startCrashTestSession(true, 0, props.courseSlug)
 }
 
@@ -362,9 +362,9 @@ async function handleResetCourseProgress(): Promise<void> {
       </div>
     </div>
 
-    <!-- Crash-Test (все 6147 задач трилогии в один батч) & Flagged Queue Panel (Developer MO3EP Only) -->
+    <!-- Crash-Test & Flagged Queue Panel (Restricted to developer / owner roles) -->
     <div
-      v-if="authStore.isMo3ep"
+      v-if="authStore.isDeveloper"
       class="p-3.5 sm:p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
     >
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">

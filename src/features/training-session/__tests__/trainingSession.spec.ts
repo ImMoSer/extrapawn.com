@@ -871,6 +871,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       authStore.userProfile = {
         id: 'mo3ep',
         username: 'MO3EP',
+        role: 'owner',
       }
       await preferencesStore.updatePreferences({
         gameplay: { global_crashtest: true, crashtestEngine: 'mozero' },

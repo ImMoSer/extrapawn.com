@@ -179,9 +179,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- 0. PUBLIC PLACEHOLDER FOR NON-DEVELOPER USERS -->
+  <!-- 0. PUBLIC PLACEHOLDER FOR REGULAR USERS (OPEN TO testuser, developer, owner) -->
   <div
-    v-if="!authStore.isMo3ep"
+    v-if="!authStore.canAccessCourses"
     class="w-full h-full min-h-[70vh] max-w-3xl mx-auto px-4 py-12 flex flex-col items-center justify-center text-center gap-5 text-text-primary select-none"
   >
     <div class="p-8 rounded-lg bg-surface border border-border flex flex-col items-center gap-4 w-full">

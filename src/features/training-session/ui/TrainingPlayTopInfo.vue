@@ -88,7 +88,7 @@ const twinPrompt = computed(() => {
 })
 
 async function handleFlagSubmit(preset?: string): Promise<void> {
-  if (!authStore.isMo3ep) return
+  if (!authStore.isDeveloper) return
   const reason = preset ?? flagComment.value.trim()
   showFlagPopover.value = false
   flagComment.value = ''
@@ -272,7 +272,7 @@ function handleBackAction(): void {
     <!-- Right: Post-Attempt Actions / Analysis Controls / Flag Button -->
     <div class="flex items-center gap-1.5 shrink-0">
       <NButton
-        v-if="authStore.isMo3ep && store.activeSessionSummary?.mode === 'crashtest'"
+        v-if="authStore.isDeveloper && store.activeSessionSummary?.mode === 'crashtest'"
         size="tiny"
         secondary
         type="info"
@@ -286,7 +286,7 @@ function handleBackAction(): void {
       </NButton>
 
       <NPopover
-        v-if="authStore.isMo3ep && isTacticsCourse && !store.isAnalysisMode && !store.isPracticeReplay"
+        v-if="authStore.isDeveloper && isTacticsCourse && !store.isAnalysisMode && !store.isPracticeReplay"
         v-model:show="showFlagPopover"
         trigger="click"
         placement="bottom-end"

@@ -1,6 +1,6 @@
 {
   "name": "extrapawn.com",
-  "version": "26.11.18-0952",
+  "version": "26.11.18-1035",
   "private": true,
   "type": "module",
   "engines": {
@@ -78,5 +78,5 @@
     "vitest": "^4.1.12",
     "vue-tsc": "^3.3.13"
   },
-  "packageManager": "pnpm@11.14.0"
+  "packageManager": "pnpm@12.21.0"
 }

@@ -56,11 +56,11 @@ const crashtestEngineOptions = computed(() =>
 )
 
 const draftPreferences = ref<UserPreferencesDto>(
-  JSON.parse(JSON.stringify(preferencesStore.preferences)),
+  JSON.parse(JSON.stringify(preferencesStore.rawPreferences)),
 )
 
 const initializeDraft = () => {
-  draftPreferences.value = JSON.parse(JSON.stringify(preferencesStore.preferences))
+  draftPreferences.value = JSON.parse(JSON.stringify(preferencesStore.rawPreferences))
 }
 
 watch(isOpen, (newVal) => {
@@ -329,9 +329,9 @@ const handleAuthAction = () => {
               </div>
             </div>
 
-            <!-- Developer Crashtest Section (Only for MO3EP) -->
+            <!-- Developer Crashtest Section (Restricted to developer / owner roles) -->
             <div
-              v-if="authStore.isMo3ep"
+              v-if="authStore.isDeveloper"
               class="p-3 rounded-md bg-danger/10 border border-dashed border-danger/40 flex flex-col gap-3"
             >
               <div class="flex items-center justify-between">

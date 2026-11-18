@@ -126,7 +126,9 @@ const activeGateThreshold = computed<number>(() => {
 const visibleRecentCourses = computed<CourseDTO[]>(() => {
   const courses = cabinetData.value?.recent_courses ?? []
   return courses.filter(
-    (c) => c.status === 'completed' && isDisciplineVisibleForUser(c.discipline, authStore.isMo3ep),
+    (c) =>
+      c.status === 'completed' &&
+      isDisciplineVisibleForUser(c.discipline, authStore.canAccessCourses),
   )
 })
 

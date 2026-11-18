@@ -56,12 +56,12 @@ const selectedFocusGroup = ref<string>('all')
 const selectedFocusKey = ref<string>('all')
 const selectedObjective = ref<TrainingObjective | ''>('')
 
-const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.isMo3ep))
+const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.canAccessCourses))
 const discOverview = computed(() => store.activeDisciplineOverview)
 
 const activeSession = computed(() => {
   const s = discOverview.value?.active_session ?? null
-  if (s?.mode === 'crashtest' && !authStore.isMo3ep) return null
+  if (s?.mode === 'crashtest' && !authStore.isDeveloper) return null
   return s
 })
 
@@ -82,7 +82,7 @@ function applyRouteQueryOverrides(): void {
   if (
     qDisc &&
     isValidTrainingDiscipline(qDisc) &&
-    isDisciplineVisibleForUser(qDisc, authStore.isMo3ep)
+    isDisciplineVisibleForUser(qDisc, authStore.canAccessCourses)
   ) {
     store.selectDiscipline(qDisc)
     syncDefaultsForDiscipline(qDisc)

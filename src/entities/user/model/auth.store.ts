@@ -1,5 +1,5 @@
 import logger from '@/shared/lib/logger'
-import type { UserSessionProfile } from '@/shared/types/api.types'
+import type { UserRole, UserSessionProfile } from '@/shared/types/api.types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
@@ -26,11 +26,22 @@ export const useAuthStore = defineStore('auth', () => {
   const effectiveLichessUsername = computed(() => {
     return targetLichessUsername.value || userProfile.value?.id || ''
   })
-  const isMo3ep = computed(() => {
-    const profile = userProfile.value
-    if (!profile) return false
-    return profile.id === 'mo3ep' || profile.username === 'MO3EP'
+  const userRole = computed<UserRole>(() => {
+    const rawRole = userProfile.value?.role
+    if (rawRole === 'testuser' || rawRole === 'developer' || rawRole === 'owner') {
+      return rawRole
+    }
+    return 'user'
   })
+  const canAccessCourses = computed<boolean>(() => {
+    const role = userRole.value
+    return role === 'testuser' || role === 'developer' || role === 'owner'
+  })
+  const isDeveloper = computed<boolean>(() => {
+    const role = userRole.value
+    return role === 'developer' || role === 'owner'
+  })
+  const isOwner = computed<boolean>(() => userRole.value === 'owner')
 
   function restoreFromStorage() {
     try {
@@ -158,7 +169,10 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     targetLichessUsername,
     effectiveLichessUsername,
-    isMo3ep,
+    userRole,
+    canAccessCourses,
+    isDeveloper,
+    isOwner,
     getUserProfile,
     getIsAuthenticated,
     getIsLoading,

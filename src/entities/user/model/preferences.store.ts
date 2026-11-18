@@ -181,11 +181,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const authStore = useAuthStore()
   const rawPreferences = ref<UserPreferencesDto>({ ...DEFAULT_USER_PREFERENCES })
 
-  const isMo3ep = computed(() => authStore.isMo3ep)
+  const isDeveloper = computed(() => authStore.isDeveloper)
 
   const preferences = computed<UserPreferencesDto>({
     get: () => {
-      if (!isMo3ep.value) {
+      if (!isDeveloper.value) {
         const safeGameplay: GameplayPreferences = {
           ...rawPreferences.value.gameplay,
           global_crashtest: false,
@@ -251,6 +251,9 @@ export const usePreferencesStore = defineStore('preferences', () => {
       }
       merged.gameplay.endgameAutomat = normalizeEndgameAutomatMode(merged.gameplay.endgameAutomat)
       merged.delays.nextPuzzleDelayMs = normalizeNextPuzzleDelayMs(merged.delays.nextPuzzleDelayMs)
+      if (!merged.delays.automatMoveDelayMs || merged.delays.automatMoveDelayMs < 50) {
+        merged.delays.automatMoveDelayMs = DEFAULT_USER_PREFERENCES.delays.automatMoveDelayMs
+      }
       // Migrate legacy coach settings if present
       const legacyCoach = localStorage.getItem(LEGACY_COACH_STORAGE_KEY)
       if (legacyCoach) {
@@ -288,7 +291,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             rawBackendPrefs.gameplay?.language ?? DEFAULT_USER_PREFERENCES.gameplay.language,
           botEngine:
             rawBackendPrefs.gameplay?.botEngine ?? DEFAULT_USER_PREFERENCES.gameplay.botEngine,
-          global_crashtest: isMo3ep.value
+          global_crashtest: isDeveloper.value
             ? (rawBackendPrefs.gameplay?.global_crashtest ??
               DEFAULT_USER_PREFERENCES.gameplay.global_crashtest)
             : false,
@@ -335,9 +338,13 @@ export const usePreferencesStore = defineStore('preferences', () => {
         coach: rawBackendPrefs.coach,
       }
 
-      preferences.value = deepMerge(preferences.value, mappedPrefs)
-      if (preferences.value.gameplay.language) {
-        changeLang(preferences.value.gameplay.language)
+      rawPreferences.value = deepMerge(rawPreferences.value, mappedPrefs)
+      if (rawPreferences.value.delays.automatMoveDelayMs < 50) {
+        rawPreferences.value.delays.automatMoveDelayMs =
+          DEFAULT_USER_PREFERENCES.delays.automatMoveDelayMs
+      }
+      if (rawPreferences.value.gameplay.language) {
+        changeLang(rawPreferences.value.gameplay.language)
       }
       saveLocal()
       logger.info('[PreferencesStore] Preferences loaded from backend.')
@@ -347,7 +354,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
   }
 
   async function updatePreferences(updateDto: DeepPartial<UserPreferencesDto>) {
-    preferences.value = deepMerge(preferences.value, updateDto)
+    rawPreferences.value = deepMerge(rawPreferences.value, updateDto)
     saveLocal()
 
     const hasBackendFields = Boolean(
@@ -375,7 +382,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             gameplay: {
               language: current.gameplay.language,
               botEngine: current.gameplay.botEngine,
-              global_crashtest: isMo3ep.value ? current.gameplay.global_crashtest : false,
+              global_crashtest: isDeveloper.value ? current.gameplay.global_crashtest : false,
               crashtestEngine: current.gameplay.crashtestEngine,
               endgameAutomat: current.gameplay.endgameAutomat,
             },
@@ -448,6 +455,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   return {
     preferences,
+    rawPreferences,
     isLoaded,
     initialize,
     updatePreferences,
