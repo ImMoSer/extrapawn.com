@@ -14,15 +14,20 @@ export const GaviotaAutomatLineSchema = z.object({
 
 export type GaviotaAutomatLineDTO = z.infer<typeof GaviotaAutomatLineSchema>
 
-export const AUTOMAT_INITIAL_DELAY_MS = 750
-export const AUTOMAT_FINAL_DELAY_MS = 250
-export const AUTOMAT_ANIMATION_MS = 200
+export const AUTOMAT_DEFAULT_INITIAL_DELAY_MS = 500
+export const AUTOMAT_FINAL_DELAY_MS = 100
+export const AUTOMAT_MIN_ANIMATION_MS = 80
+export const AUTOMAT_ANIMATION_GAP_MS = 50
 
 /**
  * Computes the pre-move delay (ms) for half-move `stepIndex` in a Gaviota rollout of `totalSteps` plies.
- * Starts calmly at `750 ms` and linearly accelerates on each consecutive ply down to `250 ms` on `#`.
+ * Starts at `initialDelayMs` (default `500 ms`) and linearly accelerates on each consecutive ply down to `100 ms` on `#`.
  */
-export function computeAutomatStepDelayMs(stepIndex: number, totalSteps: number): number {
+export function computeAutomatStepDelayMs(
+  stepIndex: number,
+  totalSteps: number,
+  initialDelayMs: number = AUTOMAT_DEFAULT_INITIAL_DELAY_MS,
+): number {
   if (
     !Number.isInteger(totalSteps) ||
     totalSteps <= 0 ||
@@ -34,13 +39,39 @@ export function computeAutomatStepDelayMs(stepIndex: number, totalSteps: number)
       `[endgameAutomatRules] Invalid step bounds stepIndex=${stepIndex}, totalSteps=${totalSteps}. Fail-Fast!`,
     )
   }
+  if (!Number.isFinite(initialDelayMs) || initialDelayMs < AUTOMAT_FINAL_DELAY_MS) {
+    throw new Error(
+      `[endgameAutomatRules] Invalid initialDelayMs=${initialDelayMs} (must be >= ${AUTOMAT_FINAL_DELAY_MS}). Fail-Fast!`,
+    )
+  }
   if (totalSteps === 1) {
-    return AUTOMAT_INITIAL_DELAY_MS
+    return Math.round(initialDelayMs)
   }
   const progress = stepIndex / (totalSteps - 1)
   return Math.round(
-    AUTOMAT_INITIAL_DELAY_MS - (AUTOMAT_INITIAL_DELAY_MS - AUTOMAT_FINAL_DELAY_MS) * progress,
+    initialDelayMs - (initialDelayMs - AUTOMAT_FINAL_DELAY_MS) * progress,
   )
+}
+
+/**
+ * Computes the piece slide animation duration (ms) for half-move `stepIndex`.
+ * Synchronized with the interval *after* move `stepIndex` (`nextDelayMs - 50 ms`) and floored at `80 ms`
+ * (strictly above Chessground's 70 ms animation disable threshold and strictly below the 100 ms minimum step delay).
+ */
+export function computeAutomatStepAnimationMs(
+  stepIndex: number,
+  totalSteps: number,
+  initialDelayMs: number = AUTOMAT_DEFAULT_INITIAL_DELAY_MS,
+): number {
+  // Validate bounds and initialDelayMs via computeAutomatStepDelayMs (Fail-Fast)
+  computeAutomatStepDelayMs(stepIndex, totalSteps, initialDelayMs)
+
+  const followingDelayMs =
+    stepIndex + 1 < totalSteps
+      ? computeAutomatStepDelayMs(stepIndex + 1, totalSteps, initialDelayMs)
+      : AUTOMAT_FINAL_DELAY_MS
+
+  return Math.max(AUTOMAT_MIN_ANIMATION_MS, followingDelayMs - AUTOMAT_ANIMATION_GAP_MS)
 }
 
 /**

@@ -26,7 +26,7 @@ const props = defineProps({
   drawableShapes: { type: Array as PropType<DrawShape[]>, default: () => [] },
   isAnalysisMode: { type: Boolean, default: false },
   animationEnabled: { type: Boolean, default: true },
-  animationDuration: { type: Number, default: 200 },
+  animationDuration: { type: Number, default: 100 },
   canEdit: { type: Boolean, default: true },
   hideNag: { type: Boolean, default: false },
 })

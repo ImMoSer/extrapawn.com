@@ -54,7 +54,7 @@ export const useBoardStore = defineStore('board', () => {
   const autoShapes = computed(() => [...coachShapes.value, ...analysisShapes.value])
   const lastNag = ref<NagMarker | null>(null)
   const lastMoveTimestamp = ref<number>(0)
-  const animationDurationMs = ref<number>(200)
+  const animationDurationMs = ref<number>(100)
   const animationDurationOverrideMs = ref<number | null>(null)
 
   const isGameOver = computed(() => {

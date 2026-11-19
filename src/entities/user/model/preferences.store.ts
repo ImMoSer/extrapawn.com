@@ -43,8 +43,8 @@ export interface GameplayPreferences {
   endgameAutomat: EndgameAutomatMode
 }
 
-export const NEXT_PUZZLE_DELAY_STEPS = [0, 100, 500, 1000, 2000, 3000] as const
-export type NextPuzzleDelayMs = (typeof NEXT_PUZZLE_DELAY_STEPS)[number]
+export const GAMEPLAY_TIMING_STEPS = [100, 250, 500, 750, 1000] as const
+export type GameplayTimingMs = (typeof GAMEPLAY_TIMING_STEPS)[number]
 
 export interface DelayPreferences {
   initialBotDelayMs: number
@@ -52,6 +52,7 @@ export interface DelayPreferences {
   nextPuzzleDelayMs: number
   restartDelayMs: number
   crashtestDelayMs: number
+  automatDelayMs: number
 }
 
 export interface PuzzlePreferences {
@@ -94,7 +95,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   theme: {
     board: 'wood4',
     pieces: 'alpha',
-    animationDuration: 200,
+    animationDuration: 100,
   },
   engine: {
     useServerCoach: true,
@@ -113,10 +114,11 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesDto = {
   },
   delays: {
     initialBotDelayMs: 500,
-    botDelayMs: 250,
-    nextPuzzleDelayMs: 100,
+    botDelayMs: 100,
+    nextPuzzleDelayMs: 500,
     restartDelayMs: 500,
     crashtestDelayMs: 100,
+    automatDelayMs: 500,
   },
   puzzle: {
     autoNext: true,
@@ -143,13 +145,16 @@ export function normalizeEndgameAutomatMode(value: unknown): EndgameAutomatMode 
   return DEFAULT_USER_PREFERENCES.gameplay.endgameAutomat
 }
 
-export function normalizeNextPuzzleDelayMs(value: unknown): NextPuzzleDelayMs {
+export function normalizeGameplayTimingMs(
+  value: unknown,
+  fallback: GameplayTimingMs,
+): GameplayTimingMs {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs as NextPuzzleDelayMs
+    return fallback
   }
-  let closest: NextPuzzleDelayMs = NEXT_PUZZLE_DELAY_STEPS[0]
+  let closest: GameplayTimingMs = GAMEPLAY_TIMING_STEPS[0]
   let minDiff = Math.abs(value - closest)
-  for (const step of NEXT_PUZZLE_DELAY_STEPS) {
+  for (const step of GAMEPLAY_TIMING_STEPS) {
     const diff = Math.abs(value - step)
     if (diff < minDiff) {
       minDiff = diff
@@ -202,6 +207,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: rawPreferences.value.delays.nextPuzzleDelayMs,
             restartDelayMs: 500,
             crashtestDelayMs: 100,
+            automatDelayMs: rawPreferences.value.delays.automatDelayMs,
           },
         }
       }
@@ -215,6 +221,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             nextPuzzleDelayMs: rawPreferences.value.delays.nextPuzzleDelayMs,
             restartDelayMs: speed,
             crashtestDelayMs: speed,
+            automatDelayMs: rawPreferences.value.delays.automatDelayMs,
           },
         }
       }
@@ -245,8 +252,27 @@ export const usePreferencesStore = defineStore('preferences', () => {
       if (!CRASHTEST_ENGINES.includes(merged.gameplay.crashtestEngine)) {
         merged.gameplay.crashtestEngine = 'stockfish'
       }
+      merged.theme.animationDuration = normalizeGameplayTimingMs(
+        merged.theme.animationDuration,
+        DEFAULT_USER_PREFERENCES.theme.animationDuration as GameplayTimingMs,
+      )
       merged.gameplay.endgameAutomat = normalizeEndgameAutomatMode(merged.gameplay.endgameAutomat)
-      merged.delays.nextPuzzleDelayMs = normalizeNextPuzzleDelayMs(merged.delays.nextPuzzleDelayMs)
+      merged.delays.botDelayMs = normalizeGameplayTimingMs(
+        merged.delays.botDelayMs,
+        DEFAULT_USER_PREFERENCES.delays.botDelayMs as GameplayTimingMs,
+      )
+      merged.delays.nextPuzzleDelayMs = normalizeGameplayTimingMs(
+        merged.delays.nextPuzzleDelayMs,
+        DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs as GameplayTimingMs,
+      )
+      merged.delays.crashtestDelayMs = normalizeGameplayTimingMs(
+        merged.delays.crashtestDelayMs,
+        DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs as GameplayTimingMs,
+      )
+      merged.delays.automatDelayMs = normalizeGameplayTimingMs(
+        merged.delays.automatDelayMs,
+        DEFAULT_USER_PREFERENCES.delays.automatDelayMs as GameplayTimingMs,
+      )
       // Migrate legacy coach settings if present
       const legacyCoach = localStorage.getItem(LEGACY_COACH_STORAGE_KEY)
       if (legacyCoach) {
@@ -276,7 +302,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
       const rawBackendPrefs = await apiClient<UserPreferencesDto>('/users/me/preferences')
 
       const mappedPrefs: DeepPartial<UserPreferencesDto> = {
-        theme: rawBackendPrefs.theme,
+        theme: {
+          board: rawBackendPrefs.theme?.board ?? DEFAULT_USER_PREFERENCES.theme.board,
+          pieces: rawBackendPrefs.theme?.pieces ?? DEFAULT_USER_PREFERENCES.theme.pieces,
+          animationDuration: normalizeGameplayTimingMs(
+            rawBackendPrefs.theme?.animationDuration ?? rawPreferences.value.theme.animationDuration,
+            DEFAULT_USER_PREFERENCES.theme.animationDuration as GameplayTimingMs,
+          ),
+        },
         engine: rawBackendPrefs.engine,
         audio: rawBackendPrefs.audio,
         gameplay: {
@@ -302,18 +335,27 @@ export const usePreferencesStore = defineStore('preferences', () => {
           initialBotDelayMs:
             rawBackendPrefs.delays?.initialBotDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.initialBotDelayMs,
-          botDelayMs:
-            rawBackendPrefs.delays?.botDelayMs ?? DEFAULT_USER_PREFERENCES.delays.botDelayMs,
-          nextPuzzleDelayMs: normalizeNextPuzzleDelayMs(
+          botDelayMs: normalizeGameplayTimingMs(
+            rawBackendPrefs.delays?.botDelayMs ?? rawPreferences.value.delays.botDelayMs,
+            DEFAULT_USER_PREFERENCES.delays.botDelayMs as GameplayTimingMs,
+          ),
+          nextPuzzleDelayMs: normalizeGameplayTimingMs(
             rawBackendPrefs.delays?.nextPuzzleDelayMs ??
               rawPreferences.value.delays.nextPuzzleDelayMs,
+            DEFAULT_USER_PREFERENCES.delays.nextPuzzleDelayMs as GameplayTimingMs,
           ),
           restartDelayMs:
             rawBackendPrefs.delays?.restartDelayMs ??
             DEFAULT_USER_PREFERENCES.delays.restartDelayMs,
-          crashtestDelayMs:
+          crashtestDelayMs: normalizeGameplayTimingMs(
             rawBackendPrefs.delays?.crashtestDelayMs ??
-            DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs,
+              rawPreferences.value.delays.crashtestDelayMs,
+            DEFAULT_USER_PREFERENCES.delays.crashtestDelayMs as GameplayTimingMs,
+          ),
+          automatDelayMs: normalizeGameplayTimingMs(
+            rawBackendPrefs.delays?.automatDelayMs ?? rawPreferences.value.delays.automatDelayMs,
+            DEFAULT_USER_PREFERENCES.delays.automatDelayMs as GameplayTimingMs,
+          ),
         },
         puzzle: {
           autoNext: rawBackendPrefs.puzzle?.autoNext ?? DEFAULT_USER_PREFERENCES.puzzle.autoNext,
@@ -378,6 +420,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
               nextPuzzleDelayMs: current.delays.nextPuzzleDelayMs,
               restartDelayMs: current.delays.restartDelayMs,
               crashtestDelayMs: current.delays.crashtestDelayMs,
+              automatDelayMs: current.delays.automatDelayMs,
             },
             puzzle: current.puzzle,
             analysis: {

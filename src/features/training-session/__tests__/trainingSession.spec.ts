@@ -763,11 +763,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
 
       expect(store.currentItemIndex).toBe(0)
 
-      // 1. Solve TAC-1 -> should stay in 'playing' (no 'awaiting_next' flash) and auto-advance to TAC-2 after nextPuzzleDelayMs (100ms)
+      // 1. Solve TAC-1 -> should stay in 'playing' (no 'awaiting_next' flash) and auto-advance to TAC-2 after nextPuzzleDelayMs (500ms)
       await gameStore.handleUserMove('e1', 'e8')
       expect(store.viewState).toBe('playing')
       expect(store.isAwaitingNext).toBe(false)
-      vi.advanceTimersByTime(100)
+      vi.advanceTimersByTime(500)
       expect(store.viewState).toBe('playing')
       expect(store.currentItemIndex).toBe(1)
       expect(store.currentPuzzle?.puzzle_id).toBe('TAC-2')
@@ -795,7 +795,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       expect(store.currentPuzzle?.puzzle_id).toBe('TAC-3')
 
       // 3. Verify non-developer cannot enable global_crashtest or start Crash-Test session,
-      //    but CAN configure unified nextPuzzleDelayMs across [0, 100, 500, 1000, 2000, 3000]
+      //    but CAN configure unified nextPuzzleDelayMs across [100, 250, 500, 750, 1000]
       const authStore = useAuthStore()
       authStore.userProfile = {
         id: 'other_user',

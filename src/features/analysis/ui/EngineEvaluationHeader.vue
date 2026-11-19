@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { NButton, NIcon, NPopover, NText, NSlider, NCheckbox } from 'naive-ui'
+import { NButton, NIcon, NPopover, NText, NCheckbox } from 'naive-ui'
 import { RefreshOutline, SettingsOutline } from '@vicons/ionicons5'
 import { useAnalysisStore } from '../model/analysis.store'
 import EngineLines from './EngineLines.vue'
@@ -104,25 +104,18 @@ const handleRetryEngineLoad = () => {
   void analysisStore.retryEngineLoad()
 }
 
-const sliderSearchTime = computed({
-  get() {
-    return searchTime.value === 99 ? 35 : searchTime.value
-  },
-  set(val: number) {
-    analysisStore.setSearchTime(val === 35 ? 99 : val)
-  },
-})
+const MULTI_PV_STEPS = [1, 2, 3, 4, 5] as const
 
-const searchTimeMarks = {
-  5: '5s',
-  15: '15s',
-  25: '25s',
-  35: '∞',
-}
+const SEARCH_TIME_OPTIONS: readonly { value: number; label: string }[] = [
+  { value: 5, label: '5s' },
+  { value: 10, label: '10s' },
+  { value: 15, label: '15s' },
+  { value: 25, label: '25s' },
+  { value: 99, label: '∞' },
+]
 
-const formatSearchTimeTooltip = (value: number) => {
-  if (value === 35) return '∞'
-  return `${value}s`
+const handleSearchTimeChange = (value: number) => {
+  analysisStore.setSearchTime(value)
 }
 </script>
 
@@ -185,7 +178,7 @@ const formatSearchTimeTooltip = (value: number) => {
             </n-button>
           </template>
 
-          <div class="flex min-w-[220px] flex-col gap-4 px-2 py-3">
+          <div class="flex min-w-[240px] flex-col gap-3.5 px-2 py-3">
             <n-text
               strong
               class="mb-1 border-b border-border pb-1.5 text-[0.85rem] text-text-primary"
@@ -193,26 +186,34 @@ const formatSearchTimeTooltip = (value: number) => {
               {{ t('features.analysis.engineSettings') }}
             </n-text>
 
-            <!-- MultiPV Slider -->
-            <div class="flex flex-col gap-2">
+            <!-- MultiPV Presets -->
+            <div class="flex flex-col gap-1.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-text-secondary">MultiPV</span>
                 <span class="font-condensed text-xs font-bold text-brand">
                   {{ t('features.analysis.lines', { count: multiPv }) }}
                 </span>
               </div>
-              <n-slider
-                v-model:value="multiPv"
-                :min="1"
-                :max="5"
-                :step="1"
-                class="pt-1 pb-4"
-                @update:value="handlePvChange"
-              />
+              <div class="grid grid-cols-5 gap-1 p-1 rounded-md bg-canvas border border-border">
+                <button
+                  v-for="pv in MULTI_PV_STEPS"
+                  :key="pv"
+                  type="button"
+                  class="min-w-0 overflow-hidden py-1 px-1 rounded-sm font-condensed font-bold text-xs transition-colors cursor-pointer border text-center"
+                  :class="
+                    multiPv === pv
+                      ? 'bg-surface text-text-primary border-border-hover shadow-xs'
+                      : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary'
+                  "
+                  @click="handlePvChange(pv)"
+                >
+                  <span class="truncate block">{{ pv }}</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Search Time Slider -->
-            <div class="flex flex-col gap-2">
+            <!-- Search Time Presets -->
+            <div class="flex flex-col gap-1.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-text-secondary">
                   {{ t('features.analysis.searchTime') }}
@@ -221,15 +222,22 @@ const formatSearchTimeTooltip = (value: number) => {
                   {{ searchTime === 99 ? t('features.analysis.unlimited') : `${searchTime}s` }}
                 </span>
               </div>
-              <n-slider
-                v-model:value="sliderSearchTime"
-                :min="5"
-                :max="35"
-                :step="5"
-                :marks="searchTimeMarks"
-                :format-tooltip="formatSearchTimeTooltip"
-                class="pt-1 pb-4"
-              />
+              <div class="grid grid-cols-5 gap-1 p-1 rounded-md bg-canvas border border-border">
+                <button
+                  v-for="opt in SEARCH_TIME_OPTIONS"
+                  :key="opt.value"
+                  type="button"
+                  class="min-w-0 overflow-hidden py-1 px-1 rounded-sm font-condensed font-bold text-xs transition-colors cursor-pointer border text-center"
+                  :class="
+                    searchTime === opt.value
+                      ? 'bg-surface text-text-primary border-border-hover shadow-xs'
+                      : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary'
+                  "
+                  @click="handleSearchTimeChange(opt.value)"
+                >
+                  <span class="truncate block">{{ opt.label }}</span>
+                </button>
+              </div>
             </div>
 
             <!-- Show Arrows Checkbox -->

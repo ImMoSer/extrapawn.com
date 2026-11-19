@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import {
-  NEXT_PUZZLE_DELAY_STEPS,
-  normalizeNextPuzzleDelayMs,
   useAuthStore,
   usePreferencesStore,
   type EndgameAutomatMode,
@@ -37,6 +35,7 @@ import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsBoardPiecesSection from './SettingsBoardPiecesSection.vue'
+import SettingsTimingSelector from './SettingsTimingSelector.vue'
 
 const authStore = useAuthStore()
 const preferencesStore = usePreferencesStore()
@@ -72,23 +71,6 @@ watch(isOpen, (newVal) => {
 const handleCrashtestEngineChange = (val: CrashtestEngineId) => {
   draftPreferences.value.gameplay.crashtestEngine = val
 }
-
-const nextPuzzleDelayStepIndex = computed<number>({
-  get: () => {
-    const normalized = normalizeNextPuzzleDelayMs(draftPreferences.value.delays.nextPuzzleDelayMs)
-    const idx = NEXT_PUZZLE_DELAY_STEPS.indexOf(normalized)
-    return idx >= 0 ? idx : 1
-  },
-  set: (idx: number) => {
-    const step = NEXT_PUZZLE_DELAY_STEPS[idx]
-    if (step !== undefined) {
-      draftPreferences.value.delays.nextPuzzleDelayMs = step
-    }
-  },
-})
-
-const formatNextPuzzleDelayTooltip = (idx: number): string =>
-  `${NEXT_PUZZLE_DELAY_STEPS[idx] ?? 0}ms`
 
 const handleSave = async () => {
   changeLang(draftPreferences.value.gameplay.language)
@@ -141,7 +123,7 @@ const handleAuthAction = () => {
             <div class="grid grid-cols-2 gap-1.5 p-1 rounded-md bg-canvas border border-border">
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-sm font-display font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border"
+                class="min-w-0 overflow-hidden py-1.5 px-3 rounded-sm font-display font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border"
                 :class="
                   colorMode === 'dark'
                     ? 'bg-surface text-text-primary border-border-hover shadow-xs'
@@ -149,12 +131,12 @@ const handleAuthAction = () => {
                 "
                 @click="setColorMode('dark')"
               >
-                <NIcon><MoonOutline /></NIcon>
-                <span>Dark</span>
+                <NIcon class="shrink-0"><MoonOutline /></NIcon>
+                <span class="truncate">Dark</span>
               </button>
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-sm font-display font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border"
+                class="min-w-0 overflow-hidden py-1.5 px-3 rounded-sm font-display font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border"
                 :class="
                   colorMode === 'light'
                     ? 'bg-surface text-text-primary border-border-hover shadow-xs'
@@ -162,8 +144,8 @@ const handleAuthAction = () => {
                 "
                 @click="setColorMode('light')"
               >
-                <NIcon><SunnyOutline /></NIcon>
-                <span>Light</span>
+                <NIcon class="shrink-0"><SunnyOutline /></NIcon>
+                <span class="truncate">Light</span>
               </button>
             </div>
           </div>
@@ -178,7 +160,7 @@ const handleAuthAction = () => {
                 v-for="lang in ['en', 'de', 'ru'] as const"
                 :key="lang"
                 type="button"
-                class="flex-1 py-1.5 px-2 rounded-sm font-display font-medium text-xs uppercase transition-colors cursor-pointer border"
+                class="flex-1 min-w-0 overflow-hidden py-1.5 px-2 rounded-sm font-display font-medium text-xs uppercase transition-colors cursor-pointer border"
                 :class="
                   draftPreferences.gameplay.language === lang
                     ? 'bg-surface text-text-primary border-border-hover shadow-xs'
@@ -186,7 +168,7 @@ const handleAuthAction = () => {
                 "
                 @click="draftPreferences.gameplay.language = lang"
               >
-                {{ lang.toUpperCase() }}
+                <span class="truncate block">{{ lang.toUpperCase() }}</span>
               </button>
             </div>
           </div>
@@ -210,83 +192,27 @@ const handleAuthAction = () => {
             </div>
           </div>
 
-          <!-- 3. Animation Duration -->
-          <div class="p-3.5 rounded-lg bg-elevated/40 border border-border">
-            <div class="text-xs font-display font-semibold uppercase tracking-wider text-text-secondary mb-2.5">
-              {{ t('features.settings.animationDuration') }}
-            </div>
-            <div class="flex items-center gap-3.5">
-              <NSlider
-                v-model:value="draftPreferences.theme.animationDuration"
-                :min="0"
-                :max="500"
-                :step="50"
-              />
-              <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
-                {{ draftPreferences.theme.animationDuration }}ms
-              </span>
-            </div>
-          </div>
-
-          <!-- 4. Gameplay & Bot Delays -->
+          <!-- 3. Unified Gameplay Settings -->
           <div class="p-3.5 rounded-lg bg-elevated/40 border border-border flex flex-col gap-3">
             <div class="flex items-center gap-1.5 text-xs font-display font-semibold uppercase tracking-wider text-text-secondary">
               <NIcon><GameControllerOutline /></NIcon>
-              <span>{{ t('features.settings.gameplayBotDelays') }}</span>
+              <span>{{ t('features.settings.gameplaySettings') }}</span>
             </div>
 
-            <!-- Bot Thinking Delay -->
-            <div>
-              <div class="text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary mb-2">
-                {{ t('features.settings.botThinkingDelay') }}
-              </div>
-              <div class="flex items-center gap-3.5">
-                <NSlider
-                  v-model:value="draftPreferences.delays.botDelayMs"
-                  :min="50"
-                  :max="5000"
-                  :step="50"
-                />
-                <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
-                  {{ draftPreferences.delays.botDelayMs }}ms
-                </span>
-              </div>
-            </div>
+            <SettingsTimingSelector
+              v-model="draftPreferences.theme.animationDuration"
+              :label="t('features.settings.animationDuration')"
+            />
 
-            <!-- Next Puzzle Delay (Unified across all modes: 0, 100, 500, 1000, 2000, 3000 ms) -->
-            <div>
-              <div class="text-[11px] font-display font-medium uppercase tracking-wider text-text-secondary mb-2">
-                {{ t('features.settings.nextPuzzleDelay') }}
-              </div>
-              <div class="flex items-center gap-3.5 mb-2">
-                <NSlider
-                  v-model:value="nextPuzzleDelayStepIndex"
-                  :min="0"
-                  :max="NEXT_PUZZLE_DELAY_STEPS.length - 1"
-                  :step="1"
-                  :format-tooltip="formatNextPuzzleDelayTooltip"
-                />
-                <span class="font-condensed font-bold text-xs text-text-primary bg-surface border border-border px-2 py-0.5 rounded-sm min-w-13 text-center">
-                  {{ draftPreferences.delays.nextPuzzleDelayMs }}ms
-                </span>
-              </div>
-              <div class="grid grid-cols-6 gap-1 p-1 rounded-md bg-canvas border border-border">
-                <button
-                  v-for="stepMs in NEXT_PUZZLE_DELAY_STEPS"
-                  :key="stepMs"
-                  type="button"
-                  class="py-1 px-1 rounded-sm font-condensed font-bold text-[11px] transition-colors cursor-pointer border text-center"
-                  :class="
-                    draftPreferences.delays.nextPuzzleDelayMs === stepMs
-                      ? 'bg-surface text-text-primary border-border-hover shadow-xs'
-                      : 'bg-transparent text-text-secondary border-transparent hover:text-text-primary'
-                  "
-                  @click="draftPreferences.delays.nextPuzzleDelayMs = stepMs"
-                >
-                  {{ stepMs }}
-                </button>
-              </div>
-            </div>
+            <SettingsTimingSelector
+              v-model="draftPreferences.delays.botDelayMs"
+              :label="t('features.settings.botThinkingDelay')"
+            />
+
+            <SettingsTimingSelector
+              v-model="draftPreferences.delays.nextPuzzleDelayMs"
+              :label="t('features.settings.nextPuzzleDelay')"
+            />
 
             <!-- Endgame Automat (Gaviota DTM) -->
             <div class="pt-2 border-t border-border/60 flex flex-col gap-2.5">
@@ -310,6 +236,11 @@ const handleAuthAction = () => {
                   <span class="truncate block">{{ t(`features.settings.endgameAutomatModes.${mode}`) }}</span>
                 </button>
               </div>
+
+              <SettingsTimingSelector
+                v-model="draftPreferences.delays.automatDelayMs"
+                :label="t('features.settings.automatSpeed')"
+              />
             </div>
 
             <!-- Developer Crashtest Section (Restricted to developer / owner roles) -->
@@ -341,26 +272,15 @@ const handleAuthAction = () => {
               </div>
 
               <!-- Crashtest Move Delay -->
-              <div class="flex flex-col gap-1.5">
-                <span class="text-[11px] font-display font-medium uppercase tracking-wider text-danger">
-                  {{ t('features.settings.devCrashtestSpeed') }}
-                </span>
-                <div class="flex items-center gap-3.5">
-                  <NSlider
-                    v-model:value="draftPreferences.delays.crashtestDelayMs"
-                    :min="0"
-                    :max="1000"
-                    :step="50"
-                  />
-                  <span class="font-condensed font-bold text-xs text-danger bg-danger/15 border border-danger/40 px-2 py-0.5 rounded-sm min-w-13 text-center">
-                    {{ draftPreferences.delays.crashtestDelayMs }}ms
-                  </span>
-                </div>
-              </div>
+              <SettingsTimingSelector
+                v-model="draftPreferences.delays.crashtestDelayMs"
+                :label="t('features.settings.devCrashtestSpeed')"
+                tone="danger"
+              />
             </div>
           </div>
 
-          <!-- 5. Board & Pieces Tab -->
+          <!-- 4. Board & Pieces Tab -->
           <SettingsBoardPiecesSection
             :board="draftPreferences.theme.board"
             :pieces="draftPreferences.theme.pieces"

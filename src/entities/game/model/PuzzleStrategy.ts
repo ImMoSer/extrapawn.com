@@ -157,9 +157,9 @@ export class PuzzleStrategy implements IGameplayStrategy {
   get config(): GameplayStrategyConfig {
     return {
       initialBotDelayMs: this.callbacks?.delays?.initialBotDelayMs ?? 500,
-      botDelayMs: this.callbacks?.delays?.botDelayMs ?? 250,
+      botDelayMs: this.callbacks?.delays?.botDelayMs ?? 100,
       playGameStatusSounds: false,
-      nextPuzzleDelayMs: this.callbacks?.delays?.nextPuzzleDelayMs ?? 100,
+      nextPuzzleDelayMs: this.callbacks?.delays?.nextPuzzleDelayMs ?? 500,
       restartDelayMs: this.callbacks?.delays?.restartDelayMs ?? 500,
     }
   }

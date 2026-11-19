@@ -3,7 +3,9 @@ import { pgnService } from '@/shared/lib/pgn/PgnService'
 import { makeSan } from 'chessops/san'
 import { parseUci } from 'chessops/util'
 import {
-  AUTOMAT_ANIMATION_MS,
+  AUTOMAT_DEFAULT_INITIAL_DELAY_MS,
+  AUTOMAT_MIN_ANIMATION_MS,
+  computeAutomatStepAnimationMs,
   computeAutomatStepDelayMs,
   fetchGaviotaAutomatLine,
   isEligibleForEndgameAutomat,
@@ -23,6 +25,7 @@ export interface EndgameAutomatPromptRequest {
 
 export interface EndgameAutomatCallbacks {
   getMode: () => EndgameAutomatPolicyMode
+  getInitialDelayMs?: () => number
   onPromptOpen?: (prompt: EndgameAutomatPromptRequest) => void
   onRolloutStart?: (mateInMoves: number) => void
   onRolloutStep?: (remainingMoves: number) => void
@@ -139,6 +142,7 @@ export class EndgameAutomatController {
     }
 
     const tokenAtProbe = ++this.runToken
+    const probeStartedAt = Date.now()
     const { startFen, moves } = pgnService.getAnalysisPayloadContext()
     const lineDto = await fetchGaviotaAutomatLine(currentFen, startFen, moves)
 
@@ -158,8 +162,9 @@ export class EndgameAutomatController {
     }
 
     if (latestMode === 'on') {
+      const probeElapsedMs = Math.max(0, Date.now() - probeStartedAt)
       this.triggeredInAttempt = true
-      await this.executeRollout(tokenAtProbe, lineDto.uci_line, lineDto.mate_in_moves)
+      await this.executeRollout(tokenAtProbe, lineDto.uci_line, lineDto.mate_in_moves, probeElapsedMs)
       return
     }
 
@@ -175,7 +180,7 @@ export class EndgameAutomatController {
         if (tokenAtProbe !== this.runToken || !this.promptOpen) return
         this.promptOpen = false
         this.triggeredInAttempt = true
-        void this.executeRollout(tokenAtProbe, lineDto.uci_line, lineDto.mate_in_moves)
+        void this.executeRollout(tokenAtProbe, lineDto.uci_line, lineDto.mate_in_moves, 0)
       },
       decline: () => {
         if (tokenAtProbe !== this.runToken || !this.promptOpen) return
@@ -190,13 +195,19 @@ export class EndgameAutomatController {
     token: number,
     uciLine: string[],
     mateInMoves: number,
+    initialElapsedMs: number = 0,
   ): Promise<void> {
     const boardStore = useBoardStore()
     const gameStore = useGameStore()
     const totalSteps = uciLine.length
+    const initialDelayMs = this.hooks?.getInitialDelayMs?.() ?? AUTOMAT_DEFAULT_INITIAL_DELAY_MS
 
     this.runningRollout = true
-    boardStore.setAnimationDurationOverride(AUTOMAT_ANIMATION_MS)
+    let lastAnimationMs =
+      totalSteps > 0
+        ? computeAutomatStepAnimationMs(0, totalSteps, initialDelayMs)
+        : AUTOMAT_MIN_ANIMATION_MS
+    boardStore.setAnimationDurationOverride(lastAnimationMs)
     this.hooks?.onRolloutStart?.(mateInMoves)
 
     try {
@@ -204,7 +215,9 @@ export class EndgameAutomatController {
         const uci = uciLine[idx]
         if (!uci) continue
 
-        const stepDelayMs = computeAutomatStepDelayMs(idx, totalSteps)
+        const rawStepDelayMs = computeAutomatStepDelayMs(idx, totalSteps, initialDelayMs)
+        const stepDelayMs =
+          idx === 0 ? Math.max(0, rawStepDelayMs - initialElapsedMs) : rawStepDelayMs
         await this.sleep(stepDelayMs)
 
         if (
@@ -215,6 +228,10 @@ export class EndgameAutomatController {
         ) {
           return
         }
+
+        const stepAnimationMs = computeAutomatStepAnimationMs(idx, totalSteps, initialDelayMs)
+        lastAnimationMs = stepAnimationMs
+        boardStore.setAnimationDurationOverride(stepAnimationMs)
 
         const remainingMoves = Math.max(1, Math.ceil((totalSteps - idx) / 2))
         this.hooks?.onRolloutStep?.(remainingMoves)
@@ -240,8 +257,8 @@ export class EndgameAutomatController {
         this.host.recordAutomatMove(uci)
       }
 
-      // Let the final mating piece complete its 200ms slide before transitioning to GAMEOVER
-      await this.sleep(AUTOMAT_ANIMATION_MS)
+      // Let the final mating piece complete its slide before transitioning to GAMEOVER
+      await this.sleep(lastAnimationMs)
 
       if (token !== this.runToken || !this.runningRollout || !this.host.isActiveAndUnresolved()) {
         return

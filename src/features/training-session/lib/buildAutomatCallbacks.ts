@@ -35,6 +35,7 @@ export function buildEndgameAutomatCallbacks(
       }
       return preferencesStore.preferences.gameplay.endgameAutomat
     },
+    getInitialDelayMs: () => preferencesStore.preferences.delays.automatDelayMs,
     onPromptOpen: (prompt: EndgameAutomatPromptRequest) => {
       if (pauseClock) {
         clock.pauseTimer()
