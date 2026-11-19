@@ -30,7 +30,7 @@
   - `engine` — клиент спарринг-движков `enginePlay.service.ts`.
 - **`src/shared/`** — переиспользуемое ядро:
   - `theme/` — реактивные токены Dark/Light (`tokens.ts`, `naive-overrides.ts`),
-  - `lib/pgn/` (`PgnService.ts`), `lib/engine/` (`LocalEngineManager.ts`, `engine.loader.ts`, `wasmCache.ts` — персистентное хранение `stockfish-19-single.wasm` `99.2 МБ` в браузерном `Cache Storage API` с валидацией WASM-заголовка `\0asm`, прогрессом загрузки и передачей disk-backed `Blob URL` в Web Worker без повторного скачивания при перезагрузке ПК или смене Lichess-аккаунта),
+  - `lib/pgn/` (`PgnService.ts` + `pgnTypes.ts`, `pgnFormatter.ts`, `pgnTreeOps.ts`), `lib/engine/` (`LocalEngineManager.ts`, `engine.loader.ts`, `wasmCache.ts` — персистентное хранение `stockfish-19-single.wasm` `99.2 МБ` в браузерном `Cache Storage API` с валидацией WASM-заголовка `\0asm`, прогрессом загрузки и передачей disk-backed `Blob URL` в Web Worker без повторного скачивания при перезагрузке ПК или смене Lichess-аккаунта),
   - `config/` (`i18n` и автотест целостности словарей `src/shared/config/__tests__/i18n.spec.ts`).
 
 ---
