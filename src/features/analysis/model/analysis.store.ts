@@ -1,24 +1,34 @@
 import {
   analysisService,
+  buildLocalAnalysisShapes,
+  classifyLocalEngineLines,
   countBoardPieces,
+  getLocalAnalysisSignature,
+  type ClassifiedEngineLine,
   type EngineLoadingState,
   type EvaluatedLineWithSan,
+  type LocalEngineLineInput,
 } from '@/entities/analysis'
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
-import type { DrawShape } from '@lichess-org/chessground/draw'
-import type { Key } from '@lichess-org/chessground/types'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
-const ARROW_STYLES = [
-  { brush: 'blue', lineWidth: 14 },
-  { brush: 'blue', lineWidth: 10 },
-  { brush: 'blue', lineWidth: 8 },
-  { brush: 'blue', lineWidth: 6 },
-  { brush: 'blue', lineWidth: 4 },
-]
+function toClassifierInput(line: EvaluatedLineWithSan): LocalEngineLineInput {
+  const moverScore =
+    line.initialTurn === 'black'
+      ? { type: line.score.type, value: -line.score.value }
+      : line.score
+  return {
+    id: line.id,
+    depth: line.depth,
+    moverScore,
+    wdl: line.wdl,
+    pvUci: line.pvUci,
+    isTablebase: line.isTablebase,
+  }
+}
 
 export const useAnalysisStore = defineStore('analysis', () => {
   const boardStore = useBoardStore()
@@ -27,6 +37,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   const isAnalysisActive = ref(false)
   const analysisLines = ref<EvaluatedLineWithSan[]>([])
+  const highlightedLineId = ref<number | null>(null)
 
   // Options
   const multiPv = ref(3)
@@ -57,10 +68,19 @@ export const useAnalysisStore = defineStore('analysis', () => {
         engineLoadingState.value.phase === 'initializing'),
   )
 
+  const classifiedLines = computed<ClassifiedEngineLine[]>(() => {
+    const topLines = analysisLines.value.slice(0, multiPv.value)
+    if (topLines.length === 0) return []
+    const fen = topLines[0]?.startingFen || boardStore.fen
+    if (!fen) return []
+    return classifyLocalEngineLines(fen, topLines.map(toClassifierInput))
+  })
+
   // Internal versioning to prevent race conditions
   let analysisVersion = 0
   let lastArrowsSignature = ''
   let lastRenderedDepth = 0
+  let lastRenderedCount = 0
   let fenDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
   // Watch FEN for debounced analysis restart
@@ -72,6 +92,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
         fenDebounceTimer = setTimeout(() => {
           logger.debug(`[AnalysisStore] FEN changed (debounced). Restarting analysis.`)
           lastRenderedDepth = 0
+          lastRenderedCount = 0
           void startAnalysis(newFen)
         }, 250)
       }
@@ -103,18 +124,24 @@ export const useAnalysisStore = defineStore('analysis', () => {
     },
   )
 
-  // Watch lines to update board arrows
+  // Watch lines to update board arrows, NAGs, and piece marches
   watch(analysisLines, (lines) => {
     if (isAnalysisActive.value && lines.length > 0) {
       const firstLine = lines[0]!
       const currentDepth = firstLine.depth
-      if (firstLine.isTablebase || shouldUpdateBoard(currentDepth)) {
+      const visibleCount = Math.min(lines.length, multiPv.value)
+      if (
+        firstLine.isTablebase ||
+        visibleCount > lastRenderedCount ||
+        shouldUpdateBoard(currentDepth)
+      ) {
         if (showArrows.value) {
-          drawAnalysisArrows(lines)
+          drawAnalysisArrows(classifiedLines.value)
         } else {
           boardStore.setAnalysisShapes([])
         }
         lastRenderedDepth = currentDepth
+        lastRenderedCount = visibleCount
       }
     }
   })
@@ -123,13 +150,25 @@ export const useAnalysisStore = defineStore('analysis', () => {
     if (!newVal) {
       boardStore.setAnalysisShapes([])
       lastArrowsSignature = ''
-    } else if (isAnalysisActive.value && analysisLines.value.length > 0) {
-      drawAnalysisArrows(analysisLines.value)
+    } else if (isAnalysisActive.value && classifiedLines.value.length > 0) {
+      drawAnalysisArrows(classifiedLines.value)
     }
   })
 
+  watch(highlightedLineId, () => {
+    if (isAnalysisActive.value && showArrows.value && classifiedLines.value.length > 0) {
+      drawAnalysisArrows(classifiedLines.value)
+    }
+  })
+
+  function setHighlightedLine(lineId: number | null) {
+    if (highlightedLineId.value === lineId) return
+    highlightedLineId.value = lineId
+  }
+
   function shouldUpdateBoard(depth: number): boolean {
     if (depth === 1) return true
+    if (lastRenderedDepth < 6 && depth >= 6) return true
     if (lastRenderedDepth < 10 && depth >= 10) return true
     if (lastRenderedDepth < 15 && depth >= 15) return true
     if (lastRenderedDepth < 20 && depth >= 20) return true
@@ -137,36 +176,19 @@ export const useAnalysisStore = defineStore('analysis', () => {
     return false
   }
 
-  function drawAnalysisArrows(lines: EvaluatedLineWithSan[]) {
+  function drawAnalysisArrows(classified: ClassifiedEngineLine[]) {
     if (gameStore.gamePhase !== 'ANALYSIS') {
       boardStore.setAnalysisShapes([])
       return
     }
 
-    const topMoves = lines.slice(0, multiPv.value)
-    const signature = topMoves.map((l) => (l.pvUci && l.pvUci[0]) || '').join(',')
-
+    const signature = getLocalAnalysisSignature(classified, highlightedLineId.value)
     if (signature === lastArrowsSignature) {
       return
     }
 
-    const shapes: DrawShape[] = []
-    topMoves.forEach((line, index) => {
-      if (line.pvUci && line.pvUci.length > 0) {
-        const firstMove = line.pvUci[0]
-        if (firstMove && firstMove.length >= 4) {
-          const orig = firstMove.slice(0, 2) as Key
-          const dest = firstMove.slice(2, 4) as Key
-          const style = ARROW_STYLES[index] || ARROW_STYLES[ARROW_STYLES.length - 1]
-
-          shapes.push({
-            orig,
-            dest,
-            brush: style!.brush,
-            modifiers: { lineWidth: style!.lineWidth },
-          })
-        }
-      }
+    const shapes = buildLocalAnalysisShapes(classified, {
+      highlightedLineId: highlightedLineId.value,
     })
 
     boardStore.setAnalysisShapes(shapes)
@@ -247,8 +269,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
     analysisVersion++
     const currentVersion = analysisVersion
     isAnalysisActive.value = true
+    highlightedLineId.value = null
     lastArrowsSignature = ''
     lastRenderedDepth = 0
+    lastRenderedCount = 0
 
     await analysisService.stopAnalysis()
 
@@ -291,8 +315,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
     }
     isAnalysisActive.value = false
     analysisLines.value = []
+    highlightedLineId.value = null
     lastArrowsSignature = ''
     lastRenderedDepth = 0
+    lastRenderedCount = 0
     boardStore.setAnalysisShapes([])
     await analysisService.stopAnalysis()
     logger.info('[AnalysisStore] Stopped.')
@@ -306,6 +332,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     if (!isAnalysisActive.value) {
       lastRenderedDepth = 0
+      lastRenderedCount = 0
       await startNewGame()
       await startAnalysis(boardStore.fen)
     } else {
@@ -316,6 +343,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
   return {
     isAnalysisActive,
     analysisLines,
+    classifiedLines,
+    highlightedLineId,
     multiPv,
     searchTime,
     showArrows,
@@ -328,6 +357,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     setMultiPv,
     setSearchTime,
     setShowArrows,
+    setHighlightedLine,
     startNewGame,
     startAnalysis,
     stopAnalysis,

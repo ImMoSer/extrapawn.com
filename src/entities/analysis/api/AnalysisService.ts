@@ -152,7 +152,7 @@ class AnalysisServiceController {
       body: JSON.stringify({
         fen,
         max_candidates: maxCandidates,
-        include_pv: false,
+        include_pv: true,
       }),
     })
 
@@ -160,15 +160,28 @@ class AnalysisServiceController {
       return []
     }
 
-    const rawEvaluated: EvaluatedLine[] = res.lines.map((item) => ({
-      id: item.rank,
-      depth: 99,
-      score:
-        item.mate !== null && item.mate !== undefined
-          ? { type: 'mate', value: item.mate }
-          : { type: 'cp', value: 0 },
-      pvUci: [item.uci],
-    }))
+    const rawEvaluated: EvaluatedLine[] = res.lines.map((item) => {
+      const hasWdl =
+        typeof item.win_p === 'number' &&
+        typeof item.draw_p === 'number' &&
+        typeof item.loss_p === 'number'
+      return {
+        id: item.rank,
+        depth: 99,
+        score:
+          item.mate !== null && item.mate !== undefined
+            ? { type: 'mate', value: item.mate }
+            : { type: 'cp', value: 0 },
+        wdl: hasWdl
+          ? {
+              win: Math.round(item.win_p! * 10),
+              draw: Math.round(item.draw_p! * 10),
+              loss: Math.round(item.loss_p! * 10),
+            }
+          : undefined,
+        pvUci: Array.isArray(item.pv) && item.pv.length > 0 ? item.pv : [item.uci],
+      }
+    })
 
     const prepared = this.prepareLinesForDisplay(rawEvaluated, fen)
     return prepared.map((line) => ({
