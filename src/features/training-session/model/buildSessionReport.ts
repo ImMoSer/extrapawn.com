@@ -84,7 +84,7 @@ export function computeSessionReportSummary(
       if (item.status === 'solved') woodpeckerSolvedCount++
     }
 
-    const recorded = sessionAttemptResults[item.puzzle_id]
+    const recorded = item.puzzle_id ? sessionAttemptResults[item.puzzle_id] : undefined
     if (recorded) {
       if (recorded.woodpecker.action === 'graduated') woodpeckerGraduatedCount++
       if (recorded.woodpecker.action === 'queued' || recorded.woodpecker.action === 'reset') {

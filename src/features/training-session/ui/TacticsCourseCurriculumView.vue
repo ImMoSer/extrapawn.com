@@ -192,8 +192,8 @@ onMounted(async () => {
   } catch {
     // Handled by store
   }
-  if (store.tacticsCourseCurriculum && store.tacticsCourseCurriculum.crash_test_index > 0) {
-    jumpIndexInput.value = store.tacticsCourseCurriculum.crash_test_index + 1
+  if (store.tacticsCourseCurriculum && (store.tacticsCourseCurriculum.crash_test_index ?? 0) > 0) {
+    jumpIndexInput.value = (store.tacticsCourseCurriculum.crash_test_index ?? 0) + 1
   }
 })
 
@@ -382,7 +382,7 @@ async function handleResetCourseProgress(): Promise<void> {
               class="font-condensed font-bold text-sm text-text-primary"
             >
               Позиция: #{{ Math.min(crashTestTotal, (curriculum.crash_test_index ?? 0) + 1) }} / {{ crashTestTotal }}
-              · Решено: {{ curriculum.crash_test_solved }} · Ошибок: {{ curriculum.crash_test_failed }}
+              · Решено: {{ curriculum.crash_test_solved ?? 0 }} · Ошибок: {{ curriculum.crash_test_failed ?? 0 }}
             </span>
             <span
               class="px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated border border-border text-text-secondary"
@@ -445,7 +445,7 @@ async function handleResetCourseProgress(): Promise<void> {
             </template>
             {{
               curriculum?.crash_test_active
-                ? `Продолжить Крэш-Тест (#${Math.min(crashTestTotal, curriculum.crash_test_index + 1)})`
+                ? `Продолжить Крэш-Тест (#${Math.min(crashTestTotal, (curriculum.crash_test_index ?? 0) + 1)})`
                 : `Запустить Крэш-Тест (${crashTestTotal})`
             }}
           </NButton>
@@ -479,7 +479,7 @@ async function handleResetCourseProgress(): Promise<void> {
           </NPopconfirm>
 
           <NButton
-            v-if="curriculum && curriculum.flagged_puzzles.length > 0"
+            v-if="curriculum && (curriculum.flagged_puzzles?.length ?? 0) > 0"
             size="small"
             secondary
             @click="showFlagsPanel = !showFlagsPanel"
@@ -487,22 +487,22 @@ async function handleResetCourseProgress(): Promise<void> {
             <template #icon>
               <NIcon><FlagOutline /></NIcon>
             </template>
-            Флаги ({{ curriculum.flagged_puzzles.length }})
+            Флаги ({{ curriculum.flagged_puzzles?.length ?? 0 }})
           </NButton>
         </div>
       </div>
 
       <!-- Collapsible Flagged Puzzles Table -->
       <div
-        v-if="showFlagsPanel && curriculum && curriculum.flagged_puzzles.length > 0"
+        v-if="showFlagsPanel && curriculum && (curriculum.flagged_puzzles?.length ?? 0) > 0"
         class="pt-3 border-t border-border flex flex-col gap-2"
       >
         <div class="text-xs font-display font-semibold uppercase tracking-wider text-text-secondary">
-          Отмеченные задачи на проверку ({{ curriculum.flagged_puzzles.length }})
+          Отмеченные задачи на проверку ({{ curriculum.flagged_puzzles?.length ?? 0 }})
         </div>
         <div class="max-h-48 overflow-y-auto divide-y divide-border/50 rounded-sm border border-border bg-elevated/30">
           <div
-            v-for="fl in curriculum.flagged_puzzles"
+            v-for="fl in curriculum.flagged_puzzles ?? []"
             :key="fl.puzzle_id"
             class="px-3 py-1.5 flex items-center justify-between gap-3 text-xs"
           >

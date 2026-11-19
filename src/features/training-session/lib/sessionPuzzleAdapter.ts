@@ -67,17 +67,10 @@ export function adaptTacticalPuzzleV2(
     )
   }
 
-  const allMotifs = [
-    ...(tp.geometry_motifs ?? []),
-    ...(tp.operator_motifs ?? []),
-    ...(tp.concept_motifs ?? []),
-    ...(tp.trigger_motifs ?? []),
-  ]
-
-  const primaryCategory = allMotifs[0] ?? tp.cognitive_profile
+  const primaryCategory = tp.primary_motif?.trim()
   if (!primaryCategory) {
     throw new Error(
-      `[sessionPuzzleAdapter] Missing motif and cognitive_profile on tactical puzzle ${tp.puzzle_id}. Fail-Fast!`,
+      `[sessionPuzzleAdapter] Missing primary_motif on tactical puzzle ${tp.puzzle_id}. Fail-Fast!`,
     )
   }
 
@@ -85,8 +78,8 @@ export function adaptTacticalPuzzleV2(
     puzzle_id: tp.puzzle_id,
     puzzle_type: 'tactics',
     category: primaryCategory,
-    category_comby: allMotifs,
-    motifs_pg: tp.meta_themes ?? [],
+    category_comby: [primaryCategory],
+    motifs_pg: [],
     sub_category: tp.phase,
     difficulty: tp.difficulty,
     rating: tp.rating,
@@ -133,13 +126,12 @@ export function adaptCoursePuzzleV2(
   const firstMove = assertValidFirstMove(cp.puzzle_id, cp.first_move)
   const userColor = assertValidUserColor(cp.puzzle_id, cp.user_color)
   const isExam = cp.domain === 'EXAMS'
-  const secondaryThemes = [
-    ...(cp.geometry_motifs ?? []),
-    ...(cp.operator_motifs ?? []),
-    ...(cp.concept_motifs ?? []),
-    ...(cp.trigger_motifs ?? []),
-    ...(cp.meta_themes ?? []),
-  ]
+  const resolvedClass = cp.class?.trim() || (isExam ? 'mixedExam' : '')
+  if (!resolvedClass) {
+    throw new Error(
+      `[sessionPuzzleAdapter] Missing class on non-exam course puzzle ${cp.puzzle_id}. Fail-Fast!`,
+    )
+  }
 
   const mapped: PuzzlePuzzle = {
     puzzle_id: cp.puzzle_id,
@@ -147,16 +139,13 @@ export function adaptCoursePuzzleV2(
     course_slug: cp.course_slug,
     course_id: cp.course_id,
     global_batch_id: cp.global_batch_id,
-    category: isExam ? 'mixedExam' : cp.class,
-    category_comby: isExam
-      ? []
-      : [cp.class, ...(cp.sub_class ? [cp.sub_class] : []), ...secondaryThemes],
-    motifs_pg: isExam ? [] : secondaryThemes,
+    category: resolvedClass,
+    category_comby: isExam && !cp.class ? [] : [resolvedClass],
+    motifs_pg: [],
     sub_category: cp.domain,
     domain: cp.domain,
     batch_id: cp.batch_id,
     batch_title: cp.batch_title,
-    week: cp.week_number,
     is_exam: isExam,
     strategy: cp.strategy,
     first_move: firstMove,
@@ -167,7 +156,7 @@ export function adaptCoursePuzzleV2(
     twin_group_id: cp.twin_group_id || undefined,
     twin_role: cp.twin_role || undefined,
     initial_fen: cp.tactical_fen,
-    tactical_solution: cp.tactical_solution,
+    tactical_solution: cp.tactical_solution ?? '',
     puzzle_fen: cp.tactical_fen,
   }
 
@@ -226,7 +215,7 @@ export function adaptEndgamePuzzleV2(
       puzzle_id: ep.puzzle_id,
       puzzle_type: 'finishhim',
       category: ep.class,
-      motifs_pg: ep.meta_themes ?? [],
+      motifs_pg: [],
       sub_category: ep.domain,
       domain: ep.domain,
       difficulty: ep.difficulty,

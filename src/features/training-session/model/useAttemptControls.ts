@@ -48,6 +48,11 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
     sessionId: string,
     item: HydratedSessionItem,
   ): Promise<ConsumeItemRetryResponseDTO> {
+    if (!item.puzzle_id) {
+      throw new Error(
+        `[TrainingSessionStore] Cannot persist retry on unhydrated item index=${item.index}. Fail-Fast!`,
+      )
+    }
     state.isPersistingRetry.value = true
     state.error.value = null
     try {
@@ -118,9 +123,9 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
     clock.clearAutoNextTimeout()
     const sess = state.hydratedSession.value
     const item = state.currentItem.value
-    if (!sess || !item) {
+    if (!sess || !item || !item.puzzle_id) {
       throw new Error(
-        '[TrainingSessionStore] Cannot resign puzzle without active session item. Fail-Fast!',
+        '[TrainingSessionStore] Cannot resign puzzle without active hydrated session item. Fail-Fast!',
       )
     }
     if (

@@ -104,10 +104,10 @@ export function useInspectionAndReplay(deps: InspectionDependencies) {
         const fallbackOrientation = determineHumanColor(adapted)
         const savedSnap = state.runtime.getSavedRetrySnapshot()
         const snap =
-          savedSnap && savedSnap.puzzleId === item.puzzle_id
+          savedSnap && item.puzzle_id && savedSnap.puzzleId === item.puzzle_id
             ? savedSnap
             : {
-                puzzleId: item.puzzle_id,
+                puzzleId: item.puzzle_id ?? adapted.puzzle_id,
                 fen: adapted.initial_fen,
                 orientation: fallbackOrientation,
               }

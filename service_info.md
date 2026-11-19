@@ -18,7 +18,7 @@
   - `training-session` — модульная подсистема Тренировочного Центра, Разминки и Классических курсов:
     - `model/`: компактный Pinia-фасад `trainingSession.store.ts` (`~360` строк) + модули единой ответственности `trainingSession.types.ts`, `usePuzzleClock.ts`, `buildSessionReport.ts`, `useHubAndCurriculumActions.ts`, `useGameplayLifecycle.ts`, `useAttemptControls.ts`, `useInspectionAndReplay.ts`, `useCrashTestActions.ts` (каждый строго `< 500` строк).
     - `lib/`: `sessionItemPolicy.ts` (неограниченное число попыток `Restart` до победы или явного `Resign` с обязательной отправкой повторных попыток в Дятла, блокировка анализа `pending`-задач, `Practice Replay`), `sessionPuzzleAdapter.ts`, `buildAutomatCallbacks.ts`, `crashTestReportLogger.ts`.
-    - `ui/`: `TrainingHubDashboard.vue` + дочерние секции `TrainingSprintCourseSection.vue` и `TrainingWarmupConfigurator.vue`, а также `TacticsCourseCurriculumView.vue`, `TrainingSessionSidebar.vue`, `TrainingPlayTopInfo.vue`, `EndgameAutomatOverlay.vue`, `TrainingSessionReport.vue`.
+    - `ui/`: `TrainingHubDashboard.vue` + дочерние секции `TrainingSprintCourseSection.vue` и `TrainingWarmupConfigurator.vue`, а также `TacticsCourseCurriculumView.vue`, `TrainingSessionSidebar.vue` + `TrainingSessionQueueItem.vue` (Window = 1 очередь с CSS-замыливанием нераскрытых будущих слотов), `TrainingPlayTopInfo.vue`, `EndgameAutomatOverlay.vue`, `TrainingSessionReport.vue`.
   - `profile` — диагностические виджеты и матрицы Кабинета 2.0 (`ECharts`).
   - `coach` — серверный ИИ-тренер (`coach.store.ts`, визуальные команды доски `mark / route / arrow`) и контроллер краштеста (`crashtest.store.ts`).
   - `analysis` — локальный движковый анализ в браузере (`analysis.store.ts`, `MultiPV`).
@@ -52,7 +52,7 @@
 
 В продакшене контейнер `app_vue` (`chess_frontend`) выступает входным HTTP-маршрутизатором за Traefik:
 - Проверяет сессию через внутренний подзапрос `auth_request /api/auth/check` к `fastify-app:3000` и прокидывает проверенные `X-User-Id` и `X-User-Role` напрямую в `puzzle-engine:5000`, `stockfish_server:5000`, `engine-hub:5000` и `tableservice:5000` (на публичных маршрутах принудительно очищает `X-User-Id ""` и `X-User-Role ""`).
-- Применяет строгий IP-рейтлимит (`api_limit` `15r/s`, `engine_limit` `5r/s` с обходом только для верифицированных ролей `developer` и `owner`), ограничивает `client_max_body_size` до `1M` глобально (`15M` только для `/api/engine-eval/endgame/analyze`), проксирует в `fastify-app` строго белый список `/api/(auth|users|gaviota)/` и отсекает все неизвестные `/api/*` сканы с `404` (`access_log off`) на уровне Nginx.
+- Применяет строгий IP-рейтлимит (`api_limit` `15r/s`, `engine_limit` `5r/s`, а также анти-скрапинг зоны `session_create_limit` `10r/m` на `POST /api/training/sessions/(course|warmup)` и `attempt_limit` `30r/m` на `POST /api/training/sessions/*/attempt` с обходом только для верифицированных ролей `developer` и `owner`), ограничивает `client_max_body_size` до `1M` глобально (`15M` только для `/api/engine-eval/endgame/analyze`), проксирует в `fastify-app` строго белый список `/api/(auth|users|gaviota)/` и отсекает внутренние служебные маршруты `/api/training/puzzle/*`, `/api/training/catalog-info` (доступны только `EXTRAPAWN_MINI` по внутренней сети Docker) и все неизвестные `/api/*` сканы с `404` (`access_log off`) на уровне Nginx.
 - При добавлении любых `add_header` внутри `location`-блока обязательно повторно подключать `include /etc/nginx/security-headers.conf;` (из-за правила наследования заголовков в Nginx).
 
 ---

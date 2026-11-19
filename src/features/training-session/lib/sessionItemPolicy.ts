@@ -1,16 +1,21 @@
 import { MAX_SANITY_ATTEMPTS, type HydratedSessionItem } from '@/entities/training'
 
+export function isSessionItemHydrated(item: HydratedSessionItem | null | undefined): boolean {
+  if (!item || !item.puzzle_id?.trim()) return false
+  return Boolean(item.tactical || item.endgame || item.course_puzzle)
+}
+
 export function isItemVerdictFinalized(item: HydratedSessionItem | null | undefined): boolean {
   if (!item) return false
   return item.status === 'solved' || item.status === 'failed'
 }
 
 export function canAnalyzeSessionItem(item: HydratedSessionItem | null | undefined): boolean {
-  return isItemVerdictFinalized(item)
+  return isItemVerdictFinalized(item) && isSessionItemHydrated(item)
 }
 
 export function canPracticeReplayItem(item: HydratedSessionItem | null | undefined): boolean {
-  return isItemVerdictFinalized(item)
+  return isItemVerdictFinalized(item) && isSessionItemHydrated(item)
 }
 
 export function getItemAttemptsUsed(item: HydratedSessionItem | null | undefined): number {

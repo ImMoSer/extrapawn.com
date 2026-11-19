@@ -23,6 +23,7 @@ interface CrashTestDependencies {
   state: TrainingSessionSharedState
   consumeElapsedTimeMs: () => number
   applyHydratedSessionAndLaunch: (dto: HydratedSessionDTO) => void
+  mergeHydratedItem: (item: HydratedSessionItem) => void
   advanceAfterAttempt: () => void
   fetchTacticsCourseCurriculum: (
     courseSlug?: TacticsCourseSlug,
@@ -67,12 +68,13 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
     telemetry: PuzzleAttemptTelemetry,
     elapsedMs: number,
   ): void {
-    recordCrashTestPuzzleOutcome(targetItem.puzzle_id, targetItem.index, solved)
+    const puzzleId = targetItem.puzzle_id ?? `#${targetItem.index + 1}`
+    recordCrashTestPuzzleOutcome(puzzleId, targetItem.index, solved)
     if (!solved) {
       const gameHistory = captureCurrentGameMoveHistory()
       recordCrashTestAnomaly({
         type: 'blunder_in_crashtest',
-        puzzle_id: targetItem.puzzle_id,
+        puzzle_id: puzzleId,
         course_slug: targetItem.course_puzzle?.course_slug,
         global_batch_id: targetItem.course_puzzle?.global_batch_id,
         batch_id: targetItem.course_puzzle?.batch_id,
@@ -93,10 +95,11 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
   }
 
   function recordCrashTestSubmitError(targetItem: HydratedSessionItem, errorMessage: string): void {
+    const puzzleId = targetItem.puzzle_id ?? `#${targetItem.index + 1}`
     const gameHistory = captureCurrentGameMoveHistory()
     recordCrashTestAnomaly({
       type: 'api_error',
-      puzzle_id: targetItem.puzzle_id,
+      puzzle_id: puzzleId,
       course_slug: targetItem.course_puzzle?.course_slug,
       global_batch_id: targetItem.course_puzzle?.global_batch_id,
       batch_id: targetItem.course_puzzle?.batch_id,
@@ -159,7 +162,8 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
     }
     const sess = state.hydratedSession.value
     const item = state.currentItem.value
-    if (!sess || !item) return
+    if (!sess || !item || !item.puzzle_id) return
+    const flaggedPuzzleId = item.puzzle_id
 
     state.isFlaggingPuzzle.value = true
     state.error.value = null
@@ -167,7 +171,7 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
       const gameHistory = captureCurrentGameMoveHistory()
       recordCrashTestAnomaly({
         type: 'manual_flag',
-        puzzle_id: item.puzzle_id,
+        puzzle_id: flaggedPuzzleId,
         course_slug: item.course_puzzle?.course_slug,
         global_batch_id: item.course_puzzle?.global_batch_id,
         batch_id: item.course_puzzle?.batch_id,
@@ -183,8 +187,8 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
         error_message: comment.trim() || 'Помечено во время прохождения',
       })
 
-      const updatedSession = await trainingApi.flagCoursePuzzle({
-        puzzle_id: item.puzzle_id,
+      const flagRes = await trainingApi.flagCoursePuzzle({
+        puzzle_id: flaggedPuzzleId,
         comment: comment.trim() || 'Помечено во время прохождения',
         session_id: sess.session.id,
       })
@@ -193,8 +197,11 @@ export function useCrashTestActions(deps: CrashTestDependencies) {
         deps.consumeElapsedTimeMs()
         item.status = 'failed'
       }
-      if (updatedSession) {
-        sess.session = updatedSession
+      if (flagRes?.session) {
+        sess.session = flagRes.session
+      }
+      if (flagRes?.next_item) {
+        deps.mergeHydratedItem(flagRes.next_item)
       }
 
       void deps.fetchTacticsCourseCurriculum()

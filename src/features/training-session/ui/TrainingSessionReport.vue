@@ -75,21 +75,15 @@ function formatDelta(val: number): string {
 
 function itemCategory(item: HydratedSessionItem): string {
   if (item.course_puzzle) {
-    return resolveScopeLabel('scopes', item.course_puzzle.class, t, te)
+    return resolveScopeLabel('scopes', item.course_puzzle.class || 'mixedExam', t, te)
   }
   if (item.tactical) {
-    const motif =
-      item.tactical.geometry_motifs[0] ??
-      item.tactical.operator_motifs[0] ??
-      item.tactical.concept_motifs[0] ??
-      item.tactical.trigger_motifs[0] ??
-      item.tactical.cognitive_profile
-    return resolveScopeLabel('scopes', motif, t, te)
+    return resolveScopeLabel('scopes', item.tactical.primary_motif, t, te)
   }
   if (item.endgame) {
     return resolveScopeLabel('scopes', item.endgame.class, t, te)
   }
-  return item.puzzle_id
+  return item.puzzle_id || `#${item.index + 1}`
 }
 
 function itemMetaLabel(item: HydratedSessionItem): string {
@@ -98,7 +92,7 @@ function itemMetaLabel(item: HydratedSessionItem): string {
   }
   if (item.tactical) return `R: ${item.tactical.rating}`
   if (item.endgame) return `R: ${item.endgame.effective_rating}`
-  return 'R: 1500'
+  return ''
 }
 
 async function handleReturnToHub(): Promise<void> {
@@ -370,7 +364,7 @@ function handleGoToCabinet(): void {
       <div class="divide-y divide-border">
         <div
           v-for="item in visibleReportItems"
-          :key="item.puzzle_id"
+          :key="item.index"
           class="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-elevated/60 transition-colors"
         >
           <div class="flex items-center gap-3 min-w-0">

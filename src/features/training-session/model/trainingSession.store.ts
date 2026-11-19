@@ -30,6 +30,7 @@ import {
   canRestartFromRetryPrompt,
   getCurrentAttemptNumber,
   getItemAttemptsUsed,
+  isSessionItemHydrated,
 } from '../lib/sessionItemPolicy'
 import { adaptSessionItemToPuzzle } from '../lib/sessionPuzzleAdapter'
 import { computeSessionReportSummary } from './buildSessionReport'
@@ -122,7 +123,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const currentPuzzle = computed<PuzzlePuzzle | null>(() => {
     const sess = hydratedSession.value
     const item = currentItem.value
-    if (!sess || !item) return null
+    if (!sess || !item || !isSessionItemHydrated(item)) return null
     return adaptSessionItemToPuzzle(sess.session.discipline, item)
   })
 
@@ -242,6 +243,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     state: sharedState,
     consumeElapsedTimeMs: clock.consumeElapsedTimeMs,
     applyHydratedSessionAndLaunch: (dto) => gameplay.applyHydratedSessionAndLaunch(dto),
+    mergeHydratedItem: (item) => gameplay.mergeHydratedItem(item),
     advanceAfterAttempt: () => gameplay.advanceAfterAttempt(),
     fetchTacticsCourseCurriculum: hubActions.fetchTacticsCourseCurriculum,
   })

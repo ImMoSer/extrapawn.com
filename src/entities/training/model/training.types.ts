@@ -313,37 +313,22 @@ export type CourseTwinRole = (typeof COURSE_TWIN_ROLES)[number]
 
 export interface CoursePuzzleV2 {
   puzzle_id: string
-  base_id: string
   discipline: 'tactics_course' | 'endgame_course'
   course_slug?: TacticsCourseSlug | string
   course_id?: number
   batch_id: number
   global_batch_id?: number
-  batch_slug?: string
   batch_title: string
-  week_number: number
-  schedule_day?: string
-  order_in_batch?: number
   domain: string
-  class: string
-  sub_class?: string
+  class?: string
   objective: TrainingObjective
   strategy: 'scenarioOnly' | 'scenarioPlus' | 'playOutOnly'
   first_move: 'bot' | 'user'
   user_color: 'white' | 'black'
-  pieces_count: number
-  plies_count: number
-  phase?: string
-  length?: string
-  geometry_motifs?: string[]
-  operator_motifs?: string[]
-  concept_motifs?: string[]
-  trigger_motifs?: string[]
-  meta_themes?: string[]
   twin_group_id?: string
   twin_role?: CourseTwinRole | string
   tactical_fen: string
-  tactical_solution: string
+  tactical_solution?: string
 }
 
 export interface TacticalPuzzleV2 {
@@ -354,21 +339,10 @@ export interface TacticalPuzzleV2 {
   user_color: 'white' | 'black'
   difficulty: TrainingDifficulty
   phase: TacticsPhase
-  length: TacticsLength
-  goal: TacticsGoal
-  master_game: boolean
-  course_eligible: boolean
-  cognitive_profile: TacticsCognitiveProfile
-  geometry_motifs: string[]
-  operator_motifs: string[]
-  concept_motifs: string[]
-  trigger_motifs: string[]
-  meta_themes: string[]
+  primary_motif: string
   tactical_fen: string
   tactical_solution: string
   rating: number
-  popularity: number
-  nb_plays: number
 }
 
 export interface EndgamePuzzleV2 {
@@ -376,9 +350,7 @@ export interface EndgamePuzzleV2 {
   discipline: Exclude<TrainingDiscipline, 'tactics'>
   ending_fen: string
   difficulty: TrainingDifficulty
-  ending_rating: number
   effective_rating: number
-  pieces_count: number
   domain: EndgameDomain
   class: string
   strategy: 'playOutOnly' | 'scenarioPlus'
@@ -389,24 +361,6 @@ export interface EndgamePuzzleV2 {
   // FinishHim extensions (present when discipline === 'finishhim')
   tactical_fen?: string
   tactical_solution?: string
-  tactical_rating?: number
-  popularity?: number
-  nb_plays?: number
-  meta_themes?: string[]
-
-  // Theoretical extensions (present when discipline === 'theoretical_endgames')
-  base_id?: string
-  result?: string
-  winner?: string
-  weak_side?: string
-  turn_sensitive?: boolean
-  dtm?: number
-  dtz?: number
-  sf_eval?: number
-  wdl_white?: number
-  wdl_draw?: number
-  wdl_black?: number
-  source?: string
 }
 
 // ============================================================================
@@ -540,7 +494,7 @@ export interface SessionSummaryDTO {
 
 export interface HydratedSessionItem {
   index: number
-  puzzle_id: string
+  puzzle_id?: string
   is_woodpecker: boolean
   woodpecker_streak: number
   status: SessionItemStatus
@@ -650,6 +604,8 @@ export interface AttemptResultDTO {
   session: SessionSummaryDTO
   course?: CourseDTO
   promoted_to_tier?: TrainingDifficulty
+  resolved_item?: HydratedSessionItem
+  next_item?: HydratedSessionItem
 }
 
 // ============================================================================
@@ -798,12 +754,12 @@ export interface TacticsCourseCurriculumDTO {
   batches: CourseBatchStatusDTO[]
   woodpecker_days: WoodpeckerCheckpointDTO[]
   crash_test_total?: number
-  crash_test_active: boolean
-  crash_test_index: number
-  crash_test_solved: number
-  crash_test_failed: number
+  crash_test_active?: boolean
+  crash_test_index?: number
+  crash_test_solved?: number
+  crash_test_failed?: number
   crashtest_session?: SessionSummaryDTO
-  flagged_puzzles: CourseFlagDTO[]
+  flagged_puzzles?: CourseFlagDTO[]
 }
 
 export interface CrashTestSessionRequest {
@@ -817,6 +773,11 @@ export interface FlagCoursePuzzleRequest {
   puzzle_id: string
   comment: string
   session_id?: string
+}
+
+export interface FlagCoursePuzzleResponseDTO {
+  session?: SessionSummaryDTO | null
+  next_item?: HydratedSessionItem | null
 }
 
 

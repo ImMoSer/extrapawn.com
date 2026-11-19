@@ -3,20 +3,15 @@ import {
   isClassicalCourseDiscipline,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
-  resolveScopeLabel,
   resolveTwinBadgeLabel,
   resolveTwinPedagogicalPrompt,
-  resolveTwinShortTag,
-  type HydratedSessionItem,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
-  CheckmarkOutline,
   CloseOutline,
   DownloadOutline,
   EyeOutline,
-  LockClosedOutline,
   PauseOutline,
   PlayOutline,
   RefreshOutline,
@@ -25,10 +20,10 @@ import { NButton, NIcon, NScrollbar } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
-import { canAnalyzeSessionItem } from '../lib/sessionItemPolicy'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
+import TrainingSessionQueueItem from './TrainingSessionQueueItem.vue'
 
-const { t, te } = useI18n()
+const { t } = useI18n()
 const store = useTrainingSessionStore()
 const { anomaliesCount } = useCrashTestReport()
 
@@ -83,61 +78,7 @@ const visibleSessionItems = computed(() => {
   return items.slice(start, end)
 })
 
-const scopeLabelCache = new Map<string, string>()
-function cachedScopeLabel(key: string): string {
-  const hit = scopeLabelCache.get(key)
-  if (hit !== undefined) return hit
-  const resolved = resolveScopeLabel('scopes', key, t, te)
-  scopeLabelCache.set(key, resolved)
-  return resolved
-}
-
-function itemMetaSubtitle(item: HydratedSessionItem): string {
-  if (item.course_puzzle) {
-    return `Курс ${item.course_puzzle.course_id || 1} · Батч #${item.course_puzzle.batch_id}`
-  }
-  if (item.tactical) return `R: ${item.tactical.rating}`
-  if (item.endgame) return `R: ${item.endgame.effective_rating}`
-  return 'R: 1500'
-}
-
-function itemCategoryLabel(item: HydratedSessionItem): string {
-  if (item.course_puzzle) {
-    if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') {
-      return `Экзамен · Батч #${item.course_puzzle.batch_id}`
-    }
-    return cachedScopeLabel(item.course_puzzle.class)
-  }
-  if (item.tactical) {
-    const firstMotif =
-      item.tactical.geometry_motifs[0] ??
-      item.tactical.operator_motifs[0] ??
-      item.tactical.concept_motifs[0] ??
-      item.tactical.trigger_motifs[0] ??
-      item.tactical.cognitive_profile
-    return cachedScopeLabel(firstMotif)
-  }
-  if (item.endgame) {
-    return cachedScopeLabel(item.endgame.class)
-  }
-  return item.puzzle_id
-}
-
-function itemObjective(item: HydratedSessionItem): 'win' | 'hold_draw' {
-  if (item.course_puzzle) {
-    if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') {
-      return 'win'
-    }
-    return item.course_puzzle.objective
-  }
-  return item.endgame?.objective ?? 'win'
-}
-
-function itemTwinShortTag(item: HydratedSessionItem): string {
-  if (!item.course_puzzle?.twin_role) return ''
-  if (item.course_puzzle.domain === 'EXAMS' && item.status === 'pending') return ''
-  return resolveTwinShortTag(item.course_puzzle.twin_role)
-}
+const isInspectionActive = computed(() => store.isAnalysisMode || store.isPracticeReplay)
 
 const activeTwinBanner = computed(() => {
   const p = store.analysisPuzzle ?? store.practicePuzzle ?? store.currentPuzzle
@@ -160,13 +101,8 @@ function formatDelta(delta?: number): string {
   return rounded >= 0 ? `+${rounded}` : `${rounded}`
 }
 
-function isItemClickable(item: HydratedSessionItem): boolean {
-  return store.canSwitchSidebarItem && canAnalyzeSessionItem(item)
-}
-
-function handleItemClick(item: HydratedSessionItem): void {
-  if (!isItemClickable(item)) return
-  store.enterPuzzleAnalysis(item.puzzle_id, true)
+function handleItemSelect(puzzleId: string): void {
+  store.enterPuzzleAnalysis(puzzleId, true)
 }
 </script>
 
@@ -509,107 +445,23 @@ function handleItemClick(item: HydratedSessionItem): void {
 
       <NScrollbar class="flex-1">
         <div class="divide-y divide-border/50">
-          <div
+          <TrainingSessionQueueItem
             v-for="item in visibleSessionItems"
-            :key="item.puzzle_id"
-            class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
-            :title="
-              !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
-                ? t('features.trainingCenter.sidebar.pendingLockedHint')
-                : undefined
+            :key="item.index"
+            :item="item"
+            :is-current="item.index === store.currentItemIndex"
+            :is-inspection-active="isInspectionActive"
+            :is-inspecting-this="
+              Boolean(
+                item.puzzle_id &&
+                  ((store.isAnalysisMode && store.analysisPuzzle?.puzzle_id === item.puzzle_id) ||
+                    (store.isPracticeReplay && store.practicePuzzle?.puzzle_id === item.puzzle_id)),
+              )
             "
-            :class="[
-              item.index === store.currentItemIndex &&
-              !store.isAnalysisMode &&
-              !store.isPracticeReplay
-                ? 'bg-elevated border-l-2 border-l-brand'
-                : '',
-              (store.isAnalysisMode && store.analysisPuzzle?.puzzle_id === item.puzzle_id) ||
-              (store.isPracticeReplay && store.practicePuzzle?.puzzle_id === item.puzzle_id)
-                ? 'bg-accent/15 border-l-2 border-l-accent'
-                : '',
-              item.status === 'solved' ? 'bg-success/5 border-l-2 border-l-success' : '',
-              item.status === 'failed' ? 'bg-danger/5 border-l-2 border-l-danger' : '',
-              isItemClickable(item) ? 'cursor-pointer hover:bg-elevated/70' : '',
-              !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
-                ? 'opacity-50 cursor-not-allowed'
-                : '',
-            ]"
-            @click="handleItemClick(item)"
-          >
-            <!-- Left: Status Icon + Category + Badges -->
-            <div class="flex items-center gap-2 min-w-0 flex-1">
-              <span
-                class="w-5 h-5 rounded-sm flex items-center justify-center font-condensed font-bold text-[11px] shrink-0 border"
-                :class="[
-                  item.status === 'solved'
-                    ? 'bg-success/15 text-success border-success/40'
-                    : item.status === 'failed'
-                      ? 'bg-danger/15 text-danger border-danger/40'
-                      : item.index === store.currentItemIndex
-                        ? 'bg-brand text-on-brand border-brand'
-                        : 'bg-elevated text-text-secondary border-border',
-                ]"
-              >
-                <NIcon v-if="item.status === 'solved'" size="12"><CheckmarkOutline /></NIcon>
-                <NIcon v-else-if="item.status === 'failed'" size="12"><CloseOutline /></NIcon>
-                <template v-else>{{ item.index + 1 }}</template>
-              </span>
-
-              <div class="flex flex-col min-w-0 flex-1">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="truncate text-text-primary font-medium">
-                    {{ itemCategoryLabel(item) }}
-                  </span>
-                  <span
-                    v-if="itemTwinShortTag(item)"
-                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40 shrink-0"
-                    title="Золотой перевёртыш"
-                  >
-                    TWIN {{ itemTwinShortTag(item) }}
-                  </span>
-                  <span
-                    v-if="itemObjective(item) === 'hold_draw'"
-                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40 shrink-0"
-                  >
-                    DRAW
-                  </span>
-                  <span
-                    v-if="item.is_woodpecker"
-                    class="px-1 py-0.2 rounded-sm text-[9px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40 shrink-0"
-                  >
-                    WP {{ item.woodpecker_streak }}/3
-                  </span>
-                </div>
-                <span class="font-condensed text-[11px] text-text-secondary">
-                  {{ itemMetaSubtitle(item) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Right: Lock Icon (Pending in Analysis) / Rating Delta + Time -->
-            <div class="flex items-center gap-2 shrink-0 ml-2">
-              <NIcon
-                v-if="
-                  !canAnalyzeSessionItem(item) && (store.isAnalysisMode || store.isPracticeReplay)
-                "
-                size="13"
-                class="text-text-disabled"
-              >
-                <LockClosedOutline />
-              </NIcon>
-              <span
-                v-if="item.rating_delta !== undefined"
-                class="font-condensed font-bold text-[11px]"
-                :class="item.rating_delta >= 0 ? 'text-success' : 'text-danger'"
-              >
-                {{ formatDelta(item.rating_delta) }}
-              </span>
-              <span class="font-condensed text-[11px] text-text-secondary min-w-12 text-right">
-                {{ item.time_ms ? store.formatDurationMs(item.time_ms) : '--:--.-' }}
-              </span>
-            </div>
-          </div>
+            :can-switch-sidebar-item="store.canSwitchSidebarItem"
+            :format-duration-ms="store.formatDurationMs"
+            @select="handleItemSelect"
+          />
         </div>
       </NScrollbar>
     </div>

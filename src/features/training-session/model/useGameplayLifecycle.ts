@@ -25,7 +25,7 @@ import {
 import { usePreferencesStore } from '@/entities/user'
 import logger from '@/shared/lib/logger'
 import { markRaw } from 'vue'
-import { getItemAttemptsUsed } from '../lib/sessionItemPolicy'
+import { getItemAttemptsUsed, isSessionItemHydrated } from '../lib/sessionItemPolicy'
 import {
   buildEndgameAutomatCallbacks,
   buildEndgameHopelessCallbacks,
@@ -70,6 +70,28 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     return serverBot
   }
 
+  function markRawPayloads(item: HydratedSessionItem): void {
+    if (item.course_puzzle) item.course_puzzle = markRaw(item.course_puzzle)
+    if (item.tactical) item.tactical = markRaw(item.tactical)
+    if (item.endgame) item.endgame = markRaw(item.endgame)
+  }
+
+  function mergeHydratedItem(incoming: HydratedSessionItem): void {
+    const sess = state.hydratedSession.value
+    if (!sess) return
+    if (incoming.index < 0 || incoming.index >= sess.items.length) {
+      throw new Error(
+        `[TrainingSessionStore] Received out-of-bounds hydrated item index=${incoming.index} (session length=${sess.items.length}). Fail-Fast!`,
+      )
+    }
+    markRawPayloads(incoming)
+    sess.items[incoming.index] = incoming
+    const reactiveSlot = sess.items[incoming.index]
+    if (reactiveSlot && reactiveSlot.puzzle_id) {
+      state.itemByPuzzleId.set(reactiveSlot.puzzle_id, reactiveSlot)
+    }
+  }
+
   function applyHydratedSessionAndLaunch(dto: HydratedSessionDTO): void {
     clock.clearAutoNextTimeout()
     clock.stopTimer()
@@ -88,16 +110,16 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
       if (typeof item.time_ms === 'number' && item.time_ms > 0) {
         initialTotalTimeMs += item.time_ms
       }
-      if (item.course_puzzle) item.course_puzzle = markRaw(item.course_puzzle)
-      if (item.tactical) item.tactical = markRaw(item.tactical)
-      if (item.endgame) item.endgame = markRaw(item.endgame)
+      markRawPayloads(item)
     }
     state.runningSessionTimeMs.value = initialTotalTimeMs
 
     state.activeDiscipline.value = dto.session.discipline
     state.hydratedSession.value = dto
     for (const reactiveItem of state.hydratedSession.value.items) {
-      state.itemByPuzzleId.set(reactiveItem.puzzle_id, reactiveItem)
+      if (reactiveItem.puzzle_id) {
+        state.itemByPuzzleId.set(reactiveItem.puzzle_id, reactiveItem)
+      }
     }
     state.lastAttemptResult.value = null
     state.lastAttemptTelemetry.value = null
@@ -137,9 +159,15 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
     }
     if (item.status !== 'pending') {
       throw new Error(
-        `[TrainingSessionStore] Cannot launch non-pending item ${item.puzzle_id} (status="${item.status}"). Fail-Fast!`,
+        `[TrainingSessionStore] Cannot launch non-pending item ${item.puzzle_id ?? `#${item.index}`} (status="${item.status}"). Fail-Fast!`,
       )
     }
+    if (!isSessionItemHydrated(item) || !item.puzzle_id) {
+      throw new Error(
+        `[TrainingSessionStore] Cannot launch unhydrated session item at index ${item.index}. Fail-Fast!`,
+      )
+    }
+    const activePuzzleId = item.puzzle_id
 
     const botEngine = syncBotLadderForSession(sess.session)
     const puzzle = adaptSessionItemToPuzzle(sess.session.discipline, item)
@@ -196,7 +224,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         await handleAttemptOutcome(
           tokenAtLaunch,
           sess.session.id,
-          item.puzzle_id,
+          activePuzzleId,
           true,
           resolvedTelemetry,
           attemptsUsedOnSolve,
@@ -219,7 +247,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
           item.attempts_used = nextSpentAttempts
           state.lastAttemptTelemetry.value = resolvedTelemetry
           state.runtime.setSavedRetrySnapshot({
-            puzzleId: item.puzzle_id,
+            puzzleId: activePuzzleId,
             fen: boardStore.fen,
             orientation: humanColor,
           })
@@ -231,7 +259,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         await handleAttemptOutcome(
           tokenAtLaunch,
           sess.session.id,
-          item.puzzle_id,
+          activePuzzleId,
           false,
           resolvedTelemetry,
           nextSpentAttempts,
@@ -331,6 +359,12 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
       targetItem.attempts_used = effectiveAttemptsUsed
       targetItem.time_ms = elapsedMs
       targetItem.rating_delta = result.global_rating_delta
+      if (result.resolved_item) {
+        mergeHydratedItem(result.resolved_item)
+      }
+      if (result.next_item) {
+        mergeHydratedItem(result.next_item)
+      }
       state.runningSessionTimeMs.value += elapsedMs
       sess.session = result.session
 
@@ -425,6 +459,7 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
 
   return {
     syncBotLadderForSession,
+    mergeHydratedItem,
     applyHydratedSessionAndLaunch,
     launchCurrentPuzzle,
     handleAttemptOutcome,

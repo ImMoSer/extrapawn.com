@@ -5,21 +5,17 @@ import {
   type AttemptRequest,
   type AttemptResultDTO,
   type CabinetDTO,
-  type CatalogManifestDTO,
   type ConsumeItemRetryResponseDTO,
   type CourseDiplomaDTO,
   type CourseDTO,
   type CourseHistoryResponseDTO,
-  type CoursePuzzleV2,
   type CourseSessionRequest,
   type CrashTestSessionRequest,
-  type EndgamePuzzleV2,
   type FlagCoursePuzzleRequest,
+  type FlagCoursePuzzleResponseDTO,
   type HubOverviewDTO,
   type HydratedSessionDTO,
-  type SessionSummaryDTO,
   type StartCourseRequest,
-  type TacticalPuzzleV2,
   type TacticsCourseCurriculumDTO,
   type TrainingDiscipline,
   type WarmUpSessionRequest,
@@ -86,21 +82,16 @@ function assertTacticsCourseCurriculumDTO(raw: unknown): TacticsCourseCurriculum
   if (
     !Array.isArray(obj.batches) ||
     !Array.isArray(obj.woodpecker_days) ||
-    !Array.isArray(obj.flagged_puzzles) ||
     typeof obj.current_step_type !== 'string'
   ) {
     throw new Error(
-      '[trainingApi] Invalid TacticsCourseCurriculumDTO payload from server (missing batches/woodpecker_days/flagged_puzzles). Ensure Go training-engine v3.0 is running on port 5001. Fail-Fast!',
+      '[trainingApi] Invalid TacticsCourseCurriculumDTO payload from server (missing batches/woodpecker_days/current_step_type). Ensure Go training-engine v3.0 is running on port 5001. Fail-Fast!',
     )
   }
   return raw as TacticsCourseCurriculumDTO
 }
 
 export const trainingApi = {
-  getCatalogInfo(): Promise<CatalogManifestDTO> {
-    return apiClient<CatalogManifestDTO>('/training/catalog-info')
-  },
-
   async getOverview(): Promise<HubOverviewDTO> {
     const raw = await apiClient<unknown>('/training/overview')
     return assertHubOverviewDTO(raw)
@@ -239,16 +230,6 @@ export const trainingApi = {
     )
   },
 
-  getTacticalPuzzleById(puzzleId: string): Promise<TacticalPuzzleV2> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    return apiClient<TacticalPuzzleV2>(`/training/puzzle/tactics/${encodeURIComponent(id)}`)
-  },
-
-  getCoursePuzzleById(puzzleId: string): Promise<CoursePuzzleV2> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    return apiClient<CoursePuzzleV2>(`/training/puzzle/tactics_course/${encodeURIComponent(id)}`)
-  },
-
   async getTacticsCourseCurriculum(courseSlug?: string): Promise<TacticsCourseCurriculumDTO> {
     const trimmed = courseSlug?.trim() ?? ''
     const query = trimmed ? `?course_slug=${encodeURIComponent(trimmed)}` : ''
@@ -284,7 +265,7 @@ export const trainingApi = {
     })
   },
 
-  flagCoursePuzzle(payload: FlagCoursePuzzleRequest): Promise<SessionSummaryDTO | null> {
+  flagCoursePuzzle(payload: FlagCoursePuzzleRequest): Promise<FlagCoursePuzzleResponseDTO> {
     const id = assertNonEmptyId('puzzle_id', payload.puzzle_id)
     const body: Record<string, unknown> = {
       puzzle_id: id,
@@ -293,19 +274,9 @@ export const trainingApi = {
     if (payload.session_id) {
       body.session_id = payload.session_id.trim()
     }
-    return apiClient<SessionSummaryDTO | null>('/training/tactics-course/flag', {
+    return apiClient<FlagCoursePuzzleResponseDTO>('/training/tactics-course/flag', {
       method: 'POST',
       body: JSON.stringify(body),
     })
-  },
-
-  getEndgamePuzzleById(
-    discipline: Exclude<TrainingDiscipline, 'tactics'>,
-    puzzleId: string,
-  ): Promise<EndgamePuzzleV2> {
-    const id = assertNonEmptyId('puzzleId', puzzleId)
-    return apiClient<EndgamePuzzleV2>(
-      `/training/puzzle/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`,
-    )
   },
 }

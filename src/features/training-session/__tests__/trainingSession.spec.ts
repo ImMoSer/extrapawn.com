@@ -151,21 +151,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         user_color: 'white',
         difficulty: 'Master',
         phase: 'middlegame',
-        length: 'long',
-        goal: 'crushing',
-        master_game: true,
-        course_eligible: true,
-        cognitive_profile: 'pure_calc',
-        geometry_motifs: [],
-        operator_motifs: [],
-        concept_motifs: [],
-        trigger_motifs: [],
-        meta_themes: ['crushing'],
+        primary_motif: 'pure_calc',
         tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 b - - 0 1',
         tactical_solution: 'g8f8 e1e8',
         rating: 2150,
-        popularity: 92,
-        nb_plays: 1400,
       },
     }
     const adaptedTac = adaptSessionItemToPuzzle('tactics', tacItem)
@@ -189,9 +178,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         tactical_fen: '6k1/8/5Q1K/8/8/8/8/8 w - - 0 1',
         tactical_solution: 'f6g6 g8h8',
         difficulty: 'Pro',
-        ending_rating: 1620,
         effective_rating: 1710,
-        pieces_count: 3,
         domain: 'QUEEN',
         class: 'queenEnding',
         strategy: 'scenarioPlus',
@@ -218,9 +205,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         discipline: 'theoretical_endgames',
         ending_fen: '7k/5Q2/7K/8/8/8/8/8 w - - 0 1',
         difficulty: 'Novice',
-        ending_rating: 1200,
         effective_rating: 1200,
-        pieces_count: 3,
         domain: 'EXTRA' as EndgameDomain,
         class: 'extraPawn',
         strategy: 'playOutOnly',
@@ -242,26 +227,18 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       status: 'pending',
       course_puzzle: {
         puzzle_id: '0QMrP0Dd',
-        base_id: 'QF6kssnH',
         discipline: 'endgame_course',
         course_slug: 'endgame_course_1_pawn',
         course_id: 1,
         batch_id: 1,
         global_batch_id: 1,
-        batch_slug: 'batch_01_elementary_mates',
         batch_title: 'Батч 01. Базовые и легкофигурные маты',
-        week_number: 1,
-        schedule_day: 'Mon',
-        order_in_batch: 7,
         domain: 'ELEMENTARY_MATES',
         class: 'minorPieceMates',
-        sub_class: 'twoKnightsVsPawnMate',
         objective: 'win',
         strategy: 'playOutOnly',
         first_move: 'user',
         user_color: 'white',
-        pieces_count: 4,
-        plies_count: 0,
         twin_group_id: '0QMrP0Dd',
         twin_role: 'part_1_win',
         tactical_fen: '8/8/8/8/8/p2N4/k7/2K5 w - - 0 1',
@@ -277,7 +254,6 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       course_puzzle: {
         ...twinPart1.course_puzzle!,
         puzzle_id: '0QMrP0DdR',
-        order_in_batch: 8,
         objective: 'hold_draw',
         first_move: 'bot',
         user_color: 'white',
@@ -327,9 +303,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
             discipline: 'theoretical_endgames',
             ending_fen: '7k/5Q2/7K/8/8/8/8/8 w - - 0 1',
             difficulty: 'Pro',
-            ending_rating: 1750,
             effective_rating: 1750,
-            pieces_count: 3,
             domain: 'QUEEN',
             class: 'queenEnding',
             strategy: 'playOutOnly',
@@ -349,9 +323,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
             discipline: 'theoretical_endgames',
             ending_fen: '7k/5Q2/7K/8/8/8/8/8 w - - 0 1',
             difficulty: 'Pro',
-            ending_rating: 1780,
             effective_rating: 1780,
-            pieces_count: 3,
             domain: 'QUEEN',
             class: 'queenEnding',
             strategy: 'playOutOnly',
@@ -605,21 +577,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
               user_color: 'white',
               difficulty: 'Novice',
               phase: 'endgame',
-              length: 'short',
-              goal: 'mate',
-              master_game: false,
-              course_eligible: true,
-              cognitive_profile: 'geometry_only',
-              geometry_motifs: ['backRankMate'],
-              operator_motifs: [],
-              concept_motifs: [],
-              trigger_motifs: [],
-              meta_themes: ['mate'],
+              primary_motif: 'backRankMate',
               tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
               tactical_solution: 'e1e8',
               rating: 1200,
-              popularity: 95,
-              nb_plays: 500,
             },
           },
           {
@@ -636,21 +597,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
               user_color: 'white',
               difficulty: 'Novice',
               phase: 'endgame',
-              length: 'short',
-              goal: 'mate',
-              master_game: false,
-              course_eligible: true,
-              cognitive_profile: 'geometry_only',
-              geometry_motifs: ['backRankMate'],
-              operator_motifs: [],
-              concept_motifs: [],
-              trigger_motifs: [],
-              meta_themes: ['mate'],
+              primary_motif: 'backRankMate',
               tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
               tactical_solution: 'e1e8',
               rating: 1210,
-              popularity: 95,
-              nb_plays: 500,
             },
           },
           {
@@ -667,21 +617,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
               user_color: 'white',
               difficulty: 'Novice',
               phase: 'endgame',
-              length: 'short',
-              goal: 'mate',
-              master_game: false,
-              course_eligible: true,
-              cognitive_profile: 'geometry_only',
-              geometry_motifs: ['backRankMate'],
-              operator_motifs: [],
-              concept_motifs: [],
-              trigger_motifs: [],
-              meta_themes: ['mate'],
+              primary_motif: 'backRankMate',
               tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
               tactical_solution: 'e1e8',
               rating: 1220,
-              popularity: 95,
-              nb_plays: 500,
             },
           },
         ],
@@ -912,21 +851,10 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         user_color: 'white',
         difficulty: 'Novice',
         phase: 'endgame',
-        length: 'short',
-        goal: 'mate',
-        master_game: false,
-        course_eligible: true,
-        cognitive_profile: 'geometry_only',
-        geometry_motifs: ['backRankMate'],
-        operator_motifs: [],
-        concept_motifs: [],
-        trigger_motifs: [],
-        meta_themes: ['mate'],
+        primary_motif: 'backRankMate',
         tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
         tactical_solution: 'e1e8',
         rating: 1200 + index * 10,
-        popularity: 95,
-        nb_plays: 500,
       },
     })
 
@@ -1030,22 +958,11 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
         user_color: 'white',
         difficulty: 'Novice',
         phase: 'endgame',
-        length: 'short',
-        goal: 'mate',
-        master_game: false,
-        course_eligible: true,
-        cognitive_profile: 'geometry_only',
-        geometry_motifs: ['backRankMate'],
-        operator_motifs: [],
-        concept_motifs: [],
-        trigger_motifs: [],
-        meta_themes: ['mate'],
+        primary_motif: 'backRankMate',
         // White plays 1. Re7+ Kf8 2. Re8#
         tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
         tactical_solution: 'e1e7 g8f8 e7e8',
         rating: 1300,
-        popularity: 95,
-        nb_plays: 500,
       },
     })
 
@@ -1200,21 +1117,17 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
           status: 'pending',
           course_puzzle: {
             puzzle_id: 'tc1_b01_001',
-            base_id: 'base1',
             discipline: 'tactics_course',
             course_slug: 'tactics_classical_1',
             course_id: 1,
             batch_id: 1,
             batch_title: 'Mate in 1',
-            week_number: 1,
             domain: 'TACTICS',
             class: 'backRankMate',
             objective: 'win',
             strategy: 'scenarioOnly',
             first_move: 'user',
             user_color: 'white',
-            pieces_count: 8,
-            plies_count: 1,
             tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
             tactical_solution: 'e1e8',
           },
@@ -1278,9 +1191,7 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
             discipline: 'theoretical_endgames',
             ending_fen: '4k3/8/8/8/4P3/4K3/8/8 w - - 0 1',
             difficulty: 'Novice',
-            ending_rating: 1200,
             effective_rating: 1200,
-            pieces_count: 3,
             domain: 'PAWN',
             class: 'pawnEnding',
             strategy: 'playOutOnly',
@@ -1371,5 +1282,144 @@ describe('training-session — Adapter, Bot Ladder & Session Store', () => {
       'GameAudioEngine.hopelessResign',
     )
     expect(soundService.play).not.toHaveBeenCalledWith('tactics_error')
+  })
+
+  it('progressively hydrates Window=1 future stubs via submitAttempt.next_item and reveals masked exam metadata via resolved_item', async () => {
+    const store = useTrainingSessionStore()
+    const gameStore = useGameStore()
+    const boardStore = useBoardStore()
+    boardStore.animationDurationMs = 0
+
+    const initialSession: HydratedSessionDTO = {
+      session: createSessionSummary({
+        discipline: 'tactics_course',
+        mode: 'course',
+        difficulty: 'Pro',
+        total_count: 2,
+      }),
+      items: [
+        {
+          index: 0,
+          puzzle_id: 'EXAM-1',
+          is_woodpecker: false,
+          woodpecker_streak: 0,
+          status: 'pending',
+          course_puzzle: {
+            puzzle_id: 'EXAM-1',
+            discipline: 'tactics_course',
+            course_slug: 'tactics_classical_1',
+            course_id: 1,
+            batch_id: 15,
+            batch_title: 'Батч 15. Экзамен',
+            domain: 'EXAMS',
+            class: '', // Masked by server while pending
+            objective: 'win',
+            strategy: 'scenarioOnly',
+            first_move: 'user',
+            user_color: 'white',
+            tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+            tactical_solution: 'e1e8',
+          },
+        },
+        {
+          index: 1,
+          // Unhydrated future stub: NO puzzle_id and NO course_puzzle payload
+          is_woodpecker: false,
+          woodpecker_streak: 0,
+          status: 'pending',
+        },
+      ],
+    }
+
+    vi.spyOn(trainingApi, 'composeCourseSession').mockResolvedValue(initialSession)
+    vi.spyOn(trainingApi, 'getOverview').mockResolvedValue(createOverviewStub())
+    vi.spyOn(trainingApi, 'getTacticsCourseCurriculum').mockResolvedValue(createCurriculumStub())
+    vi.spyOn(trainingApi, 'submitAttempt').mockResolvedValue({
+      puzzle_id: 'EXAM-1',
+      solved: true,
+      global_rating_before: 1500,
+      global_rating_after: 1500,
+      global_rating_delta: 0,
+      scope_deltas: [],
+      woodpecker: { action: 'none', streak: 0 },
+      session: createSessionSummary({
+        discipline: 'tactics_course',
+        mode: 'course',
+        difficulty: 'Pro',
+        total_count: 2,
+        current_index: 1,
+        solved_count: 1,
+        failed_count: 0,
+        is_completed: false,
+      }),
+      resolved_item: {
+        index: 0,
+        puzzle_id: 'EXAM-1',
+        is_woodpecker: false,
+        woodpecker_streak: 0,
+        status: 'solved',
+        attempts_used: 1,
+        time_ms: 1200,
+        rating_delta: 0,
+        course_puzzle: {
+          puzzle_id: 'EXAM-1',
+          discipline: 'tactics_course',
+          course_slug: 'tactics_classical_1',
+          course_id: 1,
+          batch_id: 15,
+          batch_title: 'Батч 15. Экзамен',
+          domain: 'EXAMS',
+          class: 'backRankMate', // Revealed by server upon completion
+          objective: 'win',
+          strategy: 'scenarioOnly',
+          first_move: 'user',
+          user_color: 'white',
+          tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+          tactical_solution: 'e1e8',
+        },
+      },
+      next_item: {
+        index: 1,
+        puzzle_id: 'EXAM-2',
+        is_woodpecker: false,
+        woodpecker_streak: 0,
+        status: 'pending',
+        course_puzzle: {
+          puzzle_id: 'EXAM-2',
+          discipline: 'tactics_course',
+          course_slug: 'tactics_classical_1',
+          course_id: 1,
+          batch_id: 15,
+          batch_title: 'Батч 15. Экзамен',
+          domain: 'EXAMS',
+          class: '',
+          objective: 'win',
+          strategy: 'scenarioOnly',
+          first_move: 'user',
+          user_color: 'white',
+          tactical_fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+          tactical_solution: 'e1e8',
+        },
+      },
+    })
+
+    await store.startClassicalCourseNextStep('tactics_classical_1')
+
+    // Initially slot 0 is hydrated (masked exam), slot 1 is an unhydrated stub
+    expect(store.currentPuzzle?.puzzle_id).toBe('EXAM-1')
+    expect(store.currentPuzzle?.category).toBe('mixedExam')
+    expect(store.sessionItems[1]?.puzzle_id).toBeUndefined()
+    expect(store.sessionItems[1]?.course_puzzle).toBeUndefined()
+
+    // Solve EXAM-1 -> server reveals slot 0's true class and delivers slot 1 inside submitAttempt response
+    await gameStore.handleUserMove('e1', 'e8')
+    expect(store.sessionItems[0]?.course_puzzle?.class).toBe('backRankMate')
+    expect(store.sessionItems[1]?.puzzle_id).toBe('EXAM-2')
+    expect(store.sessionItems[1]?.course_puzzle?.puzzle_id).toBe('EXAM-2')
+
+    // Advancing launches newly hydrated EXAM-2 with zero extra HTTP requests
+    store.advanceAfterAttempt()
+    expect(store.currentItemIndex).toBe(1)
+    expect(store.currentPuzzle?.puzzle_id).toBe('EXAM-2')
   })
 })
