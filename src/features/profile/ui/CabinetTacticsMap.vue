@@ -134,7 +134,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 <template>
   <section class="flex flex-col gap-4">
     <!-- Top Header & Sort Controls (No outer mega-card) -->
-    <div class="flex flex-col justify-between gap-3 px-0.5 md:flex-row md:items-center">
+    <div class="flex flex-col justify-between gap-3 px-0.5 @3xl:flex-row @3xl:items-center">
       <div>
         <div class="flex items-center gap-2">
           <NIcon :component="LayersOutline" class="text-lg text-text-secondary shrink-0" />
@@ -189,9 +189,9 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     </div>
 
     <!-- Main 2-Column Split: Left Structural Compass + Right 4 Motif Contours -->
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-12">
       <!-- Left Column: Structural Compass (Phases, Lengths, Goals, Cognitive, Master Game) -->
-      <div class="space-y-3.5 rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-5">
+      <div class="space-y-3.5 rounded-xl border border-border bg-surface p-3 @2xl:p-4 @3xl:col-span-5">
         <div class="flex items-center justify-between border-b border-border pb-2.5">
           <div class="flex items-center gap-2">
             <NIcon :component="CompassOutline" class="text-base text-accent" />
@@ -266,9 +266,9 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Right Column: 4 Combat Motif Contour Tabs -->
-      <div class="rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-7">
+      <div class="rounded-xl border border-border bg-surface p-3 @2xl:p-4 @3xl:col-span-7">
         <!-- 4 Contour Selector Tabs -->
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div class="grid grid-cols-2 gap-2 @5xl:grid-cols-4">
           <div
             v-for="contour in TACTICS_MOTIF_GROUPS"
             :key="contour"

@@ -367,7 +367,7 @@ async function handleResetCourseProgress(): Promise<void> {
       v-if="authStore.isDeveloper"
       class="p-3.5 sm:p-4 rounded-lg bg-surface border border-warning/40 flex flex-col gap-3"
     >
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div class="flex flex-col @5xl:flex-row @5xl:items-center @5xl:justify-between gap-3">
         <div class="flex flex-col gap-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40">
@@ -541,7 +541,7 @@ async function handleResetCourseProgress(): Promise<void> {
           </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 @3xl:grid-cols-2 gap-3">
           <template v-for="batch in wg.batches" :key="batch.batch_id">
             <!-- Batch Card -->
             <div
@@ -649,7 +649,7 @@ async function handleResetCourseProgress(): Promise<void> {
             <!-- Woodpecker Checkpoint Banner after every 2nd batch -->
             <div
               v-if="batch.batch_id % 2 === 0 && wg.checkpoints[batch.batch_id]"
-              class="md:col-span-2 px-3.5 py-2.5 rounded-md border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+              class="@3xl:col-span-2 px-3.5 py-2.5 rounded-md border flex flex-col @2xl:flex-row @2xl:items-center @2xl:justify-between gap-2"
               :class="
                 !wg.checkpoints[batch.batch_id]?.is_unlocked
                   ? 'bg-surface/40 border-border opacity-70'

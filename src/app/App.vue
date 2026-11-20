@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/entities/game'
 import { LanguageInitModal, LegalConsentModal, SettingsMenu } from '@/features/settings'
+import { useViewportMode } from '@/shared/lib/layout/useViewportMode'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { isDarkMode, toggleColorMode } from '@/shared/theme/tokens'
@@ -16,18 +17,23 @@ import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
 
 const route = useRoute()
 const { t, locale } = useI18n()
+const { isDesktopShell } = useViewportMode()
 
 watch(locale, () => {
   updateSeoWithRoute(route.meta as RouteMetaWithSeo, t)
 })
 
-const isLandscape = ref(false)
-const isSidebarCollapsed = ref(true)
 const isDrawerOpen = ref(false)
 
 const openDrawer = () => {
   isDrawerOpen.value = true
 }
+
+watch(isDesktopShell, (desktop) => {
+  if (desktop && isDrawerOpen.value) {
+    isDrawerOpen.value = false
+  }
+})
 
 const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
   const gameStore = useGameStore()
@@ -37,17 +43,11 @@ const beforeUnloadHandler = (event: BeforeUnloadEvent) => {
   }
 }
 
-const mediaQuery = window.matchMedia('(min-width: 769px) and (orientation: landscape)')
-const updateLandscape = () => (isLandscape.value = mediaQuery.matches)
-
 onMounted(() => {
-  mediaQuery.addEventListener('change', updateLandscape)
-  updateLandscape()
   window.addEventListener('beforeunload', beforeUnloadHandler)
 })
 
 onUnmounted(() => {
-  mediaQuery.removeEventListener('change', updateLandscape)
   window.removeEventListener('beforeunload', beforeUnloadHandler)
 })
 </script>
@@ -56,29 +56,18 @@ onUnmounted(() => {
   <n-config-provider :theme="isDarkMode ? darkTheme : null" :theme-overrides="naiveThemeOverrides">
     <n-message-provider :duration="6000">
       <n-dialog-provider>
-        <n-layout has-sider position="absolute" class="h-screen bg-canvas">
-          <!-- Desktop Sidebar (Landscape) -->
-          <n-layout-sider
-            v-if="isLandscape"
-            bordered
-            collapse-mode="width"
-            :collapsed-width="64"
-            :width="260"
-            :collapsed="isSidebarCollapsed"
-            show-trigger
-            class="z-1000 bg-surface border-r border-border"
-            @collapse="isSidebarCollapsed = true"
-            @expand="isSidebarCollapsed = false"
+        <div class="flex h-dvh w-screen overflow-hidden bg-canvas text-text-primary">
+          <!-- Fixed Collapsed Desktop NavRail (Landscape >= 900px) -->
+          <aside
+            v-if="isDesktopShell"
+            class="z-50 flex h-full w-[var(--nav-rail-w)] shrink-0 flex-col border-r border-border bg-surface select-none"
           >
             <!-- Top Action Bar (Settings + Dark/Light Mode Switcher) -->
-            <div
-              class="py-2 px-2 flex items-center justify-center border-b border-border"
-              :class="isSidebarCollapsed ? 'flex-col gap-1' : 'flex-row gap-2'"
-            >
+            <div class="flex flex-col items-center justify-center gap-1 border-b border-border px-2 py-2">
               <SettingsMenu />
               <button
                 type="button"
-                class="p-2 rounded-md flex items-center justify-center bg-transparent border border-transparent text-text-secondary hover:text-text-primary hover:bg-elevated hover:border-border cursor-pointer transition-colors"
+                class="flex cursor-pointer items-center justify-center rounded-md border border-transparent bg-transparent p-2 text-text-secondary transition-colors hover:border-border hover:bg-elevated hover:text-text-primary"
                 :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                 :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                 @click="toggleColorMode"
@@ -90,38 +79,36 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <div class="py-2.5 px-4 flex items-center justify-center min-h-[50px] border-b border-border/60">
-              <RouterLink to="/" class="flex items-center justify-center no-underline">
+            <!-- Brand Mark -->
+            <div class="flex min-h-[50px] items-center justify-center border-b border-border/60 px-2 py-2.5">
+              <RouterLink
+                to="/"
+                class="flex items-center justify-center no-underline"
+                title="EXTRAPAWN"
+                aria-label="EXTRAPAWN"
+              >
                 <img
-                  v-if="isSidebarCollapsed"
                   src="/webp/extra_pawn_black.webp"
-                  alt="Logo"
+                  alt="EXTRAPAWN"
                   width="28"
                   height="28"
-                  class="w-7 h-7 object-contain"
+                  class="h-7 w-7 object-contain"
                 />
-                <div v-else class="flex items-center gap-2.5 w-full">
-                  <img
-                    src="/webp/extra_pawn_black.webp"
-                    alt="EXTRAPAWN"
-                    width="32"
-                    height="32"
-                    class="h-8 w-auto object-contain"
-                  />
-                  <span class="brand-text text-xl m-0">EXTRAPAWN</span>
-                </div>
               </RouterLink>
             </div>
 
-            <NavMenu :collapsed="isSidebarCollapsed" />
-          </n-layout-sider>
+            <!-- Always-Collapsed Icon Navigation -->
+            <div class="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <NavMenu :collapsed="true" />
+            </div>
+          </aside>
 
-          <n-layout class="h-screen bg-canvas">
-            <!-- Mobile Header (Portrait) -->
-            <n-layout-header
-              v-if="!isLandscape"
-              bordered
-              class="h-14 px-4 flex items-center justify-between bg-surface border-b border-border relative"
+          <!-- Main Viewport Shell -->
+          <div class="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+            <!-- Mobile / Portrait Header -->
+            <header
+              v-if="!isDesktopShell"
+              class="relative z-40 flex h-[var(--mobile-header-h)] shrink-0 items-center justify-between border-b border-border bg-surface px-4"
             >
               <n-button
                 quaternary
@@ -140,7 +127,7 @@ onUnmounted(() => {
               <RouterLink
                 v-if="route.path !== '/'"
                 to="/"
-                class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 no-underline"
+                class="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 no-underline"
               >
                 <img
                   src="/webp/extra_pawn_black.webp"
@@ -149,13 +136,13 @@ onUnmounted(() => {
                   height="24"
                   class="h-6 w-auto object-contain"
                 />
-                <span class="brand-text text-base m-0 whitespace-nowrap">EXTRAPAWN</span>
+                <span class="brand-text m-0 text-base whitespace-nowrap">EXTRAPAWN</span>
               </RouterLink>
 
               <div class="flex items-center gap-1">
                 <button
                   type="button"
-                  class="p-2 rounded-md flex items-center justify-center bg-transparent border border-transparent text-text-secondary hover:text-text-primary hover:bg-elevated cursor-pointer transition-colors"
+                  class="flex cursor-pointer items-center justify-center rounded-md border border-transparent bg-transparent p-2 text-text-secondary transition-colors hover:bg-elevated hover:text-text-primary"
                   :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                   :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                   @click="toggleColorMode"
@@ -167,24 +154,20 @@ onUnmounted(() => {
                 </button>
                 <SettingsMenu />
               </div>
-            </n-layout-header>
+            </header>
 
-            <!-- Page Content -->
-            <n-layout-content
-              :content-style="{ height: '100%' }"
-              class="bg-canvas"
-              :class="isLandscape ? 'h-screen' : 'h-[calc(100vh-56px)]'"
-            >
+            <!-- Active Page / Game Stage -->
+            <main class="relative min-h-0 w-full flex-1 overflow-hidden bg-canvas">
               <RouterView />
-            </n-layout-content>
-          </n-layout>
+            </main>
+          </div>
 
-          <!-- Mobile Menu Drawer (Swipe-out) -->
+          <!-- Mobile Menu Drawer (Portrait / Compact) -->
           <n-drawer
             v-model:show="isDrawerOpen"
             placement="left"
             :width="280"
-            class="bg-surface border-r border-border"
+            class="border-r border-border bg-surface"
           >
             <n-drawer-content
               closable
@@ -194,7 +177,7 @@ onUnmounted(() => {
               <template #header>
                 <RouterLink
                   to="/"
-                  class="flex items-center justify-center no-underline w-full"
+                  class="flex w-full items-center justify-center no-underline"
                   @click="isDrawerOpen = false"
                 >
                   <n-space align="center" :wrap="false">
@@ -207,7 +190,7 @@ onUnmounted(() => {
                   </n-space>
                 </RouterLink>
               </template>
-              <NavMenu @select="isDrawerOpen = false" />
+              <NavMenu :collapsed="false" @select="isDrawerOpen = false" />
             </n-drawer-content>
           </n-drawer>
 
@@ -215,7 +198,7 @@ onUnmounted(() => {
           <LanguageInitModal />
           <LegalConsentModal />
           <AppUpdateNotifier />
-        </n-layout>
+        </div>
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>

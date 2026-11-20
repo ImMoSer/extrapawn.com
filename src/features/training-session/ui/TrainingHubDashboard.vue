@@ -14,6 +14,7 @@ import {
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import {
   AnalyticsOutline,
@@ -206,9 +207,10 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 </script>
 
 <template>
-  <div class="w-full max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 text-text-primary select-none">
-    <!-- Top Header & Woodpecker Vault Summary -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 rounded-lg bg-surface border border-border">
+  <AppPageShell>
+    <div class="flex w-full flex-col gap-5 text-text-primary select-none">
+      <!-- Top Header & Woodpecker Vault Summary -->
+      <div class="flex flex-col @5xl:flex-row @5xl:items-center @5xl:justify-between gap-4 p-4 @3xl:p-5 rounded-lg bg-surface border border-border">
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-2">
           <NIcon
@@ -300,8 +302,8 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 
     <!-- Discipline Tabs — Monochrome Studio Tabs -->
     <div
-      class="grid grid-cols-2 gap-3"
-      :class="visibleDisciplines.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+      class="grid grid-cols-1 @md:grid-cols-2 gap-3"
+      :class="visibleDisciplines.length >= 5 ? '@5xl:grid-cols-5' : '@5xl:grid-cols-4'"
     >
       <button
         v-for="disc in visibleDisciplines"
@@ -379,7 +381,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
     <!-- Unfinished Session Resume Banner -->
     <div
       v-if="activeSession"
-      class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      class="p-4 rounded-lg bg-surface border border-warning/40 flex flex-col @2xl:flex-row @2xl:items-center @2xl:justify-between gap-3"
     >
       <div class="flex flex-col gap-0.5">
         <div class="flex items-center gap-2">
@@ -457,5 +459,6 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
         @start-warmup="handleStartWarmup"
       />
     </div>
-  </div>
+    </div>
+  </AppPageShell>
 </template>

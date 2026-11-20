@@ -157,9 +157,9 @@ const chartOption = computed(() => {
 <template>
   <section class="flex flex-col gap-4">
     <!-- Top Identity & Woodpecker Vault Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 @5xl:grid-cols-3 gap-4">
       <!-- Player Identity Card -->
-      <div class="lg:col-span-2 p-5 rounded-lg bg-surface border border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="@5xl:col-span-2 p-5 rounded-lg bg-surface border border-border flex flex-col @xl:flex-row @xl:items-center @xl:justify-between gap-4">
         <div class="flex items-center gap-3.5">
           <div class="w-12 h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0">
             <NIcon size="28"><PersonCircleOutline /></NIcon>
@@ -235,8 +235,8 @@ const chartOption = computed(() => {
 
     <!-- Discipline Selector Cards -->
     <div
-      class="grid grid-cols-2 gap-3"
-      :class="visibleDisciplines.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+      class="grid grid-cols-1 @md:grid-cols-2 gap-3"
+      :class="visibleDisciplines.length >= 5 ? '@5xl:grid-cols-5' : '@5xl:grid-cols-4'"
     >
       <button
         v-for="disc in visibleDisciplines"

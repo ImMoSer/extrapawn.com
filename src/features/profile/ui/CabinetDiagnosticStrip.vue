@@ -41,9 +41,9 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
 </script>
 
 <template>
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <section class="grid grid-cols-1 @3xl:grid-cols-3 gap-4">
     <!-- Card 1: Top Strength -->
-    <div class="p-4 rounded-lg bg-surface border border-success/40 flex flex-col justify-between gap-3">
+    <div class="min-w-0 p-4 rounded-lg bg-surface border border-success/40 flex flex-col justify-between gap-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5 text-success">
           <NIcon size="18"><ShieldCheckmarkOutline /></NIcon>
@@ -89,7 +89,7 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
     </div>
 
     <!-- Card 2: Primary Weakness / Gate Blocker -->
-    <div class="p-4 rounded-lg bg-surface border border-danger/40 flex flex-col justify-between gap-3">
+    <div class="min-w-0 p-4 rounded-lg bg-surface border border-danger/40 flex flex-col justify-between gap-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5 text-danger">
           <NIcon size="18"><AlertCircleOutline /></NIcon>
@@ -135,7 +135,7 @@ function handleTrainCard(card: DiagnosticFocusCardDTO): void {
     </div>
 
     <!-- Card 3: Blind Spot (High RD / Unexplored) -->
-    <div class="p-4 rounded-lg bg-surface border border-dashed border-warning/50 flex flex-col justify-between gap-3">
+    <div class="min-w-0 p-4 rounded-lg bg-surface border border-dashed border-warning/50 flex flex-col justify-between gap-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5 text-warning">
           <NIcon size="18"><EyeOffOutline /></NIcon>

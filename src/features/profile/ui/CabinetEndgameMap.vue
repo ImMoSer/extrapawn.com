@@ -152,7 +152,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
 <template>
   <section class="flex flex-col gap-4">
     <!-- Top Section Header & Sorting Controls (No outer mega-card) -->
-    <div class="flex flex-col justify-between gap-3 px-0.5 md:flex-row md:items-center">
+    <div class="flex flex-col justify-between gap-3 px-0.5 @3xl:flex-row @3xl:items-center">
       <div>
         <div class="flex items-center gap-2">
           <NIcon :component="SparklesOutline" class="text-lg text-text-secondary shrink-0" />
@@ -209,7 +209,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     <!-- Global Objective Vector Bar (Theoretical Endgames Only: Win vs Hold Draw — FIDE) -->
     <div
       v-if="discipline === 'theoretical_endgames' && (winObjectiveStat || drawObjectiveStat)"
-      class="grid grid-cols-1 gap-3 md:grid-cols-2"
+      class="grid grid-cols-1 gap-3 @3xl:grid-cols-2"
     >
       <!-- Win Vector -->
       <div
@@ -287,9 +287,9 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
     </div>
 
     <!-- Main Split: Domain Cards (Left) + Concrete Classes Drill-Down (Right) -->
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-12">
       <!-- Left Column: Endgame Domains -->
-      <div class="space-y-2 rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-5">
+      <div class="space-y-2 rounded-xl border border-border bg-surface p-3 @2xl:p-4 @3xl:col-span-5">
         <div class="flex items-center justify-between border-b border-border pb-2.5">
           <span class="text-xs font-bold tracking-wider text-text-primary uppercase">
             {{ t('pages.userCabinet.map.domainsHeader') }} ({{ sortedDomains.length }})
@@ -379,7 +379,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
       </div>
 
       <!-- Right Column: Material Classes Bullet-List inside Selected Domain -->
-      <div class="rounded-xl border border-border bg-surface p-3 sm:p-4 lg:col-span-7">
+      <div class="rounded-xl border border-border bg-surface p-3 @2xl:p-4 @3xl:col-span-7">
         <template v-if="activeDomainEntry">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
             <div>
@@ -468,7 +468,7 @@ function resolveStatusSemanticClass(stat: ScopeStatDTO): {
               <!-- Dual Inline Vector Split for Theoretical Endgames (Win vs Hold Draw) -->
               <div
                 v-if="discipline === 'theoretical_endgames' && (cls.win || cls.hold_draw)"
-                class="mt-2.5 grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2"
+                class="mt-2.5 grid grid-cols-1 gap-2 pt-1 @5xl:grid-cols-2"
               >
                 <div
                   v-if="cls.win"

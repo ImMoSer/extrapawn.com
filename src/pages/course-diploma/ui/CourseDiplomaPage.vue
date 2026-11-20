@@ -24,6 +24,7 @@ import {
   type CourseScopeSummaryDTO,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 
 const { t, te, locale } = useI18n()
 const route = useRoute()
@@ -223,7 +224,8 @@ function handleOpenTrainingCenter(): void {
 </script>
 
 <template>
-  <div class="mx-auto my-6 max-w-4xl px-4 max-md:my-3 max-md:px-2 select-none">
+  <AppPageShell>
+    <div class="w-full select-none">
     <!-- Loading State -->
     <div
       v-if="isLoading"
@@ -325,7 +327,7 @@ function handleOpenTrainingCenter(): void {
 
         <!-- Recipient & Course Identity Strip -->
         <section
-          class="relative mt-6 grid grid-cols-1 gap-4 rounded-lg border border-border bg-canvas p-5 sm:grid-cols-2 lg:grid-cols-4"
+          class="relative mt-6 grid grid-cols-1 gap-4 rounded-lg border border-border bg-canvas p-5 @2xl:grid-cols-2 @4xl:grid-cols-4"
         >
           <!-- Player -->
           <div class="flex flex-col justify-between">
@@ -404,7 +406,7 @@ function handleOpenTrainingCenter(): void {
         </section>
 
         <!-- Primary KPI Bento Grid -->
-        <section class="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <section class="mt-6 grid grid-cols-1 gap-3.5 @2xl:grid-cols-2 @4xl:grid-cols-4">
           <!-- 1. Quota Solved -->
           <div class="rounded-lg border border-border bg-elevated p-4 flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-text-secondary uppercase font-condensed">
@@ -510,7 +512,7 @@ function handleOpenTrainingCenter(): void {
         <!-- Secondary Telemetry Row (Pure Board Time & Woodpecker, if recorded in summary_json) -->
         <section
           v-if="diploma.summary.has_detailed_telemetry && (diploma.summary.total_time_ms ?? 0) > 0"
-          class="mt-3.5 grid grid-cols-1 gap-3.5 sm:grid-cols-2"
+          class="mt-3.5 grid grid-cols-1 gap-3.5 @2xl:grid-cols-2"
         >
           <div class="rounded-lg border border-border bg-canvas p-4 flex items-center justify-between">
             <div>
@@ -568,7 +570,7 @@ function handleOpenTrainingCenter(): void {
               {{ section.title }}
             </h3>
 
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-2 @2xl:grid-cols-2">
               <div
                 v-for="item in section.items"
                 :key="`${item.group}:${item.key}`"
@@ -651,6 +653,7 @@ function handleOpenTrainingCenter(): void {
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </AppPageShell>
 </template>
 

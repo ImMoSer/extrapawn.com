@@ -108,7 +108,7 @@ function handleItemSelect(puzzleId: string): void {
 
 <template>
   <div
-    class="h-full flex flex-col gap-3 p-3 bg-surface border-r border-border text-text-primary select-none overflow-hidden"
+    class="h-full flex flex-col gap-3 p-3 bg-surface text-text-primary select-none overflow-hidden"
   >
     <!-- Session Header -->
     <div v-if="summary" class="flex flex-col gap-2 pb-2 border-b border-border shrink-0">

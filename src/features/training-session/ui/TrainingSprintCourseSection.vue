@@ -161,7 +161,7 @@ const gateScopesPercent = computed(() => {
         </div>
 
         <!-- Batch Size Selection & Launch CTA -->
-        <div class="pt-2 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="pt-2 border-t border-border flex flex-col @2xl:flex-row @2xl:items-center @2xl:justify-between gap-4">
           <div class="flex items-center gap-2">
             <span class="text-xs text-text-secondary">
               {{ t('features.trainingCenter.course.batchSizeLabel') }}
@@ -205,7 +205,7 @@ const gateScopesPercent = computed(() => {
 
     <!-- New Course Setup Builder -->
     <template v-else>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 @3xl:grid-cols-2 gap-6">
         <!-- Left: Rank Tier & Duration Selection -->
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-2">

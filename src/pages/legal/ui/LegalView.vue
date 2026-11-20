@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import { NCard, NTabs, NTabPane, NH1, NH2, NP, NText, NDivider, NAlert } from 'naive-ui'
 
 const { t, te, tm, rt, locale } = useI18n()
@@ -75,9 +76,9 @@ const showPrecedenceNotice = computed(() => {
 </script>
 
 <template>
-  <div class="mx-auto my-1 max-w-[900px] px-1 sm:my-10 sm:px-5">
+  <AppPageShell>
     <n-card
-      class="glass text-text-primary [&>.n-card__content]:!px-2 [&>.n-card__content]:!py-2.5 sm:[&>.n-card__content]:!px-6 sm:[&>.n-card__content]:!py-5"
+      class="glass text-text-primary [&>.n-card__content]:!px-3 [&>.n-card__content]:!py-3 @2xl:[&>.n-card__content]:!px-6 @2xl:[&>.n-card__content]:!py-5"
       :bordered="false"
     >
       <n-h1
@@ -234,5 +235,5 @@ const showPrecedenceNotice = computed(() => {
         </n-tab-pane>
       </n-tabs>
     </n-card>
-  </div>
+  </AppPageShell>
 </template>

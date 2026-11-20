@@ -13,7 +13,8 @@
 - **`src/pages/`** — маршрутные экраны:
   - `training-center` (`/training`, `/warmup`), `courses` (`/courses`), `user-cabinet` (`/user-cabinet`), `course-diploma` (`/kursdiplom/:courseId` — публичный диплом без авторизации), `analysis`, `club-player`, `welcome`, `about`, `pricing`, `legal`.
 - **`src/widgets/`** — композиционные раскладки экрана:
-  - `game-layout/ui/GameLayout.vue` и `ControlCenter.vue` — адаптивный трёхколоночный игровой экран с шахматной доской, верхней инфо-полоской и боковой панелью.
+  - `game-layout/ui/GameLayout.vue` и `ControlCenter.vue` — строго симметричный трёхколоночный игровой экран (`minmax(240px, 1fr) var(--board-stage-w) minmax(240px, 1fr)`, ограниченный `2560px` на Ultrawide) с 1:1 квадратной доской, синхронизированный по оси и ширине с `AppPageShell`.
+  - `nav-menu/ui/NavMenu.vue` — фиксированная всегда свёрнутая навигационная рейка (`64px`) на десктопе `(min-width: 900px) and (orientation: landscape)` и полнотекстовое меню в мобильном `NDrawer` на портретных/компактных экранах.
 - **`src/features/`** — бизнес-сценарии пользователя:
   - `training-session` — модульная подсистема Тренировочного Центра, Разминки и Классических курсов:
     - `model/`: компактный Pinia-фасад `trainingSession.store.ts` (`~360` строк) + модули единой ответственности `trainingSession.types.ts`, `usePuzzleClock.ts`, `buildSessionReport.ts`, `useHubAndCurriculumActions.ts`, `useGameplayLifecycle.ts`, `useAttemptControls.ts`, `useInspectionAndReplay.ts`, `useCrashTestActions.ts` (каждый строго `< 500` строк).
@@ -30,6 +31,7 @@
   - `engine` — клиент спарринг-движков `enginePlay.service.ts`.
 - **`src/shared/`** — переиспользуемое ядро:
   - `theme/` — реактивные токены Dark/Light (`tokens.ts`, `naive-overrides.ts`),
+  - `lib/layout/useViewportMode.ts` и `ui/layout/AppPageShell.vue` — единый источник правды по брейкпоинтам (`DESKTOP_SHELL_MEDIA_QUERY`, `COMPACT_MOBILE_MEDIA_QUERY`) и универсальная обёртка всех не-игровых страниц (`--page-stage-w: clamp(820px, var(--board-stage-w), 1320px)`, `scrollbar-gutter: stable both-edges`, CSS `@container` для внутренних сеток),
   - `lib/pgn/` (`PgnService.ts` + `pgnTypes.ts`, `pgnFormatter.ts`, `pgnTreeOps.ts`), `lib/engine/` (`LocalEngineManager.ts`, `engine.loader.ts`, `wasmCache.ts` — персистентное хранение `stockfish-19-single.wasm` `99.2 МБ` в браузерном `Cache Storage API` с валидацией WASM-заголовка `\0asm`, прогрессом загрузки и передачей disk-backed `Blob URL` в Web Worker без повторного скачивания при перезагрузке ПК или смене Lichess-аккаунта),
   - `config/` (`i18n` и автотест целостности словарей `src/shared/config/__tests__/i18n.spec.ts`).
 

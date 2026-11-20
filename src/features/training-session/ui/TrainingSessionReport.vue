@@ -9,6 +9,7 @@ import {
   type HydratedSessionItem,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   ArrowBackOutline,
   CheckmarkCircleOutline,
@@ -160,7 +161,8 @@ function handleGoToCabinet(): void {
 </script>
 
 <template>
-  <div v-if="report" class="w-full max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 text-text-primary">
+  <AppPageShell v-if="report">
+    <div class="flex w-full flex-col gap-5 text-text-primary">
     <!-- Course Completed Diploma Celebration Banner -->
     <div
       v-if="completedCourseInSession"
@@ -215,7 +217,7 @@ function handleGoToCabinet(): void {
     </div>
 
     <!-- Header Card -->
-    <div class="p-6 rounded-lg bg-surface border border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="p-5 @3xl:p-6 rounded-lg bg-surface border border-border flex flex-col @4xl:flex-row @4xl:items-center @4xl:justify-between gap-4">
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-2">
           <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
@@ -267,7 +269,7 @@ function handleGoToCabinet(): void {
     </div>
 
     <!-- KPI Bento Row -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="grid grid-cols-2 @3xl:grid-cols-5 gap-3">
       <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
         <span class="text-xs text-text-secondary uppercase">
           {{ t('features.trainingCenter.report.solvedTotal') }}
@@ -307,7 +309,7 @@ function handleGoToCabinet(): void {
         </span>
       </div>
 
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1 col-span-2 md:col-span-1">
+      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1 col-span-2 @3xl:col-span-1">
         <span class="text-xs text-text-secondary uppercase">
           {{ t('features.trainingCenter.woodpecker.title') }}
         </span>
@@ -478,6 +480,7 @@ function handleGoToCabinet(): void {
         </NButton>
       </div>
     </div>
-  </div>
+    </div>
+  </AppPageShell>
 </template>
 

@@ -13,6 +13,7 @@ import {
   useTrainingSessionStore,
 } from '@/features/training-session'
 import { GameLayout, RightSidebarSlot } from '@/widgets/game-layout'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   BookOutline,
   CheckmarkCircleOutline,
@@ -180,53 +181,52 @@ onUnmounted(() => {
 
 <template>
   <!-- 0. PUBLIC PLACEHOLDER FOR REGULAR USERS (OPEN TO testuser, developer, owner) -->
-  <div
-    v-if="!authStore.canAccessCourses"
-    class="w-full h-full min-h-[70vh] max-w-3xl mx-auto px-4 py-12 flex flex-col items-center justify-center text-center gap-5 text-text-primary select-none"
-  >
-    <div class="p-8 rounded-lg bg-surface border border-border flex flex-col items-center gap-4 w-full">
-      <div class="w-14 h-14 rounded-full bg-warning/15 border border-warning/40 flex items-center justify-center">
-        <NIcon size="28" class="text-warning">
-          <SparklesOutline />
-        </NIcon>
-      </div>
+  <AppPageShell v-if="!authStore.canAccessCourses" vertical-center>
+    <div
+      class="flex w-full flex-col items-center justify-center gap-5 text-center text-text-primary select-none"
+    >
+      <div class="p-8 rounded-lg bg-surface border border-border flex flex-col items-center gap-4 w-full">
+        <div class="w-14 h-14 rounded-full bg-warning/15 border border-warning/40 flex items-center justify-center">
+          <NIcon size="28" class="text-warning">
+            <SparklesOutline />
+          </NIcon>
+        </div>
 
-      <span class="px-3 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase tracking-widest bg-warning/15 text-warning border border-warning/40">
-        EXTRAPAWN CLASSICAL COURSES
-      </span>
+        <span class="px-3 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase tracking-widest bg-warning/15 text-warning border border-warning/40">
+          EXTRAPAWN CLASSICAL COURSES
+        </span>
 
-      <h1 class="font-display font-bold text-3xl md:text-4xl tracking-wider uppercase text-text-primary">
-        COMING SOON
-      </h1>
+        <h1 class="font-display font-bold text-3xl @3xl:text-4xl tracking-wider uppercase text-text-primary">
+          COMING SOON
+        </h1>
 
-      <p class="text-sm text-text-secondary max-w-lg leading-relaxed">
-        Structured step-by-step Tactics and Endgame curricula with dedicated Woodpecker error-clearance days are currently in development and final calibration.
-      </p>
+        <p class="text-sm text-text-secondary max-w-lg leading-relaxed">
+          Structured step-by-step Tactics and Endgame curricula with dedicated Woodpecker error-clearance days are currently in development and final calibration.
+        </p>
 
-      <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-        <NButton type="primary" @click="router.push('/training')">
-          <template #icon>
-            <NIcon><FlashOutline /></NIcon>
-          </template>
-          Open Training Center
-        </NButton>
-        <NButton secondary @click="router.push('/warmup')">
-          <template #icon>
-            <NIcon><FlameOutline /></NIcon>
-          </template>
-          Open WarmUp
-        </NButton>
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <NButton type="primary" @click="router.push('/training')">
+            <template #icon>
+              <NIcon><FlashOutline /></NIcon>
+            </template>
+            Open Training Center
+          </NButton>
+          <NButton secondary @click="router.push('/warmup')">
+            <template #icon>
+              <NIcon><FlameOutline /></NIcon>
+            </template>
+            Open WarmUp
+          </NButton>
+        </div>
       </div>
     </div>
-  </div>
+  </AppPageShell>
 
   <!-- 1. HUB / SHOWCASE & ACTIVE COURSE CURRICULUM (DEVELOPER MO3EP ONLY) -->
-  <div
-    v-else-if="store.viewState === 'hub'"
-    class="w-full max-w-6xl mx-auto px-2.5 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 text-text-primary select-none"
-  >
-    <!-- Top Header Banner -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3.5 sm:p-5 rounded-lg bg-surface border border-border">
+  <AppPageShell v-else-if="store.viewState === 'hub'">
+    <div class="flex w-full flex-col gap-5 text-text-primary select-none">
+      <!-- Top Header Banner -->
+      <div class="flex flex-col @5xl:flex-row @5xl:items-center @5xl:justify-between gap-4 p-4 @3xl:p-5 rounded-lg bg-surface border border-border">
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-2.5">
           <NIcon size="26" class="text-warning">
@@ -325,7 +325,7 @@ onUnmounted(() => {
       <!-- Course Cards Grid for Selected Category -->
       <div
         class="grid grid-cols-1 gap-3"
-        :class="activeCategory === 'tactics' ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'"
+        :class="activeCategory === 'tactics' ? '@3xl:grid-cols-3' : '@2xl:grid-cols-2 @5xl:grid-cols-4'"
       >
         <button
           v-for="course in categoryCourses"
@@ -403,7 +403,8 @@ onUnmounted(() => {
         {{ selectedCourse.subtitle }} Курс готовится к выпуску по стандарту «2 тематических батча → 1 выделенный День Дятла».
       </p>
     </div>
-  </div>
+    </div>
+  </AppPageShell>
 
   <!-- 2. POST-BATCH / POST-WOODPECKER REPORT -->
   <TrainingSessionReport v-else-if="store.viewState === 'report'" />

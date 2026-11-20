@@ -166,19 +166,12 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
 
 <style scoped>
 .game-layout {
-  --top-panel-h: 48px;
-  --bottom-panel-h: 48px;
-  --eval-bar-w: 16px;
-  --gap-size: 8px;
-  --board-size: min(
-    calc(100vh - 20px - var(--top-panel-h) - var(--bottom-panel-h) - (2 * var(--gap-size))),
-    calc(100vw - var(--eval-bar-w) - var(--gap-size) - 24px)
-  );
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  align-items: center;
+  height: 100%;
   width: 100%;
-  padding: 10px;
+  padding: var(--layout-pad);
   box-sizing: border-box;
   overflow: hidden;
   background-color: var(--color-canvas);
@@ -187,10 +180,15 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
 .layout-main {
   display: grid;
   flex: 1;
-  grid-template-columns: 3fr auto 4fr;
-  gap: 10px;
+  width: 100%;
+  max-width: calc(var(--stage-shell-max-w) - var(--nav-rail-w) - (2 * var(--layout-pad)));
+  grid-template-columns:
+    minmax(var(--side-min-w), 1fr)
+    var(--board-stage-w)
+    minmax(var(--side-min-w), 1fr);
+  gap: var(--layout-gap);
   min-height: 0;
-  justify-content: center;
+  height: 100%;
 }
 
 /* --- Center Stage Area --- */
@@ -199,9 +197,11 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-size);
-  width: calc(var(--eval-bar-w) + var(--gap-size) + var(--board-size));
-  height: calc(100vh - 20px);
+  justify-content: center;
+  gap: var(--board-gap);
+  width: var(--board-stage-w);
+  height: 100%;
+  min-height: 0;
 }
 
 .cb-top-panel {
@@ -218,7 +218,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: var(--gap-size);
+  gap: var(--board-gap);
   width: 100%;
   height: var(--board-size);
   flex: 0 0 var(--board-size);
@@ -292,8 +292,8 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-  padding: 0px;
-  min-width: 200px;
+  padding: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -306,34 +306,28 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   display: none;
 }
 
-/* --- Responsive / Mobile --- */
-
-@media (max-width: 1200px) {
-  .layout-main {
-    grid-template-columns: 250px auto 300px;
-    gap: 10px;
-  }
-}
-
-@media (orientation: portrait) {
+/* --- Portrait / Compact Responsive Shell (matches DESKTOP_SHELL_MEDIA_QUERY complement) --- */
+@media (max-width: 899px), (orientation: portrait) {
   .game-layout {
     height: 100%;
     overflow-y: auto;
-    padding: 4px;
+    padding: 8px;
     display: block;
   }
 
   .layout-main {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    max-width: 100%;
+    height: auto;
+    gap: 8px;
   }
 
   .center-stage {
     order: 1;
     width: 100%;
     height: auto;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
     overflow: hidden;
   }
@@ -372,7 +366,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     order: 2;
     height: auto;
     min-height: 0;
-    padding: 6px;
+    padding: 0;
     background: transparent;
     border: none;
   }
@@ -380,9 +374,8 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   .left-panel {
     order: 3;
     height: auto;
-    min-height: 150px;
-    padding: 6px;
-    margin-top: 10px;
+    min-height: 180px;
+    padding: 0;
   }
 
   .cb-top-panel {

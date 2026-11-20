@@ -34,6 +34,7 @@ import {
   type TrainingObjective,
 } from '@/entities/training'
 import { ENGINE_NAMES } from '@/shared/types/api.types'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   CabinetDiagnosticStrip,
   CabinetEndgameMap,
@@ -275,7 +276,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
 </script>
 
 <template>
-  <div class="mx-auto my-6 max-w-6xl px-4 max-md:my-3 max-md:px-2">
+  <AppPageShell>
     <!-- Unauthenticated State -->
     <div
       v-if="!canViewCabinet"
@@ -362,7 +363,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
             </h2>
           </div>
 
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="grid grid-cols-1 gap-3 @2xl:grid-cols-2 @5xl:grid-cols-3">
             <div
               v-for="course in visibleRecentCourses"
               :key="course.id"
@@ -679,5 +680,5 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
         </div>
       </div>
     </NModal>
-  </div>
+  </AppPageShell>
 </template>

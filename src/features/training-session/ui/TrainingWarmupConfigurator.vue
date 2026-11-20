@@ -136,8 +136,8 @@ const customFocusDisplayLabel = computed<string>(() => {
 </script>
 
 <template>
-  <div class="p-6 flex flex-col gap-6">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="p-4 @3xl:p-6 flex flex-col gap-6">
+    <div class="grid grid-cols-1 @3xl:grid-cols-2 gap-6">
       <!-- Left: Free Rank Tier, Session Volume & Start CTA -->
       <div class="flex flex-col justify-between gap-5">
         <div class="flex flex-col gap-5">

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore } from '../model/game.store'
 import PgnTree from './PgnTree.vue'
 import { pgnService, pgnTreeVersion, type PgnNode } from '@/shared/lib/pgn/PgnService'
+import { DESKTOP_SHELL_MEDIA_QUERY } from '@/shared/lib/layout/useViewportMode'
 import { NText, NIcon } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { ArrowUpOutline, TrashOutline, TrendingUpOutline } from '@vicons/ionicons5'
@@ -25,7 +26,7 @@ const isReadOnly = computed(() => props.readOnly ?? gameStore.gamePhase === 'PLA
 watch(
   pgnTreeVersion,
   () => {
-    if (window.matchMedia('(orientation: portrait)').matches) {
+    if (!window.matchMedia(DESKTOP_SHELL_MEDIA_QUERY).matches) {
       return
     }
 

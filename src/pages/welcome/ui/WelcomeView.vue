@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
-import { changeLang } from '@/shared/config/i18n'
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { LogInOutline } from '@vicons/ionicons5'
 import { GAME_MODES } from '@/shared/config/gameModes.config'
+import { changeLang } from '@/shared/config/i18n'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
+import { LogInOutline } from '@vicons/ionicons5'
+import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   getRandomChessQuote,
   loadChessQuotes,
@@ -52,48 +53,29 @@ const menuItems = [
   GAME_MODES.user_cabinet,
 ]
 
-const isMobile = ref(false)
-const updateMobile = () => {
-  isMobile.value = window.innerWidth <= 768
-}
-
 onMounted(async () => {
-  updateMobile()
-  window.addEventListener('resize', updateMobile)
   const loadedQuotes = await loadChessQuotes()
   quotesList.value = loadedQuotes
   currentQuote.value = getRandomChessQuote(loadedQuotes)
 })
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateMobile)
-})
-
-const filteredMenuItems = computed(() => {
-  return menuItems
-})
 </script>
 
 <template>
-  <div
-    class="box-border flex h-full w-full items-start justify-center overflow-y-auto px-3 py-5 md:items-center md:overflow-hidden md:p-2.5"
-  >
-    <div
-      class="relative z-10 flex h-auto max-h-none w-full max-w-[1000px] flex-col items-center justify-center gap-4 md:max-h-full md:gap-[2vh]"
-    >
+  <AppPageShell vertical-center>
+    <div class="relative z-10 flex w-full flex-col items-center justify-center gap-5 @3xl:gap-7">
       <!-- Hero Section -->
-      <div class="flex shrink-0 flex-col items-center gap-2 md:gap-[15px]">
-        <div class="flex flex-col items-center gap-2 md:gap-5">
+      <div class="flex shrink-0 flex-col items-center gap-3 @3xl:gap-4">
+        <div class="flex flex-col items-center gap-2.5 @3xl:gap-4">
           <img
             src="/webp/extra_pawn_black.webp"
             alt="EXTRAPAWN"
             width="256"
             height="256"
             fetchpriority="high"
-            class="h-20 w-auto md:h-[clamp(100px,25vh,500px)]"
+            class="h-24 w-auto object-contain @2xl:h-[clamp(112px,22dvh,260px)]"
           />
-          <div class="flex flex-col items-center gap-1.5 md:gap-2">
-            <h1 class="brand-text m-0 text-[2rem] leading-none md:text-[clamp(2rem,6vw,4.5rem)]">
+          <div class="flex flex-col items-center gap-1.5 @3xl:gap-2">
+            <h1 class="brand-text m-0 text-[2rem] leading-none @2xl:text-[clamp(2.25rem,4.5vw,3.75rem)]">
               EXTRAPAWN
             </h1>
             <blockquote
@@ -102,12 +84,12 @@ const filteredMenuItems = computed(() => {
               @click="selectNextRandomQuote"
             >
               <p
-                class="m-0 text-xs leading-relaxed font-normal text-text-secondary italic md:text-[clamp(0.8rem,1.2vw,1.05rem)]"
+                class="m-0 text-xs leading-relaxed font-normal text-text-secondary italic @2xl:text-[0.95rem]"
               >
                 "{{ localizedQuoteText }}"
               </p>
               <footer
-                class="text-[0.7rem] font-medium tracking-[0.08rem] text-text-primary md:text-[0.85rem]"
+                class="text-[0.7rem] font-medium tracking-[0.08rem] text-text-primary @2xl:text-[0.85rem]"
               >
                 - {{ currentQuote.author }} -
               </footer>
@@ -116,7 +98,7 @@ const filteredMenuItems = computed(() => {
         </div>
 
         <!-- Login Button (Visible only if not authenticated) -->
-        <div v-if="!isAuthenticated" class="mt-[5px]">
+        <div v-if="!isAuthenticated" class="mt-1">
           <n-button
             type="primary"
             size="large"
@@ -136,51 +118,49 @@ const filteredMenuItems = computed(() => {
       </div>
 
       <!-- Mode Selection Grid -->
-      <n-grid
-        :x-gap="isMobile ? 10 : 20"
-        :y-gap="isMobile ? 10 : 20"
-        :cols="2"
-        class="flex max-h-none w-full grow content-center justify-center md:max-h-[60vh]"
-      >
-        <n-grid-item v-for="item in filteredMenuItems" :key="item.path">
-          <router-link :to="item.path" custom v-slot="{ navigate }">
-            <n-card
-              hoverable
-              class="group relative flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover hover:bg-elevated md:rounded-[var(--radius-lg)]"
-              :content-style="{
-                padding: '0',
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }"
-              @click="navigate"
-              :bordered="false"
+      <div class="grid w-full grid-cols-2 gap-3 @3xl:gap-5">
+        <router-link
+          v-for="item in menuItems"
+          :key="item.path"
+          :to="item.path"
+          custom
+          v-slot="{ navigate }"
+        >
+          <n-card
+            hoverable
+            class="group relative flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-border bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-border-hover hover:bg-elevated"
+            :content-style="{
+              padding: '0',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }"
+            :bordered="false"
+            @click="navigate"
+          >
+            <div
+              class="relative z-10 flex w-full flex-col items-center justify-center gap-2 px-3 py-5 text-center @3xl:gap-2.5 @3xl:px-5 @3xl:py-8"
             >
-              <div
-                class="relative z-10 flex w-full flex-col items-center justify-center gap-1.5 px-2 py-3 text-center md:gap-2 md:px-4 md:py-6"
+              <n-icon
+                :color="item.color"
+                class="text-[26px] transition-transform duration-200 group-hover:scale-105 @3xl:text-[34px]"
               >
-                <n-icon
-                  :size="isMobile ? 24 : 34"
-                  :color="item.color"
-                  class="transition-transform duration-200 group-hover:scale-105"
-                >
-                  <component :is="item.icon" />
-                </n-icon>
-                <n-text
-                  class="font-display text-[0.8rem] font-bold tracking-[1px] text-text-primary uppercase transition-colors duration-200 group-hover:text-text-primary md:text-[1.1rem] md:tracking-[1.5px]"
-                >
-                  {{ t(item.labelKey) }}
-                </n-text>
-              </div>
-            </n-card>
-          </router-link>
-        </n-grid-item>
-      </n-grid>
+                <component :is="item.icon" />
+              </n-icon>
+              <n-text
+                class="font-display text-[0.8rem] font-bold tracking-[1px] text-text-primary uppercase transition-colors duration-200 @3xl:text-[1.05rem] @3xl:tracking-[1.5px]"
+              >
+                {{ t(item.labelKey) }}
+              </n-text>
+            </div>
+          </n-card>
+        </router-link>
+      </div>
 
       <!-- Language Switcher -->
-      <div class="mt-auto shrink-0 py-2.5">
+      <div class="shrink-0 py-2">
         <n-space justify="center" size="small">
           <button
             class="cursor-pointer border-none bg-transparent px-1.5 text-[0.9rem] transition-colors"
@@ -220,5 +200,5 @@ const filteredMenuItems = computed(() => {
         </n-space>
       </div>
     </div>
-  </div>
+  </AppPageShell>
 </template>

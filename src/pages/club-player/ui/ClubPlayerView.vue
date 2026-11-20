@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useViewportMode } from '@/shared/lib/layout/useViewportMode'
+import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import { ArrowForwardOutline } from '@vicons/ionicons5'
 import {
   NButton,
@@ -7,17 +9,15 @@ import {
   NH1,
   NH2,
   NIcon,
-  NLayout,
-  NLayoutContent,
-  NSpace,
   NTag,
   NText,
   type DataTableColumns,
 } from 'naive-ui'
-import { computed, h, onMounted, onUnmounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const { isCompactMobile: isMobile } = useViewportMode()
 
 interface ClubPlayer {
   lichess_id: string
@@ -36,23 +36,8 @@ interface ClubPlayer {
 const leaderboard = ref<ClubPlayer[]>([])
 const loading = ref(false)
 
-const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
-const isMobile = computed(() => windowWidth.value < 600)
-const updateWindowWidth = () => {
-  windowWidth.value = window.innerWidth
-}
-
 onMounted(() => {
-  if (typeof window !== 'undefined') {
-    window.addEventListener('resize', updateWindowWidth)
-  }
-  fetchLeaderboard()
-})
-
-onUnmounted(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('resize', updateWindowWidth)
-  }
+  void fetchLeaderboard()
 })
 
 const fetchLeaderboard = async () => {
@@ -188,66 +173,59 @@ const columns = computed<DataTableColumns<ClubPlayer>>(() => {
 </script>
 
 <template>
-  <n-layout class="!bg-transparent">
-    <n-layout-content
-      class="!bg-transparent"
-      :content-style="
-        isMobile ? 'padding: 10px;' : 'padding: 20px; max-width: 1200px; margin: 0 auto;'
-      "
-    >
-      <n-space vertical :size="isMobile ? 'medium' : 'large'">
-        <n-h1
-          align-text
-          class="!mb-6 text-center font-display font-extrabold tracking-[2px] uppercase"
+  <AppPageShell>
+    <div class="flex w-full flex-col gap-5">
+      <n-h1
+        align-text
+        class="!mb-0 text-center font-display text-2xl font-extrabold tracking-[2px] uppercase @3xl:text-3xl"
+      >
+        <n-text class="text-text-primary">ExtraPawn Club Top 20</n-text>
+      </n-h1>
+
+      <n-card
+        class="glass"
+        :content-style="isMobile ? { padding: '14px' } : { padding: '20px' }"
+      >
+        <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
+          {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 Leaderboard' }}
+        </n-h2>
+        <n-text
+          depth="2"
+          :style="{
+            fontSize: isMobile ? '0.9rem' : '1rem',
+            display: 'block',
+            marginBottom: '12px',
+          }"
         >
-          <n-text class="text-text-primary">ExtraPawn Club Top 20</n-text>
-        </n-h1>
+          {{ t('pages.bonus.description') }}
+        </n-text>
 
-        <n-card
-          class="glass"
-          :content-style="isMobile ? { padding: '14px' } : { padding: '20px' }"
+        <n-button
+          tag="a"
+          href="https://club.extrapawn.com/xtrapawn/home"
+          target="_blank"
+          type="primary"
+          ghost
+          :size="isMobile ? 'medium' : 'large'"
+          class="mt-2"
         >
-          <n-h2 prefix="bar" align-text type="info" :style="isMobile ? { fontSize: '1.2rem' } : {}">
-            {{ t('pages.bonus.mostValuablePlayersTitle') || 'Club Top 20 Leaderboard' }}
-          </n-h2>
-          <n-text
-            depth="2"
-            :style="{
-              fontSize: isMobile ? '0.9rem' : '1rem',
-              display: 'block',
-              marginBottom: '12px',
-            }"
-          >
-            {{ t('pages.bonus.description') }}
-          </n-text>
+          {{ t('pages.bonus.homepageLink') }}
+          <template #icon>
+            <n-icon><ArrowForwardOutline /></n-icon>
+          </template>
+        </n-button>
+      </n-card>
 
-          <n-button
-            tag="a"
-            href="https://club.extrapawn.com/xtrapawn/home"
-            target="_blank"
-            type="primary"
-            ghost
-            :size="isMobile ? 'medium' : 'large'"
-            class="mt-2"
-          >
-            {{ t('pages.bonus.homepageLink') }}
-            <template #icon>
-              <n-icon><ArrowForwardOutline /></n-icon>
-            </template>
-          </n-button>
-        </n-card>
-
-        <div class="glass overflow-hidden">
-          <n-data-table
-            :columns="columns"
-            :data="leaderboard"
-            :loading="loading"
-            :bordered="false"
-            :single-line="false"
-            size="small"
-          />
-        </div>
-      </n-space>
-    </n-layout-content>
-  </n-layout>
+      <div class="glass overflow-hidden">
+        <n-data-table
+          :columns="columns"
+          :data="leaderboard"
+          :loading="loading"
+          :bordered="false"
+          :single-line="false"
+          size="small"
+        />
+      </div>
+    </div>
+  </AppPageShell>
 </template>

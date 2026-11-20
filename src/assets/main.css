@@ -51,6 +51,50 @@ html[data-theme='dark'] {
   /* Scrollbar */
   --theme-scrollbar-thumb: rgba(255, 255, 255, 0.16);
   --theme-scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+
+  /* ==========================================================================
+   * UNIFIED APP SHELL & 3-COLUMN STAGE GEOMETRY (Single Source of Truth)
+   * Desktop 3-column mode: (min-width: 900px) and (orientation: landscape)
+   * ========================================================================== */
+  --nav-rail-w: 64px;
+  --mobile-header-h: 56px;
+
+  --layout-pad: 10px;
+  --layout-gap: 10px;
+  --page-pad-y: 20px;
+  --page-pad-bottom: 32px;
+  --side-min-w: 240px;
+  --stage-shell-max-w: 2560px;
+
+  --top-panel-h: 48px;
+  --bottom-panel-h: 48px;
+  --eval-bar-w: 16px;
+  --board-gap: 8px;
+
+  /* Effective workspace width right of the fixed NavRail (capped for ultrawide monitors) */
+  --workspace-w: min(
+    calc(100vw - var(--nav-rail-w)),
+    calc(var(--stage-shell-max-w) - var(--nav-rail-w))
+  );
+
+  /* Height-driven 1:1 square chessboard size with horizontal guard for side panels */
+  --board-size: max(
+    280px,
+    min(
+      calc(
+        100dvh - (2 * var(--layout-pad)) - var(--top-panel-h) - var(--bottom-panel-h) -
+          (2 * var(--board-gap))
+      ),
+      calc(
+        var(--workspace-w) - (2 * var(--layout-pad)) - (2 * var(--layout-gap)) -
+          (2 * var(--side-min-w)) - var(--eval-bar-w) - var(--board-gap)
+      )
+    )
+  );
+
+  /* Master center column width synced 1:1 between GameLayout and AppPageShell */
+  --board-stage-w: calc(var(--eval-bar-w) + var(--board-gap) + var(--board-size));
+  --page-stage-w: clamp(820px, var(--board-stage-w), 1320px);
 }
 
 html[data-theme='light'] {
