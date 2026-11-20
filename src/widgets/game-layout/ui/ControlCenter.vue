@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useGameStore, useBoardStore } from '@/entities/game'
 import { useCoachStore } from '@/features/coach'
+import { useViewportMode } from '@/shared/lib/layout/useViewportMode'
 import { useSidebarStore } from '../model/sidebar.store'
 import { useI18n } from 'vue-i18n'
 import { NIcon } from 'naive-ui'
@@ -11,18 +12,25 @@ import {
   PlaySkipForwardOutline,
   SwapVerticalOutline,
 } from '@vicons/ionicons5'
+import { computed } from 'vue'
 
 const { t } = useI18n()
 const gameStore = useGameStore()
 const boardStore = useBoardStore()
 const coachStore = useCoachStore()
 const sidebarStore = useSidebarStore()
+const { isDesktopShell } = useViewportMode()
+
+const showSidebarModeToggles = computed(() => isDesktopShell.value || !coachStore.isFairPlayLocked)
 </script>
 
 <template>
-  <div class="h-12 w-full px-3.5 bg-surface border border-border rounded-lg flex items-center justify-between gap-3 select-none">
-    <!-- Left: Sidebar Mode Toggles (EXP - COACH) -->
-    <div class="flex items-center gap-1.5">
+  <div
+    class="h-12 w-full px-3.5 bg-surface border border-border rounded-lg flex items-center gap-3 select-none"
+    :class="showSidebarModeToggles ? 'justify-between' : 'justify-center'"
+  >
+    <!-- Left: Sidebar Mode Toggles (STOCKFISH / COACH; hidden on mobile under Fair Play) -->
+    <div v-if="showSidebarModeToggles" class="flex items-center gap-1.5">
       <button
         v-if="!coachStore.isFairPlayLocked"
         type="button"

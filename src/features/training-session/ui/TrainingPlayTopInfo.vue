@@ -14,23 +14,20 @@ import {
   CloseOutline,
   DownloadOutline,
   EyeOutline,
-  FlagOutline,
   PlayOutline,
   RefreshOutline,
 } from '@vicons/ionicons5'
-import { NButton, NIcon, NInput, NPopover } from 'naive-ui'
-import { computed, ref } from 'vue'
+import { NButton, NIcon } from 'naive-ui'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
+import TrainingPuzzleFlagPopover from './TrainingPuzzleFlagPopover.vue'
 
 const { t, te } = useI18n()
 const authStore = useAuthStore()
 const store = useTrainingSessionStore()
 const { anomaliesCount } = useCrashTestReport()
-
-const showFlagPopover = ref<boolean>(false)
-const flagComment = ref<string>('')
 
 const activePuzzle = computed(
   () => store.analysisPuzzle ?? store.practicePuzzle ?? store.currentPuzzle,
@@ -86,12 +83,9 @@ const twinPrompt = computed(() => {
   return resolveTwinPedagogicalPrompt(activePuzzle.value?.twin_role)
 })
 
-async function handleFlagSubmit(preset?: string): Promise<void> {
+async function handleFlagSubmit(reason: string): Promise<void> {
   if (!authStore.isDeveloper) return
-  const reason = preset ?? flagComment.value.trim()
-  showFlagPopover.value = false
-  flagComment.value = ''
-  await store.flagCurrentCoursePuzzle(reason || 'Помечено при проверке курса')
+  await store.flagCurrentCoursePuzzle(reason)
 }
 
 const showBotBadge = computed(() => {
@@ -109,6 +103,14 @@ const deltaText = computed(() => {
 })
 
 const isCrashtestSession = computed(() => store.activeSessionSummary?.mode === 'crashtest')
+
+const isPostAttemptDecision = computed(
+  () => Boolean(store.isAwaitingNext && store.lastAttemptResult && !store.lastAttemptResult.solved),
+)
+
+const showLivePlayMeta = computed(
+  () => !store.isAnalysisMode && !store.isPracticeReplay && !isPostAttemptDecision.value,
+)
 
 const showAttemptBadge = computed(
   () =>
@@ -133,7 +135,7 @@ function handleBackAction(): void {
 <template>
   <div
     v-if="activePuzzle"
-    class="w-full h-11 px-3 rounded-lg bg-surface border border-border flex items-center justify-between gap-2 select-none"
+    class="w-full h-11 px-2.5 sm:px-3 rounded-lg bg-surface border border-border flex items-center justify-between gap-1.5 sm:gap-2 select-none overflow-hidden"
   >
     <!-- Left: Pause / Return to Hub or Exit Analysis -->
     <div class="flex items-center gap-2 shrink-0">
@@ -171,11 +173,11 @@ function handleBackAction(): void {
     </div>
 
     <!-- Center: Objective Badge + Woodpecker + Bot + Timer -->
-    <div class="flex items-center gap-2 min-w-0">
+    <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
       <!-- Analysis Badge -->
       <span
         v-if="store.isAnalysisMode"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40 whitespace-nowrap shrink-0"
       >
         {{ t('features.trainingCenter.badges.analysis') }}
       </span>
@@ -183,37 +185,43 @@ function handleBackAction(): void {
       <!-- Practice Replay Badge -->
       <span
         v-else-if="store.isPracticeReplay"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-success/15 text-success border border-success/40"
+        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-success/15 text-success border border-success/40 whitespace-nowrap shrink-0"
       >
         {{ t('features.trainingCenter.badges.practiceBadge') }}
       </span>
 
-      <!-- Exam Mode Badge (No Theme or Objective Spoilers) -->
-      <span
-        v-else-if="isExamPuzzle"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40"
-      >
-        ЭКЗАМЕН · НАЙДИТЕ СИЛЬНЕЙШЕЕ ПРОДОЛЖЕНИЕ
-      </span>
+      <!-- Live Play Objective Badges (hidden after resign/fail to prevent mobile bar overflow) -->
+      <template v-else-if="showLivePlayMeta">
+        <!-- Exam Mode Badge (No Theme or Objective Spoilers) -->
+        <span
+          v-if="isExamPuzzle"
+          class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40 truncate max-w-44 sm:max-w-none"
+          :class="{ 'hidden sm:inline-flex': store.isAwaitingRetry }"
+        >
+          ЭКЗАМЕН · НАЙДИТЕ СИЛЬНЕЙШЕЕ ПРОДОЛЖЕНИЕ
+        </span>
 
-      <!-- Objective Badge: Hold Draw (FIDE) vs Win -->
-      <span
-        v-else-if="isHoldDraw"
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-warning/15 text-warning border border-warning/50"
-      >
-        {{ t('features.trainingCenter.badges.holdDrawFide') }}
-      </span>
-      <span
-        v-else
-        class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40"
-      >
-        {{ t('features.trainingCenter.badges.winTarget') }}
-      </span>
+        <!-- Objective Badge: Hold Draw (FIDE) vs Win -->
+        <span
+          v-else-if="isHoldDraw"
+          class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-warning/15 text-warning border border-warning/50 whitespace-nowrap shrink-0"
+          :class="{ 'hidden sm:inline-flex': store.isAwaitingRetry }"
+        >
+          {{ t('features.trainingCenter.badges.holdDrawFide') }}
+        </span>
+        <span
+          v-else
+          class="px-2.5 py-0.5 rounded-sm text-[11px] font-display font-bold uppercase tracking-wider bg-brand/15 text-brand border border-brand/40 whitespace-nowrap shrink-0"
+          :class="{ 'hidden sm:inline-flex': store.isAwaitingRetry }"
+        >
+          {{ t('features.trainingCenter.badges.winTarget') }}
+        </span>
+      </template>
 
       <!-- Attempt Counter Badge (#1, #2, ...) -->
       <span
         v-if="showAttemptBadge"
-        class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold border"
+        class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold border whitespace-nowrap shrink-0"
         :class="
           store.isAwaitingRetry
             ? 'bg-danger/15 text-danger border-danger/40'
@@ -231,17 +239,17 @@ function handleBackAction(): void {
 
       <!-- Golden Twin Badge -->
       <span
-        v-if="twinBadgeLabel"
+        v-if="twinBadgeLabel && showLivePlayMeta"
         :title="twinPrompt"
-        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40 cursor-help"
+        class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/40 cursor-help whitespace-nowrap shrink-0"
       >
         {{ twinBadgeLabel }}
       </span>
 
       <!-- Woodpecker Badge -->
       <span
-        v-if="activePuzzle.is_woodpecker"
-        class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold bg-accent/15 text-accent border border-accent/40"
+        v-if="activePuzzle.is_woodpecker && showLivePlayMeta"
+        class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold bg-accent/15 text-accent border border-accent/40 whitespace-nowrap shrink-0"
       >
         {{
           t('features.trainingCenter.badges.woodpeckerStreak', {
@@ -252,16 +260,17 @@ function handleBackAction(): void {
 
       <!-- Sparring Bot Badge -->
       <span
-        v-if="showBotBadge"
-        class="hidden lg:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated text-text-secondary border border-border"
+        v-if="showBotBadge && showLivePlayMeta"
+        class="hidden lg:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated text-text-secondary border border-border whitespace-nowrap shrink-0"
       >
         {{ botLabel }}
       </span>
 
-      <!-- Timer -->
+      <!-- Timer (hidden during analysis, practice replay, post-attempt decision, and mobile retry prompt) -->
       <span
-        v-if="!store.isAnalysisMode && !store.isPracticeReplay"
-        class="font-condensed font-bold text-base text-warning min-w-16 text-right"
+        v-if="showLivePlayMeta"
+        class="font-condensed font-bold text-base text-warning min-w-14 sm:min-w-16 text-right whitespace-nowrap shrink-0"
+        :class="{ 'hidden sm:inline': store.isAwaitingRetry }"
       >
         {{ formattedTimer }}
       </span>
@@ -283,70 +292,12 @@ function handleBackAction(): void {
         Отчёт ({{ anomaliesCount }})
       </NButton>
 
-      <NPopover
+      <TrainingPuzzleFlagPopover
         v-if="authStore.isDeveloper && isTacticsCourse && !store.isAnalysisMode && !store.isPracticeReplay"
-        v-model:show="showFlagPopover"
-        trigger="click"
-        placement="bottom-end"
-      >
-        <template #trigger>
-          <NButton
-            size="tiny"
-            quaternary
-            type="warning"
-            :loading="store.isFlaggingPuzzle"
-            title="Пожаловаться на задачу и перейти к следующей"
-          >
-            <template #icon>
-              <NIcon><FlagOutline /></NIcon>
-            </template>
-            Флаг
-          </NButton>
-        </template>
-        <div class="w-64 p-1 flex flex-col gap-2 text-xs">
-          <div class="font-display font-bold text-text-primary">
-            Отправить задачу #{{ activePuzzle.puzzle_id }} в доработку
-          </div>
-          <div class="flex flex-wrap gap-1">
-            <NButton
-              size="tiny"
-              secondary
-              @click="handleFlagSubmit('Неоднозначное решение / дуаль')"
-            >
-              Дуаль
-            </NButton>
-            <NButton
-              size="tiny"
-              secondary
-              @click="handleFlagSubmit('Слишком короткое / странное решение')"
-            >
-              Странная линия
-            </NButton>
-            <NButton
-              size="tiny"
-              secondary
-              @click="handleFlagSubmit('Неверная тема / классификация')"
-            >
-              Не та тема
-            </NButton>
-          </div>
-          <NInput
-            v-model:value="flagComment"
-            size="small"
-            placeholder="Комментарий (опционально)..."
-            @keyup.enter="handleFlagSubmit()"
-          />
-          <NButton
-            size="small"
-            type="warning"
-            block
-            :loading="store.isFlaggingPuzzle"
-            @click="handleFlagSubmit()"
-          >
-            В блокнот и далее →
-          </NButton>
-        </div>
-      </NPopover>
+        :puzzle-id="activePuzzle.puzzle_id"
+        :loading="store.isFlaggingPuzzle"
+        @submit="handleFlagSubmit"
+      />
 
       <!-- Retry Prompt Controls (Attempt 1/3 or 2/3 failed, engine locked) -->
       <template v-if="store.isAwaitingRetry">
@@ -445,22 +396,28 @@ function handleBackAction(): void {
 
       <!-- Practice Replay Controls (Sandbox without rating impact) -->
       <template v-else-if="store.isPracticeReplay">
-        <NButton size="tiny" secondary @click="store.restartCurrentPuzzle()">
+        <NButton
+          size="tiny"
+          secondary
+          :title="t('features.trainingCenter.actions.restartPuzzle')"
+          @click="store.restartCurrentPuzzle()"
+        >
           <template #icon>
             <NIcon><RefreshOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.restartPuzzle') }}
+          <span class="hidden sm:inline">{{ t('features.trainingCenter.actions.restartPuzzle') }}</span>
         </NButton>
 
         <NButton
           size="tiny"
           secondary
+          :title="t('features.trainingCenter.actions.analyze')"
           @click="store.enterPuzzleAnalysis(store.practicePuzzle?.puzzle_id, true)"
         >
           <template #icon>
             <NIcon><EyeOutline /></NIcon>
           </template>
-          {{ t('features.trainingCenter.actions.analyze') }}
+          <span class="hidden sm:inline">{{ t('features.trainingCenter.actions.analyze') }}</span>
         </NButton>
 
         <NButton size="tiny" type="primary" @click="store.exitPracticeReplay()">

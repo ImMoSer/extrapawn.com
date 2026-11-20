@@ -155,7 +155,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
         </div>
       </div>
 
-      <aside class="right-panel">
+      <aside class="right-panel" :class="{ 'is-fair-play-locked': coachStore.isFairPlayLocked }">
         <slot name="right-panel">
           <RightSidebarSlot />
         </slot>
@@ -369,6 +369,10 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     padding: 0;
     background: transparent;
     border: none;
+  }
+
+  .right-panel.is-fair-play-locked {
+    display: none;
   }
 
   .left-panel {

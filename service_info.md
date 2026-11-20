@@ -13,7 +13,7 @@
 - **`src/pages/`** — маршрутные экраны:
   - `training-center` (`/training`, `/warmup`), `courses` (`/courses`), `user-cabinet` (`/user-cabinet`), `course-diploma` (`/kursdiplom/:courseId` — публичный диплом без авторизации), `analysis`, `club-player`, `welcome`, `about`, `pricing`, `legal`.
 - **`src/widgets/`** — композиционные раскладки экрана:
-  - `game-layout/ui/GameLayout.vue` и `ControlCenter.vue` — строго симметричный трёхколоночный игровой экран (`minmax(240px, 1fr) var(--board-stage-w) minmax(240px, 1fr)`, ограниченный `2560px` на Ultrawide) с 1:1 квадратной доской, синхронизированный по оси и ширине с `AppPageShell`.
+  - `game-layout/ui/GameLayout.vue` и `ControlCenter.vue` — строго симметричный трёхколоночный игровой экран (`minmax(240px, 1fr) var(--board-stage-w) minmax(240px, 1fr)`, ограниченный `2560px` на Ultrawide) с 1:1 квадратной доской, синхронизированный по оси и ширине с `AppPageShell`. В мобильном/портретном режиме (`<= 899px` / `portrait`) правая панель (`Coach`/`Stockfish`) и переключатели режимов в `ControlCenter` скрываются, пока активна блокировка `Fair Play` (`coachStore.isFairPlayLocked`), чтобы сразу под доской отображалась очередь и статус сессии (`left-panel`), и мгновенно появляются под доской при входе в режим анализа.
   - `nav-menu/ui/NavMenu.vue` — фиксированная всегда свёрнутая навигационная рейка (`64px`) на десктопе `(min-width: 900px) and (orientation: landscape)` и полнотекстовое меню в мобильном `NDrawer` на портретных/компактных экранах.
 - **`src/features/`** — бизнес-сценарии пользователя:
   - `training-session` — модульная подсистема Тренировочного Центра, Разминки и Классических курсов:
