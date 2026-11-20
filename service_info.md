@@ -39,7 +39,7 @@
 
 1. **Защита от гонок асинхронных запросов:**
    - `game.store.ts`: монотонный `gameSessionToken` отсекает запоздавшие ходы бота при рестарте задачи или переключении позиции.
-   - `coach.store.ts`: `AbortController` (`abortInFlightAnalysis()`) отменяет незавершённые запросы к `stockfish_server`.
+   - `coach.store.ts`: `AbortController` (`abortInFlightAnalysis()`) отменяет незавершённые запросы к `coach_sf`.
    - `PgnService.ts`: `disposeTree()` при `reset()` разрывает ссылки дерева ходов.
 2. **Дизайн и локализация (`DE / EN / RU`):**
    - Строгое соблюдение [`css_info.md`](file:///c:/MY_APPS/CHESS_APP/css_info.md): нулевой хардкод цветов, `font-condensed` для нотации и цифр, короткие глагольные кнопки (`<= 14–16` символов) с защитой `min-w-0` + `truncate`.
@@ -51,7 +51,7 @@
 ## 3. Продакшен Nginx-маршрутизатор (`nginx.conf`)
 
 В продакшене контейнер `app_vue` (`chess_frontend`) выступает входным HTTP-маршрутизатором за Traefik:
-- Проверяет сессию через внутренний подзапрос `auth_request /api/auth/check` к `fastify-app:3000` и прокидывает проверенные `X-User-Id` и `X-User-Role` напрямую в `puzzle-engine:5000`, `stockfish_server:5000`, `engine-hub:5000` и `tableservice:5000` (на публичных маршрутах принудительно очищает `X-User-Id ""` и `X-User-Role ""`).
+- Проверяет сессию через внутренний подзапрос `auth_request /api/auth/check` к `fastify-app:3000` и прокидывает проверенные `X-User-Id` и `X-User-Role` напрямую в `puzzle-engine:5000`, `coach_sf:5000`, `engine-hub:5000` и `tableservice:5000` (на публичных маршрутах принудительно очищает `X-User-Id ""` и `X-User-Role ""`).
 - Применяет строгий IP-рейтлимит (`api_limit` `15r/s`, `engine_limit` `5r/s`, а также анти-скрапинг зоны `session_create_limit` `10r/m` на `POST /api/training/sessions/(course|warmup)` и `attempt_limit` `30r/m` на `POST /api/training/sessions/*/attempt` с обходом только для верифицированных ролей `developer` и `owner`), ограничивает `client_max_body_size` до `1M` глобально (`15M` только для `/api/engine-eval/endgame/analyze`), проксирует в `fastify-app` строго белый список `/api/(auth|users|gaviota)/` и отсекает внутренние служебные маршруты `/api/training/puzzle/*`, `/api/training/catalog-info` (доступны только `EXTRAPAWN_MINI` по внутренней сети Docker) и все неизвестные `/api/*` сканы с `404` (`access_log off`) на уровне Nginx.
 - При добавлении любых `add_header` внутри `location`-блока обязательно повторно подключать `include /etc/nginx/security-headers.conf;` (из-за правила наследования заголовков в Nginx).
 
