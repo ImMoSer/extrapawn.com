@@ -21,6 +21,16 @@ async function boot() {
     throw new Error('Environment check failed: Cache API and IndexedDB are required.')
   }
 
+  // Phase 0b: Wipe local user caches immediately after permanent account deletion redirect
+  const initialSearchParams = new URLSearchParams(window.location.search)
+  if (initialSearchParams.get('account_deleted') === '1') {
+    localStorage.removeItem('user_profile')
+    localStorage.removeItem('redirect_after_login')
+    localStorage.removeItem('user_preferences_backup_v1')
+    localStorage.removeItem('extrapawn_coach_settings')
+    sessionStorage.removeItem('lichess_study_ready')
+  }
+
   // Phase 1: Identity/Session Check (Prioritized)
   // We check Auth status BEFORE loading the rest of the app.
   const { useAuthStore, usePreferencesStore } = await import('@/entities/user')

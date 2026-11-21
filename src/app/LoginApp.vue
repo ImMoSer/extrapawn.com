@@ -1,10 +1,23 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/entities/user'
 import { changeLang } from '@/shared/config/i18n'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
+const showAccountDeletedBanner = ref(false)
+
+onMounted(() => {
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('account_deleted') === '1') {
+    showAccountDeletedBanner.value = true
+    params.delete('account_deleted')
+    const nextSearch = params.toString()
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`
+    window.history.replaceState({}, '', nextUrl)
+  }
+})
 
 const handleLogin = async () => {
   await authStore.login(['email:read', 'preference:read'])
@@ -30,6 +43,19 @@ const handleChangeLang = (lang: 'en' | 'ru' | 'de') => {
         <h1 class="brand-text text-2xl m-0">
           EXTRAPAWN
         </h1>
+      </div>
+
+      <div
+        v-if="showAccountDeletedBanner"
+        role="status"
+        class="mb-5 w-full rounded-md border border-success/40 bg-success/10 px-4 py-3 text-left text-xs leading-relaxed text-success"
+      >
+        <div class="font-bold uppercase tracking-wider">
+          {{ t('pages.login.accountDeletedTitle') }}
+        </div>
+        <p class="mt-1 text-text-primary">
+          {{ t('pages.login.accountDeletedText') }}
+        </p>
       </div>
 
       <div class="mb-6">

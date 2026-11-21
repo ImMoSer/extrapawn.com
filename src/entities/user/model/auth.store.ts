@@ -162,6 +162,28 @@ export const useAuthStore = defineStore('auth', () => {
     logger.info('[AuthStore] Terms of Use accepted and persisted.')
   }
 
+  async function startAccountDeletion(): Promise<void> {
+    logger.info('[AuthStore] Initiating Lichess OAuth re-authentication for account deletion...')
+    const response = await fetch(`${BACKEND_API_URL}/auth/lichess/delete-account/start`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      throw new Error(`[AuthStore] Failed to initiate account deletion: HTTP ${response.status}`)
+    }
+
+    const payload = (await response.json()) as { authorizeUrl?: unknown }
+    if (
+      typeof payload.authorizeUrl !== 'string' ||
+      !payload.authorizeUrl.startsWith('https://lichess.org/oauth')
+    ) {
+      throw new Error('[AuthStore] Invalid Lichess re-authentication URL returned by server.')
+    }
+
+    window.location.href = payload.authorizeUrl
+  }
+
   return {
     userProfile,
     isAuthenticated,
@@ -181,6 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     acceptTerms,
+    startAccountDeletion,
     checkSession,
     clearAuthDataLocal,
   }

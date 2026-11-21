@@ -552,6 +552,23 @@
         "batchLabel": "2. Aufgaben pro Sitzung",
         "objectiveLabel": "3. Zielvektor",
         "startBtn": "Start ({count} Aufgaben)"
+      },
+      "accountDanger": {
+        "title": "Konto löschen",
+        "description": "Löscht dein Profil und alle Daten dauerhaft aus unserer Datenbank. Du kannst dich später jederzeit erneut über Lichess anmelden und komplett bei null starten.",
+        "triggerBtn": "Konto löschen",
+        "modalTitle": "Konto endgültig löschen?",
+        "modalLead": "Du bist dabei, das Konto {username} vollständig aus der ExtraPawn-Datenbank zu entfernen. Dieser Vorgang ist unwiderruflich und löscht spurlos:",
+        "bulletRatings": "Alle Glicko-2-Wertungen, Ränge und Disziplin-Analysen",
+        "bulletActivity": "Die gesamte Aktivitätshistorie, Kalender, Verläufe und Woodpecker-Warteschlange",
+        "bulletCourses": "Alle Kurse, Batch-Fortschritte und ausgestellten Diplome",
+        "bulletProfile": "Dein Benutzerprofil, Einstellungen und alle aktiven Sitzungen",
+        "reauthHint": "Zur Bestätigung ist eine erneute Anmeldung mit demselben Lichess-Konto erforderlich.",
+        "confirmBtn": "Über Lichess",
+        "statusCancelled": "Die Kontolöschung wurde bei der Lichess-Autorisierung abgebrochen.",
+        "statusExpired": "Die Bestätigungssitzung ist abgelaufen. Bitte klicke erneut auf „Konto löschen“.",
+        "statusMismatch": "Es wurde ein anderes Lichess-Konto autorisiert. Melde dich mit deinem aktuellen Konto an, um die Löschung zu bestätigen.",
+        "statusError": "Die Kontolöschung konnte nicht abgeschlossen werden. Bitte versuche es später erneut."
       }
     },
     "pricing": {
@@ -600,7 +617,9 @@
     "recordsPage": {},
     "login": {
       "welcomeTitle": "Willkommen bei EXTRAPAWN",
-      "welcomeText": "Dein ultimatives Labor für Schachtraining und Tiefenanalyse. Melde dich über Lichess an, um alle Profi-Funktionen zu nutzen."
+      "welcomeText": "Dein ultimatives Labor für Schachtraining und Tiefenanalyse. Melde dich über Lichess an, um alle Profi-Funktionen zu nutzen.",
+      "accountDeletedTitle": "Konto gelöscht",
+      "accountDeletedText": "Dein Konto und alle zugehörigen Daten wurden vollständig aus unserer Datenbank entfernt. Du kannst dich jederzeit erneut über Lichess anmelden und bei null starten."
     }
   },
   "features": {

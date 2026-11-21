@@ -552,6 +552,23 @@
         "batchLabel": "2. Session Batch Size",
         "objectiveLabel": "3. Objective Vector",
         "startBtn": "Start ({count} puzzles)"
+      },
+      "accountDanger": {
+        "title": "Delete Account",
+        "description": "Permanently erases your profile and all data from our database. You can sign in again with Lichess anytime and start completely fresh.",
+        "triggerBtn": "Delete Account",
+        "modalTitle": "Permanently Delete Account?",
+        "modalLead": "You are about to permanently erase account {username} from the ExtraPawn database. This action cannot be undone and removes without trace:",
+        "bulletRatings": "All Glicko-2 ratings, ranks, and discipline analytics",
+        "bulletActivity": "All activity tracks, calendar history, charts, and Woodpecker queue",
+        "bulletCourses": "All courses, batch progress, and issued diplomas",
+        "bulletProfile": "Your user profile, preferences, and all active sessions",
+        "reauthHint": "To confirm, you will be asked to re-authenticate with the same Lichess account.",
+        "confirmBtn": "Via Lichess",
+        "statusCancelled": "Account deletion was cancelled during Lichess authorization.",
+        "statusExpired": "Confirmation session expired. Please click Delete Account again.",
+        "statusMismatch": "A different Lichess account was authorized. Sign in with your current account to confirm deletion.",
+        "statusError": "Could not complete account deletion. Please try again later."
       }
     },
     "pricing": {
@@ -600,7 +617,9 @@
     "recordsPage": {},
     "login": {
       "welcomeTitle": "Welcome to EXTRAPAWN",
-      "welcomeText": "Your ultimate laboratory for chess training and deep analysis. Log in via Lichess to access all professional features."
+      "welcomeText": "Your ultimate laboratory for chess training and deep analysis. Log in via Lichess to access all professional features.",
+      "accountDeletedTitle": "Account Deleted",
+      "accountDeletedText": "Your account and all associated data have been permanently erased from our database. You can sign in again with Lichess to start fresh."
     }
   },
   "features": {
