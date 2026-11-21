@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import {
-  resolveDisciplineLabel,
-  stepDiscipline,
-  type TrainingDiscipline,
-} from '@/entities/training'
 import { useHorizontalSwipe } from '@/shared/lib/touch/useHorizontalSwipe'
 import { CaretBackSharp, CaretForwardSharp } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { stepDiscipline } from '../lib/disciplineSlug'
+import { resolveDisciplineLabel } from '../lib/trainingLabels'
+import type { TrainingDiscipline } from '../model/training.types'
 
 const props = defineProps<{
   visible: boolean

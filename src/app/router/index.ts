@@ -143,6 +143,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/courses/:category(tactics|endgames)',
+      name: 'courses-category',
+      component: () => import('@/pages/courses').then((m) => m.CoursesPage),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/club-player',
       name: 'club-player',
       component: () => import('@/pages/club-player').then((m) => m.ClubPlayerPage),

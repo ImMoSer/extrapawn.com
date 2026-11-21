@@ -106,10 +106,10 @@ const gateScopesPercent = computed(() => {
 </script>
 
 <template>
-  <div class="p-6 flex flex-col gap-6">
+  <div class="p-3.5 @3xl:p-6 flex flex-col gap-4 @3xl:gap-6">
     <!-- Active Course HUD -->
     <template v-if="activeCourse">
-      <div class="p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-4">
+      <div class="p-3.5 @3xl:p-5 rounded-lg bg-elevated/50 border border-border flex flex-col gap-3.5 @3xl:gap-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-surface text-text-primary border border-border">

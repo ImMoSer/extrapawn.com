@@ -17,6 +17,7 @@ import {
 } from '@vicons/ionicons5'
 import { useAuthStore } from '@/entities/user'
 import {
+  DisciplineStickyBar,
   disciplineToRouteSlug,
   formatElapsedDuration,
   getVisibleTrainingDisciplines,
@@ -38,7 +39,6 @@ import {
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   CabinetDiagnosticStrip,
-  CabinetDisciplineStickyBar,
   CabinetEndgameMap,
   CabinetMacroPulse,
   CabinetTacticsMap,
@@ -350,7 +350,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
 
     <!-- Authenticated / Public Showcase State -->
     <div v-else class="relative">
-      <CabinetDisciplineStickyBar
+      <DisciplineStickyBar
         v-if="cabinetData"
         :visible="!isMobileSelectorVisible"
         :disciplines="visibleDisciplines"
