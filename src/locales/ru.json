@@ -507,7 +507,9 @@
         "noTimelineYet": "Завершите первую тренировочную сессию, чтобы построить 12-месячный график прогресса.",
         "chartRating": "Рейтинг Glicko-2",
         "chartAccuracy": "Точность EMA %",
-        "recentCoursesTitle": "История курсов (7 / 30 дней)"
+        "recentCoursesTitle": "История курсов (7 / 30 дней)",
+        "prevDiscipline": "Предыдущая дисциплина",
+        "nextDiscipline": "Следующая дисциплина"
       },
       "diagnostics": {
         "topStrengthTitle": "Главная опора (Top Strength)",
@@ -983,9 +985,9 @@
         "tactics": "Тактика",
         "tactics_course": "Классический курс тактики",
         "endgame_course": "Классический курс эндшпиля",
-        "theoretical_endgames": "Теория эндшпиля",
-        "practical_chess": "Практический эндшпиль",
-        "finishhim": "Добивание (Finish Him)"
+        "theoretical_endgames": "Теория",
+        "practical_chess": "Практика",
+        "finishhim": "Добивание"
       },
       "modes": {
         "courseTab": "Курсы (7 / 30 дней)",

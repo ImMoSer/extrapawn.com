@@ -17,11 +17,14 @@ import {
 } from '@vicons/ionicons5'
 import { useAuthStore } from '@/entities/user'
 import {
+  disciplineToRouteSlug,
   formatElapsedDuration,
+  getVisibleTrainingDisciplines,
   isDisciplineVisibleForUser,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
+  routeSlugToDiscipline,
   TRAINING_DIFFICULTIES,
   trainingApi,
   type CabinetDTO,
@@ -35,6 +38,7 @@ import {
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   CabinetDiagnosticStrip,
+  CabinetDisciplineStickyBar,
   CabinetEndgameMap,
   CabinetMacroPulse,
   CabinetTacticsMap,
@@ -49,10 +53,7 @@ const authStore = useAuthStore()
 const trainingSessionStore = useTrainingSessionStore()
 const { userProfile, isAuthenticated } = storeToRefs(authStore)
 
-const isPublicMo3epCabinet = computed<boolean>(() => {
-  const rawId = typeof route.params.id === 'string' ? route.params.id.trim().toLowerCase() : ''
-  return rawId === 'mo3ep'
-})
+const isPublicMo3epCabinet = computed<boolean>(() => route.name === 'user-cabinet-public')
 
 const canViewCabinet = computed<boolean>(() => {
   return isPublicMo3epCabinet.value || (isAuthenticated.value && Boolean(userProfile.value))
@@ -63,11 +64,32 @@ const displayedUsername = computed<string>(() => {
   return userProfile.value?.username ?? ''
 })
 
+const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.canAccessCourses))
+
 const cabinetData = ref<CabinetDTO | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
-const selectedDiscipline = ref<TrainingDiscipline>('tactics')
+const selectedDiscipline = computed<TrainingDiscipline>(() => {
+  const rawParam = typeof route.params.discipline === 'string' ? route.params.discipline : undefined
+  return routeSlugToDiscipline(rawParam) ?? 'tactics'
+})
+const isMobileSelectorVisible = ref(true)
 const copiedCourseId = ref<string | null>(null)
+
+const activeDisciplineRating = computed<number | null>(() => {
+  const discOverview = cabinetData.value?.overview.disciplines[selectedDiscipline.value]
+  return discOverview ? discOverview.global_rating : null
+})
+
+function handleSelectDiscipline(disc: TrainingDiscipline): void {
+  const slug = disciplineToRouteSlug(disc)
+  const targetPath = isPublicMo3epCabinet.value
+    ? `/user-cabinet/mo3ep/${slug}`
+    : `/user-cabinet/${slug}`
+  if (route.path !== targetPath) {
+    void router.replace(targetPath)
+  }
+}
 
 async function loadCabinet(): Promise<void> {
   if (!canViewCabinet.value) return
@@ -294,8 +316,18 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
     </div>
 
     <!-- Authenticated / Public Showcase State -->
-    <div v-else class="space-y-6">
-      <NAlert v-if="errorMessage" type="error" closable @close="errorMessage = null">
+    <div v-else class="relative">
+      <CabinetDisciplineStickyBar
+        v-if="cabinetData"
+        :visible="!isMobileSelectorVisible"
+        :disciplines="visibleDisciplines"
+        :selected-discipline="selectedDiscipline"
+        :rating="activeDisciplineRating"
+        @select-discipline="handleSelectDiscipline"
+      />
+
+      <div class="space-y-3 sm:space-y-6">
+        <NAlert v-if="errorMessage" type="error" closable @close="errorMessage = null">
         <div class="flex items-center justify-between gap-4">
           <span>{{ errorMessage }}</span>
           <NButton size="small" secondary type="error" @click="loadCabinet">
@@ -320,8 +352,9 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
           :cabinet="cabinetData"
           :selected-discipline="selectedDiscipline"
           :username="displayedUsername"
-          @select-discipline="(disc) => (selectedDiscipline = disc)"
+          @select-discipline="handleSelectDiscipline"
           @open-training-hub="handleOpenTrainingHub"
+          @selector-visibility-change="(v) => (isMobileSelectorVisible = v)"
         />
 
         <!-- LAYER 2: Coach's Diagnostic Strip (Top Strength / Primary Weakness / Blind Spot) -->
@@ -521,6 +554,7 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
           </div>
         </section>
       </template>
+      </div>
     </div>
 
     <!-- Quick WarmUp Launch Modal (Direct Start from Cabinet) -->

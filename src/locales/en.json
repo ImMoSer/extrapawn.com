@@ -507,7 +507,9 @@
         "noTimelineYet": "Complete your first training session to populate the 12-month mastery chart.",
         "chartRating": "Glicko-2 Rating",
         "chartAccuracy": "EMA Accuracy %",
-        "recentCoursesTitle": "Course History (7 / 30 Days)"
+        "recentCoursesTitle": "Course History (7 / 30 Days)",
+        "prevDiscipline": "Previous discipline",
+        "nextDiscipline": "Next discipline"
       },
       "diagnostics": {
         "topStrengthTitle": "Top Strength",
@@ -983,8 +985,8 @@
         "tactics": "Tactics",
         "tactics_course": "Classical Tactics Course",
         "endgame_course": "Classical Endgame Course",
-        "theoretical_endgames": "Theoretical Endgames",
-        "practical_chess": "Practical Endgames",
+        "theoretical_endgames": "Theory",
+        "practical_chess": "Practice",
         "finishhim": "Finish Him"
       },
       "modes": {

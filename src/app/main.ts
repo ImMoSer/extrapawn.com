@@ -36,7 +36,9 @@ async function boot() {
     /^\/legal\/?$/i.test(window.location.pathname) ||
     /^\/about\/?$/i.test(window.location.pathname) ||
     /^\/kursdiplom\/[^/]+/.test(window.location.pathname) ||
-    /^\/user-cabinet\/mo3ep\/?$/i.test(window.location.pathname)
+    /^\/user-cabinet\/mo3ep(?:\/(?:tactics|theory|practice|finishhim))?\/?$/i.test(
+      window.location.pathname,
+    )
   if (!authStore.isAuthenticated && !isPublicShareRoute) {
     // Save the current path to redirect back after login
     if (window.location.pathname !== '/' && window.location.pathname !== '/login') {

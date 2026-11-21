@@ -4,18 +4,26 @@ import {
   getVisibleTrainingDisciplines,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
+  stepDiscipline,
   type CabinetDTO,
   type TrainingDiscipline,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
+import { useHorizontalSwipe } from '@/shared/lib/touch/useHorizontalSwipe'
 import { tokens } from '@/shared/theme/tokens'
-import { FlashOutline, PersonCircleOutline, TrendingUpOutline } from '@vicons/ionicons5'
+import {
+  CaretBackSharp,
+  CaretForwardSharp,
+  FlashOutline,
+  PersonCircleOutline,
+  TrendingUpOutline,
+} from '@vicons/ionicons5'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { NButton, NIcon } from 'naive-ui'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import VChart from 'vue-echarts'
 import { useI18n } from 'vue-i18n'
 
@@ -30,11 +38,55 @@ const props = defineProps<{
 const emit = defineEmits<{
   selectDiscipline: [discipline: TrainingDiscipline]
   openTrainingHub: [discipline: TrainingDiscipline]
+  selectorVisibilityChange: [visible: boolean]
 }>()
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 const visibleDisciplines = computed(() => getVisibleTrainingDisciplines(authStore.canAccessCourses))
+
+const activeDisciplineOverview = computed(
+  () => props.cabinet.overview.disciplines[props.selectedDiscipline] ?? null,
+)
+
+function goPrevDiscipline(): void {
+  emit('selectDiscipline', stepDiscipline(visibleDisciplines.value, props.selectedDiscipline, -1))
+}
+
+function goNextDiscipline(): void {
+  emit('selectDiscipline', stepDiscipline(visibleDisciplines.value, props.selectedDiscipline, 1))
+}
+
+const mobileCardSwipe = useHorizontalSwipe({
+  onSwipeLeft: goNextDiscipline,
+  onSwipeRight: goPrevDiscipline,
+})
+
+const mobileSelectorRef = ref<HTMLElement | null>(null)
+let selectorObserver: IntersectionObserver | null = null
+
+onMounted(() => {
+  const el = mobileSelectorRef.value
+  if (!el || typeof IntersectionObserver === 'undefined') return
+  const scrollRoot = el.closest('.app-page-scroll')
+  selectorObserver = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      emit('selectorVisibilityChange', entry.isIntersecting)
+    },
+    {
+      root: scrollRoot ?? null,
+      threshold: 0.05,
+    },
+  )
+  selectorObserver.observe(el)
+})
+
+onUnmounted(() => {
+  selectorObserver?.disconnect()
+  selectorObserver = null
+})
 
 const disciplineTimeline = computed(() => {
   return props.cabinet.weekly_timeline.filter(
@@ -155,21 +207,29 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <section class="flex flex-col gap-4">
+  <section class="flex flex-col gap-2.5 @3xl:gap-4">
     <!-- Top Identity & Woodpecker Vault Row -->
-    <div class="grid grid-cols-1 @5xl:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 @5xl:grid-cols-3 gap-2.5 @3xl:gap-4">
       <!-- Player Identity Card -->
-      <div class="@5xl:col-span-2 p-5 rounded-lg bg-surface border border-border flex flex-col @xl:flex-row @xl:items-center @xl:justify-between gap-4">
-        <div class="flex items-center gap-3.5">
-          <div class="w-12 h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0">
-            <NIcon size="28"><PersonCircleOutline /></NIcon>
+      <div
+        class="@5xl:col-span-2 p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col @xl:flex-row @xl:items-center @xl:justify-between gap-3 @3xl:gap-4"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 @3xl:w-12 @3xl:h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0"
+          >
+            <NIcon size="24"><PersonCircleOutline /></NIcon>
           </div>
-          <div class="flex flex-col">
+          <div class="flex flex-col min-w-0">
             <div class="flex items-center gap-2">
-              <h1 class="font-display font-bold text-2xl text-text-primary tracking-wide">
+              <h1
+                class="font-display font-bold text-xl @3xl:text-2xl text-text-primary tracking-wide truncate"
+              >
                 {{ username }}
               </h1>
-              <span class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border">
+              <span
+                class="px-1.5 py-0.5 rounded-sm text-[10px] @3xl:text-[11px] font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border shrink-0"
+              >
                 HUD 2.0
               </span>
             </div>
@@ -194,19 +254,21 @@ const chartOption = computed(() => {
       </div>
 
       <!-- Woodpecker Vault Card ([D3]) -->
-      <div class="p-5 rounded-lg bg-surface border border-border flex flex-col justify-between gap-3">
-        <div class="flex items-center justify-between">
+      <div
+        class="p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col justify-between gap-2.5 @3xl:gap-3"
+      >
+        <div class="flex items-center justify-between gap-2">
           <span class="font-display font-bold text-xs uppercase tracking-wider text-accent">
             {{ t('features.trainingCenter.woodpecker.vaultTitle') }}
           </span>
-          <span class="font-condensed text-xs text-text-secondary">
+          <span class="hidden @xl:inline font-condensed text-xs text-text-secondary text-right">
             {{ t('pages.userCabinet.macro.woodpeckerRuleHint') }}
           </span>
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-xl text-warning">
+          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
+            <div class="font-condensed font-bold text-lg @3xl:text-xl text-warning">
               {{ cabinet.overview.woodpecker.due_now }}
             </div>
             <div class="text-[10px] text-text-secondary uppercase">
@@ -214,15 +276,15 @@ const chartOption = computed(() => {
             </div>
           </div>
 
-          <div class="p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-xl text-text-primary">
+          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
+            <div class="font-condensed font-bold text-lg @3xl:text-xl text-text-primary">
               {{ cabinet.overview.woodpecker.on_cooldown }}
             </div>
             <div class="text-[10px] text-text-secondary uppercase">24h</div>
           </div>
 
-          <div class="p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-xl text-success">
+          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
+            <div class="font-condensed font-bold text-lg @3xl:text-xl text-success">
               {{ cabinet.overview.woodpecker.mastered_total }}
             </div>
             <div class="text-[10px] text-text-secondary uppercase">
@@ -233,9 +295,107 @@ const chartOption = computed(() => {
       </div>
     </div>
 
-    <!-- Discipline Selector Cards -->
+    <!-- Mobile / Compact Discipline Swipe Carousel Card (< @5xl) -->
+    <div ref="mobileSelectorRef" class="@5xl:hidden select-none">
+      <div
+        class="rounded-md border border-border-hover bg-elevated overflow-hidden flex items-stretch"
+        @touchstart.passive="mobileCardSwipe.onTouchstart"
+        @touchend="mobileCardSwipe.onTouchend"
+        @touchcancel="mobileCardSwipe.onTouchcancel"
+      >
+        <button
+          type="button"
+          class="w-10 shrink-0 flex items-center justify-center border-r border-border bg-surface/60 text-text-secondary hover:text-text-primary active:bg-surface active:text-brand transition-colors cursor-pointer"
+          :aria-label="t('pages.userCabinet.macro.prevDiscipline')"
+          @click="goPrevDiscipline"
+        >
+          <NIcon size="18"><CaretBackSharp /></NIcon>
+        </button>
+
+        <div class="flex-1 min-w-0 p-3 flex flex-col gap-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span
+              class="font-display font-bold text-sm uppercase tracking-wider text-text-primary truncate"
+            >
+              {{ resolveDisciplineLabel(selectedDiscipline, t) }}
+            </span>
+            <span
+              v-if="activeDisciplineOverview"
+              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-surface border border-border text-text-secondary shrink-0"
+            >
+              {{ resolveDifficultyLabel(activeDisciplineOverview.unlocked_tier, t) }}
+            </span>
+          </div>
+
+          <div
+            v-if="activeDisciplineOverview"
+            class="flex items-baseline justify-between font-condensed"
+          >
+            <span class="text-2xl font-bold text-text-primary">
+              {{ Math.round(activeDisciplineOverview.global_rating) }}
+              <span class="text-xs font-normal text-text-secondary">
+                ±{{ Math.round(activeDisciplineOverview.global_rd) }}
+              </span>
+            </span>
+            <span class="text-xs text-text-secondary">
+              EMA {{ Math.round(activeDisciplineOverview.ema_accuracy * 100) }}%
+            </span>
+          </div>
+
+          <div
+            v-if="activeDisciplineOverview"
+            class="flex items-center justify-between text-[11px] font-condensed text-text-secondary"
+          >
+            <span>
+              {{ activeDisciplineOverview.solved_total }}✓ /
+              {{ activeDisciplineOverview.failed_total }}✕
+            </span>
+            <span v-if="activeDisciplineOverview.active_course" class="text-brand">
+              {{ activeDisciplineOverview.active_course.solved_puzzles }}/{{
+                activeDisciplineOverview.active_course.target_puzzles
+              }}
+              ·
+              {{
+                formatRemainingDuration(
+                  activeDisciplineOverview.active_course.remaining_seconds ?? 0,
+                  t,
+                )
+              }}
+            </span>
+          </div>
+
+          <!-- Compact Discipline Position Indicator (Tap or Swipe) -->
+          <div class="flex items-center justify-center gap-1.5 pt-1">
+            <button
+              v-for="disc in visibleDisciplines"
+              :key="disc"
+              type="button"
+              :aria-label="resolveDisciplineLabel(disc, t)"
+              class="h-1.5 rounded-xs transition-all cursor-pointer"
+              :class="
+                disc === selectedDiscipline
+                  ? 'w-5 bg-brand'
+                  : 'w-2 bg-border-hover hover:bg-text-secondary'
+              "
+              @click="emit('selectDiscipline', disc)"
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="w-10 shrink-0 flex items-center justify-center border-l border-border bg-surface/60 text-text-secondary hover:text-text-primary active:bg-surface active:text-brand transition-colors cursor-pointer"
+          :aria-label="t('pages.userCabinet.macro.nextDiscipline')"
+          @click="goNextDiscipline"
+        >
+          <NIcon size="18"><CaretForwardSharp /></NIcon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Discipline Selector Cards (4 in 1 Row) -->
     <div
-      class="grid grid-cols-1 @md:grid-cols-2 gap-3"
+      class="hidden @5xl:grid gap-3"
       :class="visibleDisciplines.length >= 5 ? '@5xl:grid-cols-5' : '@5xl:grid-cols-4'"
     >
       <button
@@ -245,7 +405,7 @@ const chartOption = computed(() => {
         class="p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col gap-2"
         :class="
           selectedDiscipline === disc
-            ? 'bg-elevated border-border-hover shadow-sm'
+            ? 'bg-elevated border-brand/60 shadow-sm'
             : 'bg-surface border-border hover:border-border-hover hover:bg-elevated/50'
         "
         @click="emit('selectDiscipline', disc)"
@@ -288,10 +448,7 @@ const chartOption = computed(() => {
             {{ cabinet.overview.disciplines[disc].solved_total }}✓ /
             {{ cabinet.overview.disciplines[disc].failed_total }}✕
           </span>
-          <span
-            v-if="cabinet.overview.disciplines[disc].active_course"
-            class="text-brand"
-          >
+          <span v-if="cabinet.overview.disciplines[disc].active_course" class="text-brand">
             {{ cabinet.overview.disciplines[disc].active_course?.solved_puzzles }}/{{
               cabinet.overview.disciplines[disc].active_course?.target_puzzles
             }}
@@ -308,11 +465,13 @@ const chartOption = computed(() => {
     </div>
 
     <!-- 12-Month Weekly Pulse Chart -->
-    <div class="p-5 rounded-lg bg-surface border border-border flex flex-col gap-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <NIcon size="18" class="text-brand"><TrendingUpOutline /></NIcon>
-          <h2 class="font-display font-bold text-sm uppercase tracking-wider text-text-primary">
+    <div class="p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col gap-3">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <NIcon size="18" class="text-brand shrink-0"><TrendingUpOutline /></NIcon>
+          <h2
+            class="font-display font-bold text-sm uppercase tracking-wider text-text-primary truncate"
+          >
             {{
               t('pages.userCabinet.macro.timelineTitle', {
                 discipline: resolveDisciplineLabel(selectedDiscipline, t),
@@ -320,7 +479,7 @@ const chartOption = computed(() => {
             }}
           </h2>
         </div>
-        <span class="text-xs text-text-secondary font-condensed">
+        <span class="text-xs text-text-secondary font-condensed shrink-0">
           {{ t('pages.userCabinet.macro.rolling52Weeks') }}
         </span>
       </div>
@@ -337,4 +496,3 @@ const chartOption = computed(() => {
     </div>
   </section>
 </template>
-

@@ -507,7 +507,9 @@
         "noTimelineYet": "Schließen Sie Ihre erste Trainingssitzung ab, um den 12-Monats-Verlauf aufzubauen.",
         "chartRating": "Glicko-2 Wertung",
         "chartAccuracy": "EMA-Präzision %",
-        "recentCoursesTitle": "Kurshistorie (7 / 30 Tage)"
+        "recentCoursesTitle": "Kurshistorie (7 / 30 Tage)",
+        "prevDiscipline": "Vorherige Disziplin",
+        "nextDiscipline": "Nächste Disziplin"
       },
       "diagnostics": {
         "topStrengthTitle": "Top-Stärke",
@@ -983,8 +985,8 @@
         "tactics": "Taktik",
         "tactics_course": "Klassischer Taktikkurs",
         "endgame_course": "Klassischer Endspielkurs",
-        "theoretical_endgames": "Theoretische Endspiele",
-        "practical_chess": "Praktische Endspiele",
+        "theoretical_endgames": "Theorie",
+        "practical_chess": "Praxis",
         "finishhim": "Finish Him"
       },
       "modes": {

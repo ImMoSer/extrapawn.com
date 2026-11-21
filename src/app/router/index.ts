@@ -81,7 +81,23 @@ const router = createRouter({
       },
     },
     {
-      path: '/user-cabinet/:id?',
+      path: '/user-cabinet',
+      redirect: '/user-cabinet/tactics',
+    },
+    {
+      path: '/user-cabinet/mo3ep/:discipline(tactics|theory|practice|finishhim)?',
+      name: 'user-cabinet-public',
+      component: () => import('@/pages/user-cabinet').then((m) => m.UserCabinetPage),
+      meta: {
+        requiresAuth: false,
+        seo: {
+          titleKey: 'seo.userCabinet.title',
+          descriptionKey: 'seo.userCabinet.description',
+        },
+      },
+    },
+    {
+      path: '/user-cabinet/:discipline(tactics|theory|practice|finishhim)',
       name: 'user-cabinet',
       component: () => import('@/pages/user-cabinet').then((m) => m.UserCabinetPage),
       meta: {
@@ -166,10 +182,7 @@ router.beforeEach(async (to, from) => {
     })
   }
 
-  const isPublicDeveloperCabinet =
-    to.name === 'user-cabinet' &&
-    typeof to.params.id === 'string' &&
-    to.params.id.trim().toLowerCase() === 'mo3ep'
+  const isPublicDeveloperCabinet = to.name === 'user-cabinet-public'
   const requiresAuth = Boolean(to.meta.requiresAuth) && !isPublicDeveloperCabinet
   const isAuthenticated = authStore.isAuthenticated
 
