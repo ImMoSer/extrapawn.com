@@ -32,14 +32,14 @@ export function getNaiveThemeOverrides(mode: ColorMode): GlobalThemeOverrides {
       warningColor: t.warning,
       errorColor: t.danger,
       infoColor: t.info,
-      borderRadius: '6px',
-      borderRadiusSmall: '4px',
+      borderRadius: '3px',
+      borderRadiusSmall: '2px',
     },
     Card: {
       color: t.surface,
       colorModal: t.surface,
       borderColor: t.border,
-      borderRadius: '8px',
+      borderRadius: '4px',
     },
     Layout: {
       color: t.canvas,
@@ -61,7 +61,7 @@ export function getNaiveThemeOverrides(mode: ColorMode): GlobalThemeOverrides {
       itemColorHover: t.elevated,
       itemColorActive: t.elevated,
       itemColorActiveHover: t.elevated,
-      borderRadius: '6px',
+      borderRadius: '3px',
     },
     Select: {
       peers: {
@@ -74,11 +74,11 @@ export function getNaiveThemeOverrides(mode: ColorMode): GlobalThemeOverrides {
           borderActive: `1px solid ${t.brand}`,
           borderFocus: `1px solid ${t.brand}`,
           boxShadowFocus: `0 0 0 2px ${t.brand}26`,
-          borderRadius: '6px',
+          borderRadius: '3px',
         },
         InternalSelectMenu: {
           color: t.overlay,
-          borderRadius: '8px',
+          borderRadius: '4px',
         },
       },
     },
@@ -90,7 +90,7 @@ export function getNaiveThemeOverrides(mode: ColorMode): GlobalThemeOverrides {
       thTextColor: t.textSecondary,
       tdTextColor: t.textPrimary,
       borderColor: t.border,
-      borderRadius: '8px',
+      borderRadius: '4px',
     },
     Drawer: {
       color: t.surface,
@@ -102,9 +102,9 @@ export function getNaiveThemeOverrides(mode: ColorMode): GlobalThemeOverrides {
       textColor: t.textPrimary,
     },
     Button: {
-      borderRadiusSmall: '4px',
-      borderRadiusMedium: '6px',
-      borderRadiusLarge: '8px',
+      borderRadiusSmall: '2px',
+      borderRadiusMedium: '3px',
+      borderRadiusLarge: '4px',
       textColorPrimary: t.onBrand,
       textColorHoverPrimary: t.onBrand,
       textColorPressedPrimary: t.onBrand,

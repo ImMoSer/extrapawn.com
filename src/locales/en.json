@@ -1423,6 +1423,10 @@
         "moveForward": "Next move",
         "endOfGame": "End of game",
         "flipBoard": "Flip board",
+        "boardMenu": "Board menu",
+        "analysisMode": "Analysis mode",
+        "localStockfish": "Stockfish (Local)",
+        "serverCoach": "Coach (Server)",
         "modeExplorer": "Engine Lines & PGN (EXP)",
         "modeCoach": "Coach Analysis & Explanations (COACH)"
       }

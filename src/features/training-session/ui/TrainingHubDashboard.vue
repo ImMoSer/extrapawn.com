@@ -13,7 +13,6 @@ import {
   type TrainingObjective,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import { useUiStore } from '@/shared/ui/model/ui.store'
 import {
@@ -208,7 +207,7 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
 
 <template>
   <AppPageShell>
-    <div class="flex w-full flex-col gap-5 text-text-primary select-none">
+    <div class="flex w-full flex-col gap-3 sm:gap-5 text-text-primary select-none">
       <!-- Top Header & Woodpecker Vault Summary -->
       <div class="flex flex-col @5xl:flex-row @5xl:items-center @5xl:justify-between gap-4 p-4 @3xl:p-5 rounded-lg bg-surface border border-border">
       <div class="flex flex-col gap-1">
@@ -398,7 +397,6 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
         </div>
         <div class="text-xs text-text-secondary font-condensed">
           {{ resolveDifficultyLabel(activeSession.difficulty, t) }} ·
-          {{ ENGINE_NAMES[activeSession.bot_engine] }} ·
           {{ activeSession.solved_count + activeSession.failed_count }} /
           {{ activeSession.total_count }}
           {{ t('features.trainingCenter.session.completedPuzzles') }}

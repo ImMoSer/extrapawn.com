@@ -23,7 +23,6 @@ import {
   type CourseDiplomaDTO,
   type CourseScopeSummaryDTO,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 
 const { t, te, locale } = useI18n()
@@ -366,7 +365,7 @@ function handleOpenTrainingCenter(): void {
             </span>
           </div>
 
-          <!-- Difficulty Tier & Bot -->
+          <!-- Difficulty Tier -->
           <div class="flex flex-col justify-between">
             <span class="font-condensed text-[11px] font-bold tracking-wider text-text-secondary uppercase">
               {{ t('features.trainingCenter.diploma.rankTierLabel') }}
@@ -377,10 +376,6 @@ function handleOpenTrainingCenter(): void {
                 {{ resolveDifficultyLabel(diploma.course.difficulty, t) }}
               </span>
             </div>
-            <span class="mt-1 font-condensed text-xs text-text-secondary">
-              {{ t('features.trainingCenter.diploma.sparringBotLabel') }}:
-              <strong class="text-text-primary">{{ ENGINE_NAMES[diploma.course.bot_engine] }}</strong>
-            </span>
           </div>
 
           <!-- Course Horizon -->

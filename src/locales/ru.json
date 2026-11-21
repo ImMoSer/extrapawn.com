@@ -1423,6 +1423,10 @@
         "moveForward": "Ход вперёд",
         "endOfGame": "Конец партии",
         "flipBoard": "Перевернуть доску",
+        "boardMenu": "Меню доски",
+        "analysisMode": "Режим анализа",
+        "localStockfish": "Stockfish (Локальный)",
+        "serverCoach": "Тренер (Сервер)",
         "modeExplorer": "Линии движка и PGN (EXP)",
         "modeCoach": "Анализ тренера и объяснения (COACH)"
       }

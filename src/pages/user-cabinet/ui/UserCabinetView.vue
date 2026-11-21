@@ -19,7 +19,6 @@ import { useAuthStore } from '@/entities/user'
 import {
   formatElapsedDuration,
   isDisciplineVisibleForUser,
-  resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
   resolveScopeLabel,
@@ -33,7 +32,6 @@ import {
   type TrainingDiscipline,
   type TrainingObjective,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   CabinetDiagnosticStrip,
@@ -383,9 +381,6 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
                     </div>
                     <div class="mt-0.5 text-sm font-bold text-text-primary">
                       {{ resolveDifficultyLabel(course.difficulty, t) }} · {{ course.duration_days }}d
-                      <span class="font-condensed text-xs font-normal text-text-secondary">
-                        · {{ ENGINE_NAMES[course.bot_engine] }}
-                      </span>
                     </div>
                   </div>
 
@@ -582,9 +577,6 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
             >
               <span class="font-display font-semibold text-xs">
                 {{ resolveDifficultyLabel(tier, t) }}
-              </span>
-              <span class="font-condensed text-[10px] text-text-secondary">
-                {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
               </span>
             </button>
           </div>

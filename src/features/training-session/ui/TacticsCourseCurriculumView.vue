@@ -261,7 +261,7 @@ async function handleResetCourseProgress(): Promise<void> {
               v-if="curriculum && curriculum.total_puzzles > 0"
               class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-elevated border border-border text-text-secondary"
             >
-              {{ curriculum.total_puzzles }} позиций<template v-if="isEndgameCourse"> · Спарринг с MOZERO</template>
+              {{ curriculum.total_puzzles }} позиций
             </span>
           </div>
 

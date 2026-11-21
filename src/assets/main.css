@@ -66,9 +66,8 @@ html[data-theme='dark'] {
   --side-min-w: 240px;
   --stage-shell-max-w: 2560px;
 
-  --top-panel-h: 48px;
-  --bottom-panel-h: 48px;
-  --eval-bar-w: 16px;
+  --top-panel-h: 44px;
+  --bottom-panel-h: 44px;
   --board-gap: 8px;
 
   /* Effective workspace width right of the fixed NavRail (capped for ultrawide monitors) */
@@ -87,13 +86,13 @@ html[data-theme='dark'] {
       ),
       calc(
         var(--workspace-w) - (2 * var(--layout-pad)) - (2 * var(--layout-gap)) -
-          (2 * var(--side-min-w)) - var(--eval-bar-w) - var(--board-gap)
+          (2 * var(--side-min-w))
       )
     )
   );
 
   /* Master center column width synced 1:1 between GameLayout and AppPageShell */
-  --board-stage-w: calc(var(--eval-bar-w) + var(--board-gap) + var(--board-size));
+  --board-stage-w: var(--board-size);
   --page-stage-w: clamp(820px, var(--board-stage-w), 1320px);
 }
 
@@ -188,15 +187,13 @@ html[data-theme='light'] {
   --color-amber: var(--theme-amber);
   --color-acid-green: var(--theme-acid-green);
 
-  /* Chessboard Invariant Tokens (White vs Black side on Eval Bar) */
-  --color-eval-white: #e4e4e7;
-  --color-eval-black: #242424;
-
-  /* Border Radius Scale (Supabase Studio precision) */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* Sharp Studio Border Radius Scale (Serious, technical precision) */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
 }
 
 /* ============================================================================
@@ -251,7 +248,7 @@ body {
   padding-right: 48px;
 }
 
-/* Subtle Scrollbar */
+/* Subtle Scrollbar (Desktop only) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -265,4 +262,22 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--theme-scrollbar-thumb-hover);
+}
+
+/* Mobile / Portrait: keep touch scrolling active while hiding scrollbar chrome */
+@media (max-width: 899px), (orientation: portrait) {
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .n-scrollbar > .n-scrollbar-rail {
+    display: none;
+  }
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
   resolveScopeLabel,
   TRAINING_DIFFICULTIES,
@@ -9,7 +8,6 @@ import {
   type TrainingDiscipline,
   type TrainingObjective,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import { PlayOutline } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
 import { computed } from 'vue'
@@ -160,9 +158,6 @@ const customFocusDisplayLabel = computed<string>(() => {
               >
                 <span class="font-display font-semibold text-sm">
                   {{ resolveDifficultyLabel(tier, t) }}
-                </span>
-                <span class="font-condensed text-[11px] text-text-secondary">
-                  {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
                 </span>
               </button>
             </div>

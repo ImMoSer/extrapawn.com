@@ -224,7 +224,7 @@ onUnmounted(() => {
 
   <!-- 1. HUB / SHOWCASE & ACTIVE COURSE CURRICULUM (DEVELOPER MO3EP ONLY) -->
   <AppPageShell v-else-if="store.viewState === 'hub'">
-    <div class="flex w-full flex-col gap-5 text-text-primary select-none">
+    <div class="flex w-full flex-col gap-3 sm:gap-5 text-text-primary select-none">
       <!-- Top Header Banner -->
       <div class="flex flex-col @5xl:flex-row @5xl:items-center @5xl:justify-between gap-4 p-4 @3xl:p-5 rounded-lg bg-surface border border-border">
       <div class="flex flex-col gap-1">

@@ -7,7 +7,6 @@ import {
   resolveTwinPedagogicalPrompt,
 } from '@/entities/training'
 import { useAuthStore } from '@/entities/user'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
   CloseCircleOutline,
@@ -87,13 +86,6 @@ async function handleFlagSubmit(reason: string): Promise<void> {
   if (!authStore.isDeveloper) return
   await store.flagCurrentCoursePuzzle(reason)
 }
-
-const showBotBadge = computed(() => {
-  const disc = store.activeSessionSummary?.discipline
-  return disc && disc !== 'tactics' && disc !== 'tactics_course'
-})
-
-const botLabel = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
 
 const deltaText = computed(() => {
   const res = store.lastAttemptResult
@@ -256,14 +248,6 @@ function handleBackAction(): void {
             streak: activePuzzle.woodpecker_streak ?? 0,
           })
         }}
-      </span>
-
-      <!-- Sparring Bot Badge -->
-      <span
-        v-if="showBotBadge && showLivePlayMeta"
-        class="hidden lg:inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-condensed bg-elevated text-text-secondary border border-border whitespace-nowrap shrink-0"
-      >
-        {{ botLabel }}
       </span>
 
       <!-- Timer (hidden during analysis, practice replay, post-attempt decision, and mobile retry prompt) -->

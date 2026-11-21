@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   formatRemainingDuration,
-  resolveBotEngineForDifficulty,
   resolveDifficultyLabel,
   resolveScopeLabel,
   TRAINING_DIFFICULTIES,
@@ -10,7 +9,6 @@ import {
   type TrainingDifficulty,
   type TrainingDiscipline,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   CheckmarkCircleOutline,
   LockClosedOutline,
@@ -116,10 +114,6 @@ const gateScopesPercent = computed(() => {
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-surface text-text-primary border border-border">
               {{ resolveDifficultyLabel(activeCourse.difficulty, t) }}
-            </span>
-            <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-text-secondary">
-              {{ t('features.trainingCenter.sidebar.sparringBot') }}:
-              {{ ENGINE_NAMES[activeCourse.bot_engine] }}
             </span>
             <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed bg-surface border border-border text-warning flex items-center gap-1">
               <NIcon size="13"><TimeOutline /></NIcon>
@@ -236,9 +230,6 @@ const gateScopesPercent = computed(() => {
                     <LockClosedOutline />
                   </NIcon>
                 </div>
-                <span class="font-condensed text-[11px] text-text-secondary">
-                  {{ ENGINE_NAMES[resolveBotEngineForDifficulty(tier)] }}
-                </span>
               </button>
             </div>
           </div>

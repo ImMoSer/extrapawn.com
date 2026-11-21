@@ -3,13 +3,12 @@ import {
   isClassicalCourseDiscipline,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
+  resolveScopeLabel,
   resolveTwinBadgeLabel,
   resolveTwinPedagogicalPrompt,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import {
   ArrowForwardOutline,
-  CloseOutline,
   DownloadOutline,
   EyeOutline,
   PauseOutline,
@@ -23,7 +22,7 @@ import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestRep
 import { useTrainingSessionStore } from '../model/trainingSession.store'
 import TrainingSessionQueueItem from './TrainingSessionQueueItem.vue'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const store = useTrainingSessionStore()
 const { anomaliesCount } = useCrashTestReport()
 
@@ -37,7 +36,46 @@ const difficultyLabel = computed(() =>
   summary.value ? resolveDifficultyLabel(summary.value.difficulty, t) : '',
 )
 
-const botName = computed(() => ENGINE_NAMES[store.activeBotEngine] ?? store.activeBotEngine)
+const activeHeaderItem = computed(() => {
+  const inspectedId = store.isAnalysisMode
+    ? store.analysisPuzzle?.puzzle_id
+    : store.isPracticeReplay
+      ? store.practicePuzzle?.puzzle_id
+      : undefined
+  if (inspectedId) {
+    const matched = store.sessionItems.find((it) => it.puzzle_id === inspectedId)
+    if (matched) return matched
+  }
+  return store.currentItem
+})
+
+const activePuzzleHeader = computed<{ title: string; meta: string } | null>(() => {
+  const it = activeHeaderItem.value
+  if (!it) return null
+  if (it.course_puzzle) {
+    const hideExamSpoiler =
+      it.course_puzzle.domain === 'EXAMS' && it.status === 'pending' && !store.isAnalysisMode
+    return {
+      title: hideExamSpoiler
+        ? `Экзамен · Батч #${it.course_puzzle.batch_id}`
+        : resolveScopeLabel('scopes', it.course_puzzle.class || 'mixedExam', t, te),
+      meta: `Курс ${it.course_puzzle.course_id || 1} · Батч #${it.course_puzzle.batch_id}`,
+    }
+  }
+  if (it.tactical) {
+    return {
+      title: resolveScopeLabel('scopes', it.tactical.primary_motif, t, te),
+      meta: `R: ${it.tactical.rating}`,
+    }
+  }
+  if (it.endgame) {
+    return {
+      title: resolveScopeLabel('scopes', it.endgame.class, t, te),
+      meta: `R: ${it.endgame.effective_rating}`,
+    }
+  }
+  return null
+})
 
 const completedCount = computed(() => {
   if (summary.value) {
@@ -108,7 +146,7 @@ function handleItemSelect(puzzleId: string): void {
 
 <template>
   <div
-    class="h-full flex flex-col gap-3 p-3 bg-surface text-text-primary select-none overflow-hidden"
+    class="h-full flex flex-col gap-2 sm:gap-3 p-2 sm:p-3 bg-surface text-text-primary select-none overflow-hidden"
   >
     <!-- Session Header -->
     <div v-if="summary" class="flex flex-col gap-2 pb-2 border-b border-border shrink-0">
@@ -117,7 +155,7 @@ function handleItemSelect(puzzleId: string): void {
           {{ disciplineLabel }}
         </span>
         <span
-          class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated border border-border text-text-primary"
+          class="px-2 py-0.5 rounded-sm text-[11px] font-condensed font-bold uppercase bg-elevated border border-border text-text-primary shrink-0"
         >
           <template v-if="isClassicalCourseDiscipline(summary.discipline)">
             {{
@@ -137,10 +175,22 @@ function handleItemSelect(puzzleId: string): void {
         </span>
       </div>
 
-      <div class="flex items-center justify-between text-xs text-text-secondary">
-        <span v-if="summary.discipline === 'tactics_course'">Классический курс</span>
-        <span v-else>{{ t('features.trainingCenter.sidebar.sparringBot') }}: {{ botName }}</span>
-        <span class="font-condensed font-bold text-text-primary">
+      <div class="flex items-baseline justify-between gap-2 text-xs min-w-0">
+        <div v-if="activePuzzleHeader" class="flex items-baseline gap-1.5 min-w-0">
+          <span class="font-medium text-text-primary truncate">
+            {{ activePuzzleHeader.title }}
+          </span>
+          <span
+            v-if="activePuzzleHeader.meta"
+            class="font-condensed text-[11px] text-text-secondary shrink-0"
+          >
+            {{ activePuzzleHeader.meta }}
+          </span>
+        </div>
+        <span v-else class="text-text-secondary truncate">
+          #{{ store.currentItemIndex + 1 }}
+        </span>
+        <span class="font-condensed font-bold text-text-primary shrink-0">
           {{ completedCount }} / {{ store.sessionItems.length }} ({{ progressPercent }}%)
         </span>
       </div>
@@ -183,63 +233,9 @@ function handleItemSelect(puzzleId: string): void {
       </p>
     </div>
 
-    <!-- Retry Prompt Card (Unlimited retries until Solved or Resigned) -->
-    <div
-      v-if="store.isAwaitingRetry"
-      class="p-3 rounded-md border border-warning/50 bg-warning/10 flex flex-col gap-2 shrink-0"
-    >
-      <div class="flex items-center justify-between gap-2">
-        <span class="font-display font-bold text-xs uppercase tracking-wider text-warning">
-          {{
-            t('features.trainingCenter.play.retryPromptTitle', {
-              used: store.currentAttemptsUsed,
-            })
-          }}
-        </span>
-      </div>
-      <p class="text-[11px] text-text-secondary leading-snug">
-        {{ t('features.trainingCenter.play.retryPromptHint') }}
-      </p>
-      <div class="grid grid-cols-2 gap-2 pt-0.5">
-        <NButton
-          size="small"
-          type="warning"
-          class="min-w-0 overflow-hidden"
-          :disabled="!store.canRestartCurrentPuzzle"
-          :loading="store.isPersistingRetry"
-          @click="store.restartCurrentPuzzle()"
-        >
-          <template #icon>
-            <NIcon class="shrink-0"><RefreshOutline /></NIcon>
-          </template>
-          <span class="truncate">
-            {{
-              t('features.trainingCenter.actions.restartAttempt', {
-                current: store.currentAttemptNumber,
-              })
-            }}
-          </span>
-        </NButton>
-        <NButton
-          size="small"
-          secondary
-          type="error"
-          class="min-w-0 overflow-hidden"
-          :disabled="!store.canResignCurrentPuzzle"
-          :loading="store.isSubmittingAttempt"
-          @click="store.resignCurrentPuzzle()"
-        >
-          <template #icon>
-            <NIcon class="shrink-0"><CloseOutline /></NIcon>
-          </template>
-          <span class="truncate">{{ t('features.trainingCenter.actions.resignToAnalyze') }}</span>
-        </NButton>
-      </div>
-    </div>
-
     <!-- Practice Replay Banner (Sandbox Mode without rating impact) -->
     <div
-      v-else-if="store.isPracticeReplay"
+      v-if="store.isPracticeReplay"
       class="p-3 rounded-md border flex flex-col gap-2 shrink-0"
       :class="
         store.practiceFeedbackState === 'solved'
@@ -374,54 +370,6 @@ function handleItemSelect(puzzleId: string): void {
         </template>
         {{ t('features.trainingCenter.actions.practiceReplayFull') }}
       </NButton>
-    </div>
-
-    <!-- Active Puzzle Attempt Strip (Restart & Resign during live play) -->
-    <div
-      v-else-if="
-        store.isPlaying &&
-        store.currentItem?.status === 'pending' &&
-        summary?.mode !== 'crashtest'
-      "
-      class="px-2.5 py-2 rounded-md bg-elevated/60 border border-border flex items-center justify-between gap-2 shrink-0"
-    >
-      <span
-        class="font-condensed font-bold text-xs"
-        :class="store.displayAttemptNumber > 1 ? 'text-warning' : 'text-text-secondary'"
-      >
-        {{
-          t('features.trainingCenter.badges.attemptCounter', {
-            current: store.displayAttemptNumber,
-          })
-        }}
-      </span>
-      <div class="flex items-center gap-1.5">
-        <NButton
-          size="tiny"
-          secondary
-          :disabled="!store.canRestartCurrentPuzzle"
-          :loading="store.isPersistingRetry"
-          @click="store.restartCurrentPuzzle()"
-        >
-          <template #icon>
-            <NIcon><RefreshOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.restartPuzzle') }}
-        </NButton>
-        <NButton
-          size="tiny"
-          quaternary
-          type="error"
-          :disabled="!store.canResignCurrentPuzzle"
-          :loading="store.isSubmittingAttempt"
-          @click="store.resignCurrentPuzzle()"
-        >
-          <template #icon>
-            <NIcon><CloseOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.resignPuzzle') }}
-        </NButton>
-      </div>
     </div>
 
     <!-- Puzzle Queue List -->

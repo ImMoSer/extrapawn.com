@@ -8,7 +8,6 @@ import {
   resolveTwinBadgeLabel,
   type HydratedSessionItem,
 } from '@/entities/training'
-import { ENGINE_NAMES } from '@/shared/types/api.types'
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
   ArrowBackOutline,
@@ -228,7 +227,7 @@ function handleGoToCabinet(): void {
             }}
           </span>
           <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border">
-            {{ resolveDifficultyLabel(report.difficulty, t) }} · {{ ENGINE_NAMES[report.botEngine] }}
+            {{ resolveDifficultyLabel(report.difficulty, t) }}
           </span>
         </div>
         <h1 class="font-display font-bold text-2xl text-text-primary mt-1">

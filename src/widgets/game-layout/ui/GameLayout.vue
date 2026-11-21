@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore, WebChessBoard } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
-import { useAnalysisStore } from '@/features/analysis'
-import { EvalBar, useCoachStore, useCrashtestStore } from '@/features/coach'
-import { useSidebarStore } from '../model/sidebar.store'
+import { useCoachStore, useCrashtestStore } from '@/features/coach'
 import ControlCenter from './ControlCenter.vue'
 import RightSidebarSlot from './RightSidebarSlot.vue'
 import type { Key } from '@lichess-org/chessground/types'
@@ -12,21 +10,17 @@ import { computed, onMounted, onUnmounted } from 'vue'
 const props = withDefaults(
   defineProps<{
     boardLocked?: boolean
-    hideEvalBar?: boolean
   }>(),
   {
     boardLocked: false,
-    hideEvalBar: false,
   },
 )
 
 const preferencesStore = usePreferencesStore()
 const boardStore = useBoardStore()
 const gameStore = useGameStore()
-const analysisStore = useAnalysisStore()
 const coachStore = useCoachStore()
 const crashtestStore = useCrashtestStore()
-const sidebarStore = useSidebarStore()
 
 onMounted(() => {
   crashtestStore.init()
@@ -45,37 +39,6 @@ const activeDests = computed(() => (props.boardLocked ? new Map() : boardStore.d
 
 const isAnalysisMode = computed(() => gameStore.gamePhase === 'ANALYSIS')
 
-const activeEvalCp = computed<number | null>(() => {
-  if (coachStore.isFairPlayLocked) return 0
-  if (sidebarStore.activeMode === 'explorer' && analysisStore.isAnalysisActive) {
-    const topLine = analysisStore.analysisLines[0]
-    if (!topLine || topLine.score.type !== 'cp') return null
-    return topLine.score.value
-  }
-  return coachStore.evalCp
-})
-
-const activeEvalMate = computed<number | null>(() => {
-  if (coachStore.isFairPlayLocked) return null
-  if (sidebarStore.activeMode === 'explorer' && analysisStore.isAnalysisActive) {
-    const topLine = analysisStore.analysisLines[0]
-    if (!topLine || topLine.score.type !== 'mate') return null
-    return topLine.score.value
-  }
-  return coachStore.evalMate
-})
-
-const activeEvalLoading = computed<boolean>(() => {
-  if (coachStore.isFairPlayLocked) return false
-  if (sidebarStore.activeMode === 'explorer') {
-    return (
-      analysisStore.isEngineLoading ||
-      (analysisStore.isAnalysisActive && analysisStore.analysisLines.length === 0)
-    )
-  }
-  return coachStore.topMovesLoading
-})
-
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
   await gameStore.handleUserMove(orig, dest)
 }
@@ -93,7 +56,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
         <slot name="left-panel"></slot>
       </aside>
 
-      <!-- Center Stage: Top Info -> (EvalBar + Board) -> Controls -->
+      <!-- Center Stage: Top Info -> Board -> Controls -->
       <div class="center-stage">
         <!-- Top Sector -->
         <div class="cb-top-panel">
@@ -102,20 +65,8 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
           </div>
         </div>
 
-        <!-- Middle Row: EvalBar + Board Sector -->
+        <!-- Middle Row: Chessboard Sector -->
         <div class="board-row">
-          <div v-if="!props.hideEvalBar" class="eval-bar-container">
-            <slot name="eval-bar">
-              <EvalBar
-                :eval-cp="activeEvalCp"
-                :mate="activeEvalMate"
-                :result="coachStore.gameResult"
-                :loading="activeEvalLoading"
-                :orientation="boardStore.orientation"
-              />
-            </slot>
-          </div>
-
           <div class="board-section">
             <div class="board-aspect-wrapper">
               <slot name="board">
@@ -147,8 +98,8 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
           </div>
         </div>
 
-        <!-- Control Center Sector -->
-        <div class="cb-bottom-panel">
+        <!-- Control Center Sector (hidden on mobile unless in active analysis) -->
+        <div class="cb-bottom-panel" :class="{ 'is-fair-play-locked': coachStore.isFairPlayLocked }">
           <slot name="bottom-controls">
             <ControlCenter />
           </slot>
@@ -218,17 +169,9 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: var(--board-gap);
   width: 100%;
   height: var(--board-size);
   flex: 0 0 var(--board-size);
-}
-
-.eval-bar-container {
-  width: var(--eval-bar-w);
-  height: 100%;
-  flex: 0 0 var(--eval-bar-w);
-  flex-shrink: 0;
 }
 
 .board-section {
@@ -264,7 +207,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   aspect-ratio: 1 / 1;
   position: relative;
   background-color: var(--color-canvas);
-  border-radius: 4px;
+  border-radius: 0;
   flex-shrink: 0;
 }
 
@@ -311,7 +254,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   .game-layout {
     height: 100%;
     overflow-y: auto;
-    padding: 8px;
+    padding: 4px;
     display: block;
   }
 
@@ -320,7 +263,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     flex-direction: column;
     max-width: 100%;
     height: auto;
-    gap: 8px;
+    gap: 4px;
   }
 
   .center-stage {
@@ -328,7 +271,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     width: 100%;
     height: auto;
     justify-content: flex-start;
-    gap: 6px;
+    gap: 4px;
     overflow: hidden;
   }
 
@@ -337,13 +280,6 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     height: auto;
     flex: 0 0 auto;
     align-items: stretch;
-  }
-
-  .eval-bar-container {
-    width: var(--eval-bar-w);
-    flex: 0 0 var(--eval-bar-w);
-    height: auto;
-    align-self: stretch;
   }
 
   .board-section {
@@ -362,6 +298,18 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     flex-shrink: 0;
   }
 
+  .cb-top-panel,
+  .cb-bottom-panel {
+    width: 100%;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+
+  .cb-bottom-panel.is-fair-play-locked,
+  .right-panel.is-fair-play-locked {
+    display: none;
+  }
+
   .right-panel {
     order: 2;
     height: auto;
@@ -371,21 +319,11 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
     border: none;
   }
 
-  .right-panel.is-fair-play-locked {
-    display: none;
-  }
-
   .left-panel {
     order: 3;
     height: auto;
     min-height: 180px;
     padding: 0;
-  }
-
-  .cb-top-panel {
-    width: 100%;
-    height: 48px;
-    flex: 0 0 48px;
   }
 }
 </style>
