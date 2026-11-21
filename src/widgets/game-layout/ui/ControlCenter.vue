@@ -2,13 +2,13 @@
 import { useBoardStore, useGameStore } from '@/entities/game'
 import { useCoachStore } from '@/features/coach'
 import {
+  CaretBackSharp,
+  CaretForwardSharp,
   CheckmarkOutline,
-  ChevronBackOutline,
-  ChevronForwardOutline,
+  GridSharp,
   HardwareChipOutline,
-  MenuOutline,
-  PlaySkipBackOutline,
-  PlaySkipForwardOutline,
+  PlaySkipBackSharp,
+  PlaySkipForwardSharp,
   SchoolOutline,
   SwapVerticalOutline,
 } from '@vicons/ionicons5'
@@ -38,28 +38,30 @@ function handleFlipBoard(): void {
 
 <template>
   <div
-    class="h-11 w-full px-2 bg-surface border border-border rounded-lg flex items-center justify-center select-none"
+    class="h-11 w-full bg-surface border border-border rounded-lg flex items-center justify-center select-none"
   >
-    <!-- Centered PGN Navigation + Upward Board Menu: ⏮ ◀ ☰ ▶ ⏭ -->
-    <div class="flex items-center gap-1 bg-elevated border border-border p-1 rounded-md">
+    <!-- Centered Sharp Segmented Navigation & Board Menu Bar -->
+    <div
+      class="inline-flex h-8 items-stretch overflow-hidden rounded-md border border-border bg-elevated/40 divide-x divide-border"
+    >
       <button
         type="button"
         :title="t('shared.board.pgn.startOfGame')"
         :aria-label="t('shared.board.pgn.startOfGame')"
-        class="h-7 w-9 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        class="w-11 sm:w-12 flex items-center justify-center text-text-secondary hover:bg-elevated hover:text-text-primary active:bg-surface transition-colors cursor-pointer"
         @click="gameStore.navigatePgn('start')"
       >
-        <n-icon size="16"><PlaySkipBackOutline /></n-icon>
+        <n-icon size="16"><PlaySkipBackSharp /></n-icon>
       </button>
 
       <button
         type="button"
         :title="t('shared.board.pgn.moveBack')"
         :aria-label="t('shared.board.pgn.moveBack')"
-        class="h-7 w-9 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        class="w-11 sm:w-12 flex items-center justify-center text-text-secondary hover:bg-elevated hover:text-text-primary active:bg-surface transition-colors cursor-pointer"
         @click="gameStore.navigatePgn('backward')"
       >
-        <n-icon size="16"><ChevronBackOutline /></n-icon>
+        <n-icon size="18"><CaretBackSharp /></n-icon>
       </button>
 
       <n-popover
@@ -76,14 +78,14 @@ function handleFlipBoard(): void {
             :title="t('shared.board.pgn.boardMenu')"
             :aria-label="t('shared.board.pgn.boardMenu')"
             :aria-expanded="isMenuOpen"
-            class="h-7 w-10 rounded-sm transition-colors cursor-pointer flex items-center justify-center border"
+            class="w-11 sm:w-12 flex items-center justify-center transition-colors cursor-pointer"
             :class="
               isMenuOpen
-                ? 'bg-surface text-brand border-border-hover'
-                : 'bg-surface/60 text-text-primary border-border hover:bg-surface hover:border-border-hover'
+                ? 'bg-elevated text-brand'
+                : 'text-text-primary hover:bg-elevated hover:text-brand'
             "
           >
-            <n-icon size="17"><MenuOutline /></n-icon>
+            <n-icon size="15"><GridSharp /></n-icon>
           </button>
         </template>
 
@@ -162,20 +164,20 @@ function handleFlipBoard(): void {
         type="button"
         :title="t('shared.board.pgn.moveForward')"
         :aria-label="t('shared.board.pgn.moveForward')"
-        class="h-7 w-9 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        class="w-11 sm:w-12 flex items-center justify-center text-text-secondary hover:bg-elevated hover:text-text-primary active:bg-surface transition-colors cursor-pointer"
         @click="gameStore.navigatePgn('forward')"
       >
-        <n-icon size="16"><ChevronForwardOutline /></n-icon>
+        <n-icon size="18"><CaretForwardSharp /></n-icon>
       </button>
 
       <button
         type="button"
         :title="t('shared.board.pgn.endOfGame')"
         :aria-label="t('shared.board.pgn.endOfGame')"
-        class="h-7 w-9 rounded-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors cursor-pointer flex items-center justify-center"
+        class="w-11 sm:w-12 flex items-center justify-center text-text-secondary hover:bg-elevated hover:text-text-primary active:bg-surface transition-colors cursor-pointer"
         @click="gameStore.navigatePgn('end')"
       >
-        <n-icon size="16"><PlaySkipForwardOutline /></n-icon>
+        <n-icon size="16"><PlaySkipForwardSharp /></n-icon>
       </button>
     </div>
   </div>
