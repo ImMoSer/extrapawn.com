@@ -1052,6 +1052,12 @@
       "woodpecker": {
         "title": "Woodpecker Queue (24h Cooldown · 3× Streak)",
         "vaultTitle": "Woodpecker Vault",
+        "batchTitle": "Woodpecker Batch",
+        "batchBadge": "WOODPECKER",
+        "batchRemainingLabel": "Puzzles to clear",
+        "batchRuleHint": "1 clean attempt per puzzle · unrated",
+        "batchEmptyHint": "No mistakes queued in this discipline.",
+        "startBatchBtn": "Start",
         "dueNow": "Due for Review",
         "dueShort": "due now",
         "cooldown24h": "24h Cooldown",

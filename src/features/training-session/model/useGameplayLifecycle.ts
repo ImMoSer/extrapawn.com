@@ -239,9 +239,10 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
         }
 
         const isCrashtestMode = crashTest.isCrashtestActiveForSession(sess.session)
+        const isWoodpeckerBatch = sess.session.focus_group === 'woodpecker'
         const nextSpentAttempts = Math.min(MAX_SANITY_ATTEMPTS, getItemAttemptsUsed(item) + 1)
 
-        if (!isCrashtestMode && nextSpentAttempts < MAX_SANITY_ATTEMPTS) {
+        if (!isCrashtestMode && !isWoodpeckerBatch && nextSpentAttempts < MAX_SANITY_ATTEMPTS) {
           clock.pauseTimer()
           GameAudioEngine.playFeatureError()
           item.attempts_used = nextSpentAttempts
@@ -379,11 +380,14 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
       }
 
       if (state.overview.value) {
+        const isWoodpeckerBatch = result.session.focus_group === 'woodpecker'
         const discOverview = state.overview.value.disciplines[result.session.discipline]
         if (discOverview) {
-          discOverview.global_rating = result.global_rating_after
-          if (solved) discOverview.solved_total += 1
-          else discOverview.failed_total += 1
+          if (!isWoodpeckerBatch) {
+            discOverview.global_rating = result.global_rating_after
+            if (solved) discOverview.solved_total += 1
+            else discOverview.failed_total += 1
+          }
           discOverview.active_session = result.session.is_completed ? undefined : result.session
           if (result.course) {
             discOverview.active_course =
@@ -391,6 +395,16 @@ export function useGameplayLifecycle(deps: GameplayLifecycleDependencies) {
           }
           if (result.promoted_to_tier) {
             discOverview.unlocked_tier = result.promoted_to_tier
+          }
+        }
+        if (isWoodpeckerBatch && result.woodpecker.action === 'graduated') {
+          const wpDisc = state.overview.value.woodpecker?.by_discipline?.[result.session.discipline]
+          if (wpDisc) {
+            if (wpDisc.due_now > 0) {
+              wpDisc.due_now -= 1
+            } else if (wpDisc.on_cooldown > 0) {
+              wpDisc.on_cooldown -= 1
+            }
           }
         }
       }

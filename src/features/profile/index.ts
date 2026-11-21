@@ -1,5 +1,6 @@
 export { default as CabinetMacroPulse } from './ui/CabinetMacroPulse.vue'
 export { default as CabinetDisciplineStickyBar } from './ui/CabinetDisciplineStickyBar.vue'
+export { default as CabinetWoodpeckerCard } from './ui/CabinetWoodpeckerCard.vue'
 export { default as CabinetDiagnosticStrip } from './ui/CabinetDiagnosticStrip.vue'
 export { default as CabinetEndgameMap } from './ui/CabinetEndgameMap.vue'
 export { default as CabinetTacticsMap } from './ui/CabinetTacticsMap.vue'

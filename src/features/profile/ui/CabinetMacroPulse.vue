@@ -208,91 +208,47 @@ const chartOption = computed(() => {
 
 <template>
   <section class="flex flex-col gap-2.5 @3xl:gap-4">
-    <!-- Top Identity & Woodpecker Vault Row -->
-    <div class="grid grid-cols-1 @5xl:grid-cols-3 gap-2.5 @3xl:gap-4">
-      <!-- Player Identity Card -->
-      <div
-        class="@5xl:col-span-2 p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col @xl:flex-row @xl:items-center @xl:justify-between gap-3 @3xl:gap-4"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 @3xl:w-12 @3xl:h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0"
-          >
-            <NIcon size="24"><PersonCircleOutline /></NIcon>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <div class="flex items-center gap-2">
-              <h1
-                class="font-display font-bold text-xl @3xl:text-2xl text-text-primary tracking-wide truncate"
-              >
-                {{ username }}
-              </h1>
-              <span
-                class="px-1.5 py-0.5 rounded-sm text-[10px] @3xl:text-[11px] font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border shrink-0"
-              >
-                HUD 2.0
-              </span>
-            </div>
-            <span class="text-xs text-text-secondary">
-              {{
-                t('pages.userCabinet.macro.yearlySummary', {
-                  days: yearlyStats.activeDays,
-                  solved: yearlyStats.totalSolved,
-                  acc: yearlyStats.acc,
-                })
-              }}
+    <!-- Player Identity Card (Full Width) -->
+    <div
+      class="p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col @xl:flex-row @xl:items-center @xl:justify-between gap-3 @3xl:gap-4"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 @3xl:w-12 @3xl:h-12 rounded-md bg-elevated border border-border-hover flex items-center justify-center text-text-primary shrink-0"
+        >
+          <NIcon size="24"><PersonCircleOutline /></NIcon>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <div class="flex items-center gap-2">
+            <h1
+              class="font-display font-bold text-xl @3xl:text-2xl text-text-primary tracking-wide truncate"
+            >
+              {{ username }}
+            </h1>
+            <span
+              class="px-1.5 py-0.5 rounded-sm text-[10px] @3xl:text-[11px] font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border shrink-0"
+            >
+              HUD 2.0
             </span>
           </div>
-        </div>
-
-        <NButton type="primary" @click="emit('openTrainingHub', selectedDiscipline)">
-          <template #icon>
-            <NIcon><FlashOutline /></NIcon>
-          </template>
-          {{ t('pages.userCabinet.macro.goToTrainingCenter') }}
-        </NButton>
-      </div>
-
-      <!-- Woodpecker Vault Card ([D3]) -->
-      <div
-        class="p-3.5 @3xl:p-5 rounded-lg bg-surface border border-border flex flex-col justify-between gap-2.5 @3xl:gap-3"
-      >
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-display font-bold text-xs uppercase tracking-wider text-accent">
-            {{ t('features.trainingCenter.woodpecker.vaultTitle') }}
-          </span>
-          <span class="hidden @xl:inline font-condensed text-xs text-text-secondary text-right">
-            {{ t('pages.userCabinet.macro.woodpeckerRuleHint') }}
+          <span class="text-xs text-text-secondary">
+            {{
+              t('pages.userCabinet.macro.yearlySummary', {
+                days: yearlyStats.activeDays,
+                solved: yearlyStats.totalSolved,
+                acc: yearlyStats.acc,
+              })
+            }}
           </span>
         </div>
-
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-lg @3xl:text-xl text-warning">
-              {{ cabinet.overview.woodpecker.due_now }}
-            </div>
-            <div class="text-[10px] text-text-secondary uppercase">
-              {{ t('features.trainingCenter.woodpecker.dueShort') }}
-            </div>
-          </div>
-
-          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-lg @3xl:text-xl text-text-primary">
-              {{ cabinet.overview.woodpecker.on_cooldown }}
-            </div>
-            <div class="text-[10px] text-text-secondary uppercase">24h</div>
-          </div>
-
-          <div class="p-1.5 @3xl:p-2 rounded-sm bg-elevated border border-border">
-            <div class="font-condensed font-bold text-lg @3xl:text-xl text-success">
-              {{ cabinet.overview.woodpecker.mastered_total }}
-            </div>
-            <div class="text-[10px] text-text-secondary uppercase">
-              {{ t('features.trainingCenter.woodpecker.masteredShort') }}
-            </div>
-          </div>
-        </div>
       </div>
+
+      <NButton type="primary" @click="emit('openTrainingHub', selectedDiscipline)">
+        <template #icon>
+          <NIcon><FlashOutline /></NIcon>
+        </template>
+        {{ t('pages.userCabinet.macro.goToTrainingCenter') }}
+      </NButton>
     </div>
 
     <!-- Mobile / Compact Discipline Swipe Carousel Card (< @5xl) -->

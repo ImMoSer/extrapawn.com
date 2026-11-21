@@ -237,29 +237,6 @@ function handleOpenLaggingScopeInWarmup(group: string, key: string): void {
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div
-          v-if="store.overview?.woodpecker"
-          class="flex items-center gap-3 px-3.5 py-2 rounded-md bg-elevated/60 border border-border text-xs"
-        >
-          <span class="font-display font-semibold uppercase tracking-wider text-text-secondary">
-            {{ t('features.trainingCenter.woodpecker.vaultTitle') }}
-          </span>
-          <div class="flex items-center gap-2 font-condensed text-sm">
-            <span class="text-warning" :title="t('features.trainingCenter.woodpecker.dueNow')">
-              {{ t('features.trainingCenter.woodpecker.dueShort') }}:
-              <strong>{{ store.overview.woodpecker.due_now }}</strong>
-            </span>
-            <span class="text-text-disabled">|</span>
-            <span class="text-text-secondary" :title="t('features.trainingCenter.woodpecker.cooldown24h')">
-              24h: <strong>{{ store.overview.woodpecker.on_cooldown }}</strong>
-            </span>
-            <span class="text-text-disabled">|</span>
-            <span class="text-success" :title="t('features.trainingCenter.woodpecker.mastered')">
-              3/3: <strong>{{ store.overview.woodpecker.mastered_total }}</strong>
-            </span>
-          </div>
-        </div>
-
         <NButton
           v-if="props.mode === 'course'"
           secondary

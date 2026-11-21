@@ -221,9 +221,11 @@ function handleGoToCabinet(): void {
         <div class="flex items-center gap-2">
           <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
             {{
-              report.mode === 'course'
-                ? t('features.trainingCenter.modes.courseBadge')
-                : t('features.trainingCenter.modes.warmupBadge')
+              store.isWoodpeckerBatch
+                ? t('features.trainingCenter.woodpecker.batchBadge')
+                : report.mode === 'course'
+                  ? t('features.trainingCenter.modes.courseBadge')
+                  : t('features.trainingCenter.modes.warmupBadge')
             }}
           </span>
           <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border">

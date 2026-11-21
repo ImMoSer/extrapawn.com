@@ -107,6 +107,7 @@ const showLivePlayMeta = computed(
 const showAttemptBadge = computed(
   () =>
     !isCrashtestSession.value &&
+    !store.isWoodpeckerBatch &&
     (store.isPlaying || store.isAwaitingRetry) &&
     store.currentItem?.status === 'pending',
 )
@@ -416,6 +417,7 @@ function handleBackAction(): void {
       <template v-else>
         <template v-if="!isCrashtestSession && store.currentItem?.status === 'pending'">
           <NButton
+            v-if="!store.isWoodpeckerBatch"
             size="tiny"
             secondary
             :disabled="!store.canRestartCurrentPuzzle"

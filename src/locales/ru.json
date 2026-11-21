@@ -1052,6 +1052,12 @@
       "woodpecker": {
         "title": "Очередь Метода Дятла (24ч пауза · 3× подряд)",
         "vaultTitle": "Хранилище Дятла",
+        "batchTitle": "Батч Дятла",
+        "batchBadge": "БАТЧ ДЯТЛА",
+        "batchRemainingLabel": "Задач на отработку",
+        "batchRuleHint": "1 попытка на задачу · без влияния на рейтинг",
+        "batchEmptyHint": "Ошибок по этой дисциплине нет.",
+        "startBatchBtn": "Старт",
         "dueNow": "Готовы к повтору",
         "dueShort": "к повтору",
         "cooldown24h": "Пауза 24ч",

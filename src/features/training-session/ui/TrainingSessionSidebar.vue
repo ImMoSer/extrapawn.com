@@ -164,6 +164,9 @@ function handleItemSelect(puzzleId: string): void {
                 : t('features.trainingCenter.modes.courseBadge')
             }}
           </template>
+          <template v-else-if="summary.focus_group === 'woodpecker'">
+            {{ t('features.trainingCenter.woodpecker.batchBadge') }}
+          </template>
           <template v-else>
             {{
               summary.mode === 'course'
@@ -316,6 +319,7 @@ function handleItemSelect(puzzleId: string): void {
           }}
         </span>
         <span
+          v-if="!store.isWoodpeckerBatch"
           class="font-condensed font-bold text-sm"
           :class="store.lastAttemptResult.solved ? 'text-success' : 'text-danger'"
         >

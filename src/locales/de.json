@@ -1052,6 +1052,12 @@
       "woodpecker": {
         "title": "Specht-Warteschlange (24h Pause · 3× Serie)",
         "vaultTitle": "Specht-Tresor",
+        "batchTitle": "Woodpecker-Batch",
+        "batchBadge": "WOODPECKER",
+        "batchRemainingLabel": "Aufgaben zu klären",
+        "batchRuleHint": "1 sauberer Versuch pro Aufgabe · ohne Rating-Einfluss",
+        "batchEmptyHint": "Keine offenen Fehler in dieser Disziplin.",
+        "startBatchBtn": "Starten",
         "dueNow": "Jetzt fällig",
         "dueShort": "fällig",
         "cooldown24h": "24h Pause",

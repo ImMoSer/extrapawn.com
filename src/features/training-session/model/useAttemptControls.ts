@@ -89,6 +89,11 @@ export function useAttemptControls(deps: AttemptControlsDependencies) {
         '[TrainingSessionStore] Cannot restart puzzle without active session item. Fail-Fast!',
       )
     }
+    if (sess.session.focus_group === 'woodpecker') {
+      throw new Error(
+        '[TrainingSessionStore] Restart is disabled in Woodpecker batch sessions. Fail-Fast!',
+      )
+    }
 
     if (state.viewState.value === 'awaiting_retry') {
       if (!canRestartFromRetryPrompt(item)) {

@@ -150,8 +150,12 @@ function handleHopelessChoice(choice: 'restart' | 'resign' | 'suffer'): void {
       </p>
     </div>
 
-    <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+    <div
+      class="grid gap-1.5 pt-0.5"
+      :class="store.isWoodpeckerBatch ? 'grid-cols-2' : 'grid-cols-3'"
+    >
       <button
+        v-if="!store.isWoodpeckerBatch"
         type="button"
         class="min-w-0 overflow-hidden py-2 px-2 rounded-md bg-warning/15 hover:bg-warning/25 border border-warning/50 text-warning font-display font-bold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
         @click="handleHopelessChoice('restart')"

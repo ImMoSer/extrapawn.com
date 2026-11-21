@@ -42,6 +42,7 @@ import {
   CabinetEndgameMap,
   CabinetMacroPulse,
   CabinetTacticsMap,
+  CabinetWoodpeckerCard,
 } from '@/features/profile'
 import { useTrainingSessionStore } from '@/features/training-session'
 
@@ -80,6 +81,38 @@ const activeDisciplineRating = computed<number | null>(() => {
   const discOverview = cabinetData.value?.overview.disciplines[selectedDiscipline.value]
   return discOverview ? discOverview.global_rating : null
 })
+
+const activeWoodpeckerPendingCount = computed<number>(() => {
+  const byDisc = cabinetData.value?.overview.woodpecker?.by_discipline?.[selectedDiscipline.value]
+  if (!byDisc) return 0
+  return byDisc.due_now + byDisc.on_cooldown
+})
+
+async function handleStartWoodpeckerBatch(): Promise<void> {
+  if (!isAuthenticated.value || activeWoodpeckerPendingCount.value <= 0) return
+  errorMessage.value = null
+  try {
+    const discOverview = cabinetData.value?.overview.disciplines[selectedDiscipline.value]
+    trainingSessionStore.selectDiscipline(selectedDiscipline.value)
+    await trainingSessionStore.startWarmupSession({
+      discipline: selectedDiscipline.value,
+      difficulty: discOverview?.unlocked_tier ?? 'Novice',
+      count: selectedDiscipline.value === 'tactics' ? 50 : 30,
+      focus_group: 'woodpecker',
+      focus_key: 'all',
+      objective: '',
+      force_replace: true,
+    })
+    await router.push({
+      path: '/warmup',
+      query: {
+        discipline: selectedDiscipline.value,
+      },
+    })
+  } catch (err: unknown) {
+    errorMessage.value = err instanceof Error ? err.message : String(err)
+  }
+}
 
 function handleSelectDiscipline(disc: TrainingDiscipline): void {
   const slug = disciplineToRouteSlug(disc)
@@ -553,6 +586,15 @@ async function handleCopyDiplomaLink(courseId: string): Promise<void> {
             </div>
           </div>
         </section>
+
+        <!-- Bottom Action Card: Per-Discipline Woodpecker Error-Clearance Batch -->
+        <CabinetWoodpeckerCard
+          :discipline="selectedDiscipline"
+          :pending-count="activeWoodpeckerPendingCount"
+          :can-start="isAuthenticated && !isPublicMo3epCabinet"
+          :is-starting="trainingSessionStore.isStartingSession"
+          @start-batch="handleStartWoodpeckerBatch"
+        />
       </template>
       </div>
     </div>

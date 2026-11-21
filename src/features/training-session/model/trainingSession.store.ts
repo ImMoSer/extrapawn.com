@@ -136,6 +136,9 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   })
 
   const isPlaying = computed<boolean>(() => viewState.value === 'playing')
+  const isWoodpeckerBatch = computed<boolean>(
+    () => activeSessionSummary.value?.focus_group === 'woodpecker',
+  )
   const isAwaitingRetry = computed<boolean>(() => viewState.value === 'awaiting_retry')
   const isAwaitingNext = computed<boolean>(() => viewState.value === 'awaiting_next')
   const isPracticeReplay = computed<boolean>(() => viewState.value === 'practice_replay')
@@ -156,6 +159,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
   const canRestartCurrentPuzzle = computed<boolean>(() => {
     if (isSubmittingAttempt.value || isPersistingRetry.value || isAutomatLocked.value) return false
     if (viewState.value === 'practice_replay') return Boolean(practicePuzzle.value)
+    if (isWoodpeckerBatch.value) return false
     if (viewState.value === 'awaiting_retry') return canRestartFromRetryPrompt(currentItem.value)
     if (viewState.value === 'playing') {
       return canRestartDuringPlay(currentItem.value, currentPuzzleUserMoves.value)
@@ -369,6 +373,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     currentPuzzle,
     activeBotEngine,
     isPlaying,
+    isWoodpeckerBatch,
     isAwaitingRetry,
     isAwaitingNext,
     isPracticeReplay,
