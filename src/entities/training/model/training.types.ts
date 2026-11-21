@@ -830,6 +830,8 @@ export type PuzzleReportFailureCriterion =
   | 'win_wdl_below_995'
   | 'hold_draw_cp_below_0'
   | 'tactics_move_mismatch'
+  | 'tactics_eval_insufficient'
+  | 'tactics_dual_move'
   | 'tactics_solution_invalid'
   | 'syzygy_win_failed'
   | 'syzygy_draw_failed'

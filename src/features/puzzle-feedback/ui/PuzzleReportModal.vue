@@ -183,7 +183,7 @@ const wdlWinPercent = computed(() => {
                   })
                 : t('features.puzzleFeedback.report.validStockfishText', {
                     eval: store.verificationResult?.whitePovEvalLabel ?? '—',
-                    depth: store.verificationResult?.depth ?? 20,
+                    depth: store.verificationResult?.depth ?? 21,
                   })
             }}
           </p>
@@ -234,7 +234,7 @@ const wdlWinPercent = computed(() => {
               Syzygy: <strong class="text-text-primary">{{ store.verificationResult.tablebaseCategory }}</strong>
             </span>
             <span v-if="store.verificationResult?.whitePovEvalLabel">
-              Eval (d{{ store.verificationResult.depth ?? 20 }}):
+              Eval (d{{ store.verificationResult.depth ?? 21 }}):
               <strong class="text-text-primary">{{ store.verificationResult.whitePovEvalLabel }}</strong>
             </span>
             <span v-if="wdlWinPercent !== null">

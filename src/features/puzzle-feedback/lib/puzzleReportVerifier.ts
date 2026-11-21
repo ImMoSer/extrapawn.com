@@ -8,40 +8,50 @@ import type {
 import type { WdlStats } from '@/shared/lib/engine'
 import {
   fetchLichessTablebaseCategory,
+  runLocalMultiPvSearch,
   runLocalSinglePvSearch,
+  type MultiPvSearchFn,
   type SinglePvSearchFn,
 } from './puzzleReportAdapters'
 import {
   buildSyzygyProofUrl,
-  doesMoveMatchTacticsStep,
   evaluateEndgameStockfishLine,
   evaluateLichessTablebaseVerdict,
-  extractTacticsPlayerSteps,
   formatWhitePovScore,
-  getFenTurnColor,
-  REPORT_DRAW_MIN_CP,
-  REPORT_EARLY_EXIT_DEPTH,
-  REPORT_TACTICS_EARLY_EXIT_DEPTH,
-  REPORT_TARGET_DEPTH,
-  resolvePuzzleSolverFen,
+  REPORT_PLAYOUT_TARGET_DEPTH,
   toUserPovEvaluation,
   toUserTablebaseCategory,
   type EngineLineSnapshot,
   type ScorePov,
 } from './puzzleReportRules'
+import {
+  doesMoveMatchTacticsStep,
+  evaluateTacticsMultiPvFinal,
+  extractTacticsPlayerSteps,
+  REPORT_TACTICS_MAX_DEPTH,
+  REPORT_TACTICS_STANDARD_DEPTH,
+  resolvePuzzleSolverFen,
+  shouldStopEarlyTacticsMultiPv,
+  type MultiPvDepthSnapshot,
+} from './puzzleReportTacticsRules'
 
 export {
   buildSyzygyProofUrl,
   doesMoveMatchTacticsStep,
   evaluateEndgameStockfishLine,
   evaluateLichessTablebaseVerdict,
+  evaluateTacticsMultiPvFinal,
   extractTacticsPlayerSteps,
   formatWhitePovScore,
   resolvePuzzleSolverFen,
+  runLocalMultiPvSearch,
   runLocalSinglePvSearch,
+  shouldStopEarlyTacticsMultiPv,
   toUserPovEvaluation,
   toUserTablebaseCategory,
   type EngineLineSnapshot,
+  type MultiPvDepthSnapshot,
+  type MultiPvSearchFn,
   type ScorePov,
   type SinglePvSearchFn,
 }
@@ -81,6 +91,7 @@ export interface VerifyPuzzleOptions {
   signal?: AbortSignal
   fetchFn?: typeof fetch
   runDepthSearchFn?: SinglePvSearchFn
+  runMultiPvSearchFn?: MultiPvSearchFn
 }
 
 async function verifyViaLichessTablebase(
@@ -149,25 +160,11 @@ async function verifyEndgameWithStockfish(
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
   const searchFn = options.runDepthSearchFn ?? runLocalSinglePvSearch
-  const isUserTurn = getFenTurnColor(evaluatedFen) === userColor
-  const targetDepth = isUserTurn ? REPORT_TARGET_DEPTH : REPORT_TARGET_DEPTH + 1
-  const earlyExitDepth = isUserTurn ? REPORT_EARLY_EXIT_DEPTH : REPORT_EARLY_EXIT_DEPTH + 1
+  const targetDepth = REPORT_PLAYOUT_TARGET_DEPTH
 
   const finalLine = await searchFn({
     fen: evaluatedFen,
     targetDepth,
-    shouldEarlyStop: (line) => {
-      const pov = toUserPovEvaluation(line.score, line.wdl, evaluatedFen, userColor)
-      return evaluateEndgameStockfishLine(
-        {
-          depth: line.depth,
-          earlyExitDepth,
-          score: pov.userScore,
-          wdl: pov.userWdl,
-        },
-        objective,
-      ).isEarlyValid
-    },
     onDepthProgress: (line) => {
       const pov = toUserPovEvaluation(line.score, line.wdl, evaluatedFen, userColor)
       const pct = Math.min(99, Math.round((line.depth / targetDepth) * 100))
@@ -206,13 +203,8 @@ async function verifyEndgameWithStockfish(
     currentEvalLabel: finalPov.whitePovEvalLabel,
   })
 
-  const { isFinalValid } = evaluateEndgameStockfishLine(
-    {
-      depth: finalLine.depth,
-      earlyExitDepth,
-      score: finalPov.userScore,
-      wdl: finalPov.userWdl,
-    },
+  const isFinalValid = evaluateEndgameStockfishLine(
+    { score: finalPov.userScore, wdl: finalPov.userWdl },
     objective,
   )
 
@@ -243,7 +235,7 @@ async function verifyTacticsWithStockfish(
   objective: PuzzleObjective,
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
-  const searchFn = options.runDepthSearchFn ?? runLocalSinglePvSearch
+  const multiPvSearchFn = options.runMultiPvSearchFn ?? runLocalMultiPvSearch
   const steps = extractTacticsPlayerSteps(puzzle)
   if (steps.length === 0) {
     return {
@@ -258,44 +250,53 @@ async function verifyTacticsWithStockfish(
     }
   }
 
-  let lastLine: EngineLineSnapshot | null = null
-  let lastFen = evaluatedFen
+  let lastReportedLine: EngineLineSnapshot | null = null
+  let lastReportedPov: ReturnType<typeof toUserPovEvaluation> | null = null
+  let hasStartedEngineGame = false
 
   for (const step of steps) {
-    lastFen = step.fenBeforeMove
-    const line = await searchFn({
+    // Stage 0: Forced 1-legal-move evasion/recapture -> instant 0 ms pass without engine call
+    if (step.isSingleLegalMove) {
+      const pct = Math.min(99, Math.round((step.stepIndex / step.totalSteps) * 100))
+      options.onProgress?.({
+        mode: 'tactics_engine',
+        depth: 1,
+        targetDepth: 1,
+        stepIndex: step.stepIndex,
+        totalSteps: step.totalSteps,
+        percent: pct,
+        currentEvalLabel: lastReportedPov?.whitePovEvalLabel,
+      })
+      continue
+    }
+
+    const resetGame = !hasStartedEngineGame
+    hasStartedEngineGame = true
+
+    const pair = await multiPvSearchFn({
       fen: step.fenBeforeMove,
-      targetDepth: REPORT_TARGET_DEPTH,
-      shouldEarlyStop: (snapshot) => {
-        if (snapshot.depth < REPORT_TACTICS_EARLY_EXIT_DEPTH) return false
-        const matches = doesMoveMatchTacticsStep(
-          step.fenBeforeMove,
-          snapshot.bestMoveUci,
-          step.expectedAlternatives,
-          step.isFinalMove,
-        )
-        if (!matches) return false
-        const pov = toUserPovEvaluation(snapshot.score, snapshot.wdl, step.fenBeforeMove, userColor)
-        if (objective === 'hold_draw') {
-          return (
-            (pov.userScore.type === 'mate' && pov.userScore.value > 0) ||
-            (pov.userScore.type === 'cp' && pov.userScore.value >= REPORT_DRAW_MIN_CP)
-          )
-        }
-        return (
-          (pov.userScore.type === 'mate' && pov.userScore.value > 0) ||
-          (pov.userScore.type === 'cp' && pov.userScore.value >= 150)
-        )
-      },
+      maxDepth: REPORT_TACTICS_MAX_DEPTH,
+      resetGame,
+      shouldEarlyStop: (snapshot) =>
+        shouldStopEarlyTacticsMultiPv(snapshot, step, objective, userColor),
       onDepthProgress: (snapshot) => {
-        const pov = toUserPovEvaluation(snapshot.score, snapshot.wdl, step.fenBeforeMove, userColor)
+        const pov = toUserPovEvaluation(
+          snapshot.pv1.score,
+          snapshot.pv1.wdl,
+          step.fenBeforeMove,
+          userColor,
+        )
+        const displayTarget =
+          snapshot.depth > REPORT_TACTICS_STANDARD_DEPTH
+            ? REPORT_TACTICS_MAX_DEPTH
+            : REPORT_TACTICS_STANDARD_DEPTH
         const completedFraction = (step.stepIndex - 1) / step.totalSteps
-        const stepFraction = Math.min(1, snapshot.depth / REPORT_TARGET_DEPTH) / step.totalSteps
+        const stepFraction = Math.min(1, snapshot.depth / displayTarget) / step.totalSteps
         const percent = Math.min(99, Math.round((completedFraction + stepFraction) * 100))
         options.onProgress?.({
           mode: 'tactics_engine',
           depth: snapshot.depth,
-          targetDepth: REPORT_TARGET_DEPTH,
+          targetDepth: displayTarget,
           stepIndex: step.stepIndex,
           totalSteps: step.totalSteps,
           percent,
@@ -305,7 +306,7 @@ async function verifyTacticsWithStockfish(
       signal: options.signal,
     })
 
-    if (!line) {
+    if (!pair) {
       return {
         verdict: 'network_error',
         source: 'local_stockfish',
@@ -316,46 +317,41 @@ async function verifyTacticsWithStockfish(
       }
     }
 
-    lastLine = line
-    const matched = doesMoveMatchTacticsStep(
-      step.fenBeforeMove,
-      line.bestMoveUci,
-      step.expectedAlternatives,
-      step.isFinalMove,
-    )
+    const stepVerdict = evaluateTacticsMultiPvFinal(pair, step, objective, userColor)
+    lastReportedLine = stepVerdict.reportedLine
+    lastReportedPov = stepVerdict.reportedPov
 
-    if (!matched) {
-      const pov = toUserPovEvaluation(line.score, line.wdl, step.fenBeforeMove, userColor)
+    if (stepVerdict.verdict === 'suspicious') {
       return {
         verdict: 'suspicious',
         source: 'local_stockfish',
-        failureCriterion: 'tactics_move_mismatch',
+        failureCriterion: stepVerdict.failureCriterion,
         solverFen: step.fenBeforeMove,
         objective,
         userColor,
-        depth: line.depth,
-        userScore: pov.userScore,
-        whiteScore: pov.whiteScore,
-        whitePovEvalLabel: pov.whitePovEvalLabel,
-        wdl: pov.userWdl,
-        engineBestMove: line.bestMoveUci,
+        depth: pair.depth,
+        userScore: stepVerdict.reportedPov.userScore,
+        whiteScore: stepVerdict.reportedPov.whiteScore,
+        whitePovEvalLabel: stepVerdict.reportedPov.whitePovEvalLabel,
+        wdl: stepVerdict.reportedPov.userWdl,
+        engineBestMove: stepVerdict.reportedLine.bestMoveUci,
         mismatchPly: step.plyNumber,
       }
     }
   }
 
-  const finalPov = lastLine
-    ? toUserPovEvaluation(lastLine.score, lastLine.wdl, lastFen, userColor)
-    : null
-
+  const finalDepth = lastReportedLine?.depth ?? REPORT_TACTICS_STANDARD_DEPTH
   options.onProgress?.({
     mode: 'tactics_engine',
-    depth: lastLine?.depth ?? REPORT_TARGET_DEPTH,
-    targetDepth: REPORT_TARGET_DEPTH,
+    depth: finalDepth,
+    targetDepth:
+      finalDepth > REPORT_TACTICS_STANDARD_DEPTH
+        ? REPORT_TACTICS_MAX_DEPTH
+        : REPORT_TACTICS_STANDARD_DEPTH,
     stepIndex: steps.length,
     totalSteps: steps.length,
     percent: 100,
-    currentEvalLabel: finalPov?.whitePovEvalLabel,
+    currentEvalLabel: lastReportedPov?.whitePovEvalLabel,
   })
 
   return {
@@ -364,12 +360,12 @@ async function verifyTacticsWithStockfish(
     solverFen: evaluatedFen,
     objective,
     userColor,
-    depth: lastLine?.depth,
-    userScore: finalPov?.userScore,
-    whiteScore: finalPov?.whiteScore,
-    whitePovEvalLabel: finalPov?.whitePovEvalLabel,
-    wdl: finalPov?.userWdl,
-    engineBestMove: lastLine?.bestMoveUci,
+    depth: finalDepth,
+    userScore: lastReportedPov?.userScore,
+    whiteScore: lastReportedPov?.whiteScore,
+    whitePovEvalLabel: lastReportedPov?.whitePovEvalLabel,
+    wdl: lastReportedPov?.userWdl,
+    engineBestMove: lastReportedLine?.bestMoveUci,
   }
 }
 
