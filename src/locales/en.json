@@ -1411,6 +1411,44 @@
         "ctaTrainTooBtn": "Start a Course in Training Center",
         "verifiedStamp": "VERIFIED BY EXTRAPAWN ENGINE V2.0"
       }
+    },
+    "puzzleFeedback": {
+      "vote": {
+        "likeTooltip": "Like",
+        "dislikeTooltip": "Dislike"
+      },
+      "report": {
+        "modalTitle": "Report Puzzle",
+        "formHint": "Select at least one reason. Before submission, the position will be checked automatically via Syzygy tablebases or local Stockfish.",
+        "reasons": {
+          "impossible_win": "Position is not winning (draw or lost)",
+          "impossible_draw": "Position is lost, holding a draw is impossible",
+          "wrong_turn_or_color": "Wrong side to move or board color",
+          "wrong_solution": "Given solution is incorrect or fails",
+          "alternative_solution": "Another equally strong solution exists",
+          "position_unclear": "Position is invalid or unsolvable",
+          "other": "Other issue with this puzzle"
+        },
+        "commentLabel": "Comment (optional)",
+        "commentPlaceholder": "Briefly describe what looks wrong...",
+        "cancelBtn": "Cancel",
+        "verifyBtn": "Verify",
+        "closeBtn": "Close",
+        "retryBtn": "Retry",
+        "verifyingInit": "Preparing verification...",
+        "verifyingTablebase": "Querying 7-piece Syzygy tablebase (Lichess)...",
+        "verifyingStockfishDepth": "Stockfish analyzing: depth {depth}/{target}",
+        "verifyingTacticsStep": "Stockfish checking move {step}/{total}: depth {depth}/{target}",
+        "verifyingSubhint": "Verification runs locally on your device.",
+        "validTitle": "Puzzle Verified as Solvable",
+        "validTablebaseText": "According to 7-piece Syzygy tablebases, the exact verdict is \"{category}\" — the puzzle objective is mathematically achievable.",
+        "validStockfishText": "According to Stockfish (depth {depth}, eval {eval}), the given puzzle objective is achievable.",
+        "syzygyProofLink": "Inspect exact proof on syzygy-tables.info",
+        "submittedTitle": "Report Submitted · Puzzle Quarantined",
+        "submittedText": "Automated verification confirmed the position is suspicious. The puzzle has been temporarily hidden pending manual review.",
+        "errorTitle": "Verification Could Not Complete",
+        "errorFallback": "Temporary network or local engine error. Please try again."
+      }
     }
   },
   "shared": {
@@ -1478,7 +1516,9 @@
         "localStockfish": "Stockfish (Local)",
         "serverCoach": "Coach (Server)",
         "modeExplorer": "Engine Lines & PGN (EXP)",
-        "modeCoach": "Coach Analysis & Explanations (COACH)"
+        "modeCoach": "Coach Analysis & Explanations (COACH)",
+        "reportPuzzle": "Report puzzle",
+        "reportSubmitted": "Report sent"
       }
     },
     "app": {

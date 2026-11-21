@@ -16,6 +16,10 @@ import {
   type HubOverviewDTO,
   type HydratedSessionDTO,
   type StartCourseRequest,
+  type SubmitPuzzleReportRequest,
+  type SubmitPuzzleReportResponseDTO,
+  type SubmitPuzzleVoteRequest,
+  type SubmitPuzzleVoteResponseDTO,
   type TacticsCourseCurriculumDTO,
   type TrainingDiscipline,
   type WarmUpSessionRequest,
@@ -277,6 +281,43 @@ export const trainingApi = {
     return apiClient<FlagCoursePuzzleResponseDTO>('/training/tactics-course/flag', {
       method: 'POST',
       body: JSON.stringify(body),
+    })
+  },
+
+  submitPuzzleReport(payload: SubmitPuzzleReportRequest): Promise<SubmitPuzzleReportResponseDTO> {
+    const puzzleId = assertNonEmptyId('puzzle_id', payload.puzzle_id)
+    const solverFen = assertNonEmptyId('solver_fen', payload.solver_fen)
+    if (!Array.isArray(payload.reasons) || payload.reasons.length === 0) {
+      throw new Error('[trainingApi] At least one report reason is required. Fail-Fast!')
+    }
+    return apiClient<SubmitPuzzleReportResponseDTO>('/training/puzzles/report', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...payload,
+        puzzle_id: puzzleId,
+        solver_fen: solverFen,
+        comment: payload.comment.trim(),
+      }),
+    })
+  },
+
+  submitPuzzleVote(payload: SubmitPuzzleVoteRequest): Promise<SubmitPuzzleVoteResponseDTO> {
+    const puzzleId = assertNonEmptyId('puzzle_id', payload.puzzle_id)
+    if (payload.vote !== -1 && payload.vote !== 0 && payload.vote !== 1) {
+      throw new Error(
+        `[trainingApi] Invalid vote value (${String(payload.vote)}) for puzzle ${puzzleId}. Fail-Fast!`,
+      )
+    }
+    return apiClient<SubmitPuzzleVoteResponseDTO>('/training/puzzles/vote', {
+      method: 'POST',
+      body: JSON.stringify({
+        discipline: payload.discipline,
+        puzzle_id: puzzleId,
+        vote: payload.vote,
+        ...(payload.attempt_solved !== undefined
+          ? { attempt_solved: payload.attempt_solved }
+          : {}),
+      }),
     })
   },
 }

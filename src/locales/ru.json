@@ -1411,6 +1411,44 @@
         "ctaTrainTooBtn": "Пройти курс в Тренировочном Центре",
         "verifiedStamp": "ВЕРИФИЦИРОВАНО EXTRAPAWN ENGINE V2.0"
       }
+    },
+    "puzzleFeedback": {
+      "vote": {
+        "likeTooltip": "Понравилась",
+        "dislikeTooltip": "Не понравилась"
+      },
+      "report": {
+        "modalTitle": "Пожаловаться на задачу",
+        "formHint": "Выберите причину жалобы. Перед отправкой позиция будет проверена автоматически по базам Syzygy или локальным Stockfish.",
+        "reasons": {
+          "impossible_win": "Позиция не выигрывается (ничья или проигрыш)",
+          "impossible_draw": "Позиция проиграна, ничья невозможна",
+          "wrong_turn_or_color": "Неверный цвет или очередь хода",
+          "wrong_solution": "Авторское решение ошибочно или не работает",
+          "alternative_solution": "Есть другое равноценное решение (дуаль)",
+          "position_unclear": "Позиция некорректна или не решается",
+          "other": "Другая проблема с задачей"
+        },
+        "commentLabel": "Комментарий (опционально)",
+        "commentPlaceholder": "Опишите, что именно показалось странным...",
+        "cancelBtn": "Отмена",
+        "verifyBtn": "Проверить",
+        "closeBtn": "Закрыть",
+        "retryBtn": "Повторить",
+        "verifyingInit": "Подготовка проверки...",
+        "verifyingTablebase": "Запрос к 7-фигурной базе Syzygy (Lichess)...",
+        "verifyingStockfishDepth": "Stockfish анализирует: глубина {depth}/{target}",
+        "verifyingTacticsStep": "Stockfish проверяет ход {step}/{total}: глубина {depth}/{target}",
+        "verifyingSubhint": "Проверка выполняется локально на вашем устройстве.",
+        "validTitle": "Задача подтверждена и выполнима",
+        "validTablebaseText": "По 7-фигурной таблице Syzygy позиция имеет вердикт «{category}» — поставленная задача математически выполнима.",
+        "validStockfishText": "По мнению Stockfish (глубина {depth}, оценка {eval}), поставленная перед вами задача выполнима.",
+        "syzygyProofLink": "Открыть доказательство на syzygy-tables.info",
+        "submittedTitle": "Жалоба принята · Задача скрыта",
+        "submittedText": "Автоматическая проверка подтвердила подозрительность позиции. Задача временно исключена из выдачи до ручной проверки.",
+        "errorTitle": "Не удалось завершить проверку",
+        "errorFallback": "Временная ошибка сети или локального движка. Попробуйте ещё раз."
+      }
     }
   },
   "shared": {
@@ -1478,7 +1516,9 @@
         "localStockfish": "Stockfish (Локальный)",
         "serverCoach": "Тренер (Сервер)",
         "modeExplorer": "Линии движка и PGN (EXP)",
-        "modeCoach": "Анализ тренера и объяснения (COACH)"
+        "modeCoach": "Анализ тренера и объяснения (COACH)",
+        "reportPuzzle": "Пожаловаться на задачу",
+        "reportSubmitted": "Жалоба отправлена"
       }
     },
     "app": {

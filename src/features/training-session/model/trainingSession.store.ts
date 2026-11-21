@@ -9,6 +9,7 @@ import {
 import { usePreferencesStore } from '@/entities/user'
 import {
   resolveBotEngineForDifficulty,
+  trainingApi,
   validateBotLadderEngine,
   type AttemptResultDTO,
   type BotLadderEngineId,
@@ -17,12 +18,14 @@ import {
   type HubOverviewDTO,
   type HydratedSessionDTO,
   type HydratedSessionItem,
+  type PuzzleVoteValue,
   type SessionSummaryDTO,
   type TacticsCourseCurriculumDTO,
   type TacticsCourseSlug,
   type TrainingDifficulty,
   type TrainingDiscipline,
 } from '@/entities/training'
+import logger from '@/shared/lib/logger'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
@@ -334,6 +337,32 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     await attemptControls.resignCurrentPuzzle({ suppressOutcomeSound: true })
   }
 
+  async function voteSessionItem(puzzleId: string, nextVote: PuzzleVoteValue): Promise<void> {
+    const sess = hydratedSession.value
+    if (!sess) return
+    const item = sess.items.find((it) => it.puzzle_id === puzzleId)
+    if (!item || (item.status !== 'solved' && item.status !== 'failed')) return
+
+    const prevVote: PuzzleVoteValue = item.user_vote ?? 0
+    if (prevVote === nextVote) return
+
+    item.user_vote = nextVote
+    try {
+      await trainingApi.submitPuzzleVote({
+        discipline: sess.session.discipline,
+        puzzle_id: puzzleId,
+        vote: nextVote,
+        attempt_solved: item.status === 'solved',
+      })
+    } catch (err: unknown) {
+      item.user_vote = prevVote
+      logger.error(
+        `[TrainingSessionStore] Failed saving puzzle vote for ${puzzleId}:`,
+        err instanceof Error ? err.message : String(err),
+      )
+    }
+  }
+
   return {
     // State
     overview,
@@ -404,6 +433,7 @@ export const useTrainingSessionStore = defineStore('trainingSession', () => {
     dismissActiveSession: attemptControls.dismissActiveSession,
     resolveAutomatPrompt,
     resolveHopelessPrompt,
+    voteSessionItem,
     formatDurationMs,
   }
 })

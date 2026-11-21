@@ -25,6 +25,22 @@ export function isClassicalCourseDiscipline(
   return discipline === 'tactics_course' || discipline === 'endgame_course'
 }
 
+export const REPORTABLE_TRAINING_DISCIPLINES = [
+  'practical_chess',
+  'tactics_course',
+  'endgame_course',
+] as const
+
+export type ReportableTrainingDiscipline = (typeof REPORTABLE_TRAINING_DISCIPLINES)[number]
+
+export function isReportableTrainingDiscipline(
+  discipline?: TrainingDiscipline | string | null,
+): discipline is ReportableTrainingDiscipline {
+  return Boolean(
+    discipline && (REPORTABLE_TRAINING_DISCIPLINES as readonly string[]).includes(discipline),
+  )
+}
+
 /**
  * Disciplines/courses currently in developer preview (visible and accessible ONLY to `mo3ep`).
  * Add any new in-development discipline here to hide it from regular users in production,
@@ -492,6 +508,8 @@ export interface SessionSummaryDTO {
   updated_at: string
 }
 
+export type PuzzleVoteValue = -1 | 0 | 1
+
 export interface HydratedSessionItem {
   index: number
   puzzle_id?: string
@@ -501,6 +519,7 @@ export interface HydratedSessionItem {
   attempts_used?: number
   time_ms?: number
   rating_delta?: number
+  user_vote?: PuzzleVoteValue
   tactical?: TacticalPuzzleV2
   endgame?: EndgamePuzzleV2
   course_puzzle?: CoursePuzzleV2
@@ -791,6 +810,62 @@ export interface FlagCoursePuzzleResponseDTO {
   session?: SessionSummaryDTO | null
   next_item?: HydratedSessionItem | null
 }
+
+// ============================================================================
+// Puzzle Report Service (Automated Pre-Check + Quarantine) & Puzzle Votes
+// ============================================================================
+
+export type PuzzleReportReasonCode =
+  | 'impossible_win'
+  | 'impossible_draw'
+  | 'wrong_turn_or_color'
+  | 'wrong_solution'
+  | 'alternative_solution'
+  | 'position_unclear'
+  | 'other'
+
+export type PuzzleReportVerificationSource = 'lichess_tablebase' | 'local_stockfish'
+
+export interface SubmitPuzzleReportRequest {
+  discipline: ReportableTrainingDiscipline
+  puzzle_id: string
+  reasons: PuzzleReportReasonCode[]
+  comment: string
+  verification_source: PuzzleReportVerificationSource
+  engine_depth?: number
+  engine_eval_cp?: number
+  engine_mate?: number
+  engine_wdl_win?: number
+  engine_wdl_draw?: number
+  engine_wdl_loss?: number
+  engine_best_move?: string
+  mismatch_ply?: number
+  tablebase_category?: string
+  solver_fen: string
+}
+
+export interface SubmitPuzzleReportResponseDTO {
+  report_id: string
+  puzzle_id: string
+  quarantined: boolean
+}
+
+export interface SubmitPuzzleVoteRequest {
+  discipline: TrainingDiscipline
+  puzzle_id: string
+  vote: PuzzleVoteValue
+  attempt_solved?: boolean
+}
+
+export interface SubmitPuzzleVoteResponseDTO {
+  discipline: TrainingDiscipline
+  puzzle_id: string
+  vote: PuzzleVoteValue
+  upvotes: number
+  downvotes: number
+  net_score: number
+}
+
 
 
 

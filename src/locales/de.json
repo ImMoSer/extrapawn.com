@@ -1411,6 +1411,44 @@
         "ctaTrainTooBtn": "Kurs im Trainingszentrum starten",
         "verifiedStamp": "VERIFIZIERT DURCH EXTRAPAWN ENGINE V2.0"
       }
+    },
+    "puzzleFeedback": {
+      "vote": {
+        "likeTooltip": "Gefällt mir",
+        "dislikeTooltip": "Gefällt mir nicht"
+      },
+      "report": {
+        "modalTitle": "Aufgabe melden",
+        "formHint": "Wähle mindestens einen Grund. Vor dem Absenden wird die Stellung automatisch per Syzygy-Tablebase oder lokalem Stockfish geprüft.",
+        "reasons": {
+          "impossible_win": "Stellung ist nicht gewonnen (Remis oder verloren)",
+          "impossible_draw": "Stellung ist verloren, Remis ist unmöglich",
+          "wrong_turn_or_color": "Falsche Farbe oder Zugrecht",
+          "wrong_solution": "Vorgegebene Lösung ist falsch oder funktioniert nicht",
+          "alternative_solution": "Es gibt eine gleichwertige Alternativlösung",
+          "position_unclear": "Stellung ist fehlerhaft oder unlösbar",
+          "other": "Anderes Problem mit der Aufgabe"
+        },
+        "commentLabel": "Kommentar (optional)",
+        "commentPlaceholder": "Beschreibe kurz, was nicht stimmt...",
+        "cancelBtn": "Abbrechen",
+        "verifyBtn": "Prüfen",
+        "closeBtn": "Schließen",
+        "retryBtn": "Erneut",
+        "verifyingInit": "Prüfung wird vorbereitet...",
+        "verifyingTablebase": "Frage 7-Steiner-Syzygy-Datenbank (Lichess) ab...",
+        "verifyingStockfishDepth": "Stockfish analysiert: Tiefe {depth}/{target}",
+        "verifyingTacticsStep": "Stockfish prüft Zug {step}/{total}: Tiefe {depth}/{target}",
+        "verifyingSubhint": "Die Prüfung läuft lokal auf deinem Gerät.",
+        "validTitle": "Aufgabe ist lösbar",
+        "validTablebaseText": "Laut 7-Steiner-Syzygy-Tablebase lautet das exakte Ergebnis „{category}“ — das Ziel der Aufgabe ist mathematisch erreichbar.",
+        "validStockfishText": "Laut Stockfish (Tiefe {depth}, Bewertung {eval}) ist das gestellte Ziel erreichbar.",
+        "syzygyProofLink": "Beweis auf syzygy-tables.info ansehen",
+        "submittedTitle": "Meldung gesendet · Aufgabe pausiert",
+        "submittedText": "Die automatische Prüfung hat die Stellung als verdächtig eingestuft. Die Aufgabe wurde bis zur manuellen Kontrolle vorübergehend ausgeblendet.",
+        "errorTitle": "Prüfung fehlgeschlagen",
+        "errorFallback": "Vorübergehender Netzwerk- oder Engine-Fehler. Bitte versuche es erneut."
+      }
     }
   },
   "shared": {
@@ -1478,7 +1516,9 @@
         "localStockfish": "Stockfish (Lokal)",
         "serverCoach": "Coach (Server)",
         "modeExplorer": "Engine-Linien & PGN (EXP)",
-        "modeCoach": "Coach-Analyse & Erklärungen (COACH)"
+        "modeCoach": "Coach-Analyse & Erklärungen (COACH)",
+        "reportPuzzle": "Aufgabe melden",
+        "reportSubmitted": "Meldung gesendet"
       }
     },
     "app": {

@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useBoardStore, useGameStore } from '@/entities/game'
+import { isReportableTrainingDiscipline } from '@/entities/training'
+import { useAnalysisStore } from '@/features/analysis'
 import { useCoachStore } from '@/features/coach'
+import { PuzzleReportModal, usePuzzleReportStore } from '@/features/puzzle-feedback'
+import { useTrainingSessionStore } from '@/features/training-session'
 import {
   CaretBackSharp,
   CaretForwardSharp,
   CheckmarkOutline,
+  FlagOutline,
   GridSharp,
   HardwareChipOutline,
   PlaySkipBackSharp,
@@ -13,7 +18,7 @@ import {
   SwapVerticalOutline,
 } from '@vicons/ionicons5'
 import { NIcon, NPopover } from 'naive-ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSidebarStore, type SidebarMode } from '../model/sidebar.store'
 
@@ -22,8 +27,27 @@ const gameStore = useGameStore()
 const boardStore = useBoardStore()
 const coachStore = useCoachStore()
 const sidebarStore = useSidebarStore()
+const analysisStore = useAnalysisStore()
+const trainingSessionStore = useTrainingSessionStore()
+const puzzleReportStore = usePuzzleReportStore()
 
 const isMenuOpen = ref(false)
+
+const reportableTarget = computed(() => {
+  if (coachStore.isFairPlayLocked || !trainingSessionStore.isAnalysisMode) return null
+  const puzzle = trainingSessionStore.analysisPuzzle
+  const discipline = trainingSessionStore.activeSessionSummary?.discipline
+  if (!puzzle || !isReportableTrainingDiscipline(discipline)) return null
+
+  const item = trainingSessionStore.sessionItems.find((it) => it.puzzle_id === puzzle.puzzle_id)
+  if (!item || item.status !== 'failed') return null
+
+  return { discipline, puzzle }
+})
+
+const isCurrentPuzzleAlreadyReported = computed(() =>
+  puzzleReportStore.isPuzzleReported(reportableTarget.value?.puzzle.puzzle_id),
+)
 
 function selectAnalysisMode(mode: SidebarMode): void {
   sidebarStore.setMode(mode)
@@ -33,6 +57,19 @@ function selectAnalysisMode(mode: SidebarMode): void {
 function handleFlipBoard(): void {
   boardStore.flipBoard()
   isMenuOpen.value = false
+}
+
+function handleOpenReportModal(): void {
+  const target = reportableTarget.value
+  if (!target || isCurrentPuzzleAlreadyReported.value) return
+  isMenuOpen.value = false
+  puzzleReportStore.openModal(target.discipline, target.puzzle, {
+    onBeforeVerify: async () => {
+      if (analysisStore.isAnalysisActive) {
+        await analysisStore.stopAnalysis()
+      }
+    },
+  })
 }
 </script>
 
@@ -157,6 +194,33 @@ function handleFlipBoard(): void {
             <n-icon size="15" class="text-text-secondary shrink-0"><SwapVerticalOutline /></n-icon>
             <span class="truncate">{{ t('shared.board.pgn.flipBoard') }}</span>
           </button>
+
+          <template v-if="reportableTarget">
+            <div class="h-px bg-border my-1" />
+            <button
+              type="button"
+              :disabled="isCurrentPuzzleAlreadyReported"
+              class="w-full px-2.5 py-2 rounded-sm text-xs font-display font-medium flex items-center gap-2 transition-colors cursor-pointer disabled:cursor-default disabled:opacity-70"
+              :class="
+                isCurrentPuzzleAlreadyReported
+                  ? 'text-success'
+                  : 'text-warning hover:bg-warning/10'
+              "
+              @click="handleOpenReportModal"
+            >
+              <n-icon size="15" class="shrink-0">
+                <CheckmarkOutline v-if="isCurrentPuzzleAlreadyReported" />
+                <FlagOutline v-else />
+              </n-icon>
+              <span class="truncate">
+                {{
+                  isCurrentPuzzleAlreadyReported
+                    ? t('shared.board.pgn.reportSubmitted')
+                    : t('shared.board.pgn.reportPuzzle')
+                }}
+              </span>
+            </button>
+          </template>
         </div>
       </n-popover>
 
@@ -180,5 +244,7 @@ function handleFlipBoard(): void {
         <n-icon size="16"><PlaySkipForwardSharp /></n-icon>
       </button>
     </div>
+
+    <PuzzleReportModal />
   </div>
 </template>

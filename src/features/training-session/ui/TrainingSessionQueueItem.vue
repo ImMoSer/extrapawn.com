@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {
+  PuzzleVoteButtons,
   resolveScopeLabel,
   resolveTwinShortTag,
   type HydratedSessionItem,
+  type PuzzleVoteValue,
 } from '@/entities/training'
 import { CheckmarkOutline, CloseOutline, LockClosedOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
@@ -21,11 +23,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [puzzleId: string]
+  vote: [puzzleId: string, nextVote: PuzzleVoteValue]
 }>()
 
 const { t, te } = useI18n()
 
 const hydrated = computed(() => isSessionItemHydrated(props.item))
+const isCompleted = computed(
+  () => props.item.status === 'solved' || props.item.status === 'failed',
+)
+const canVote = computed(() => isCompleted.value && Boolean(props.item.puzzle_id))
 const clickable = computed(
   () => props.canSwitchSidebarItem && canAnalyzeSessionItem(props.item) && Boolean(props.item.puzzle_id),
 )
@@ -99,10 +106,16 @@ function handleClick(): void {
   if (!clickable.value || !props.item.puzzle_id) return
   emit('select', props.item.puzzle_id)
 }
+
+function handleVote(nextVote: PuzzleVoteValue): void {
+  if (!canVote.value || !props.item.puzzle_id) return
+  emit('vote', props.item.puzzle_id, nextVote)
+}
 </script>
 
 <template>
   <div
+    :data-queue-index="item.index"
     class="flex items-center justify-between px-2.5 py-2 text-xs transition-colors"
     :title="showLockedVisual ? t('features.trainingCenter.sidebar.pendingLockedHint') : undefined"
     :class="[
@@ -159,9 +172,21 @@ function handleClick(): void {
             WP {{ item.woodpecker_streak }}/3
           </span>
         </div>
-        <span class="font-condensed text-[11px] text-text-secondary">
-          {{ metaSubtitle }}
-        </span>
+        <div class="flex items-center gap-1.5 font-condensed text-[11px] text-text-secondary min-w-0">
+          <span class="truncate">{{ metaSubtitle }}</span>
+          <template v-if="canVote">
+            <span
+              v-if="item.rating_delta !== undefined"
+              class="font-bold shrink-0"
+              :class="item.rating_delta >= 0 ? 'text-success' : 'text-danger'"
+            >
+              · {{ formattedDelta }}
+            </span>
+            <span v-if="item.time_ms" class="shrink-0">
+              · {{ formatDurationMs(item.time_ms) }}
+            </span>
+          </template>
+        </div>
       </div>
 
       <!-- Blurred Skeleton Placeholder (Future Unloaded Slot — Zero DOM/JSON Spoilers) -->
@@ -189,25 +214,32 @@ function handleClick(): void {
       </div>
     </div>
 
-    <!-- Right: Lock Icon (Pending in Analysis) / Rating Delta + Time -->
-    <div class="flex items-center gap-2 shrink-0 ml-2">
-      <NIcon
-        v-if="showLockedVisual"
-        size="13"
-        class="text-text-disabled"
-      >
-        <LockClosedOutline />
-      </NIcon>
-      <span
-        v-if="item.rating_delta !== undefined"
-        class="font-condensed font-bold text-[11px]"
-        :class="item.rating_delta >= 0 ? 'text-success' : 'text-danger'"
-      >
-        {{ formattedDelta }}
-      </span>
-      <span class="font-condensed text-[11px] text-text-secondary min-w-12 text-right">
-        {{ item.time_ms ? formatDurationMs(item.time_ms) : '--:--.-' }}
-      </span>
+    <!-- Right: Vote Buttons (Completed) OR Lock Icon / Time (Pending) -->
+    <div class="flex items-center gap-1.5 shrink-0 ml-2">
+      <PuzzleVoteButtons
+        v-if="canVote"
+        :vote="item.user_vote ?? 0"
+        @vote="handleVote"
+      />
+      <template v-else>
+        <NIcon
+          v-if="showLockedVisual"
+          size="13"
+          class="text-text-disabled"
+        >
+          <LockClosedOutline />
+        </NIcon>
+        <span
+          v-if="item.rating_delta !== undefined"
+          class="font-condensed font-bold text-[11px]"
+          :class="item.rating_delta >= 0 ? 'text-success' : 'text-danger'"
+        >
+          {{ formattedDelta }}
+        </span>
+        <span class="font-condensed text-[11px] text-text-secondary min-w-12 text-right">
+          {{ item.time_ms ? formatDurationMs(item.time_ms) : '--:--.-' }}
+        </span>
+      </template>
     </div>
   </div>
 </template>
