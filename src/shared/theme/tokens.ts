@@ -98,6 +98,10 @@ function applyDomColorMode(mode: ColorMode): void {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.theme = mode
     document.documentElement.style.colorScheme = mode
+    const themeColorMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (themeColorMeta) {
+      themeColorMeta.content = mode === 'light' ? LIGHT_TOKENS.canvas : DARK_TOKENS.canvas
+    }
   }
 }
 

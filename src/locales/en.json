@@ -1391,6 +1391,8 @@
       "login": "Login",
       "logout": "Logout",
       "loginWithLichess": "Login with Lichess",
+      "installApp": "Install App",
+      "installAppTitle": "Install ExtraPawn as an app",
       "trainingCenter": "Training",
       "warmup": "WarmUp",
       "courses": "Courses"

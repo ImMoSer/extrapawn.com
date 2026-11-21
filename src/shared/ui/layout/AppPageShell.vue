@@ -59,11 +59,11 @@ withDefaults(
   }
 
   .app-page-shell {
-    padding: 8px 6px 16px;
+    padding: 8px 6px calc(16px + env(safe-area-inset-bottom));
   }
 
   .app-page-shell--centered {
-    padding: 10px 6px 16px;
+    padding: 10px 6px calc(16px + env(safe-area-inset-bottom));
   }
 
   .app-page-stage {

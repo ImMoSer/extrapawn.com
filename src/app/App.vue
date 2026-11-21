@@ -3,12 +3,13 @@
 import { useGameStore } from '@/entities/game'
 import { LanguageInitModal, LegalConsentModal, SettingsMenu } from '@/features/settings'
 import { useViewportMode } from '@/shared/lib/layout/useViewportMode'
+import { usePwaInstall } from '@/shared/lib/pwa/usePwaInstall'
 import { updateSeoWithRoute, type RouteMetaWithSeo } from '@/shared/lib/seo'
 import { naiveThemeOverrides } from '@/shared/theme/naive-overrides'
 import { isDarkMode, toggleColorMode } from '@/shared/theme/tokens'
 import ConfirmationModal from '@/shared/ui/ConfirmationModal.vue'
 import { NavMenu } from '@/widgets/nav-menu'
-import { MenuOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
+import { DownloadOutline, MenuOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import { darkTheme } from 'naive-ui'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,6 +19,14 @@ import AppUpdateNotifier from './ui/AppUpdateNotifier.vue'
 const route = useRoute()
 const { t, locale } = useI18n()
 const { isDesktopShell } = useViewportMode()
+const { canInstall, promptInstall } = usePwaInstall()
+
+async function handleInstallApp(): Promise<void> {
+  const accepted = await promptInstall()
+  if (accepted) {
+    isDrawerOpen.value = false
+  }
+}
 
 watch(locale, () => {
   updateSeoWithRoute(route.meta as RouteMetaWithSeo, t)
@@ -100,6 +109,24 @@ onUnmounted(() => {
             <!-- Always-Collapsed Icon Navigation -->
             <div class="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavMenu :collapsed="true" />
+            </div>
+
+            <!-- Optional PWA Install Action (Desktop Chrome/Edge when installable) -->
+            <div
+              v-if="canInstall"
+              class="flex items-center justify-center border-t border-border px-2 py-2"
+            >
+              <button
+                type="button"
+                class="flex cursor-pointer items-center justify-center rounded-md border border-brand/40 bg-brand/10 p-2 text-brand transition-colors hover:bg-brand hover:text-on-brand"
+                :title="t('shared.nav.installAppTitle')"
+                :aria-label="t('shared.nav.installAppTitle')"
+                @click="handleInstallApp"
+              >
+                <n-icon class="text-[1.25rem]">
+                  <DownloadOutline />
+                </n-icon>
+              </button>
             </div>
           </aside>
 
@@ -191,6 +218,22 @@ onUnmounted(() => {
                 </RouterLink>
               </template>
               <NavMenu :collapsed="false" @select="isDrawerOpen = false" />
+
+              <template v-if="canInstall" #footer>
+                <div class="w-full">
+                  <n-button
+                    type="primary"
+                    block
+                    :title="t('shared.nav.installAppTitle')"
+                    @click="handleInstallApp"
+                  >
+                    <template #icon>
+                      <n-icon><DownloadOutline /></n-icon>
+                    </template>
+                    {{ t('shared.nav.installApp') }}
+                  </n-button>
+                </div>
+              </template>
             </n-drawer-content>
           </n-drawer>
 

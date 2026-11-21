@@ -254,7 +254,7 @@ const handleWheelNavigate = (direction: 'up' | 'down') => {
   .game-layout {
     height: 100%;
     overflow-y: auto;
-    padding: 4px;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
     display: block;
   }
 
