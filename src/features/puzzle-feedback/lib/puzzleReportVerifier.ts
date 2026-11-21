@@ -1,10 +1,16 @@
 import { countBoardPieces } from '@/entities/analysis'
-import type { PuzzleObjective, PuzzlePuzzle } from '@/entities/game'
+import { determineHumanColor, type PuzzleObjective, type PuzzlePuzzle } from '@/entities/game'
 import type {
+  PuzzleReportFailureCriterion,
   PuzzleReportVerificationSource,
   ReportableTrainingDiscipline,
 } from '@/entities/training'
-import { localEngineManager, type EvaluatedLine, type WdlStats } from '@/shared/lib/engine'
+import type { WdlStats } from '@/shared/lib/engine'
+import {
+  fetchLichessTablebaseCategory,
+  runLocalSinglePvSearch,
+  type SinglePvSearchFn,
+} from './puzzleReportAdapters'
 import {
   buildSyzygyProofUrl,
   doesMoveMatchTacticsStep,
@@ -12,15 +18,16 @@ import {
   evaluateLichessTablebaseVerdict,
   extractTacticsPlayerSteps,
   formatWhitePovScore,
-  normalizeUciToken,
+  getFenTurnColor,
   REPORT_DRAW_MIN_CP,
-  REPORT_STEP_TIMEOUT_MS,
-  REPORT_TABLEBASE_TIMEOUT_MS,
+  REPORT_EARLY_EXIT_DEPTH,
   REPORT_TACTICS_EARLY_EXIT_DEPTH,
   REPORT_TARGET_DEPTH,
   resolvePuzzleSolverFen,
+  toUserPovEvaluation,
+  toUserTablebaseCategory,
   type EngineLineSnapshot,
-  type ScoreMoverPov,
+  type ScorePov,
 } from './puzzleReportRules'
 
 export {
@@ -31,11 +38,13 @@ export {
   extractTacticsPlayerSteps,
   formatWhitePovScore,
   resolvePuzzleSolverFen,
+  runLocalSinglePvSearch,
+  toUserPovEvaluation,
+  toUserTablebaseCategory,
   type EngineLineSnapshot,
-  type ScoreMoverPov,
+  type ScorePov,
+  type SinglePvSearchFn,
 }
-
-const LICHESS_TABLEBASE_ENDPOINT = 'https://tablebase.lichess.ovh/standard'
 
 export interface VerificationProgress {
   mode: 'tablebase' | 'endgame_engine' | 'tactics_engine'
@@ -50,26 +59,21 @@ export interface VerificationProgress {
 export interface PuzzleVerificationResult {
   verdict: 'valid' | 'suspicious' | 'network_error'
   source: PuzzleReportVerificationSource
+  failureCriterion?: PuzzleReportFailureCriterion
   solverFen: string
   objective: PuzzleObjective
+  userColor: 'white' | 'black'
   syzygyUrl?: string
   tablebaseCategory?: string
   depth?: number
-  moverScore?: ScoreMoverPov
+  userScore?: ScorePov
+  whiteScore?: ScorePov
   whitePovEvalLabel?: string
   wdl?: WdlStats
   engineBestMove?: string
   mismatchPly?: number
   errorMessage?: string
 }
-
-export type SinglePvSearchFn = (params: {
-  fen: string
-  targetDepth: number
-  shouldEarlyStop: (line: EngineLineSnapshot) => boolean
-  onDepthProgress: (line: EngineLineSnapshot) => void
-  signal?: AbortSignal
-}) => Promise<EngineLineSnapshot | null>
 
 export interface VerifyPuzzleOptions {
   discipline: ReportableTrainingDiscipline
@@ -79,127 +83,13 @@ export interface VerifyPuzzleOptions {
   runDepthSearchFn?: SinglePvSearchFn
 }
 
-interface LichessTablebaseResponse {
-  category?: string
-  dtz?: number | null
-  dtm?: number | null
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException
-    ? error.name === 'AbortError'
-    : error instanceof Error && error.name === 'AbortError'
-}
-
-export async function runLocalSinglePvSearch(params: {
-  fen: string
-  targetDepth: number
-  shouldEarlyStop: (line: EngineLineSnapshot) => boolean
-  onDepthProgress: (line: EngineLineSnapshot) => void
-  signal?: AbortSignal
-}): Promise<EngineLineSnapshot | null> {
-  const { fen, targetDepth, shouldEarlyStop, onDepthProgress, signal } = params
-  if (signal?.aborted) {
-    throw new DOMException('Verification aborted', 'AbortError')
-  }
-
-  await localEngineManager.ensureReady()
-  await localEngineManager.startNewGame()
-
-  if (signal?.aborted) {
-    throw new DOMException('Verification aborted', 'AbortError')
-  }
-
-  return new Promise<EngineLineSnapshot | null>((resolve, reject) => {
-    let settled = false
-    let latestLine: EngineLineSnapshot | null = null
-
-    const cleanup = () => {
-      clearTimeout(timeoutId)
-      signal?.removeEventListener('abort', handleAbort)
-    }
-
-    const finishWith = (result: EngineLineSnapshot | null, needStop: boolean) => {
-      if (settled) return
-      settled = true
-      cleanup()
-      if (needStop) {
-        void localEngineManager.stopAnalysis().finally(() => resolve(result))
-      } else {
-        resolve(result)
-      }
-    }
-
-    const handleAbort = () => {
-      if (settled) return
-      settled = true
-      cleanup()
-      void localEngineManager.stopAnalysis().finally(() => {
-        reject(new DOMException('Verification aborted', 'AbortError'))
-      })
-    }
-
-    const timeoutId = setTimeout(() => {
-      finishWith(latestLine, true)
-    }, REPORT_STEP_TIMEOUT_MS)
-
-    signal?.addEventListener('abort', handleAbort, { once: true })
-
-    void localEngineManager
-      .startAnalysis(
-        fen,
-        (lines: EvaluatedLine[], bestMoveUci?: string | null) => {
-          if (settled) return
-
-          for (const line of lines) {
-            if (line.id !== 1) continue
-            const moveUci = line.pvUci[0] ? normalizeUciToken(line.pvUci[0]) : ''
-            if (!moveUci) continue
-
-            const snapshot: EngineLineSnapshot = {
-              depth: line.depth,
-              score: line.score,
-              wdl: line.wdl,
-              bestMoveUci: moveUci,
-            }
-            latestLine = snapshot
-            onDepthProgress(snapshot)
-
-            if (snapshot.depth >= targetDepth || shouldEarlyStop(snapshot)) {
-              finishWith(snapshot, true)
-              return
-            }
-          }
-
-          if (bestMoveUci !== undefined && bestMoveUci !== null) {
-            finishWith(
-              latestLine ?? {
-                depth: targetDepth,
-                score: { type: 'cp', value: 0 },
-                bestMoveUci: normalizeUciToken(bestMoveUci),
-              },
-              false,
-            )
-          }
-        },
-        { multiPv: 1 },
-      )
-      .catch((err: unknown) => {
-        if (settled) return
-        settled = true
-        cleanup()
-        reject(err)
-      })
-  })
-}
-
 async function verifyViaLichessTablebase(
-  solverFen: string,
+  evaluatedFen: string,
+  userColor: 'white' | 'black',
   objective: PuzzleObjective,
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
-  const fetchFn = options.fetchFn ?? fetch
-  const syzygyUrl = buildSyzygyProofUrl(solverFen)
+  const syzygyUrl = buildSyzygyProofUrl(evaluatedFen)
 
   options.onProgress?.({
     mode: 'tablebase',
@@ -210,103 +100,85 @@ async function verifyViaLichessTablebase(
     percent: 40,
   })
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REPORT_TABLEBASE_TIMEOUT_MS)
-  const onParentAbort = () => controller.abort()
-  options.signal?.addEventListener('abort', onParentAbort, { once: true })
-
-  try {
-    const url = `${LICHESS_TABLEBASE_ENDPOINT}?fen=${encodeURIComponent(solverFen)}`
-    const response = await fetchFn(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      return {
-        verdict: 'network_error',
-        source: 'lichess_tablebase',
-        solverFen,
-        objective,
-        syzygyUrl,
-        errorMessage: `Lichess Tablebase HTTP ${response.status}`,
-      }
-    }
-
-    const data = (await response.json()) as LichessTablebaseResponse
-    const category = (data.category ?? '').trim().toLowerCase()
-    if (!category) {
-      return {
-        verdict: 'network_error',
-        source: 'lichess_tablebase',
-        solverFen,
-        objective,
-        syzygyUrl,
-        errorMessage: 'Empty Lichess Tablebase category',
-      }
-    }
-
-    options.onProgress?.({
-      mode: 'tablebase',
-      depth: 1,
-      targetDepth: 1,
-      stepIndex: 1,
-      totalSteps: 1,
-      percent: 100,
-    })
-
-    return {
-      verdict: evaluateLichessTablebaseVerdict(category, objective),
-      source: 'lichess_tablebase',
-      solverFen,
-      objective,
-      syzygyUrl,
-      tablebaseCategory: category,
-    }
-  } catch (err: unknown) {
-    if (options.signal?.aborted) {
-      throw new DOMException('Verification aborted', 'AbortError')
-    }
+  const tbRes = await fetchLichessTablebaseCategory(evaluatedFen, options.fetchFn, options.signal)
+  if (!tbRes.ok) {
     return {
       verdict: 'network_error',
       source: 'lichess_tablebase',
-      solverFen,
+      solverFen: evaluatedFen,
       objective,
+      userColor,
       syzygyUrl,
-      errorMessage: isAbortError(err)
-        ? 'Lichess Tablebase request timed out'
-        : err instanceof Error
-          ? err.message
-          : String(err),
+      errorMessage: tbRes.errorMessage,
     }
-  } finally {
-    clearTimeout(timeoutId)
-    options.signal?.removeEventListener('abort', onParentAbort)
+  }
+
+  const userCategory = toUserTablebaseCategory(tbRes.category, evaluatedFen, userColor)
+  const verdict = evaluateLichessTablebaseVerdict(userCategory, objective)
+
+  options.onProgress?.({
+    mode: 'tablebase',
+    depth: 1,
+    targetDepth: 1,
+    stepIndex: 1,
+    totalSteps: 1,
+    percent: 100,
+  })
+
+  return {
+    verdict,
+    source: 'lichess_tablebase',
+    failureCriterion:
+      verdict === 'suspicious'
+        ? objective === 'win'
+          ? 'syzygy_win_failed'
+          : 'syzygy_draw_failed'
+        : undefined,
+    solverFen: evaluatedFen,
+    objective,
+    userColor,
+    syzygyUrl,
+    tablebaseCategory: userCategory,
   }
 }
 
 async function verifyEndgameWithStockfish(
-  solverFen: string,
+  evaluatedFen: string,
+  userColor: 'white' | 'black',
   objective: PuzzleObjective,
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
   const searchFn = options.runDepthSearchFn ?? runLocalSinglePvSearch
+  const isUserTurn = getFenTurnColor(evaluatedFen) === userColor
+  const targetDepth = isUserTurn ? REPORT_TARGET_DEPTH : REPORT_TARGET_DEPTH + 1
+  const earlyExitDepth = isUserTurn ? REPORT_EARLY_EXIT_DEPTH : REPORT_EARLY_EXIT_DEPTH + 1
 
   const finalLine = await searchFn({
-    fen: solverFen,
-    targetDepth: REPORT_TARGET_DEPTH,
-    shouldEarlyStop: (line) => evaluateEndgameStockfishLine(line, objective).isEarlyValid,
+    fen: evaluatedFen,
+    targetDepth,
+    shouldEarlyStop: (line) => {
+      const pov = toUserPovEvaluation(line.score, line.wdl, evaluatedFen, userColor)
+      return evaluateEndgameStockfishLine(
+        {
+          depth: line.depth,
+          earlyExitDepth,
+          score: pov.userScore,
+          wdl: pov.userWdl,
+        },
+        objective,
+      ).isEarlyValid
+    },
     onDepthProgress: (line) => {
-      const pct = Math.min(99, Math.round((line.depth / REPORT_TARGET_DEPTH) * 100))
+      const pov = toUserPovEvaluation(line.score, line.wdl, evaluatedFen, userColor)
+      const pct = Math.min(99, Math.round((line.depth / targetDepth) * 100))
       options.onProgress?.({
         mode: 'endgame_engine',
         depth: line.depth,
-        targetDepth: REPORT_TARGET_DEPTH,
+        targetDepth,
         stepIndex: 1,
         totalSteps: 1,
         percent: pct,
-        currentEvalLabel: formatWhitePovScore(line.score, solverFen),
+        currentEvalLabel: pov.whitePovEvalLabel,
       })
     },
     signal: options.signal,
@@ -316,39 +188,58 @@ async function verifyEndgameWithStockfish(
     return {
       verdict: 'network_error',
       source: 'local_stockfish',
-      solverFen,
+      solverFen: evaluatedFen,
       objective,
+      userColor,
       errorMessage: 'Local Stockfish returned no evaluation',
     }
   }
 
+  const finalPov = toUserPovEvaluation(finalLine.score, finalLine.wdl, evaluatedFen, userColor)
   options.onProgress?.({
     mode: 'endgame_engine',
     depth: finalLine.depth,
-    targetDepth: REPORT_TARGET_DEPTH,
+    targetDepth,
     stepIndex: 1,
     totalSteps: 1,
     percent: 100,
-    currentEvalLabel: formatWhitePovScore(finalLine.score, solverFen),
+    currentEvalLabel: finalPov.whitePovEvalLabel,
   })
 
-  const { isFinalValid } = evaluateEndgameStockfishLine(finalLine, objective)
+  const { isFinalValid } = evaluateEndgameStockfishLine(
+    {
+      depth: finalLine.depth,
+      earlyExitDepth,
+      score: finalPov.userScore,
+      wdl: finalPov.userWdl,
+    },
+    objective,
+  )
+
   return {
     verdict: isFinalValid ? 'valid' : 'suspicious',
     source: 'local_stockfish',
-    solverFen,
+    failureCriterion: isFinalValid
+      ? undefined
+      : objective === 'win'
+        ? 'win_wdl_below_995'
+        : 'hold_draw_cp_below_0',
+    solverFen: evaluatedFen,
     objective,
+    userColor,
     depth: finalLine.depth,
-    moverScore: finalLine.score,
-    whitePovEvalLabel: formatWhitePovScore(finalLine.score, solverFen),
-    wdl: finalLine.wdl,
+    userScore: finalPov.userScore,
+    whiteScore: finalPov.whiteScore,
+    whitePovEvalLabel: finalPov.whitePovEvalLabel,
+    wdl: finalPov.userWdl,
     engineBestMove: finalLine.bestMoveUci,
   }
 }
 
 async function verifyTacticsWithStockfish(
   puzzle: PuzzlePuzzle,
-  solverFen: string,
+  evaluatedFen: string,
+  userColor: 'white' | 'black',
   objective: PuzzleObjective,
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
@@ -358,15 +249,17 @@ async function verifyTacticsWithStockfish(
     return {
       verdict: 'suspicious',
       source: 'local_stockfish',
-      solverFen,
+      failureCriterion: 'tactics_solution_invalid',
+      solverFen: evaluatedFen,
       objective,
+      userColor,
       mismatchPly: 1,
       errorMessage: 'TacticalSolution is empty or illegal',
     }
   }
 
   let lastLine: EngineLineSnapshot | null = null
-  let lastFen = solverFen
+  let lastFen = evaluatedFen
 
   for (const step of steps) {
     lastFen = step.fenBeforeMove
@@ -382,18 +275,20 @@ async function verifyTacticsWithStockfish(
           step.isFinalMove,
         )
         if (!matches) return false
+        const pov = toUserPovEvaluation(snapshot.score, snapshot.wdl, step.fenBeforeMove, userColor)
         if (objective === 'hold_draw') {
           return (
-            (snapshot.score.type === 'mate' && snapshot.score.value > 0) ||
-            (snapshot.score.type === 'cp' && snapshot.score.value >= REPORT_DRAW_MIN_CP)
+            (pov.userScore.type === 'mate' && pov.userScore.value > 0) ||
+            (pov.userScore.type === 'cp' && pov.userScore.value >= REPORT_DRAW_MIN_CP)
           )
         }
         return (
-          (snapshot.score.type === 'mate' && snapshot.score.value > 0) ||
-          (snapshot.score.type === 'cp' && snapshot.score.value >= 150)
+          (pov.userScore.type === 'mate' && pov.userScore.value > 0) ||
+          (pov.userScore.type === 'cp' && pov.userScore.value >= 150)
         )
       },
       onDepthProgress: (snapshot) => {
+        const pov = toUserPovEvaluation(snapshot.score, snapshot.wdl, step.fenBeforeMove, userColor)
         const completedFraction = (step.stepIndex - 1) / step.totalSteps
         const stepFraction = Math.min(1, snapshot.depth / REPORT_TARGET_DEPTH) / step.totalSteps
         const percent = Math.min(99, Math.round((completedFraction + stepFraction) * 100))
@@ -404,7 +299,7 @@ async function verifyTacticsWithStockfish(
           stepIndex: step.stepIndex,
           totalSteps: step.totalSteps,
           percent,
-          currentEvalLabel: formatWhitePovScore(snapshot.score, step.fenBeforeMove),
+          currentEvalLabel: pov.whitePovEvalLabel,
         })
       },
       signal: options.signal,
@@ -414,8 +309,9 @@ async function verifyTacticsWithStockfish(
       return {
         verdict: 'network_error',
         source: 'local_stockfish',
-        solverFen,
+        solverFen: evaluatedFen,
         objective,
+        userColor,
         errorMessage: 'Local Stockfish returned no evaluation for tactics step',
       }
     }
@@ -429,20 +325,28 @@ async function verifyTacticsWithStockfish(
     )
 
     if (!matched) {
+      const pov = toUserPovEvaluation(line.score, line.wdl, step.fenBeforeMove, userColor)
       return {
         verdict: 'suspicious',
         source: 'local_stockfish',
-        solverFen,
+        failureCriterion: 'tactics_move_mismatch',
+        solverFen: step.fenBeforeMove,
         objective,
+        userColor,
         depth: line.depth,
-        moverScore: line.score,
-        whitePovEvalLabel: formatWhitePovScore(line.score, step.fenBeforeMove),
-        wdl: line.wdl,
+        userScore: pov.userScore,
+        whiteScore: pov.whiteScore,
+        whitePovEvalLabel: pov.whitePovEvalLabel,
+        wdl: pov.userWdl,
         engineBestMove: line.bestMoveUci,
         mismatchPly: step.plyNumber,
       }
     }
   }
+
+  const finalPov = lastLine
+    ? toUserPovEvaluation(lastLine.score, lastLine.wdl, lastFen, userColor)
+    : null
 
   options.onProgress?.({
     mode: 'tactics_engine',
@@ -451,42 +355,39 @@ async function verifyTacticsWithStockfish(
     stepIndex: steps.length,
     totalSteps: steps.length,
     percent: 100,
-    currentEvalLabel: lastLine ? formatWhitePovScore(lastLine.score, lastFen) : undefined,
+    currentEvalLabel: finalPov?.whitePovEvalLabel,
   })
 
   return {
     verdict: 'valid',
     source: 'local_stockfish',
-    solverFen,
+    solverFen: evaluatedFen,
     objective,
+    userColor,
     depth: lastLine?.depth,
-    moverScore: lastLine?.score,
-    whitePovEvalLabel: lastLine ? formatWhitePovScore(lastLine.score, lastFen) : undefined,
-    wdl: lastLine?.wdl,
+    userScore: finalPov?.userScore,
+    whiteScore: finalPov?.whiteScore,
+    whitePovEvalLabel: finalPov?.whitePovEvalLabel,
+    wdl: finalPov?.userWdl,
     engineBestMove: lastLine?.bestMoveUci,
   }
 }
 
-/**
- * Main verification orchestrator for the Puzzle Report Service:
- * - playOutOnly & <= 7 pieces -> Lichess 7-man Tablebase + syzygy-tables.info proof link
- * - playOutOnly & > 7 pieces  -> local Stockfish depth 20 (win: WDL >= 995; hold_draw: mover CP >= 0)
- * - tactics_course (scenario) -> local Stockfish depth 20 sequential match against TacticalSolution
- */
 export async function verifyPuzzleForReport(
   puzzle: PuzzlePuzzle,
   options: VerifyPuzzleOptions,
 ): Promise<PuzzleVerificationResult> {
   const objective: PuzzleObjective = puzzle.objective ?? 'win'
-  const solverFen = resolvePuzzleSolverFen(puzzle)
+  const userColor = determineHumanColor(puzzle)
+  const evaluatedFen = resolvePuzzleSolverFen(puzzle)
 
   if (puzzle.strategy === 'playOutOnly') {
-    const pieces = countBoardPieces(solverFen)
+    const pieces = countBoardPieces(evaluatedFen)
     if (pieces >= 2 && pieces <= 7) {
-      return verifyViaLichessTablebase(solverFen, objective, options)
+      return verifyViaLichessTablebase(evaluatedFen, userColor, objective, options)
     }
-    return verifyEndgameWithStockfish(solverFen, objective, options)
+    return verifyEndgameWithStockfish(evaluatedFen, userColor, objective, options)
   }
 
-  return verifyTacticsWithStockfish(puzzle, solverFen, objective, options)
+  return verifyTacticsWithStockfish(puzzle, evaluatedFen, userColor, objective, options)
 }

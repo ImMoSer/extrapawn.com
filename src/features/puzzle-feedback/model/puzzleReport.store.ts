@@ -143,15 +143,22 @@ export const usePuzzleReportStore = defineStore('puzzleReport', () => {
       }
 
       // Suspicious puzzle confirmed by automated check -> submit report & quarantine immediately
+      if (!result.failureCriterion) {
+        throw new Error('[PuzzleReportStore] Missing failureCriterion on suspicious verdict.')
+      }
+
       await trainingApi.submitPuzzleReport({
         discipline,
         puzzle_id: puzzle.puzzle_id,
         reasons: [...selectedReasons.value],
         comment: comment.value.trim(),
         verification_source: result.source,
+        failure_criterion: result.failureCriterion,
         engine_depth: result.depth,
-        engine_eval_cp: result.moverScore?.type === 'cp' ? result.moverScore.value : undefined,
-        engine_mate: result.moverScore?.type === 'mate' ? result.moverScore.value : undefined,
+        engine_eval_cp: result.userScore?.type === 'cp' ? result.userScore.value : undefined,
+        eval_white_cp: result.whiteScore?.type === 'cp' ? result.whiteScore.value : undefined,
+        eval_user_cp: result.userScore?.type === 'cp' ? result.userScore.value : undefined,
+        engine_mate: result.userScore?.type === 'mate' ? result.userScore.value : undefined,
         engine_wdl_win: result.wdl?.win,
         engine_wdl_draw: result.wdl?.draw,
         engine_wdl_loss: result.wdl?.loss,

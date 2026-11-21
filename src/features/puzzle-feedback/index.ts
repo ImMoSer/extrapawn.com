@@ -8,6 +8,8 @@ export {
   extractTacticsPlayerSteps,
   formatWhitePovScore,
   resolvePuzzleSolverFen,
+  toUserPovEvaluation,
+  toUserTablebaseCategory,
   verifyPuzzleForReport,
 } from './lib/puzzleReportVerifier'
 export type {

@@ -826,14 +826,25 @@ export type PuzzleReportReasonCode =
 
 export type PuzzleReportVerificationSource = 'lichess_tablebase' | 'local_stockfish'
 
+export type PuzzleReportFailureCriterion =
+  | 'win_wdl_below_995'
+  | 'hold_draw_cp_below_0'
+  | 'tactics_move_mismatch'
+  | 'tactics_solution_invalid'
+  | 'syzygy_win_failed'
+  | 'syzygy_draw_failed'
+
 export interface SubmitPuzzleReportRequest {
   discipline: ReportableTrainingDiscipline
   puzzle_id: string
   reasons: PuzzleReportReasonCode[]
   comment: string
   verification_source: PuzzleReportVerificationSource
+  failure_criterion: PuzzleReportFailureCriterion
   engine_depth?: number
   engine_eval_cp?: number
+  eval_white_cp?: number
+  eval_user_cp?: number
   engine_mate?: number
   engine_wdl_win?: number
   engine_wdl_draw?: number

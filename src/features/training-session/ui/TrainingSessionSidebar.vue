@@ -7,8 +7,8 @@ import {
   type PuzzleVoteValue,
 } from '@/entities/training'
 import { DownloadOutline, PauseOutline, PlayOutline } from '@vicons/ionicons5'
-import { NButton, NIcon, NScrollbar } from 'naive-ui'
-import { computed, nextTick, ref, watch } from 'vue'
+import { NButton, NIcon } from 'naive-ui'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { downloadCrashTestReport, useCrashTestReport } from '../lib/crashTestReportLogger'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
@@ -19,8 +19,11 @@ const { t, te } = useI18n()
 const store = useTrainingSessionStore()
 const { anomaliesCount } = useCrashTestReport()
 
-const scrollbarRef = ref<InstanceType<typeof NScrollbar> | null>(null)
+const scrollViewportRef = ref<HTMLElement | null>(null)
 const queueListRef = ref<HTMLElement | null>(null)
+const viewportHeightPx = ref(0)
+
+let resizeObserver: ResizeObserver | null = null
 
 const summary = computed(() => store.activeSessionSummary)
 
@@ -112,39 +115,71 @@ const visibleSessionItems = computed(() => {
   return items.slice(start, end)
 })
 
+// Bottom spacer allows the last 2 items (previous + current) to anchor cleanly at Row 1 & Row 2
+// even in short 10-puzzle WarmUps or near the end of a 50-puzzle batch.
+const bottomSpacerPx = computed(() => {
+  if (store.currentItemIndex <= 0 || viewportHeightPx.value <= 104) return 0
+  return Math.max(0, viewportHeightPx.value - 104)
+})
+
 const isInspectionActive = computed(() => store.isAnalysisMode || store.isPracticeReplay)
 
 function scrollToLastCompletedItem(smooth: boolean): void {
-  const container = queueListRef.value
-  const scroller = scrollbarRef.value
-  if (!container || !scroller) return
+  const viewport = scrollViewportRef.value
+  const listEl = queueListRef.value
+  if (!viewport || !listEl) return
 
   const items = store.sessionItems
   if (items.length === 0) return
 
-  // Always anchor the last completed puzzle (previous slot) at the top of the queue viewport
-  // so the user can effortlessly like/dislike or inspect it while solving the current puzzle.
+  // Row 1 = previous (last completed) puzzle; Row 2 = current unsolved puzzle.
   let targetIndex = Math.max(0, store.currentItemIndex - 1)
   if (store.currentItemIndex >= items.length) {
     targetIndex = items.length - 1
   }
 
-  const targetEl = container.querySelector<HTMLElement>(`[data-queue-index="${targetIndex}"]`)
+  const targetEl = listEl.querySelector<HTMLElement>(`[data-queue-index="${targetIndex}"]`)
   if (!targetEl) return
 
-  scroller.scrollTo({
-    top: targetEl.offsetTop,
-    behavior: smooth ? 'smooth' : 'auto',
-  })
+  const targetTop = targetEl.offsetTop
+  if (typeof viewport.scrollTo === 'function') {
+    viewport.scrollTo({
+      top: targetTop,
+      behavior: smooth ? 'smooth' : 'auto',
+    })
+  } else {
+    viewport.scrollTop = targetTop
+  }
 }
+
+onMounted(() => {
+  const el = scrollViewportRef.value
+  if (el) {
+    viewportHeightPx.value = el.clientHeight
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver((entries) => {
+        const entry = entries[0]
+        if (entry) {
+          viewportHeightPx.value = Math.round(entry.contentRect.height)
+        }
+      })
+      resizeObserver.observe(el)
+    }
+  }
+  void nextTick(() => scrollToLastCompletedItem(false))
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
 
 watch(
   [() => store.currentItemIndex, () => store.hydratedSession?.session.id],
   async ([, newSessId], [, oldSessId]) => {
     await nextTick()
-    scrollToLastCompletedItem(newSessId === oldSessId)
+    scrollToLastCompletedItem(Boolean(oldSessId && newSessId === oldSessId))
   },
-  { immediate: true },
 )
 
 function formatDelta(delta?: number): string {
@@ -227,8 +262,8 @@ function handleItemVote(puzzleId: string, nextVote: PuzzleVoteValue): void {
     <TrainingSessionFeedbackBanners />
 
     <!-- Puzzle Queue List -->
-    <div class="flex-1 flex flex-col min-h-0 border border-border rounded-md bg-elevated/30 overflow-hidden">
-      <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex items-center justify-between">
+    <div class="queue-box flex flex-col border border-border rounded-md bg-elevated/30 overflow-hidden">
+      <div class="px-3 py-1.5 bg-elevated/80 border-b border-border flex items-center justify-between shrink-0">
         <span class="font-display font-bold text-[11px] uppercase tracking-wider text-text-secondary">
           {{ t('features.trainingCenter.sidebar.queueTitle') }}
           <template v-if="isWindowedQueue">
@@ -245,8 +280,8 @@ function handleItemVote(puzzleId: string, nextVote: PuzzleVoteValue): void {
         </span>
       </div>
 
-      <NScrollbar ref="scrollbarRef" class="flex-1">
-        <div ref="queueListRef" class="divide-y divide-border/50">
+      <div ref="scrollViewportRef" class="queue-scroll-viewport overflow-y-auto overscroll-contain">
+        <div ref="queueListRef" class="relative divide-y divide-border/50">
           <TrainingSessionQueueItem
             v-for="item in visibleSessionItems"
             :key="item.index"
@@ -265,8 +300,14 @@ function handleItemVote(puzzleId: string, nextVote: PuzzleVoteValue): void {
             @select="handleItemSelect"
             @vote="handleItemVote"
           />
+          <div
+            v-if="bottomSpacerPx > 0"
+            :style="{ height: `${bottomSpacerPx}px` }"
+            class="border-t-0 pointer-events-none"
+            aria-hidden="true"
+          />
         </div>
-      </NScrollbar>
+      </div>
     </div>
 
     <!-- Footer Controls -->
@@ -359,3 +400,29 @@ function handleItemVote(puzzleId: string, nextVote: PuzzleVoteValue): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.queue-box {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.queue-scroll-viewport {
+  flex: 1 1 0%;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+/* Matches GameLayout.vue portrait / mobile shell where .left-panel has height: auto */
+@media (max-width: 899px), (orientation: portrait) {
+  .queue-box {
+    flex: none;
+  }
+
+  .queue-scroll-viewport {
+    flex: none;
+    height: 212px;
+    max-height: 212px;
+  }
+}
+</style>
