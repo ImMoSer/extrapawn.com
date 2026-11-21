@@ -4,50 +4,29 @@ import {
   isClassicalCourseDiscipline,
   resolveDifficultyLabel,
   resolveDisciplineLabel,
-  resolveScopeLabel,
-  resolveTwinBadgeLabel,
-  type HydratedSessionItem,
 } from '@/entities/training'
 import AppPageShell from '@/shared/ui/layout/AppPageShell.vue'
 import {
+  AlertCircleOutline,
   ArrowBackOutline,
-  CheckmarkCircleOutline,
-  CloseCircleOutline,
-  EyeOutline,
   FlameOutline,
-  LockClosedOutline,
   PlayOutline,
   RefreshOutline,
   RibbonOutline,
   TrophyOutline,
 } from '@vicons/ionicons5'
 import { NButton, NIcon } from 'naive-ui'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import {
-  canAnalyzeSessionItem,
-  canPracticeReplayItem,
-  getItemAttemptsUsed,
-} from '../lib/sessionItemPolicy'
 import { useTrainingSessionStore } from '../model/trainingSession.store'
+import TrainingSessionReportBreakdown from './TrainingSessionReportBreakdown.vue'
 
-const { t, te } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const store = useTrainingSessionStore()
 
 const report = computed(() => store.sessionReportSummary)
-const reportRenderLimit = ref<number>(100)
-
-const visibleReportItems = computed(() => {
-  const items = report.value?.items ?? []
-  if (items.length <= reportRenderLimit.value) return items
-  return items.slice(0, reportRenderLimit.value)
-})
-
-const hasMoreReportItems = computed(
-  () => (report.value?.items.length ?? 0) > reportRenderLimit.value,
-)
 
 const activeCourse = computed(() => {
   const disc = report.value?.discipline
@@ -73,28 +52,6 @@ function formatDelta(val: number): string {
   return rounded >= 0 ? `+${rounded}` : `${rounded}`
 }
 
-function itemCategory(item: HydratedSessionItem): string {
-  if (item.course_puzzle) {
-    return resolveScopeLabel('scopes', item.course_puzzle.class || 'mixedExam', t, te)
-  }
-  if (item.tactical) {
-    return resolveScopeLabel('scopes', item.tactical.primary_motif, t, te)
-  }
-  if (item.endgame) {
-    return resolveScopeLabel('scopes', item.endgame.class, t, te)
-  }
-  return item.puzzle_id || `#${item.index + 1}`
-}
-
-function itemMetaLabel(item: HydratedSessionItem): string {
-  if (item.course_puzzle) {
-    return `Курс ${item.course_puzzle.course_id || 1} · Батч #${item.course_puzzle.batch_id}`
-  }
-  if (item.tactical) return `R: ${item.tactical.rating}`
-  if (item.endgame) return `R: ${item.endgame.effective_rating}`
-  return ''
-}
-
 async function handleReturnToHub(): Promise<void> {
   if (report.value) {
     try {
@@ -111,6 +68,13 @@ async function handleReturnToHub(): Promise<void> {
 const isClassicalCourseReport = computed(() =>
   Boolean(report.value && isClassicalCourseDiscipline(report.value.discipline)),
 )
+
+const isClassicalThresholdFailed = computed<boolean>(() => {
+  if (!isClassicalCourseReport.value || !report.value || report.value.mode !== 'course') {
+    return false
+  }
+  return report.value.totalCount > 0 && report.value.solvedCount * 2 < report.value.totalCount
+})
 
 const isNextClassicalStepWoodpecker = computed(
   () =>
@@ -130,6 +94,15 @@ const canLaunchNextCourseStep = computed(() => {
 const nextCourseStepLabel = computed(() => {
   if (isClassicalCourseReport.value && store.tacticsCourseCurriculum) {
     const cur = store.tacticsCourseCurriculum
+    if (isClassicalThresholdFailed.value) {
+      return cur.current_step_type === 'woodpecker'
+        ? t('features.trainingCenter.classical.retryWoodpeckerShort', {
+            id: cur.current_woodpecker_id,
+          })
+        : t('features.trainingCenter.classical.retryBatchShort', {
+            id: cur.current_batch_id,
+          })
+    }
     if (cur.current_step_type === 'woodpecker') {
       return t('features.trainingCenter.actions.nextWoodpeckerStep', {
         id: cur.current_woodpecker_id,
@@ -162,326 +135,256 @@ function handleGoToCabinet(): void {
 <template>
   <AppPageShell v-if="report">
     <div class="flex w-full flex-col gap-5 text-text-primary">
-    <!-- Course Completed Diploma Celebration Banner -->
-    <div
-      v-if="completedCourseInSession"
-      class="p-4 rounded-lg bg-success/15 border border-success flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-    >
-      <div class="flex items-center gap-3">
-        <NIcon size="28" class="text-success"><RibbonOutline /></NIcon>
-        <div>
-          <div class="font-display font-bold text-base text-text-primary">
-            {{ t('features.trainingCenter.diploma.bannerCompletedTitle') }}
-          </div>
-          <div class="text-xs text-text-secondary">
-            {{ t('features.trainingCenter.diploma.bannerCompletedSubtitle') }}
-          </div>
-        </div>
-      </div>
-      <NButton
-        type="primary"
-        size="small"
-        @click="router.push(`/kursdiplom/${completedCourseInSession.id}`)"
+      <!-- Classical Course < 50% Failed Threshold Banner (TD-07) -->
+      <div
+        v-if="isClassicalThresholdFailed"
+        class="p-4 rounded-lg bg-danger/10 border border-danger/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
-        <template #icon>
-          <NIcon><RibbonOutline /></NIcon>
-        </template>
-        {{ t('features.trainingCenter.diploma.openDiplomaBtn') }}
-      </NButton>
-    </div>
-
-    <!-- Promotion Celebration Banner -->
-    <div
-      v-if="store.promotionBannerTier"
-      class="p-4 rounded-lg bg-accent/15 border border-accent flex items-center justify-between gap-4"
-    >
-      <div class="flex items-center gap-3">
-        <NIcon size="28" class="text-accent"><TrophyOutline /></NIcon>
-        <div>
-          <div class="font-display font-bold text-base text-text-primary">
-            {{
-              t('features.trainingCenter.promotion.unlockedTitle', {
-                tier: resolveDifficultyLabel(store.promotionBannerTier, t),
-              })
-            }}
-          </div>
-          <div class="text-xs text-text-secondary">
-            {{ t('features.trainingCenter.promotion.unlockedSubtitle') }}
+        <div class="flex items-center gap-3">
+          <NIcon size="28" class="text-danger shrink-0"><AlertCircleOutline /></NIcon>
+          <div>
+            <div class="font-display font-bold text-base text-danger">
+              {{
+                t('features.trainingCenter.classical.reportFailedTitle', {
+                  pct: report.accuracyPercent,
+                })
+              }}
+            </div>
+            <div class="text-xs text-text-secondary">
+              {{ t('features.trainingCenter.classical.reportFailedSubtitle') }}
+            </div>
           </div>
         </div>
-      </div>
-      <NButton size="small" secondary @click="store.dismissPromotionBanner()">
-        {{ t('shared.buttons.close') }}
-      </NButton>
-    </div>
-
-    <!-- Header Card -->
-    <div class="p-5 @3xl:p-6 rounded-lg bg-surface border border-border flex flex-col @4xl:flex-row @4xl:items-center @4xl:justify-between gap-4">
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40">
-            {{
-              store.isWoodpeckerBatch
-                ? t('features.trainingCenter.woodpecker.batchBadge')
-                : report.mode === 'course'
-                  ? t('features.trainingCenter.modes.courseBadge')
-                  : t('features.trainingCenter.modes.warmupBadge')
-            }}
-          </span>
-          <span class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border">
-            {{ resolveDifficultyLabel(report.difficulty, t) }}
-          </span>
-        </div>
-        <h1 class="font-display font-bold text-2xl text-text-primary mt-1">
-          {{ resolveDisciplineLabel(report.discipline, t) }} —
-          {{
-            report.mode === 'warmup'
-              ? t('features.trainingCenter.report.warmupCompletedHeading')
-              : t('features.trainingCenter.report.completedHeading')
-          }}
-        </h1>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <NButton secondary @click="handleGoToCabinet">
-          {{ t('features.trainingCenter.actions.openCabinet') }}
-        </NButton>
-        <NButton secondary @click="handleReturnToHub">
-          <template #icon>
-            <NIcon><ArrowBackOutline /></NIcon>
-          </template>
-          {{ t('features.trainingCenter.actions.backToHub') }}
-        </NButton>
         <NButton
-          v-if="canLaunchNextCourseStep"
-          :type="isNextClassicalStepWoodpecker ? 'warning' : 'primary'"
+          type="error"
+          size="small"
+          class="min-w-0 shrink-0"
           :loading="store.isStartingSession"
           @click="handleLaunchNextCourseBatch"
         >
           <template #icon>
-            <NIcon>
-              <FlameOutline v-if="isNextClassicalStepWoodpecker" />
-              <PlayOutline v-else />
-            </NIcon>
+            <NIcon><RefreshOutline /></NIcon>
           </template>
-          {{ nextCourseStepLabel }}
+          <span class="truncate">{{ nextCourseStepLabel }}</span>
         </NButton>
       </div>
-    </div>
 
-    <!-- KPI Bento Row -->
-    <div class="grid grid-cols-2 @3xl:grid-cols-5 gap-3">
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
-        <span class="text-xs text-text-secondary uppercase">
-          {{ t('features.trainingCenter.report.solvedTotal') }}
-        </span>
-        <span class="font-condensed font-bold text-2xl text-text-primary">
-          {{ report.solvedCount }} / {{ report.totalCount }}
-        </span>
-      </div>
-
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
-        <span class="text-xs text-text-secondary uppercase">
-          {{ t('features.trainingCenter.report.accuracy') }}
-        </span>
-        <span class="font-condensed font-bold text-2xl text-text-primary">
-          {{ report.accuracyPercent }}%
-        </span>
-      </div>
-
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
-        <span class="text-xs text-text-secondary uppercase">
-          {{ t('features.trainingCenter.report.netDelta') }}
-        </span>
-        <span
-          class="font-condensed font-bold text-2xl"
-          :class="report.netGlobalRatingDelta >= 0 ? 'text-success' : 'text-danger'"
-        >
-          {{ formatDelta(report.netGlobalRatingDelta) }}
-        </span>
-      </div>
-
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
-        <span class="text-xs text-text-secondary uppercase">
-          {{ t('features.trainingCenter.report.avgTime') }}
-        </span>
-        <span class="font-condensed font-bold text-2xl text-warning">
-          {{ store.formatDurationMs(report.avgTimeMs) }}
-        </span>
-      </div>
-
-      <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1 col-span-2 @3xl:col-span-1">
-        <span class="text-xs text-text-secondary uppercase">
-          {{ t('features.trainingCenter.woodpecker.title') }}
-        </span>
-        <div class="flex items-center gap-3 font-condensed font-bold text-lg">
-          <span class="text-accent" :title="t('features.trainingCenter.woodpecker.graduated')">
-            3/3: {{ report.woodpeckerGraduatedCount }}
-          </span>
-          <span class="text-text-secondary">·</span>
-          <span class="text-warning" :title="t('features.trainingCenter.woodpecker.queued24h')">
-            +24h: {{ report.woodpeckerQueuedCount }}
-          </span>
+      <!-- Course Completed Diploma Celebration Banner -->
+      <div
+        v-if="completedCourseInSession"
+        class="p-4 rounded-lg bg-success/15 border border-success flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
+        <div class="flex items-center gap-3">
+          <NIcon size="28" class="text-success"><RibbonOutline /></NIcon>
+          <div>
+            <div class="font-display font-bold text-base text-text-primary">
+              {{ t('features.trainingCenter.diploma.bannerCompletedTitle') }}
+            </div>
+            <div class="text-xs text-text-secondary">
+              {{ t('features.trainingCenter.diploma.bannerCompletedSubtitle') }}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Active Course Progress Bar (if in Course Mode) -->
-    <div
-      v-if="activeCourse"
-      class="p-4 rounded-md bg-surface border border-border flex flex-col gap-2"
-    >
-      <div class="flex items-center justify-between text-xs">
-        <span class="font-display font-bold uppercase tracking-wider text-text-secondary">
-          {{
-            t('features.trainingCenter.course.activeProgressTitle', {
-              days: activeCourse.duration_days,
-            })
-          }}
-        </span>
-        <span class="font-condensed font-bold text-sm text-brand">
-          {{ activeCourse.solved_puzzles }} / {{ activeCourse.target_puzzles }} ({{
-            courseProgressPercent
-          }}%) · {{ formatRemainingDuration(activeCourse.remaining_seconds, t) }}
-        </span>
-      </div>
-      <div class="w-full h-2 rounded-sm bg-elevated overflow-hidden border border-border">
-        <div
-          class="h-full bg-brand transition-all duration-300"
-          :style="{ width: `${courseProgressPercent}%` }"
-        />
-      </div>
-    </div>
-
-    <!-- Detailed Session Puzzle Log with 1-Click Board Analysis -->
-    <div class="rounded-lg bg-surface border border-border overflow-hidden">
-      <div class="px-4 py-3 bg-elevated border-b border-border flex items-center justify-between">
-        <h2 class="font-display font-bold text-sm uppercase tracking-wider text-text-primary">
-          {{ t('features.trainingCenter.report.puzzleBreakdownTitle') }}
-        </h2>
-        <span class="text-xs text-text-secondary">
-          {{ t('features.trainingCenter.report.clickToAnalyzeHint') }}
-        </span>
-      </div>
-
-      <div class="divide-y divide-border">
-        <div
-          v-for="item in visibleReportItems"
-          :key="item.index"
-          class="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-elevated/60 transition-colors"
+        <NButton
+          type="primary"
+          size="small"
+          @click="router.push(`/kursdiplom/${completedCourseInSession.id}`)"
         >
-          <div class="flex items-center gap-3 min-w-0">
-            <span class="font-condensed text-xs text-text-secondary w-6">
-              #{{ item.index + 1 }}
-            </span>
+          <template #icon>
+            <NIcon><RibbonOutline /></NIcon>
+          </template>
+          {{ t('features.trainingCenter.diploma.openDiplomaBtn') }}
+        </NButton>
+      </div>
 
-            <NIcon
-              size="18"
-              :class="
-                item.status === 'solved'
-                  ? 'text-success'
-                  : item.status === 'failed'
-                    ? 'text-danger'
-                    : 'text-text-disabled'
-              "
-            >
-              <CheckmarkCircleOutline v-if="item.status === 'solved'" />
-              <CloseCircleOutline v-else-if="item.status === 'failed'" />
-              <LockClosedOutline v-else />
-            </NIcon>
-
-            <span class="font-medium text-sm text-text-primary truncate">
-              {{ itemCategory(item) }}
-            </span>
-
-            <span
-              v-if="item.course_puzzle?.twin_role"
-              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40"
-            >
-              {{ resolveTwinBadgeLabel(item.course_puzzle.twin_role) }}
-            </span>
-
-            <span
-              v-if="
-                item.course_puzzle?.objective === 'hold_draw' ||
-                item.endgame?.objective === 'hold_draw'
-              "
-              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40"
-            >
-              {{ t('features.trainingCenter.badges.holdDrawFide') }}
-            </span>
-
-            <span
-              v-if="item.status === 'solved' && getItemAttemptsUsed(item) > 1"
-              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-warning/15 text-warning border border-warning/40"
-              :title="
-                t('features.trainingCenter.play.solvedWithRetriesNote', {
-                  attempt: getItemAttemptsUsed(item),
+      <!-- Promotion Celebration Banner -->
+      <div
+        v-if="store.promotionBannerTier"
+        class="p-4 rounded-lg bg-accent/15 border border-accent flex items-center justify-between gap-4"
+      >
+        <div class="flex items-center gap-3">
+          <NIcon size="28" class="text-accent"><TrophyOutline /></NIcon>
+          <div>
+            <div class="font-display font-bold text-base text-text-primary">
+              {{
+                t('features.trainingCenter.promotion.unlockedTitle', {
+                  tier: resolveDifficultyLabel(store.promotionBannerTier, t),
                 })
-              "
-            >
-              #{{ getItemAttemptsUsed(item) }}
-            </span>
+              }}
+            </div>
+            <div class="text-xs text-text-secondary">
+              {{ t('features.trainingCenter.promotion.unlockedSubtitle') }}
+            </div>
+          </div>
+        </div>
+        <NButton size="small" secondary @click="store.dismissPromotionBanner()">
+          {{ t('shared.buttons.close') }}
+        </NButton>
+      </div>
 
+      <!-- Header Card -->
+      <div
+        class="p-5 @3xl:p-6 rounded-lg bg-surface border border-border flex flex-col @4xl:flex-row @4xl:items-center @4xl:justify-between gap-4"
+      >
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
             <span
-              v-if="item.is_woodpecker"
-              class="px-2 py-0.5 rounded-sm text-[10px] font-condensed font-bold uppercase bg-accent/15 text-accent border border-accent/40"
+              class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-brand/15 text-brand border border-brand/40"
             >
-              WP {{ item.woodpecker_streak }}/3
+              {{
+                store.isWoodpeckerBatch
+                  ? t('features.trainingCenter.woodpecker.batchBadge')
+                  : report.mode === 'course'
+                    ? t('features.trainingCenter.modes.courseBadge')
+                    : t('features.trainingCenter.modes.warmupBadge')
+              }}
+            </span>
+            <span
+              class="px-2.5 py-0.5 rounded-sm text-xs font-condensed font-bold uppercase bg-elevated text-text-secondary border border-border"
+            >
+              {{ resolveDifficultyLabel(report.difficulty, t) }}
             </span>
           </div>
+          <h1 class="font-display font-bold text-2xl text-text-primary mt-1">
+            {{ resolveDisciplineLabel(report.discipline, t) }} —
+            {{
+              report.mode === 'warmup'
+                ? t('features.trainingCenter.report.warmupCompletedHeading')
+                : t('features.trainingCenter.report.completedHeading')
+            }}
+          </h1>
+        </div>
 
-          <div class="flex items-center gap-3 shrink-0">
-            <span class="font-condensed text-xs text-text-secondary">
-              {{ itemMetaLabel(item) }}
+        <div class="flex flex-wrap items-center gap-2">
+          <NButton secondary @click="handleGoToCabinet">
+            {{ t('features.trainingCenter.actions.openCabinet') }}
+          </NButton>
+          <NButton secondary @click="handleReturnToHub">
+            <template #icon>
+              <NIcon><ArrowBackOutline /></NIcon>
+            </template>
+            {{ t('features.trainingCenter.actions.backToHub') }}
+          </NButton>
+          <NButton
+            v-if="canLaunchNextCourseStep"
+            :type="
+              isClassicalThresholdFailed
+                ? 'error'
+                : isNextClassicalStepWoodpecker
+                  ? 'warning'
+                  : 'primary'
+            "
+            :loading="store.isStartingSession"
+            @click="handleLaunchNextCourseBatch"
+          >
+            <template #icon>
+              <NIcon>
+                <RefreshOutline v-if="isClassicalThresholdFailed" />
+                <FlameOutline v-else-if="isNextClassicalStepWoodpecker" />
+                <PlayOutline v-else />
+              </NIcon>
+            </template>
+            {{ nextCourseStepLabel }}
+          </NButton>
+        </div>
+      </div>
+
+      <!-- KPI Bento Row -->
+      <div class="grid grid-cols-2 @3xl:grid-cols-5 gap-3">
+        <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
+          <span class="text-xs text-text-secondary uppercase">
+            {{ t('features.trainingCenter.report.solvedTotal') }}
+          </span>
+          <span class="font-condensed font-bold text-2xl text-text-primary">
+            {{ report.solvedCount }} / {{ report.totalCount }}
+          </span>
+        </div>
+
+        <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
+          <span class="text-xs text-text-secondary uppercase">
+            {{ t('features.trainingCenter.report.accuracy') }}
+          </span>
+          <span
+            class="font-condensed font-bold text-2xl"
+            :class="isClassicalThresholdFailed ? 'text-danger' : 'text-text-primary'"
+          >
+            {{ report.accuracyPercent }}%
+          </span>
+        </div>
+
+        <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
+          <span class="text-xs text-text-secondary uppercase">
+            {{ t('features.trainingCenter.report.netDelta') }}
+          </span>
+          <span
+            class="font-condensed font-bold text-2xl"
+            :class="report.netGlobalRatingDelta >= 0 ? 'text-success' : 'text-danger'"
+          >
+            {{ formatDelta(report.netGlobalRatingDelta) }}
+          </span>
+        </div>
+
+        <div class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1">
+          <span class="text-xs text-text-secondary uppercase">
+            {{ t('features.trainingCenter.report.avgTime') }}
+          </span>
+          <span class="font-condensed font-bold text-2xl text-warning">
+            {{ store.formatDurationMs(report.avgTimeMs) }}
+          </span>
+        </div>
+
+        <div
+          class="p-4 rounded-md bg-surface border border-border flex flex-col gap-1 col-span-2 @3xl:col-span-1"
+        >
+          <span class="text-xs text-text-secondary uppercase">
+            {{ t('features.trainingCenter.woodpecker.title') }}
+          </span>
+          <div class="flex items-center gap-3 font-condensed font-bold text-lg">
+            <span class="text-accent" :title="t('features.trainingCenter.woodpecker.graduated')">
+              3/3: {{ report.woodpeckerGraduatedCount }}
             </span>
-
-            <span
-              v-if="item.rating_delta !== undefined"
-              class="font-condensed font-bold text-xs min-w-12 text-right"
-              :class="item.rating_delta >= 0 ? 'text-success' : 'text-danger'"
-            >
-              {{ formatDelta(item.rating_delta) }}
+            <span class="text-text-secondary">·</span>
+            <span class="text-warning" :title="t('features.trainingCenter.woodpecker.queued24h')">
+              +24h: {{ report.woodpeckerQueuedCount }}
             </span>
-
-            <span class="font-condensed text-xs text-warning min-w-14 text-right">
-              {{ store.formatDurationMs(item.time_ms) }}
-            </span>
-
-            <NButton
-              v-if="canPracticeReplayItem(item)"
-              size="tiny"
-              secondary
-              @click="store.startPracticeReplay(item.puzzle_id)"
-            >
-              <template #icon>
-                <NIcon><RefreshOutline /></NIcon>
-              </template>
-              {{ t('features.trainingCenter.actions.practiceReplay') }}
-            </NButton>
-
-            <NButton
-              v-if="canAnalyzeSessionItem(item)"
-              size="tiny"
-              secondary
-              @click="store.enterPuzzleAnalysis(item.puzzle_id, true)"
-            >
-              <template #icon>
-                <NIcon><EyeOutline /></NIcon>
-              </template>
-              {{ t('features.trainingCenter.actions.analyze') }}
-            </NButton>
           </div>
         </div>
       </div>
 
-      <div v-if="hasMoreReportItems" class="p-3 bg-elevated border-t border-border text-center">
-        <NButton size="small" secondary @click="reportRenderLimit += 200">
-          Показать ещё ({{ visibleReportItems.length }} / {{ report.items.length }})
-        </NButton>
+      <!-- Active Course Progress Bar (if in Sprint Course Mode) -->
+      <div
+        v-if="activeCourse"
+        class="p-4 rounded-md bg-surface border border-border flex flex-col gap-2"
+      >
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-display font-bold uppercase tracking-wider text-text-secondary">
+            {{
+              t('features.trainingCenter.course.activeProgressTitle', {
+                days: activeCourse.duration_days,
+              })
+            }}
+          </span>
+          <span class="font-condensed font-bold text-sm text-brand">
+            {{ activeCourse.solved_puzzles }} / {{ activeCourse.target_puzzles }} ({{
+              courseProgressPercent
+            }}%) · {{ formatRemainingDuration(activeCourse.remaining_seconds, t) }}
+          </span>
+        </div>
+        <div class="w-full h-2 rounded-sm bg-elevated overflow-hidden border border-border">
+          <div
+            class="h-full bg-brand transition-all duration-300"
+            :style="{ width: `${courseProgressPercent}%` }"
+          />
+        </div>
       </div>
-    </div>
+
+      <!-- Detailed Session Puzzle Log with 1-Click Board Analysis -->
+      <TrainingSessionReportBreakdown
+        :items="report.items"
+        :format-duration-ms="store.formatDurationMs"
+        @practice-replay="(pid) => store.startPracticeReplay(pid)"
+        @analyze-puzzle="(pid) => store.enterPuzzleAnalysis(pid, true)"
+      />
     </div>
   </AppPageShell>
 </template>
-

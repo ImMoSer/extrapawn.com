@@ -1219,6 +1219,27 @@
         "puzzleBreakdownTitle": "Aufgabenübersicht der Sitzung",
         "clickToAnalyzeHint": "Klicken Sie auf eine Aufgabe zur Stockfish-Analyse auf dem Brett"
       },
+      "classical": {
+        "rulesSummary": "Freie Kurswahl · 2 Batches → Woodpecker-Tag (>= 50% nötig) · Reset nach 7 inaktiven Tagen ohne bestandenen Batch.",
+        "ttlBadge": "Reset in {remaining}",
+        "ttlTooltip": "Ein unvollendeter Kurs wird nach 7 Tagen ohne mindestens einen bestandenen Batch (>= 50%) zurückgesetzt.",
+        "ttlResetBanner": "Der Fortschritt dieses Kurses wurde nach 7 Tagen Inaktivität ohne bestandenen Batch zurückgesetzt. Starte den Kurs einfach neu ab Batch #1.",
+        "batchFailedBadge": "Nicht best. · {pct}%",
+        "batchFailedHint": "Mindestens 50% gelöst erforderlich, um den nächsten Schritt freizuschalten. Bitte wiederhole den Batch.",
+        "reportFailedTitle": "Stufe nicht bestanden ({pct}% < 50%)",
+        "reportFailedSubtitle": "Der nächste Schritt bleibt gesperrt. Wiederhole diesen Abschnitt und erreiche mindestens 50%.",
+        "overallProgress": "Gesamtfortschritt ({count} Batches)",
+        "resetBtn": "Zurücksetzen",
+        "resetConfirm": "Batch-Fortschritt und Woodpecker-Warteschlange dieses Kurses zurücksetzen und ab Batch #1 neu starten?",
+        "startShort": "Starten",
+        "openShort": "Öffnen",
+        "lockedShort": "Gesperrt",
+        "startBatchShort": "Batch #{id}",
+        "retryBatchShort": "Wiederh. #{id}",
+        "startWoodpeckerShort": "Woodpecker #{id}",
+        "retryWoodpeckerShort": "Wiederh. #{id}",
+        "clearErrorsShort": "Löschen ({count})"
+      },
       "taxonomy": {
         "master_game": {
           "true": "Partien von Titelträgern",

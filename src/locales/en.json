@@ -1219,6 +1219,27 @@
         "puzzleBreakdownTitle": "Session Puzzle Breakdown",
         "clickToAnalyzeHint": "Click any puzzle row to analyze with Stockfish on the board"
       },
+      "classical": {
+        "rulesSummary": "Free course choice · 2 batches → Woodpecker Day (>= 50% pass) · resets after 7 idle days without a passed batch.",
+        "ttlBadge": "Resets in {remaining}",
+        "ttlTooltip": "An unfinished course resets automatically after 7 days without passing at least one batch (>= 50%).",
+        "ttlResetBanner": "Progress for this course was automatically reset after 7 inactive days without a completed batch. Please restart cleanly from Batch #1.",
+        "batchFailedBadge": "Failed · {pct}%",
+        "batchFailedHint": "At least 50% solved is required to unlock the next step. Please retry this batch.",
+        "reportFailedTitle": "Step Not Passed ({pct}% < 50%)",
+        "reportFailedSubtitle": "The next step stays locked. Retry this batch and reach at least 50% to continue.",
+        "overallProgress": "Overall Course Progress ({count} batches)",
+        "resetBtn": "Reset Course",
+        "resetConfirm": "Reset batch progress and Woodpecker queue for this course to start fresh from Batch #1?",
+        "startShort": "Start",
+        "openShort": "Open",
+        "lockedShort": "Locked",
+        "startBatchShort": "Batch #{id}",
+        "retryBatchShort": "Retry #{id}",
+        "startWoodpeckerShort": "Woodpecker #{id}",
+        "retryWoodpeckerShort": "Retry #{id}",
+        "clearErrorsShort": "Clear ({count})"
+      },
       "taxonomy": {
         "master_game": {
           "true": "Titled Master Games",

@@ -713,7 +713,9 @@ export interface CourseBatchStatusDTO {
   total_puzzles: number
   solved_count: number
   failed_count: number
+  pass_percent?: number
   is_completed: boolean
+  is_failed_attempt?: boolean
   is_unlocked: boolean
   is_current: boolean
 }
@@ -726,7 +728,11 @@ export interface WoodpeckerCheckpointDTO {
   title?: string
   batch_ids?: number[]
   due_count: number
+  solved_count?: number
+  failed_count?: number
+  pass_percent?: number
   is_completed: boolean
+  is_failed_attempt?: boolean
   is_unlocked: boolean
   is_active: boolean
 }
@@ -745,6 +751,12 @@ export interface TacticsCourseCurriculumDTO {
   course_slug?: string
   course_id?: number
   active_course?: CourseDTO
+  course_started_at?: string
+  last_completed_batch_at?: string
+  course_completed_at?: string
+  ttl_expires_at?: string
+  ttl_remaining_seconds?: number
+  was_reset_by_ttl?: boolean
   total_puzzles: number
   solved_total: number
   failed_total: number
