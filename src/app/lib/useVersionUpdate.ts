@@ -1,4 +1,5 @@
 import { STOCKFISH_CACHE_PREFIX } from '@/shared/lib/engine/wasmCache'
+import logger from '@/shared/lib/logger'
 import { useDialog } from 'naive-ui'
 import { onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -35,7 +36,7 @@ export function useVersionUpdate() {
         if (checkInterval) clearInterval(checkInterval)
       }
     } catch (e) {
-      console.warn('Version check failed', e)
+      logger.warn('Version check failed', e)
     }
   }
 
