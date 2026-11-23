@@ -3,6 +3,7 @@ import {
   FlameOutline,
   FlashOutline,
   PersonOutline,
+  SchoolOutline,
 } from '@vicons/ionicons5'
 import type { Component } from 'vue'
 
@@ -14,7 +15,7 @@ export interface GameModeConfig {
   color: string
 }
 
-export type GameModeKey = 'training_center' | 'warmup' | 'user_cabinet' | 'courses'
+export type GameModeKey = 'training_center' | 'warmup' | 'user_cabinet' | 'courses' | 'study'
 
 export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
   training_center: {
@@ -44,5 +45,12 @@ export const GAME_MODES: Record<GameModeKey, GameModeConfig> = {
     icon: BookOutline,
     labelKey: 'shared.nav.courses',
     color: 'var(--color-warning)',
+  },
+  study: {
+    key: 'study',
+    path: '/study',
+    icon: SchoolOutline,
+    labelKey: 'shared.nav.aiStudy',
+    color: 'var(--color-brand)',
   },
 }

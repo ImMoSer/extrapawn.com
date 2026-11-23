@@ -149,6 +149,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/study',
+      name: 'study-manager',
+      component: () => import('@/pages/coach-studio').then((m) => m.StudyManagerPage),
+      meta: { requiresAuth: true, requiresOwner: true },
+    },
+    {
+      path: '/study/:studyId',
+      name: 'study-workspace',
+      component: () => import('@/pages/coach-studio').then((m) => m.StudyWorkspacePage),
+      meta: { requiresAuth: true, requiresOwner: true },
+    },
+    {
       path: '/club-player',
       name: 'club-player',
       component: () => import('@/pages/club-player').then((m) => m.ClubPlayerPage),
@@ -213,6 +225,10 @@ router.beforeEach(async (to, from) => {
       return { name: 'about' }
     }
     return false
+  }
+
+  if (to.meta.requiresOwner && !authStore.isOwner) {
+    return { name: 'welcome' }
   }
 
   if (from.meta.isGame && to.meta.game !== from.meta.game) {

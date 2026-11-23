@@ -157,6 +157,50 @@ onMounted(async () => {
             </div>
           </n-card>
         </router-link>
+
+        <!-- Owner-only AI Study tile -->
+        <router-link
+          v-if="authStore.isOwner"
+          :to="GAME_MODES.study.path"
+          custom
+          v-slot="{ navigate }"
+        >
+          <n-card
+            hoverable
+            class="group relative col-span-2 flex h-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-brand/40 bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:bg-elevated"
+            :content-style="{
+              padding: '0',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }"
+            :bordered="false"
+            @click="navigate"
+          >
+            <div
+              class="relative z-10 flex w-full items-center justify-center gap-3 px-4 py-4 text-center @3xl:py-5"
+            >
+              <n-icon
+                :color="GAME_MODES.study.color"
+                class="text-[26px] transition-transform duration-200 group-hover:scale-105 @3xl:text-[30px]"
+              >
+                <component :is="GAME_MODES.study.icon" />
+              </n-icon>
+              <n-text
+                class="font-display text-[0.85rem] font-bold tracking-[1.2px] text-text-primary uppercase @3xl:text-[1.05rem] @3xl:tracking-[1.5px]"
+              >
+                {{ t(GAME_MODES.study.labelKey) }}
+              </n-text>
+              <span
+                class="rounded-sm border border-brand/50 bg-elevated px-1.5 py-0.5 font-condensed text-[0.68rem] font-bold tracking-wider text-brand uppercase"
+              >
+                AI
+              </span>
+            </div>
+          </n-card>
+        </router-link>
       </div>
 
       <!-- Language Switcher -->

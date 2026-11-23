@@ -74,6 +74,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/coach-engine/, '')
         },
+        '/api/ai-coach': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+        },
         '/api/training': {
           target: 'http://127.0.0.1:3000',
           changeOrigin: true,
