@@ -24,6 +24,8 @@ export const BestMoveResponseSchema = z.object({
   dtm: z.number().int().nullable().optional(),
   timeRealMs: z.number().optional(),
   playerTablebase: PlayerTablebaseSchema.nullable().optional(),
+  arbiterCp: z.number().int().nullable().optional(),
+  arbiterMate: z.number().int().nullable().optional(),
 })
 
 export interface BestMoveResult {
@@ -31,6 +33,8 @@ export interface BestMoveResult {
   mode?: string
   source?: string
   playerTablebase: PlayerTablebaseDTO | null
+  arbiterCp?: number | null
+  arbiterMate?: number | null
 }
 
 class EnginePlayServiceController {

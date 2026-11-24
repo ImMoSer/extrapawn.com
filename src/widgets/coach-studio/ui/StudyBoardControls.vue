@@ -4,6 +4,7 @@ import {
   ChevronBackOutline,
   ChevronForwardOutline,
   CloseCircleOutline,
+  EyeOutline,
   PauseOutline,
   PlayBackOutline,
   PlayForwardOutline,
@@ -20,6 +21,11 @@ const studyStore = useCoachStudyStore()
 const hasMoves = computed(() => studyStore.rootNode.children.length > 0)
 const canGoBack = computed(() => Boolean(studyStore.currentNode.parent))
 const canGoForward = computed(() => studyStore.currentNode.children.length > 0)
+const hasNodeShapesHidden = computed(
+  () =>
+    studyStore.hideNodeShapes &&
+    Boolean(studyStore.currentNode.shapes && studyStore.currentNode.shapes.length > 0),
+)
 </script>
 
 <template>
@@ -95,11 +101,19 @@ const canGoForward = computed(() => studyStore.currentNode.children.length > 0)
 
     <button
       type="button"
-      class="flex h-8 w-9 cursor-pointer items-center justify-center rounded-md border border-transparent bg-transparent text-text-secondary transition-colors hover:border-border hover:bg-elevated hover:text-text-primary"
-      :title="t('pages.study.clearArrows')"
-      @click="studyStore.clearTransientShapes()"
+      class="flex h-8 w-9 cursor-pointer items-center justify-center rounded-md border transition-colors"
+      :class="
+        hasNodeShapesHidden
+          ? 'border-brand/50 bg-elevated text-brand hover:bg-overlay'
+          : 'border-transparent bg-transparent text-text-secondary hover:border-border hover:bg-elevated hover:text-text-primary'
+      "
+      :title="hasNodeShapesHidden ? t('pages.study.restoreArrows') : t('pages.study.clearArrows')"
+      @click="studyStore.clearBoardShapes()"
     >
-      <NIcon :size="17"><CloseCircleOutline /></NIcon>
+      <NIcon :size="17">
+        <EyeOutline v-if="hasNodeShapesHidden" />
+        <CloseCircleOutline v-else />
+      </NIcon>
     </button>
   </div>
 </template>

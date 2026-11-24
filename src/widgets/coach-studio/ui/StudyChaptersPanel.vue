@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useCoachStudyStore } from '@/features/ai-coach'
+import { formatDisplayChapterTitle, useCoachStudyStore } from '@/features/ai-coach'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { AddOutline, ArrowBackOutline, TrashOutline } from '@vicons/ionicons5'
+import { AddOutline, ArrowBackOutline, FlashOutline, TrashOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -28,10 +28,11 @@ const handleNewChapter = () => {
   emit('request-new-chapter')
 }
 
-const handleDeleteChapter = async (chapterId: string, title: string) => {
+const handleDeleteChapter = async (chapterId: string, rawTitle: string) => {
+  const cleanTitle = formatDisplayChapterTitle(rawTitle)
   const confirmed = await uiStore.showConfirmation(
     t('pages.study.deleteChapterTitle'),
-    t('pages.study.deleteChapterMessage', { title }),
+    t('pages.study.deleteChapterMessage', { title: cleanTitle }),
     { confirmText: t('shared.buttons.delete'), showCancel: true },
   )
   if (confirmed === 'confirm') {
@@ -77,13 +78,25 @@ const handleDeleteChapter = async (chapterId: string, title: string) => {
         >
           <button
             type="button"
-            class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 border-none bg-transparent p-0 text-left text-inherit"
+            class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent p-0 text-left text-inherit"
             @click="handleSelectChapter(ch.id)"
           >
             <span class="shrink-0 font-condensed text-[0.75rem] text-text-secondary">
               {{ ch.chapter_order }}
             </span>
-            <span class="truncate">{{ ch.title }}</span>
+            <NIcon
+              v-if="ch.chapter_kind === 'drill'"
+              :size="12"
+              class="shrink-0 text-warning"
+            >
+              <FlashOutline />
+            </NIcon>
+            <span
+              v-else-if="ch.chapter_kind === 'live_game'"
+              class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+              aria-hidden="true"
+            />
+            <span class="truncate">{{ formatDisplayChapterTitle(ch.title) }}</span>
           </button>
 
           <button

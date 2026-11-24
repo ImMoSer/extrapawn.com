@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref } from 'vue'
+import logger from '@/shared/lib/logger'
 import { STANDARD_START_FEN } from '@/shared/lib/pgn/pgnTypes'
 import {
   createStudy,
@@ -9,20 +10,18 @@ import {
   listStudies,
   renameStudy,
   setActiveStudyChapter,
-  streamCoachTurn,
   updateStudyChapterCursor,
 } from '../api/coachStudy.api'
-import type {
-  ChatStreamPayload,
-  SseDoneEvent,
-  SseMetaEvent,
-  StudyBoardActionEvent,
-  StudyChapterRecord,
-  StudyLanguage,
-  StudySessionRecord,
-  StudyTurnRecord,
+import {
+  estimateTurnCostUsd,
+  type StudyChapterRecord,
+  type StudySessionRecord,
+  type StudyTelemetryTotals,
+  type StudyTurnRecord,
+  type SuggestedChapterCard,
 } from './coachStudy.types'
 import { useStudyBoardEngine } from './useStudyBoardEngine'
+import { useStudyStreamHandler } from './useStudyStreamHandler'
 
 export const useCoachStudyStore = defineStore('coachStudy', () => {
   // Studies list (Manager page)
@@ -35,29 +34,82 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
   const activeChapterId = ref<string | null>(null)
   const turns = ref<StudyTurnRecord[]>([])
   const isLoadingWorkspace = ref(false)
-
-  // Streaming & Coach state
-  const isStreaming = ref(false)
-  const streamingText = ref('')
-  const streamError = ref<string | null>(null)
-  const latestMeta = ref<SseMetaEvent | null>(null)
-  const latestTelemetry = ref<SseDoneEvent | null>(null)
   const pendingNewChapter = ref(false)
-  const abortCtrl = shallowRef<AbortController | null>(null)
+  const suggestedChapter = ref<SuggestedChapterCard | null>(null)
 
   const activeChapter = computed<StudyChapterRecord | null>(() => {
     if (!activeChapterId.value) return null
     return chapters.value.find((c) => c.id === activeChapterId.value) ?? null
   })
 
+  /**
+   * 1:1 Chapter <-> Chat Isolation: displays ONLY turns belonging to the active chapter
+   * (or study-lobby turns when the study has no chapters yet).
+   */
+  const visibleTurns = computed<StudyTurnRecord[]>(() => {
+    if (activeChapterId.value) {
+      return turns.value.filter((t) => t.chapter_id === activeChapterId.value)
+    }
+    return turns.value.filter((t) => t.chapter_id === null)
+  })
+
+  const studyTelemetryTotals = computed<StudyTelemetryTotals>(() => {
+    let assistantTurns = 0
+    let inputTokens = 0
+    let cachedTokens = 0
+    let outputTokens = 0
+    let totalCostUsd = 0
+    for (const t of turns.value) {
+      if (t.role !== 'assistant') continue
+      assistantTurns += 1
+      inputTokens += t.input_tokens
+      cachedTokens += t.cached_tokens
+      outputTokens += t.output_tokens
+      totalCostUsd +=
+        t.cost_usd !== undefined
+          ? t.cost_usd
+          : estimateTurnCostUsd(t.model_id, t.input_tokens, t.cached_tokens, t.output_tokens)
+    }
+    return { assistantTurns, inputTokens, cachedTokens, outputTokens, totalCostUsd }
+  })
+
+  function upsertChapter(ch: StudyChapterRecord): void {
+    const exists = chapters.value.some((item) => item.id === ch.id)
+    if (exists) {
+      chapters.value = chapters.value.map((item) => (item.id === ch.id ? ch : item))
+    } else {
+      chapters.value = [...chapters.value, ch].sort((a, b) => a.chapter_order - b.chapter_order)
+    }
+  }
+
+  let boardRef: ReturnType<typeof useStudyBoardEngine> | null = null
+
+  const stream = useStudyStreamHandler({
+    activeStudy,
+    chapters,
+    activeChapterId,
+    turns,
+    pendingNewChapter,
+    suggestedChapter,
+    upsertChapter,
+    getCurrentFen: () => boardRef?.currentFen.value ?? STANDARD_START_FEN,
+    getActiveUciPath: () => boardRef?.activeUciPath.value ?? [],
+    getPlayMode: () => boardRef?.playMode.value ?? 'study',
+    stopAutoPlay: () => boardRef?.stopAutoPlay(),
+    loadChapterIntoTree: (ch, preserve, autoBot) =>
+      boardRef?.loadChapterIntoTree(ch, preserve, autoBot),
+    setPendingTakebackPromote: (val) => boardRef?.setPendingTakebackPromote(val),
+    applyPlayModeSettings: (opts) => boardRef?.applyPlayModeSettings(opts),
+  })
+
   async function persistActiveChapterCursor(includePgn: boolean): Promise<void> {
-    if (!activeStudy.value || !activeChapter.value) return
+    if (!activeStudy.value || !activeChapter.value || !boardRef) return
     const payload: { current_path: string; current_fen: string; annotated_pgn?: string } = {
-      current_path: board.getCurrentPath(),
-      current_fen: board.currentFen.value,
+      current_path: boardRef.getCurrentPath(),
+      current_fen: boardRef.currentFen.value,
     }
     if (includePgn) {
-      payload.annotated_pgn = board.serializeCurrentChapterPgn()
+      payload.annotated_pgn = boardRef.serializeCurrentChapterPgn()
     }
     try {
       const updated = await updateStudyChapterCursor(
@@ -65,33 +117,65 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
         activeChapter.value.id,
         payload,
       )
-      chapters.value = chapters.value.map((c) => (c.id === updated.id ? updated : c))
-    } catch {
-      // Non-fatal cursor persistence failure; local tree remains responsive
+      upsertChapter(updated)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to persist chapter state'
+      logger.error('[CoachStudyStore] Failed to persist chapter cursor/PGN:', err)
+      stream.streamError.value = msg
     }
   }
 
   const board = useStudyBoardEngine({
     activeChapter,
-    isStreaming,
+    isStreaming: stream.isStreaming,
     onPersistCursor: persistActiveChapterCursor,
-    onObjectiveLost: async (language, tb) => {
-      await sendCoachMessage({
+    onCoachGameMove: async (ev) => {
+      await stream.sendCoachMessage({
         text: '',
-        language,
+        displayUserText: ev.moveSan,
+        language: ev.language,
+        eventKind: 'student_moved',
+        extraPayload: {
+          student_move_uci: ev.moveUci,
+          fen_before: ev.fenBefore,
+          active_uci_path: ev.uciPathBefore,
+          play_mode: 'coach_game',
+          expected_chapter_revision: activeChapter.value?.revision,
+        },
+      })
+    },
+    onSparringWakeCoach: async (ev) => {
+      await stream.sendCoachMessage({
+        text: '',
+        language: ev.language,
         eventKind: 'move_played',
-        extraPayload: { player_tablebase: tb },
+        hideOptimisticUserBubble: true,
+        extraPayload: {
+          fen_before: ev.fenBefore,
+          last_move_uci: ev.lastMoveUci,
+          player_tablebase: ev.playerTablebase,
+          arbiter_cp: ev.arbiterCp,
+          arbiter_mate: ev.arbiterMate,
+          play_mode: 'sparring',
+        },
+      })
+    },
+    onSparringBriefCommentary: async (ev) => {
+      await stream.sendCoachMessage({
+        text: '',
+        language: ev.language,
+        eventKind: 'student_moved',
+        hideOptimisticUserBubble: true,
+        extraPayload: {
+          student_move_uci: ev.moveUci,
+          fen_before: ev.fenBefore,
+          active_uci_path: ev.uciPathBefore,
+          play_mode: 'sparring',
+        },
       })
     },
   })
-
-  function abortStream(): void {
-    if (abortCtrl.value) {
-      abortCtrl.value.abort()
-      abortCtrl.value = null
-    }
-    isStreaming.value = false
-  }
+  boardRef = board
 
   async function fetchStudies(): Promise<void> {
     isLoadingStudies.value = true
@@ -142,7 +226,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
       activeChapterId.value = targetId
       const targetChapter = data.chapters.find((c) => c.id === targetId) ?? null
       if (targetChapter) {
-        board.loadChapterIntoTree(targetChapter)
+        board.loadChapterIntoTree(targetChapter, false, true)
       } else {
         board.resetBoard(data.session.current_fen || STANDARD_START_FEN)
       }
@@ -155,22 +239,33 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     const target = chapters.value.find((c) => c.id === chapterId)
     if (!target || !activeStudy.value) return
 
-    board.isSparringActive.value = false
     pendingNewChapter.value = false
+    suggestedChapter.value = null
+    stream.latestMeta.value = null
+    stream.streamError.value = null
     activeChapterId.value = chapterId
-    board.loadChapterIntoTree(target)
+    board.loadChapterIntoTree(target, false, true)
     await setActiveStudyChapter(activeStudy.value.id, chapterId)
+  }
+
+  function dismissSuggestedChapter(): void {
+    suggestedChapter.value = null
   }
 
   async function removeChapter(chapterId: string): Promise<void> {
     if (!activeStudy.value) return
     await deleteStudyChapter(activeStudy.value.id, chapterId)
     chapters.value = chapters.value.filter((c) => c.id !== chapterId)
+    turns.value = turns.value.filter((t) => t.chapter_id !== chapterId)
+    if (suggestedChapter.value?.chapter.id === chapterId) {
+      suggestedChapter.value = null
+    }
     if (activeChapterId.value === chapterId) {
+      stream.latestMeta.value = null
       const next = chapters.value[0] ?? null
       activeChapterId.value = next?.id ?? null
       if (next) {
-        board.loadChapterIntoTree(next)
+        board.loadChapterIntoTree(next, false, true)
         await setActiveStudyChapter(activeStudy.value.id, next.id)
       } else {
         board.resetBoard(STANDARD_START_FEN)
@@ -186,145 +281,15 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     pendingNewChapter.value = false
   }
 
-  async function sendCoachMessage(opts: {
-    text: string
-    language: StudyLanguage
-    eventKind?: ChatStreamPayload['event_kind']
-    extraPayload?: Partial<ChatStreamPayload>
-  }): Promise<void> {
-    if (!activeStudy.value) return
-    const trimmed = opts.text.trim()
-    const eventKind = opts.eventKind ?? 'chat_message'
-    if (eventKind === 'chat_message' && !trimmed) return
-
-    abortStream()
-    board.stopAutoPlay()
-    streamError.value = null
-    streamingText.value = ''
-    isStreaming.value = true
-
-    const wantNewChapter = pendingNewChapter.value || chapters.value.length === 0
-    pendingNewChapter.value = false
-
-    const optimisticUserTurn: StudyTurnRecord = {
-      id: -Date.now(),
-      session_id: activeStudy.value.id,
-      user_id: activeStudy.value.user_id,
-      chapter_id: activeChapterId.value,
-      role: 'user',
-      content: trimmed || `[${eventKind}]`,
-      board_fen: board.currentFen.value,
-      board_actions: [],
-      model_id: null,
-      input_tokens: 0,
-      cached_tokens: 0,
-      output_tokens: 0,
-      latency_ms: 0,
-      created_at: new Date().toISOString(),
-    }
-    turns.value = [...turns.value, optimisticUserTurn]
-
-    const ctrl = new AbortController()
-    abortCtrl.value = ctrl
-    const collectedActions: StudyBoardActionEvent[] = []
-    let turnChapterId = activeChapterId.value
-
-    const payload: ChatStreamPayload = {
-      session_id: activeStudy.value.id,
-      event_kind: eventKind,
-      user_message: trimmed || undefined,
-      language: opts.language,
-      current_fen: board.currentFen.value,
-      active_chapter_id: activeChapterId.value,
-      active_uci_path: board.activeUciPath.value,
-      request_new_chapter: wantNewChapter,
-      ...opts.extraPayload,
-    }
-
-    try {
-      await streamCoachTurn(
-        payload,
-        {
-          onMeta: (ev) => {
-            latestMeta.value = ev
-          },
-          onChapter: (ev) => {
-            const ch = ev.chapter
-            turnChapterId = ch.id
-            const exists = chapters.value.some((item) => item.id === ch.id)
-            if (exists) {
-              chapters.value = chapters.value.map((item) => (item.id === ch.id ? ch : item))
-            } else {
-              chapters.value = [...chapters.value, ch]
-            }
-            activeChapterId.value = ch.id
-            board.loadChapterIntoTree(ch, ev.event === 'chapter_updated')
-            if (ev.study_title && activeStudy.value) {
-              activeStudy.value = { ...activeStudy.value, title: ev.study_title }
-            }
-          },
-          onBoardAction: (ev) => {
-            collectedActions.push(ev)
-            board.applyTransientBoardAction(ev)
-          },
-          onTextDelta: (ev) => {
-            streamingText.value += ev.delta
-          },
-          onDone: (ev) => {
-            latestTelemetry.value = ev
-            if (activeStudy.value) {
-              turns.value = [
-                ...turns.value,
-                {
-                  id: ev.turn_id,
-                  session_id: activeStudy.value.id,
-                  user_id: activeStudy.value.user_id,
-                  chapter_id: turnChapterId,
-                  role: 'assistant',
-                  content: streamingText.value.trim() || '(Chapter updated)',
-                  board_fen: board.currentFen.value,
-                  board_actions: collectedActions,
-                  model_id: ev.model_id,
-                  input_tokens: ev.input_tokens,
-                  cached_tokens: ev.cached_tokens,
-                  output_tokens: ev.output_tokens,
-                  latency_ms: ev.latency_ms,
-                  created_at: new Date().toISOString(),
-                },
-              ]
-            }
-            streamingText.value = ''
-          },
-          onError: (ev) => {
-            streamError.value = ev.message
-          },
-        },
-        ctrl.signal,
-      )
-    } catch (err: unknown) {
-      if (!(err instanceof DOMException && err.name === 'AbortError')) {
-        streamError.value = err instanceof Error ? err.message : 'Stream failed'
-      }
-    } finally {
-      if (abortCtrl.value === ctrl) {
-        abortCtrl.value = null
-      }
-      isStreaming.value = false
-    }
-  }
-
   function resetWorkspace(): void {
-    abortStream()
+    stream.resetStreamState()
     board.resetBoard(STANDARD_START_FEN)
     activeStudy.value = null
     chapters.value = []
     activeChapterId.value = null
     turns.value = []
-    latestMeta.value = null
-    latestTelemetry.value = null
-    streamError.value = null
-    streamingText.value = ''
     pendingNewChapter.value = false
+    suggestedChapter.value = null
   }
 
   return {
@@ -335,6 +300,8 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     activeChapterId,
     activeChapter,
     turns,
+    visibleTurns,
+    studyTelemetryTotals,
     isLoadingWorkspace,
     orientation: board.orientation,
     rootNode: board.rootNode,
@@ -343,17 +310,24 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     boardState: board.boardState,
     lastMove: board.lastMove,
     drawableShapes: board.drawableShapes,
+    hideNodeShapes: board.hideNodeShapes,
     rootComment: board.rootComment,
     activeUciPath: board.activeUciPath,
     promotionState: board.promotionState,
-    isStreaming,
-    streamingText,
-    streamError,
-    latestMeta,
-    latestTelemetry,
+    isStreaming: stream.isStreaming,
+    streamingText: stream.streamingText,
+    coachStatusLabel: stream.coachStatusLabel,
+    streamError: stream.streamError,
+    latestMeta: stream.latestMeta,
+    latestTelemetry: stream.latestTelemetry,
     pendingNewChapter,
+    suggestedChapter,
     isAutoPlaying: board.isAutoPlaying,
+    playMode: board.playMode,
+    engineProfile: board.engineProfile,
+    commentaryLevel: board.commentaryLevel,
     isSparringActive: board.isSparringActive,
+    isCoachGameActive: board.isCoachGameActive,
     isBotThinking: board.isBotThinking,
     fetchStudies,
     createNewStudy,
@@ -361,21 +335,24 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     removeStudy,
     openStudy,
     selectChapter,
+    dismissSuggestedChapter,
     removeChapter,
     navigateToNode: board.navigateToNode,
+    navigateToPath: board.navigateToPath,
     navigateStep: board.navigateStep,
     toggleAutoPlay: board.toggleAutoPlay,
     stopAutoPlay: board.stopAutoPlay,
     flipOrientation: board.flipOrientation,
-    clearTransientShapes: board.clearTransientShapes,
+    clearBoardShapes: board.clearBoardShapes,
     setUserShapes: board.setUserShapes,
     triggerNewChapterPrompt,
     cancelNewChapterPrompt,
     toggleSparring: board.toggleSparring,
+    toggleCoachGame: board.toggleCoachGame,
     handleBoardUserMove: board.handleBoardUserMove,
     completePromotion: board.completePromotion,
-    sendCoachMessage,
-    abortStream,
+    sendCoachMessage: stream.sendCoachMessage,
+    abortStream: stream.abortStream,
     resetWorkspace,
   }
 })

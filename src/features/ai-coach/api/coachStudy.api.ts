@@ -2,13 +2,14 @@ import { BestMoveResponseSchema, type BestMoveResult } from '@/entities/game/lib
 import { apiClient, BACKEND_API_URL } from '@/shared/api/client'
 import type {
   ChatStreamPayload,
-  SseChapterEvent,
   SseDoneEvent,
   SseErrorEvent,
   SseMetaEvent,
+  SseStatusEvent,
   SseTextDeltaEvent,
-  StudyBoardActionEvent,
+  SseUiActionEvent,
   StudyChapterRecord,
+  StudyEngineProfile,
   StudySessionRecord,
   StudyWithDetailsResponse,
 } from '../model/coachStudy.types'
@@ -83,18 +84,21 @@ export async function deleteStudyChapter(
   )
 }
 
-export async function requestStudyMozeroMove(
+export async function requestStudyEngineMove(
   startFen: string,
   uciMoves: string[],
+  profile: StudyEngineProfile = 'mozero',
+  includeArbiterEval = true,
 ): Promise<BestMoveResult | null> {
   const data = await apiClient(
     '/bestmove',
     {
       method: 'POST',
       body: JSON.stringify({
-        engine: 'mozero',
+        engine: profile,
         start_fen: startFen,
         moves: uciMoves,
+        includeArbiterEval,
       }),
     },
     BestMoveResponseSchema,
@@ -105,13 +109,15 @@ export async function requestStudyMozeroMove(
     mode: data.mode,
     source: data.source,
     playerTablebase: data.playerTablebase ?? null,
+    arbiterCp: data.arbiterCp ?? null,
+    arbiterMate: data.arbiterMate ?? null,
   }
 }
 
 export interface CoachStreamHandlers {
   onMeta?: (ev: SseMetaEvent) => void
-  onChapter?: (ev: SseChapterEvent) => void
-  onBoardAction?: (ev: StudyBoardActionEvent) => void
+  onStatus?: (ev: SseStatusEvent) => void
+  onUiAction?: (ev: SseUiActionEvent) => void
   onTextDelta?: (ev: SseTextDeltaEvent) => void
   onDone?: (ev: SseDoneEvent) => void
   onError?: (ev: SseErrorEvent) => void
@@ -136,10 +142,10 @@ function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
 
   if (eventName === 'meta') {
     handlers.onMeta?.(parsed as SseMetaEvent)
-  } else if (eventName === 'chapter_created' || eventName === 'chapter_updated') {
-    handlers.onChapter?.(parsed as SseChapterEvent)
-  } else if (eventName === 'board_action') {
-    handlers.onBoardAction?.(parsed as StudyBoardActionEvent)
+  } else if (eventName === 'status') {
+    handlers.onStatus?.(parsed as SseStatusEvent)
+  } else if (eventName === 'ui_action') {
+    handlers.onUiAction?.(parsed as SseUiActionEvent)
   } else if (eventName === 'text_delta') {
     handlers.onTextDelta?.(parsed as SseTextDeltaEvent)
   } else if (eventName === 'done') {
@@ -150,7 +156,7 @@ function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
 }
 
 /**
- * Streams a single AI Coach turn via Fetch SSE with mandatory AbortSignal cancellation.
+ * Streams a single AI Coach 2.0 turn via Fetch SSE with mandatory AbortSignal cancellation.
  */
 export async function streamCoachTurn(
   payload: ChatStreamPayload,

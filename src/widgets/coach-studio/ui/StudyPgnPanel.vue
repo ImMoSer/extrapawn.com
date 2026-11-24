@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCoachStudyStore } from '@/features/ai-coach'
+import { formatDisplayChapterTitle, useCoachStudyStore } from '@/features/ai-coach'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import StudyPgnNode from './StudyPgnNode.vue'
@@ -13,9 +13,21 @@ const hasRootShapes = computed(() =>
 )
 const isRootActive = computed(() => studyStore.currentNode === studyStore.rootNode)
 
+const headerTitle = computed(() =>
+  studyStore.activeChapter
+    ? formatDisplayChapterTitle(studyStore.activeChapter.title)
+    : t('pages.study.pgnTitle'),
+)
+
+/**
+ * Only display engine evaluation when it matches BOTH the active chapter AND the exact
+ * currently navigated FEN (never sticks stale badges across chapters or moves).
+ */
 const evalBadge = computed(() => {
   const meta = studyStore.latestMeta
-  if (!meta) return null
+  if (!meta || !meta.eval_source || !meta.eval_white) return null
+  if (meta.chapter_id !== studyStore.activeChapterId) return null
+  if (meta.fen !== studyStore.currentFen) return null
   return {
     source: meta.eval_source.toUpperCase(),
     value: meta.eval_white,
@@ -29,6 +41,18 @@ const objectiveLabel = computed(() => {
   return null
 })
 
+const totals = computed(() => studyStore.studyTelemetryTotals)
+
+const cacheHitPct = computed(() => {
+  if (totals.value.inputTokens <= 0) return 0
+  return Math.round((totals.value.cachedTokens / totals.value.inputTokens) * 100)
+})
+
+const formattedTotalCost = computed(() => {
+  const c = totals.value.totalCostUsd
+  return c < 0.01 ? `$${c.toFixed(4)}` : `$${c.toFixed(3)}`
+})
+
 const handleSelectRoot = () => {
   studyStore.navigateToNode(studyStore.rootNode)
 }
@@ -39,7 +63,7 @@ const handleSelectRoot = () => {
     <!-- Top Header: Evaluation & Objective -->
     <div class="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
       <span class="truncate font-display text-xs font-semibold tracking-wide text-text-primary uppercase">
-        {{ studyStore.activeChapter?.title || t('pages.study.pgnTitle') }}
+        {{ headerTitle }}
       </span>
 
       <div class="flex shrink-0 items-center gap-1.5">
@@ -107,16 +131,17 @@ const handleSelectRoot = () => {
       </div>
     </div>
 
-    <!-- Compact Owner Telemetry Footer -->
+    <!-- Aggregated Study Telemetry Footer (deduplicated from per-message chat lines) -->
     <div
-      v-if="studyStore.latestTelemetry"
+      v-if="totals.assistantTurns > 0"
       class="flex items-center justify-between gap-2 border-t border-border px-3 py-1.5 font-condensed text-[0.7rem] text-text-secondary"
     >
-      <span class="truncate">{{ studyStore.latestTelemetry.model_id }}</span>
+      <span class="truncate">
+        {{ t('pages.study.studyTotals') }} ({{ totals.assistantTurns }})
+      </span>
       <span class="shrink-0">
-        {{ studyStore.latestTelemetry.input_tokens }}/{{ studyStore.latestTelemetry.cached_tokens }}c ·
-        {{ studyStore.latestTelemetry.output_tokens }} out ·
-        {{ (studyStore.latestTelemetry.latency_ms / 1000).toFixed(1) }}s
+        {{ totals.inputTokens }} in ({{ cacheHitPct }}%c) · {{ totals.outputTokens }} out ·
+        {{ formattedTotalCost }}
       </span>
     </div>
   </section>

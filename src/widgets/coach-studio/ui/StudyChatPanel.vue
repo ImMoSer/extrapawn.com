@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { useCoachStudyStore, type StudyLanguage } from '@/features/ai-coach'
 import {
-  BookOutline,
+  estimateTurnCostUsd,
+  formatDisplayChapterTitle,
+  useCoachStudyStore,
+  type StudyLanguage,
+  type StudyTurnRecord,
+} from '@/features/ai-coach'
+import {
+  buildChapterSanPathIndex,
+  renderCoachMarkdown,
+} from '@/shared/lib/markdown/renderCoachMarkdown'
+import {
+  ArrowForwardOutline,
   CloseOutline,
   SendOutline,
+  SparklesOutline,
   StopCircleOutline,
 } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
@@ -23,19 +34,41 @@ const currentLanguage = computed<StudyLanguage>(() => {
   return 'ru'
 })
 
-const chapterTitleById = computed(() => {
-  const map = new Map<string, string>()
-  for (const ch of studyStore.chapters) {
-    map.set(ch.id, `${ch.chapter_order}. ${ch.title}`)
-  }
-  return map
+const sanPathIndex = computed(() => buildChapterSanPathIndex(studyStore.rootNode))
+
+const showSuggestedCard = computed(() => {
+  const card = studyStore.suggestedChapter
+  if (!card) return false
+  return card.fromChapterId === studyStore.activeChapterId && card.chapter.id !== studyStore.activeChapterId
 })
 
 const starterSuggestions = computed(() => [
+  { key: 'play', label: t('pages.study.starterPlay'), prompt: t('pages.study.starterPlayPrompt') },
   { key: 'weak', label: t('pages.study.starterWeak'), prompt: t('pages.study.starterWeakPrompt') },
   { key: 'opp', label: t('pages.study.starterOpposition'), prompt: t('pages.study.starterOppositionPrompt') },
   { key: 'rook', label: t('pages.study.starterRook'), prompt: t('pages.study.starterRookPrompt') },
 ])
+
+const renderedStreamingHtml = computed(() =>
+  renderCoachMarkdown(studyStore.streamingText, sanPathIndex.value),
+)
+
+const renderTurnHtml = (content: string): string =>
+  renderCoachMarkdown(content, sanPathIndex.value)
+
+const formatTurnCost = (turn: StudyTurnRecord): string => {
+  const cost =
+    turn.cost_usd !== undefined
+      ? turn.cost_usd
+      : estimateTurnCostUsd(turn.model_id, turn.input_tokens, turn.cached_tokens, turn.output_tokens)
+  if (cost <= 0) return ''
+  return cost < 0.01 ? `$${cost.toFixed(4)}` : `$${cost.toFixed(3)}`
+}
+
+const isAssistantTier = (turn: StudyTurnRecord): boolean => {
+  if (turn.agent_role) return turn.agent_role === 'assistant_coach'
+  return Boolean(turn.model_id?.toLowerCase().includes('flash-lite'))
+}
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -45,7 +78,14 @@ const scrollToBottom = async () => {
 }
 
 watch(
-  () => [studyStore.turns.length, studyStore.streamingText, studyStore.pendingNewChapter],
+  () => [
+    studyStore.visibleTurns.length,
+    studyStore.activeChapterId,
+    studyStore.streamingText,
+    studyStore.coachStatusLabel,
+    studyStore.pendingNewChapter,
+    studyStore.suggestedChapter?.chapter.id,
+  ],
   () => {
     void scrollToBottom()
   },
@@ -78,8 +118,20 @@ const handleKeydown = (ev: KeyboardEvent) => {
   }
 }
 
-const handleOpenChapter = (chapterId: string) => {
-  void studyStore.selectChapter(chapterId)
+const handleMarkdownClick = (ev: MouseEvent) => {
+  const target = ev.target as HTMLElement | null
+  const chip = target?.closest<HTMLElement>('[data-pgn-path]')
+  const path = chip?.dataset.pgnPath
+  if (path) {
+    studyStore.navigateToPath(path)
+  }
+}
+
+const handleOpenSuggested = () => {
+  const ch = studyStore.suggestedChapter?.chapter
+  if (ch) {
+    void studyStore.selectChapter(ch.id)
+  }
 }
 </script>
 
@@ -92,17 +144,17 @@ const handleOpenChapter = (chapterId: string) => {
       </span>
       <span
         v-if="studyStore.isStreaming"
-        class="shrink-0 font-condensed text-[0.72rem] text-brand"
+        class="shrink-0 truncate font-condensed text-[0.72rem] text-brand"
       >
-        {{ t('pages.study.coachThinking') }}
+        {{ studyStore.coachStatusLabel || t('pages.study.coachThinking') }}
       </span>
     </div>
 
-    <!-- Messages Scroll Feed -->
+    <!-- Messages Scroll Feed (1:1 isolated to active chapter) -->
     <div ref="scrollRef" class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-2.5">
-      <!-- Zero-latency localized welcome when Study is brand new -->
+      <!-- Zero-latency localized welcome when current chapter/study has no turns yet -->
       <div
-        v-if="studyStore.turns.length === 0 && !studyStore.isStreaming"
+        v-if="studyStore.visibleTurns.length === 0 && !studyStore.isStreaming"
         class="flex flex-col gap-2 rounded-md border border-border bg-elevated/70 p-2.5 text-xs leading-relaxed text-text-primary"
       >
         <p class="m-0">{{ t('pages.study.welcomeCoachMessage') }}</p>
@@ -119,55 +171,97 @@ const handleOpenChapter = (chapterId: string) => {
         </div>
       </div>
 
-      <!-- Persisted Turns -->
+      <!-- Persisted Turns for Active Chapter -->
       <div
-        v-for="turn in studyStore.turns"
+        v-for="turn in studyStore.visibleTurns"
         :key="turn.id"
         class="flex flex-col gap-1"
         :class="turn.role === 'user' ? 'items-end' : 'items-start'"
       >
         <div
-          class="max-w-[94%] rounded-md border px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words"
-          :class="
-            turn.role === 'user'
-              ? 'border-border-hover bg-elevated text-text-primary'
-              : 'border-border bg-canvas text-text-primary'
-          "
+          v-if="turn.role === 'user'"
+          class="max-w-[94%] rounded-md border border-border-hover bg-elevated px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words text-text-primary"
         >
           {{ turn.content }}
-
-          <!-- Clickable Chapter Pill if this assistant turn created/updated a chapter -->
-          <div
-            v-if="turn.role === 'assistant' && turn.chapter_id && chapterTitleById.has(turn.chapter_id)"
-            class="mt-2 pt-1.5 border-t border-border/60"
-          >
-            <button
-              type="button"
-              class="inline-flex max-w-full min-w-0 cursor-pointer items-center gap-1 rounded-sm border border-brand/40 bg-elevated px-2 py-0.5 text-[0.72rem] font-medium text-brand transition-colors hover:bg-overlay"
-              @click="handleOpenChapter(turn.chapter_id)"
-            >
-              <NIcon :size="12" class="shrink-0"><BookOutline /></NIcon>
-              <span class="truncate">{{ chapterTitleById.get(turn.chapter_id) }}</span>
-            </button>
-          </div>
         </div>
+
+        <div
+          v-else
+          class="coach-markdown max-w-[96%] rounded-md border border-border bg-canvas px-2.5 py-2 text-xs leading-relaxed break-words text-text-primary"
+          @click="handleMarkdownClick"
+          v-html="renderTurnHtml(turn.content)"
+        />
 
         <!-- Compact owner-only telemetry line -->
         <span
           v-if="turn.role === 'assistant' && turn.input_tokens > 0"
-          class="px-1 font-condensed text-[0.68rem] text-text-secondary"
+          class="flex flex-wrap items-center gap-1 px-1 font-condensed text-[0.68rem] text-text-secondary"
         >
-          {{ turn.model_id }} · {{ turn.input_tokens }} in ({{ turn.cached_tokens }} cached) ·
-          {{ turn.output_tokens }} out · {{ (turn.latency_ms / 1000).toFixed(1) }}s
+          <span
+            class="rounded-sm border px-1 py-px text-[0.64rem] font-semibold"
+            :class="
+              isAssistantTier(turn)
+                ? 'border-info/40 bg-elevated text-info'
+                : 'border-brand/40 bg-elevated text-brand'
+            "
+          >
+            {{ isAssistantTier(turn) ? t('pages.study.roleAssistant') : t('pages.study.roleHead') }}
+          </span>
+          <span>
+            {{ turn.input_tokens }} in ({{ turn.cached_tokens }}c) · {{ turn.output_tokens }} out ·
+            {{ (turn.latency_ms / 1000).toFixed(1) }}s
+            <template v-if="formatTurnCost(turn)"> · {{ formatTurnCost(turn) }}</template>
+          </span>
         </span>
       </div>
 
+      <!-- Non-destructive Suggested New Chapter Card -->
+      <div
+        v-if="showSuggestedCard && studyStore.suggestedChapter"
+        class="flex items-center justify-between gap-2 rounded-md border border-brand/60 bg-elevated px-2.5 py-2"
+      >
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <span class="font-condensed text-[0.68rem] font-semibold text-brand uppercase">
+            {{ t('pages.study.suggestedChapterLabel') }}
+          </span>
+          <span class="truncate font-display text-xs font-semibold text-text-primary">
+            {{ studyStore.suggestedChapter.chapter.chapter_order }}.
+            {{ formatDisplayChapterTitle(studyStore.suggestedChapter.chapter.title) }}
+          </span>
+        </div>
+        <div class="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            class="inline-flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden rounded-md border-none bg-brand px-2.5 py-1 font-display text-[0.72rem] font-semibold text-on-brand transition-colors hover:bg-brand-deep"
+            @click="handleOpenSuggested"
+          >
+            <span class="truncate">{{ t('pages.study.openChapter') }}</span>
+            <NIcon :size="12" class="shrink-0"><ArrowForwardOutline /></NIcon>
+          </button>
+          <button
+            type="button"
+            class="shrink-0 cursor-pointer rounded-sm border-none bg-transparent p-1 text-text-secondary hover:text-text-primary"
+            @click="studyStore.dismissSuggestedChapter()"
+          >
+            <NIcon :size="13"><CloseOutline /></NIcon>
+          </button>
+        </div>
+      </div>
+
       <!-- Live Streaming Assistant Bubble -->
-      <div v-if="studyStore.isStreaming" class="flex flex-col items-start">
+      <div v-if="studyStore.isStreaming" class="flex flex-col items-start gap-1">
         <div
-          class="max-w-[94%] rounded-md border border-brand/40 bg-canvas px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words text-text-primary"
+          v-if="studyStore.coachStatusLabel"
+          class="inline-flex items-center gap-1.5 rounded-sm border border-brand/40 bg-elevated px-2 py-0.5 font-condensed text-[0.7rem] text-brand"
         >
-          <span v-if="studyStore.streamingText">{{ studyStore.streamingText }}</span>
+          <NIcon :size="12" class="shrink-0"><SparklesOutline /></NIcon>
+          <span>{{ studyStore.coachStatusLabel }}</span>
+        </div>
+        <div
+          class="coach-markdown max-w-[96%] rounded-md border border-brand/40 bg-canvas px-2.5 py-2 text-xs leading-relaxed break-words text-text-primary"
+          @click="handleMarkdownClick"
+        >
+          <div v-if="studyStore.streamingText" v-html="renderedStreamingHtml" />
           <span v-else class="text-text-secondary italic">{{ t('pages.study.coachPreparing') }}</span>
         </div>
       </div>
@@ -221,7 +315,7 @@ const handleOpenChapter = (chapterId: string) => {
           type="button"
           class="flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-danger/50 bg-elevated px-2.5 text-xs font-medium text-danger transition-colors hover:bg-overlay"
           :title="t('pages.study.stop')"
-          @click="studyStore.abortStream()"
+          @click="studyStore.abortStream(true)"
         >
           <NIcon :size="16"><StopCircleOutline /></NIcon>
         </button>
@@ -240,3 +334,65 @@ const handleOpenChapter = (chapterId: string) => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.coach-markdown :deep(.coach-md-h) {
+  margin: 0.45rem 0 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.coach-markdown :deep(.coach-md-h:first-child) {
+  margin-top: 0;
+}
+
+.coach-markdown :deep(.coach-md-p) {
+  margin: 0 0 0.35rem;
+}
+
+.coach-markdown :deep(.coach-md-p:last-child) {
+  margin-bottom: 0;
+}
+
+.coach-markdown :deep(.coach-md-ul),
+.coach-markdown :deep(.coach-md-ol) {
+  margin: 0.2rem 0 0.35rem;
+  padding-left: 1.1rem;
+}
+
+.coach-markdown :deep(li) {
+  margin-bottom: 0.18rem;
+}
+
+.coach-markdown :deep(.coach-md-code) {
+  border-radius: 2px;
+  border: 1px solid var(--color-border);
+  background: var(--color-elevated);
+  padding: 0 0.25rem;
+  font-family: var(--font-condensed);
+  font-size: 0.78rem;
+  color: var(--color-text-primary);
+}
+
+.coach-markdown :deep(.coach-san-chip) {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
+  background: var(--color-elevated);
+  padding: 0 0.3rem;
+  font-family: var(--font-condensed);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-brand);
+  line-height: 1.3;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.coach-markdown :deep(.coach-san-chip:hover) {
+  border-color: var(--color-brand);
+  background: var(--color-overlay);
+}
+</style>
