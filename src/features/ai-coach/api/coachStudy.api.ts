@@ -19,15 +19,22 @@ import type {
 } from '../model/coachStudy.types'
 
 const BASE = '/ai-coach'
+const AI_COACH_CSRF_HEADERS = {
+  'X-Requested-With': 'ExtraPawn-Study',
+} as const
 
 export async function listStudies(limit = 30): Promise<StudySessionRecord[]> {
-  return apiClient<StudySessionRecord[]>(`${BASE}/sessions?limit=${limit}`, { method: 'GET' })
+  return apiClient<StudySessionRecord[]>(`${BASE}/sessions?limit=${limit}`, {
+    method: 'GET',
+    headers: AI_COACH_CSRF_HEADERS,
+  })
 }
 
 export async function createStudy(title?: string): Promise<StudySessionRecord> {
   const payload = title ? { title } : {}
   return apiClient<StudySessionRecord>(`${BASE}/sessions`, {
     method: 'POST',
+    headers: AI_COACH_CSRF_HEADERS,
     body: JSON.stringify(payload),
   })
 }
@@ -35,12 +42,14 @@ export async function createStudy(title?: string): Promise<StudySessionRecord> {
 export async function getStudy(sessionId: string): Promise<StudyWithDetailsResponse> {
   return apiClient<StudyWithDetailsResponse>(`${BASE}/sessions/${encodeURIComponent(sessionId)}`, {
     method: 'GET',
+    headers: AI_COACH_CSRF_HEADERS,
   })
 }
 
 export async function renameStudy(sessionId: string, title: string): Promise<StudySessionRecord> {
   return apiClient<StudySessionRecord>(`${BASE}/sessions/${encodeURIComponent(sessionId)}`, {
     method: 'PATCH',
+    headers: AI_COACH_CSRF_HEADERS,
     body: JSON.stringify({ title }),
   })
 }
@@ -48,6 +57,7 @@ export async function renameStudy(sessionId: string, title: string): Promise<Stu
 export async function deleteStudy(sessionId: string): Promise<{ deleted: boolean }> {
   return apiClient<{ deleted: boolean }>(`${BASE}/sessions/${encodeURIComponent(sessionId)}`, {
     method: 'DELETE',
+    headers: AI_COACH_CSRF_HEADERS,
   })
 }
 
@@ -59,6 +69,7 @@ export async function setActiveStudyChapter(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}/active-chapter`,
     {
       method: 'PATCH',
+      headers: AI_COACH_CSRF_HEADERS,
       body: JSON.stringify({ chapter_id: chapterId }),
     },
   )
@@ -73,6 +84,7 @@ export async function updateStudyChapterCursor(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}/chapters/${encodeURIComponent(chapterId)}`,
     {
       method: 'PATCH',
+      headers: AI_COACH_CSRF_HEADERS,
       body: JSON.stringify(payload),
     },
   )
@@ -84,7 +96,10 @@ export async function deleteStudyChapter(
 ): Promise<{ deleted: boolean }> {
   return apiClient<{ deleted: boolean }>(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}/chapters/${encodeURIComponent(chapterId)}`,
-    { method: 'DELETE' },
+    {
+      method: 'DELETE',
+      headers: AI_COACH_CSRF_HEADERS,
+    },
   )
 }
 
@@ -198,6 +213,7 @@ async function consumeFetchSse(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
+      ...AI_COACH_CSRF_HEADERS,
     },
     credentials: 'include',
     body: JSON.stringify(payload),
@@ -307,6 +323,7 @@ export async function importFenPosition(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}/import/fen`,
     {
       method: 'POST',
+      headers: AI_COACH_CSRF_HEADERS,
       body: JSON.stringify(payload),
     },
   )
