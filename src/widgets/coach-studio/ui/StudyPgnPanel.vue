@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { formatDisplayChapterTitle, useCoachStudyStore } from '@/features/ai-coach'
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import StudyPgnNode from './StudyPgnNode.vue'
 
 const { t } = useI18n()
 const studyStore = useCoachStudyStore()
+const pgnScrollRef = ref<HTMLElement | null>(null)
+
+watch(
+  () => studyStore.currentNode,
+  async () => {
+    await nextTick()
+    const activeEl = pgnScrollRef.value?.querySelector<HTMLElement>('[data-pgn-active="true"]')
+    activeEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  },
+)
 
 const hasMoves = computed(() => studyStore.rootNode.children.length > 0)
 const hasRootShapes = computed(() =>
@@ -83,7 +93,7 @@ const handleSelectRoot = () => {
     </div>
 
     <!-- Scrollable PGN & Root Commentary -->
-    <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3">
+    <div ref="pgnScrollRef" class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3">
       <!-- Root position comment card (click to jump to start position & root arrows) -->
       <button
         v-if="studyStore.rootComment || hasRootShapes"

@@ -2,6 +2,10 @@ import { BestMoveResponseSchema, type BestMoveResult } from '@/entities/game/lib
 import { apiClient, BACKEND_API_URL } from '@/shared/api/client'
 import type {
   ChatStreamPayload,
+  ImportChapterResponse,
+  ImportFenPayload,
+  ImportLichessPayload,
+  ImportPgnPayload,
   SseDoneEvent,
   SseErrorEvent,
   SseMetaEvent,
@@ -123,7 +127,13 @@ export interface CoachStreamHandlers {
   onError?: (ev: SseErrorEvent) => void
 }
 
-function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
+export interface ImportStreamHandlers {
+  onStatus?: (ev: SseStatusEvent) => void
+  onDone?: (ev: ImportChapterResponse) => void
+  onError?: (ev: SseErrorEvent) => void
+}
+
+function parseSseFrame(frame: string): { eventName: string; parsed: unknown } | null {
   const lines = frame.split(/\r?\n/)
   let eventName = ''
   const dataLines: string[] = []
@@ -135,10 +145,14 @@ function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
       dataLines.push(line.slice(5).trim())
     }
   }
-  if (!eventName || dataLines.length === 0) return
+  if (!eventName || dataLines.length === 0) return null
+  return { eventName, parsed: JSON.parse(dataLines.join('\n')) }
+}
 
-  const rawJson = dataLines.join('\n')
-  const parsed: unknown = JSON.parse(rawJson)
+function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
+  const res = parseSseFrame(frame)
+  if (!res) return
+  const { eventName, parsed } = res
 
   if (eventName === 'meta') {
     handlers.onMeta?.(parsed as SseMetaEvent)
@@ -155,15 +169,31 @@ function dispatchSseFrame(frame: string, handlers: CoachStreamHandlers): void {
   }
 }
 
-/**
- * Streams a single AI Coach 2.0 turn via Fetch SSE with mandatory AbortSignal cancellation.
- */
-export async function streamCoachTurn(
-  payload: ChatStreamPayload,
-  handlers: CoachStreamHandlers,
+function extractHttpErrorDetail(rawText: string, status: number): string {
+  if (!rawText) return `HTTP ${status}`
+  try {
+    const parsed: unknown = JSON.parse(rawText)
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'detail' in parsed &&
+      typeof (parsed as { detail?: unknown }).detail === 'string'
+    ) {
+      return (parsed as { detail: string }).detail
+    }
+  } catch {
+    // plain text fallback
+  }
+  return rawText
+}
+
+async function consumeFetchSse(
+  url: string,
+  payload: unknown,
+  onFrame: (frame: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(`${BACKEND_API_URL}${BASE}/chat/stream`, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -176,7 +206,7 @@ export async function streamCoachTurn(
 
   if (!response.ok) {
     const errText = await response.text().catch(() => '')
-    throw new Error(errText || `HTTP ${response.status}`)
+    throw new Error(extractHttpErrorDetail(errText, response.status))
   }
   if (!response.body) {
     throw new Error('SSE response stream body is missing')
@@ -199,16 +229,85 @@ export async function streamCoachTurn(
         const skipLen = match ? match[0].length : 2
         buffer = buffer.slice(sepIdx + skipLen)
         if (frame.trim()) {
-          dispatchSseFrame(frame, handlers)
+          onFrame(frame)
         }
         sepIdx = buffer.search(/\r?\n\r?\n/)
       }
     }
     const tail = buffer + decoder.decode()
     if (tail.trim()) {
-      dispatchSseFrame(tail, handlers)
+      onFrame(tail)
     }
   } finally {
     reader.releaseLock()
   }
+}
+
+/**
+ * Streams a single AI Coach 2.0 turn via Fetch SSE with mandatory AbortSignal cancellation.
+ */
+export async function streamCoachTurn(
+  payload: ChatStreamPayload,
+  handlers: CoachStreamHandlers,
+  signal: AbortSignal,
+): Promise<void> {
+  await consumeFetchSse(
+    `${BACKEND_API_URL}${BASE}/chat/stream`,
+    payload,
+    (frame) => dispatchSseFrame(frame, handlers),
+    signal,
+  )
+}
+
+function dispatchImportFrame(frame: string, handlers: ImportStreamHandlers): void {
+  const res = parseSseFrame(frame)
+  if (!res) return
+  if (res.eventName === 'status') {
+    handlers.onStatus?.(res.parsed as SseStatusEvent)
+  } else if (res.eventName === 'done') {
+    handlers.onDone?.(res.parsed as ImportChapterResponse)
+  } else if (res.eventName === 'error') {
+    handlers.onError?.(res.parsed as SseErrorEvent)
+  }
+}
+
+export async function importLichessGameStream(
+  sessionId: string,
+  payload: ImportLichessPayload,
+  handlers: ImportStreamHandlers,
+  signal: AbortSignal,
+): Promise<void> {
+  await consumeFetchSse(
+    `${BACKEND_API_URL}${BASE}/sessions/${encodeURIComponent(sessionId)}/import/lichess`,
+    payload,
+    (frame) => dispatchImportFrame(frame, handlers),
+    signal,
+  )
+}
+
+export async function importPgnGameStream(
+  sessionId: string,
+  payload: ImportPgnPayload,
+  handlers: ImportStreamHandlers,
+  signal: AbortSignal,
+): Promise<void> {
+  await consumeFetchSse(
+    `${BACKEND_API_URL}${BASE}/sessions/${encodeURIComponent(sessionId)}/import/pgn`,
+    payload,
+    (frame) => dispatchImportFrame(frame, handlers),
+    signal,
+  )
+}
+
+export async function importFenPosition(
+  sessionId: string,
+  payload: ImportFenPayload,
+): Promise<ImportChapterResponse> {
+  return apiClient<ImportChapterResponse>(
+    `${BASE}/sessions/${encodeURIComponent(sessionId)}/import/fen`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
 }

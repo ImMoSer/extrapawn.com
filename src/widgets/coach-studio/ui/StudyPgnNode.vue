@@ -17,6 +17,7 @@ const studyStore = useCoachStudyStore()
 
 const isActive = computed(() => studyStore.currentNode === props.node)
 const hasShapes = computed(() => Boolean(props.node.shapes && props.node.shapes.length > 0))
+const isLongComment = computed(() => (props.node.comment?.length ?? 0) > 28)
 
 const moveNumber = computed(() => {
   const ply = props.node.ply
@@ -88,6 +89,7 @@ const handleNavigate = () => {
       </span>
       <button
         type="button"
+        :data-pgn-active="isActive ? 'true' : undefined"
         class="inline-flex cursor-pointer items-center gap-1 rounded-sm border px-1.5 py-px font-condensed text-[0.95rem] font-semibold transition-colors"
         :class="[
           isActive
@@ -106,12 +108,19 @@ const handleNavigate = () => {
       </button>
 
       <span
-        v-if="node.comment"
-        class="ml-1.5 inline-block max-w-[300px] rounded-r-sm border-l-2 border-brand bg-elevated/70 px-1.5 py-0.5 align-middle font-display text-[0.78rem] whitespace-normal text-text-secondary"
+        v-if="node.comment && !isLongComment"
+        class="ml-1 inline-block rounded-r-sm border-l-2 border-brand/70 bg-elevated/70 px-1.5 py-0.5 align-middle font-condensed text-[0.76rem] text-text-secondary"
       >
         {{ node.comment }}
       </span>
     </span>
+
+    <div
+      v-if="node.ply > 0 && node.comment && isLongComment"
+      class="my-1 block rounded-r-sm border-l-2 border-brand bg-elevated/75 px-2 py-1 font-display text-[0.78rem] leading-snug whitespace-normal text-text-secondary"
+    >
+      {{ node.comment }}
+    </div>
 
     <div class="inline">
       <div

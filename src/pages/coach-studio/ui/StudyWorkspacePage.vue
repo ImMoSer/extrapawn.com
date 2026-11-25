@@ -7,6 +7,7 @@ import {
   StudyBoardTopBar,
   StudyChaptersPanel,
   StudyChatPanel,
+  StudyImportModal,
   StudyPgnPanel,
 } from '@/widgets/coach-studio'
 import GameLayout from '@/widgets/game-layout/ui/GameLayout.vue'
@@ -24,6 +25,7 @@ const preferencesStore = usePreferencesStore()
 const studyStore = useCoachStudyStore()
 
 const chatPanelRef = ref<InstanceType<typeof StudyChatPanel> | null>(null)
+const isImportModalOpen = ref(false)
 
 const currentLanguage = computed<StudyLanguage>(() => {
   const loc = locale.value
@@ -69,6 +71,7 @@ const handleRequestNewChapter = () => {
 }
 
 const handleKeydown = (ev: KeyboardEvent) => {
+  if (isImportModalOpen.value) return
   const target = ev.target as HTMLElement | null
   if (target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable)) {
     return
@@ -112,7 +115,10 @@ onUnmounted(() => {
     <template #left-panel>
       <div class="flex h-full min-h-0 flex-col gap-2">
         <div class="flex min-h-[140px] max-h-[34%] flex-col">
-          <StudyChaptersPanel @request-new-chapter="handleRequestNewChapter" />
+          <StudyChaptersPanel
+            @request-new-chapter="handleRequestNewChapter"
+            @request-import="isImportModalOpen = true"
+          />
         </div>
         <StudyChatPanel ref="chatPanelRef" />
       </div>
@@ -155,4 +161,6 @@ onUnmounted(() => {
       <StudyPgnPanel />
     </template>
   </GameLayout>
+
+  <StudyImportModal v-model:show="isImportModalOpen" />
 </template>

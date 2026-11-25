@@ -21,7 +21,10 @@ import {
   type SuggestedChapterCard,
 } from './coachStudy.types'
 import { useStudyBoardEngine } from './useStudyBoardEngine'
+import { useStudyImport } from './useStudyImport'
 import { useStudyStreamHandler } from './useStudyStreamHandler'
+
+const CURSOR_PERSIST_DEBOUNCE_MS = 800
 
 export const useCoachStudyStore = defineStore('coachStudy', () => {
   // Studies list (Manager page)
@@ -102,8 +105,23 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     applyPlayModeSettings: (opts) => boardRef?.applyPlayModeSettings(opts),
   })
 
-  async function persistActiveChapterCursor(includePgn: boolean): Promise<void> {
-    if (!activeStudy.value || !activeChapter.value || !boardRef) return
+  let cursorPersistTimer: ReturnType<typeof setTimeout> | null = null
+
+  function cancelCursorDebounce(): void {
+    if (cursorPersistTimer !== null) {
+      clearTimeout(cursorPersistTimer)
+      cursorPersistTimer = null
+    }
+  }
+
+  async function executePersistChapterCursor(
+    studyId: string,
+    chapterId: string,
+    includePgn: boolean,
+  ): Promise<void> {
+    if (!boardRef || activeStudy.value?.id !== studyId || activeChapterId.value !== chapterId) {
+      return
+    }
     const payload: { current_path: string; current_fen: string; annotated_pgn?: string } = {
       current_path: boardRef.getCurrentPath(),
       current_fen: boardRef.currentFen.value,
@@ -112,17 +130,29 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
       payload.annotated_pgn = boardRef.serializeCurrentChapterPgn()
     }
     try {
-      const updated = await updateStudyChapterCursor(
-        activeStudy.value.id,
-        activeChapter.value.id,
-        payload,
-      )
+      const updated = await updateStudyChapterCursor(studyId, chapterId, payload)
       upsertChapter(updated)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to persist chapter state'
       logger.error('[CoachStudyStore] Failed to persist chapter cursor/PGN:', err)
       stream.streamError.value = msg
     }
+  }
+
+  async function persistActiveChapterCursor(includePgn: boolean): Promise<void> {
+    if (!activeStudy.value || !activeChapter.value || !boardRef) return
+    const studyId = activeStudy.value.id
+    const chapterId = activeChapter.value.id
+
+    cancelCursorDebounce()
+    if (!includePgn) {
+      cursorPersistTimer = setTimeout(() => {
+        cursorPersistTimer = null
+        void executePersistChapterCursor(studyId, chapterId, false)
+      }, CURSOR_PERSIST_DEBOUNCE_MS)
+      return
+    }
+    await executePersistChapterCursor(studyId, chapterId, true)
   }
 
   const board = useStudyBoardEngine({
@@ -176,6 +206,17 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     },
   })
   boardRef = board
+
+  const importer = useStudyImport({
+    activeStudy,
+    activeChapterId,
+    suggestedChapter,
+    upsertChapter,
+    loadChapterIntoTree: (ch, preserve, autoBot) =>
+      board.loadChapterIntoTree(ch, preserve, autoBot),
+    cancelCursorDebounce,
+    sendCoachMessage: stream.sendCoachMessage,
+  })
 
   async function fetchStudies(): Promise<void> {
     isLoadingStudies.value = true
@@ -239,6 +280,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     const target = chapters.value.find((c) => c.id === chapterId)
     if (!target || !activeStudy.value) return
 
+    cancelCursorDebounce()
     pendingNewChapter.value = false
     suggestedChapter.value = null
     stream.latestMeta.value = null
@@ -254,6 +296,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
 
   async function removeChapter(chapterId: string): Promise<void> {
     if (!activeStudy.value) return
+    cancelCursorDebounce()
     await deleteStudyChapter(activeStudy.value.id, chapterId)
     chapters.value = chapters.value.filter((c) => c.id !== chapterId)
     turns.value = turns.value.filter((t) => t.chapter_id !== chapterId)
@@ -282,6 +325,8 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
   }
 
   function resetWorkspace(): void {
+    cancelCursorDebounce()
+    importer.abortImport()
     stream.resetStreamState()
     board.resetBoard(STANDARD_START_FEN)
     activeStudy.value = null
@@ -329,6 +374,9 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     isSparringActive: board.isSparringActive,
     isCoachGameActive: board.isCoachGameActive,
     isBotThinking: board.isBotThinking,
+    isImporting: importer.isImporting,
+    importStatusLabel: importer.importStatusLabel,
+    importError: importer.importError,
     fetchStudies,
     createNewStudy,
     renameExistingStudy,
@@ -353,6 +401,11 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     completePromotion: board.completePromotion,
     sendCoachMessage: stream.sendCoachMessage,
     abortStream: stream.abortStream,
+    importFromLichess: importer.importFromLichess,
+    importFromPgn: importer.importFromPgn,
+    importFromFen: importer.importFromFen,
+    abortImport: importer.abortImport,
+    clearImportError: importer.clearImportError,
     resetWorkspace,
   }
 })

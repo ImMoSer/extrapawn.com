@@ -9,6 +9,39 @@ export type StudyEngineProfile = 'mozero' | 'maia_1500' | 'maia_1700' | 'maia_19
 export type StudyCommentaryLevel = 'off' | 'brief' | 'detailed'
 export type StudyAgentRole = 'head_coach' | 'assistant_coach'
 export type StudyChapterOpenMode = 'auto' | 'suggest'
+export type StudyImportSourceKind =
+  | 'lichess_analyzed'
+  | 'lichess_scanned'
+  | 'pgn_scanned'
+  | 'fen_import'
+
+export interface ImportLichessPayload {
+  url: string
+  user_color?: StudySideColor | null
+  language: StudyLanguage
+}
+
+export interface ImportPgnPayload {
+  pgn: string
+  title?: string | null
+  user_color?: StudySideColor | null
+  language: StudyLanguage
+}
+
+export interface ImportFenPayload {
+  fen: string
+  title?: string | null
+  orientation?: StudySideColor | null
+  language: StudyLanguage
+}
+
+export interface ImportChapterResponse {
+  chapter: StudyChapterRecord
+  study_title?: string | null
+  source_kind: StudyImportSourceKind
+  summary_text: string
+  session_id: string
+}
 
 export type StudyEventKind =
   | 'chat_message'
@@ -212,7 +245,7 @@ export interface ChatStreamPayload {
 }
 
 const LEADING_CHAPTER_NUM_RE =
-  /^\s*(?:(?:глава|chapter|kapitel)\s*\d+\s*[:.\-—–]\s*|\d+\s*[.)\-—–]\s*)+/i
+  /^\s*(?:(?:глава|chapter|kapitel)\s*\d+\s*[:.\-—–]\s*|\d{1,2}\s*[.):\-—–]\s+(?!(?:[a-h][1-8x]|[KQRBN][a-h1-8x]|O-O)))+/i
 
 /**
  * Strips redundant leading numbering (`Глава 1:`, `2.`, `Chapter 3 —`) so chapters

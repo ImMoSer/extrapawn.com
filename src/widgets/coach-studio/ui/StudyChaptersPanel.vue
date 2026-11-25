@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { formatDisplayChapterTitle, useCoachStudyStore } from '@/features/ai-coach'
 import { useUiStore } from '@/shared/ui/model/ui.store'
-import { AddOutline, ArrowBackOutline, FlashOutline, TrashOutline } from '@vicons/ionicons5'
+import {
+  AddOutline,
+  ArrowBackOutline,
+  CloudDownloadOutline,
+  FlashOutline,
+  TrashOutline,
+} from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -13,6 +19,7 @@ const uiStore = useUiStore()
 
 const emit = defineEmits<{
   (e: 'request-new-chapter'): void
+  (e: 'request-import'): void
 }>()
 
 const handleBack = () => {
@@ -111,15 +118,24 @@ const handleDeleteChapter = async (chapterId: string, rawTitle: string) => {
       </ul>
     </div>
 
-    <!-- Footer "+ Chapter" Action -->
-    <div class="border-t border-border p-1.5">
+    <!-- Footer Actions: + Chapter | Import (Option A) -->
+    <div class="grid grid-cols-2 gap-1.5 border-t border-border p-1.5">
       <button
         type="button"
-        class="flex w-full min-w-0 cursor-pointer items-center justify-center gap-1.5 overflow-hidden rounded-md border border-border bg-elevated px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-border-hover hover:bg-overlay"
+        class="flex min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden rounded-md border border-border bg-elevated px-2 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-border-hover hover:bg-overlay"
         @click="handleNewChapter"
       >
         <NIcon :size="14" class="shrink-0 text-brand"><AddOutline /></NIcon>
-        <span class="truncate">{{ t('pages.study.newChapter') }}</span>
+        <span class="truncate">{{ t('pages.study.addChapterShort') }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="flex min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden rounded-md border border-border bg-elevated px-2 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-brand/60 hover:bg-overlay"
+        @click="emit('request-import')"
+      >
+        <NIcon :size="14" class="shrink-0 text-brand"><CloudDownloadOutline /></NIcon>
+        <span class="truncate">{{ t('pages.study.import') }}</span>
       </button>
     </div>
   </section>
