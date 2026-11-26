@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { WebChessBoard } from '@/entities/game'
 import { usePreferencesStore } from '@/entities/user'
-import { useCoachStudyStore, type StudyLanguage } from '@/features/ai-coach'
+import { useCoachStudyStore } from '@/features/ai-coach'
 import {
   StudyBoardControls,
   StudyBoardTopBar,
@@ -15,23 +15,15 @@ import type { DrawShape } from '@lichess-org/chessground/draw'
 import type { Key } from '@lichess-org/chessground/types'
 import type { Role as ChessopsRole } from 'chessops/types'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-const { locale } = useI18n()
 const preferencesStore = usePreferencesStore()
 const studyStore = useCoachStudyStore()
 
 const chatPanelRef = ref<InstanceType<typeof StudyChatPanel> | null>(null)
 const isImportModalOpen = ref(false)
-
-const currentLanguage = computed<StudyLanguage>(() => {
-  const loc = locale.value
-  if (loc === 'en' || loc === 'de') return loc
-  return 'ru'
-})
 
 const animationDuration = computed(() => preferencesStore.preferences.theme.animationDuration)
 const isAnimationEnabled = computed(() => animationDuration.value > 0)
@@ -51,11 +43,11 @@ const loadCurrentRouteStudy = async () => {
 }
 
 const handleUserMove = async ({ orig, dest }: { orig: Key; dest: Key }) => {
-  await studyStore.handleBoardUserMove(orig, dest, currentLanguage.value)
+  await studyStore.handleBoardUserMove(orig, dest)
 }
 
 const handleCompletePromotion = async (role: ChessopsRole) => {
-  await studyStore.completePromotion(role, currentLanguage.value)
+  await studyStore.completePromotion(role)
 }
 
 const handleWheelNavigate = (direction: 'up' | 'down') => {

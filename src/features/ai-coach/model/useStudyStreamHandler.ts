@@ -1,5 +1,7 @@
+import type { DrawShape } from '@lichess-org/chessground/draw'
 import { ref, shallowRef, type Ref } from 'vue'
 import logger from '@/shared/lib/logger'
+import { extractLatestStandaloneDrawShapes } from '@/shared/lib/markdown/coachDrawShapes'
 import { getStudy, streamCoachTurn } from '../api/coachStudy.api'
 import type {
   ChatStreamPayload,
@@ -7,7 +9,6 @@ import type {
   SseMetaEvent,
   SseUiActionEvent,
   StudyChapterRecord,
-  StudyCommentaryLevel,
   StudyEngineProfile,
   StudyLanguage,
   StudyPlayMode,
@@ -37,24 +38,25 @@ export interface StudyStreamHost {
   getCurrentFen: () => string
   getActiveUciPath: () => string[]
   getPlayMode: () => StudyPlayMode
+  getAnchorEnabled: () => boolean
   stopAutoPlay: () => void
   loadChapterIntoTree: (
     chapter: StudyChapterRecord,
     preservePath: boolean,
     autoStartBotOpening: boolean,
   ) => void
+  applyCoachInlineShapes: (shapes: DrawShape[]) => void
   setPendingTakebackPromote: (value: boolean) => void
   applyPlayModeSettings: (opts: {
     mode: StudyPlayMode
     userColor?: StudySideColor | null
     profile?: StudyEngineProfile | null
-    commentary?: StudyCommentaryLevel | null
   }) => void
 }
 
 /**
- * Manages AI Coach 2.0 Fetch SSE streaming, live status pills, unified `ui_action`
- * dispatching, and server re-sync upon manual user abort.
+ * Manages AI Coach 3.0 Fetch SSE streaming, live status pills, inline `[draw: ...]`
+ * board arrow overlays, `ui_action` dispatching, and server re-sync upon user abort.
  */
 export function useStudyStreamHandler(host: StudyStreamHost) {
   const isStreaming = ref(false)
@@ -155,7 +157,6 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
           mode: ev.play_mode,
           userColor: ev.user_color,
           profile: ev.engine_profile,
-          commentary: ev.commentary,
         })
       }
     }
@@ -176,6 +177,7 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
 
     const wantNewChapter = host.pendingNewChapter.value
     host.pendingNewChapter.value = false
+    const anchorEnabled = host.getAnchorEnabled()
 
     const optimisticLabel = opts.displayUserText ?? trimmed
     if (!opts.hideOptimisticUserBubble && optimisticLabel) {
@@ -188,7 +190,7 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
           chapter_id: host.activeChapterId.value,
           role: 'user',
           content: optimisticLabel,
-          board_fen: host.getCurrentFen(),
+          board_fen: anchorEnabled ? host.getCurrentFen() : '',
           board_actions: [],
           model_id: null,
           input_tokens: 0,
@@ -212,6 +214,7 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
       current_fen: host.getCurrentFen(),
       active_chapter_id: host.activeChapterId.value,
       active_uci_path: host.getActiveUciPath(),
+      anchor_enabled: anchorEnabled,
       request_new_chapter: wantNewChapter,
       play_mode: host.getPlayMode(),
       ...opts.extraPayload,
@@ -237,6 +240,7 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
           onDone: (ev) => {
             latestTelemetry.value = ev
             coachStatusLabel.value = null
+            const finalText = streamingText.value.trim()
             const targetChap = ev.chapter_id ?? stateRef.turnChapterId
             if (host.activeStudy.value) {
               host.turns.value = [
@@ -247,7 +251,7 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
                   user_id: host.activeStudy.value.user_id,
                   chapter_id: targetChap,
                   role: 'assistant',
-                  content: streamingText.value.trim(),
+                  content: finalText,
                   board_fen: host.getCurrentFen(),
                   board_actions: [],
                   model_id: ev.model_id,
@@ -262,6 +266,10 @@ export function useStudyStreamHandler(host: StudyStreamHost) {
                   requests: ev.requests,
                 },
               ]
+            }
+            const standaloneShapes = extractLatestStandaloneDrawShapes(finalText)
+            if (standaloneShapes.length > 0) {
+              host.applyCoachInlineShapes(standaloneShapes)
             }
             streamingText.value = ''
           },

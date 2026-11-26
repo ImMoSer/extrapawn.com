@@ -1,5 +1,6 @@
 export { useCoachStudyStore } from './model/coachStudy.store'
 export {
+  STUDY_BOT_PROFILES,
   estimateTurnCostUsd,
   formatDisplayChapterTitle,
   type ImportChapterResponse,

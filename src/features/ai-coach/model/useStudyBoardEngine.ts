@@ -14,12 +14,8 @@ import {
 } from '@/shared/lib/pgn/lichessPgnParser'
 import { PgnTreeController, type PgnNode } from '@/shared/lib/pgn/PgnService'
 import { STANDARD_START_FEN } from '@/shared/lib/pgn/pgnTypes'
-import type { StudyChapterRecord, StudyLanguage, StudySideColor } from './coachStudy.types'
-import {
-  useStudyPlayModes,
-  type CoachGameMoveEvent,
-  type SparringWakeEvent,
-} from './useStudyPlayModes'
+import type { StudyChapterRecord, StudySideColor } from './coachStudy.types'
+import { useStudyPlayModes } from './useStudyPlayModes'
 
 function computePositionState(fen: string): {
   turn: ChessgroundColor
@@ -46,14 +42,12 @@ export interface StudyBoardEngineCallbacks {
   activeChapter: Ref<StudyChapterRecord | null>
   isStreaming: Ref<boolean>
   onPersistCursor: (includePgn: boolean) => Promise<void>
-  onCoachGameMove: (ev: CoachGameMoveEvent) => Promise<void>
-  onSparringWakeCoach: (ev: SparringWakeEvent) => Promise<void>
-  onSparringBriefCommentary: (ev: CoachGameMoveEvent) => Promise<void>
+  onBoardInteracted?: () => void
 }
 
 /**
- * Isolated AI Study 2.0 PGN tree, Turn-Lock, Takeback-Promote, Clear-Shapes toggle,
- * navigation, autoplay, and move commitment (decoupled from TrainingCenter `gameStore`).
+ * Isolated AI Study 3.0 PGN tree, inline coach arrow overlays, silent bot auto-reply,
+ * navigation, autoplay, and free board exploration (decoupled from TrainingCenter `gameStore`).
  */
 export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
   const pgnTree = new PgnTreeController(STANDARD_START_FEN)
@@ -121,8 +115,6 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     stopAutoPlay,
     applyEngineMoveToTree: (uci) => Boolean(applyUciMoveToTree(uci, false)),
     onPersistCursor: callbacks.onPersistCursor,
-    onSparringWakeCoach: callbacks.onSparringWakeCoach,
-    onSparringBriefCommentary: callbacks.onSparringBriefCommentary,
   })
 
   const boardState = computed(() => {
@@ -130,10 +122,7 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     if (callbacks.isStreaming.value || modes.isBotThinking.value) {
       return { turn: raw.turn, dests: new Map<Key, Key[]>() as Dests, isCheck: raw.isCheck }
     }
-    if (
-      (modes.playMode.value === 'coach_game' || modes.playMode.value === 'sparring') &&
-      raw.turn !== modes.playerColor.value
-    ) {
+    if (modes.isBotAutoReplyActive.value && raw.turn !== modes.playerColor.value) {
       return { turn: raw.turn, dests: new Map<Key, Key[]>() as Dests, isCheck: raw.isCheck }
     }
     return raw
@@ -216,16 +205,29 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     transientShapes.value = []
     hideNodeShapes.value = false
     pgnTree.navigateToNode(node)
+    callbacks.onBoardInteracted?.()
     void callbacks.onPersistCursor(false)
   }
 
-  function navigateToPath(path: string): boolean {
+  function navigateToPath(path: string, overlayShapes?: DrawShape[]): boolean {
     stopAutoPlay()
     transientShapes.value = []
     hideNodeShapes.value = false
     const ok = pgnTree.navigateToPath(path)
-    if (ok) void callbacks.onPersistCursor(false)
+    if (ok) {
+      if (overlayShapes && overlayShapes.length > 0) {
+        transientShapes.value = overlayShapes
+      }
+      callbacks.onBoardInteracted?.()
+      void callbacks.onPersistCursor(false)
+    }
     return ok
+  }
+
+  function applyCoachInlineShapes(shapes: DrawShape[]): void {
+    if (shapes.length === 0) return
+    hideNodeShapes.value = false
+    transientShapes.value = shapes
   }
 
   function navigateStep(direction: 'start' | 'backward' | 'forward' | 'end'): void {
@@ -243,6 +245,7 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
       while (cursor.children[0]) cursor = cursor.children[0]
       pgnTree.navigateToNode(cursor)
     }
+    callbacks.onBoardInteracted?.()
     void callbacks.onPersistCursor(false)
   }
 
@@ -299,46 +302,27 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     pendingTakebackPromote.value = value
   }
 
-  async function commitMove(uci: string, language: StudyLanguage): Promise<void> {
-    const fenBefore = currentFen.value
-    const uciPathBefore = pgnTree.getCurrentUciPath()
+  async function commitMove(uci: string): Promise<void> {
     const moveSan = applyUciMoveToTree(uci, pendingTakebackPromote.value)
     if (!moveSan) return
     pendingTakebackPromote.value = false
-
-    if (modes.playMode.value === 'coach_game') {
-      await callbacks.onCoachGameMove({
-        moveUci: uci,
-        moveSan,
-        fenBefore,
-        uciPathBefore,
-        language,
-      })
-      return
-    }
+    callbacks.onBoardInteracted?.()
 
     await callbacks.onPersistCursor(true)
-    if (modes.playMode.value === 'sparring' && rawBoardState.value.turn !== modes.playerColor.value) {
-      await modes.playEngineReply(language, fenBefore, uci, moveSan, uciPathBefore)
+    if (modes.isBotAutoReplyActive.value && rawBoardState.value.turn !== modes.playerColor.value) {
+      await modes.playEngineReply()
     }
   }
 
-  async function completePromotion(
-    role: ChessopsRole,
-    language: StudyLanguage = 'ru',
-  ): Promise<void> {
+  async function completePromotion(role: ChessopsRole): Promise<void> {
     const st = promotionState.value
     promotionState.value = null
     if (!st) return
     const promoChar = role === 'knight' ? 'n' : role[0]
-    await commitMove(`${st.orig}${st.dest}${promoChar}`, language)
+    await commitMove(`${st.orig}${st.dest}${promoChar}`)
   }
 
-  async function handleBoardUserMove(
-    orig: Key,
-    dest: Key,
-    language: StudyLanguage = 'ru',
-  ): Promise<void> {
+  async function handleBoardUserMove(orig: Key, dest: Key): Promise<void> {
     stopAutoPlay()
     if (modes.isBotThinking.value || callbacks.isStreaming.value) return
 
@@ -363,14 +347,14 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
         dest,
         color: piece.color,
         onComplete: (role) => {
-          if (role) void completePromotion(role, language)
+          if (role) void completePromotion(role)
           else promotionState.value = null
         },
       }
       return
     }
 
-    await commitMove(`${orig}${dest}`, language)
+    await commitMove(`${orig}${dest}`)
   }
 
   return {
@@ -388,9 +372,7 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     isAutoPlaying,
     playMode: modes.playMode,
     engineProfile: modes.engineProfile,
-    commentaryLevel: modes.commentaryLevel,
-    isSparringActive: modes.isSparringActive,
-    isCoachGameActive: modes.isCoachGameActive,
+    isBotAutoReplyActive: modes.isBotAutoReplyActive,
     isBotThinking: modes.isBotThinking,
     loadChapterIntoTree,
     applyPlayModeSettings: modes.applyPlayModeSettings,
@@ -399,6 +381,7 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     serializeCurrentChapterPgn,
     navigateToNode,
     navigateToPath,
+    applyCoachInlineShapes,
     navigateStep,
     toggleAutoPlay,
     stopAutoPlay,
@@ -406,8 +389,8 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     clearBoardShapes,
     setUserShapes,
     setPendingTakebackPromote,
-    toggleSparring: modes.toggleSparring,
-    toggleCoachGame: modes.toggleCoachGame,
+    setEngineProfile: modes.setEngineProfile,
+    toggleBotAutoReply: modes.toggleBotAutoReply,
     handleBoardUserMove,
     completePromotion,
   }

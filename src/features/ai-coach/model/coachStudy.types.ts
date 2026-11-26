@@ -6,6 +6,7 @@ export type StudyLanguage = 'ru' | 'en' | 'de'
 export type StudyChapterKind = 'lesson' | 'drill' | 'live_game' | 'repertoire'
 export type StudyPlayMode = 'study' | 'coach_game' | 'sparring' | 'weed_pressure'
 export type StudyEngineProfile = 'mozero' | 'maia_1500' | 'maia_1700' | 'maia_1900' | 'maia_2200'
+export const STUDY_BOT_PROFILES: readonly StudyEngineProfile[] = ['mozero', 'maia_1700', 'maia_2200']
 export type StudyCommentaryLevel = 'off' | 'brief' | 'detailed'
 export type StudyAgentRole = 'head_coach' | 'assistant_coach'
 export type StudyChapterOpenMode = 'auto' | 'suggest'
@@ -241,6 +242,7 @@ export interface ChatStreamPayload {
   play_mode?: StudyPlayMode
   active_chapter_id?: string | null
   active_uci_path?: string[]
+  anchor_enabled?: boolean
   request_new_chapter?: boolean
 }
 

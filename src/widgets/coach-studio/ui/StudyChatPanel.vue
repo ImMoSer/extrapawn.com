@@ -6,35 +6,27 @@ import {
   type StudyLanguage,
   type StudyTurnRecord,
 } from '@/features/ai-coach'
-import {
-  buildChapterSanPathIndex,
-  renderCoachMarkdown,
-} from '@/shared/lib/markdown/renderCoachMarkdown'
-import {
-  ArrowForwardOutline,
-  CloseOutline,
-  SendOutline,
-  SparklesOutline,
-  StopCircleOutline,
-} from '@vicons/ionicons5'
+import { parseDrawTokensToShapes } from '@/shared/lib/markdown/coachDrawShapes'
+import { renderCoachMarkdown } from '@/shared/lib/markdown/renderCoachMarkdown'
+import { ArrowForwardOutline, CloseOutline, SparklesOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import StudyChatComposer from './StudyChatComposer.vue'
 
 const { t, locale } = useI18n()
 const studyStore = useCoachStudyStore()
 
-const draftMessage = ref('')
-const inputRef = ref<HTMLTextAreaElement | null>(null)
+const composerRef = ref<InstanceType<typeof StudyChatComposer> | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
+const highlightedTurnId = ref<number | null>(null)
+let highlightTimer: ReturnType<typeof setTimeout> | null = null
 
 const currentLanguage = computed<StudyLanguage>(() => {
   const loc = locale.value
   if (loc === 'en' || loc === 'de') return loc
   return 'ru'
 })
-
-const sanPathIndex = computed(() => buildChapterSanPathIndex(studyStore.rootNode))
 
 const showSuggestedCard = computed(() => {
   const card = studyStore.suggestedChapter
@@ -43,18 +35,18 @@ const showSuggestedCard = computed(() => {
 })
 
 const starterSuggestions = computed(() => [
-  { key: 'play', label: t('pages.study.starterPlay'), prompt: t('pages.study.starterPlayPrompt') },
+  { key: 'opening', label: t('pages.study.starterOpening'), prompt: t('pages.study.starterOpeningPrompt') },
+  { key: 'trap', label: t('pages.study.starterTrap'), prompt: t('pages.study.starterTrapPrompt') },
+  { key: 'endgame', label: t('pages.study.starterEndgame'), prompt: t('pages.study.starterEndgamePrompt') },
   { key: 'weak', label: t('pages.study.starterWeak'), prompt: t('pages.study.starterWeakPrompt') },
-  { key: 'opp', label: t('pages.study.starterOpposition'), prompt: t('pages.study.starterOppositionPrompt') },
-  { key: 'rook', label: t('pages.study.starterRook'), prompt: t('pages.study.starterRookPrompt') },
 ])
 
 const renderedStreamingHtml = computed(() =>
-  renderCoachMarkdown(studyStore.streamingText, sanPathIndex.value),
+  renderCoachMarkdown(studyStore.streamingText, studyStore.sanPathIndex),
 )
 
 const renderTurnHtml = (content: string): string =>
-  renderCoachMarkdown(content, sanPathIndex.value)
+  renderCoachMarkdown(content, studyStore.sanPathIndex)
 
 const formatTurnCost = (turn: StudyTurnRecord): string => {
   const cost =
@@ -63,11 +55,6 @@ const formatTurnCost = (turn: StudyTurnRecord): string => {
       : estimateTurnCostUsd(turn.model_id, turn.input_tokens, turn.cached_tokens, turn.output_tokens)
   if (cost <= 0) return ''
   return cost < 0.01 ? `$${cost.toFixed(4)}` : `$${cost.toFixed(3)}`
-}
-
-const isAssistantTier = (turn: StudyTurnRecord): boolean => {
-  if (turn.agent_role) return turn.agent_role === 'assistant_coach'
-  return Boolean(turn.model_id?.toLowerCase().includes('flash-lite'))
 }
 
 const scrollToBottom = async () => {
@@ -91,39 +78,70 @@ watch(
   },
 )
 
+watch(
+  () => studyStore.scrollToTurnRequest,
+  async (req) => {
+    if (!req) return
+    await nextTick()
+    const targetEl = scrollRef.value?.querySelector<HTMLElement>(`[data-turn-id="${req.turnId}"]`)
+    if (!targetEl) return
+    targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    highlightedTurnId.value = req.turnId
+    if (highlightTimer !== null) clearTimeout(highlightTimer)
+    highlightTimer = setTimeout(() => {
+      highlightedTurnId.value = null
+      highlightTimer = null
+    }, 1600)
+  },
+)
+
 const focusInput = () => {
-  void nextTick(() => {
-    inputRef.value?.focus()
-  })
+  composerRef.value?.focusInput()
 }
+
+watch(
+  () => studyStore.focusChatInputRequest,
+  () => {
+    focusInput()
+  },
+)
+
+onUnmounted(() => {
+  if (highlightTimer !== null) {
+    clearTimeout(highlightTimer)
+    highlightTimer = null
+  }
+})
 
 defineExpose({ focusInput })
 
-const handleSend = async (customText?: string) => {
-  const text = (customText ?? draftMessage.value).trim()
+const handleSend = async (rawText: string) => {
+  const text = rawText.trim()
   if (!text || studyStore.isStreaming) return
-  if (!customText) {
-    draftMessage.value = ''
-  }
   await studyStore.sendCoachMessage({
     text,
     language: currentLanguage.value,
   })
 }
 
-const handleKeydown = (ev: KeyboardEvent) => {
-  if (ev.key === 'Enter' && !ev.shiftKey) {
-    ev.preventDefault()
-    void handleSend()
-  }
-}
-
 const handleMarkdownClick = (ev: MouseEvent) => {
   const target = ev.target as HTMLElement | null
-  const chip = target?.closest<HTMLElement>('[data-pgn-path]')
-  const path = chip?.dataset.pgnPath
+  const pgnChip = target?.closest<HTMLElement>('[data-pgn-path]')
+  const path = pgnChip?.dataset.pgnPath
   if (path) {
-    studyStore.navigateToPath(path)
+    const drawRaw = pgnChip.dataset.draw
+    const shapes = drawRaw ? parseDrawTokensToShapes(drawRaw) : undefined
+    studyStore.navigateToPath(path, shapes && shapes.length > 0 ? shapes : undefined)
+    return
+  }
+
+  const drawChip = target?.closest<HTMLElement>('[data-draw]')
+  const drawRaw = drawChip?.dataset.draw
+  if (drawRaw) {
+    const shapes = parseDrawTokensToShapes(drawRaw)
+    if (shapes.length > 0) {
+      studyStore.applyCoachInlineShapes(shapes)
+    }
   }
 }
 
@@ -175,37 +193,37 @@ const handleOpenSuggested = () => {
       <div
         v-for="turn in studyStore.visibleTurns"
         :key="turn.id"
+        :data-turn-id="turn.id"
         class="flex flex-col gap-1"
         :class="turn.role === 'user' ? 'items-end' : 'items-start'"
       >
         <div
           v-if="turn.role === 'user'"
-          class="max-w-[94%] rounded-md border border-border-hover bg-elevated px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words text-text-primary"
+          class="max-w-[94%] rounded-md border bg-elevated px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words text-text-primary transition-colors"
+          :class="
+            highlightedTurnId === turn.id ? 'border-brand ring-1 ring-brand' : 'border-border-hover'
+          "
         >
           {{ turn.content }}
         </div>
 
         <div
           v-else
-          class="coach-markdown max-w-[96%] rounded-md border border-border bg-canvas px-2.5 py-2 text-xs leading-relaxed break-words text-text-primary"
+          class="coach-markdown max-w-[96%] rounded-md border bg-canvas px-2.5 py-2 text-xs leading-relaxed break-words text-text-primary transition-colors"
+          :class="highlightedTurnId === turn.id ? 'border-brand ring-1 ring-brand' : 'border-border'"
           @click="handleMarkdownClick"
           v-html="renderTurnHtml(turn.content)"
         />
 
-        <!-- Compact owner-only telemetry line -->
+        <!-- Compact telemetry line -->
         <span
           v-if="turn.role === 'assistant' && turn.input_tokens > 0"
           class="flex flex-wrap items-center gap-1 px-1 font-condensed text-[0.68rem] text-text-secondary"
         >
           <span
-            class="rounded-sm border px-1 py-px text-[0.64rem] font-semibold"
-            :class="
-              isAssistantTier(turn)
-                ? 'border-info/40 bg-elevated text-info'
-                : 'border-brand/40 bg-elevated text-brand'
-            "
+            class="rounded-sm border border-brand/40 bg-elevated px-1 py-px text-[0.64rem] font-semibold text-brand"
           >
-            {{ isAssistantTier(turn) ? t('pages.study.roleAssistant') : t('pages.study.roleHead') }}
+            {{ t('pages.study.roleHead') }}
           </span>
           <span>
             {{ turn.input_tokens }} in ({{ turn.cached_tokens }}c) · {{ turn.output_tokens }} out ·
@@ -283,55 +301,8 @@ const handleOpenSuggested = () => {
       </div>
     </div>
 
-    <!-- Pending New Chapter Badge + Input Composer -->
-    <div class="flex flex-col gap-1.5 border-t border-border p-2">
-      <div
-        v-if="studyStore.pendingNewChapter"
-        class="flex items-center justify-between gap-2 rounded-sm border border-brand/40 bg-elevated px-2 py-0.5 text-[0.72rem] text-brand"
-      >
-        <span class="truncate font-medium">{{ t('pages.study.newChapterIntent') }}</span>
-        <button
-          type="button"
-          class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-text-secondary hover:text-text-primary"
-          @click="studyStore.cancelNewChapterPrompt()"
-        >
-          <NIcon :size="13"><CloseOutline /></NIcon>
-        </button>
-      </div>
-
-      <div class="flex items-end gap-1.5">
-        <textarea
-          ref="inputRef"
-          v-model="draftMessage"
-          rows="2"
-          :disabled="studyStore.isStreaming"
-          :placeholder="t('pages.study.chatPlaceholder')"
-          class="min-w-0 flex-1 resize-none rounded-md border border-border bg-elevated px-2.5 py-1.5 font-display text-xs text-text-primary placeholder:text-text-disabled focus:border-border-hover focus:outline-none disabled:opacity-60"
-          @keydown="handleKeydown"
-        />
-
-        <button
-          v-if="studyStore.isStreaming"
-          type="button"
-          class="flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-danger/50 bg-elevated px-2.5 text-xs font-medium text-danger transition-colors hover:bg-overlay"
-          :title="t('pages.study.stop')"
-          @click="studyStore.abortStream(true)"
-        >
-          <NIcon :size="16"><StopCircleOutline /></NIcon>
-        </button>
-
-        <button
-          v-else
-          type="button"
-          :disabled="!draftMessage.trim()"
-          class="flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-brand px-2.5 text-xs font-semibold text-on-brand transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-45"
-          :title="t('pages.study.send')"
-          @click="handleSend()"
-        >
-          <NIcon :size="15"><SendOutline /></NIcon>
-        </button>
-      </div>
-    </div>
+    <!-- Live Board Context Anchor + Input Composer -->
+    <StudyChatComposer ref="composerRef" @send="handleSend" />
   </section>
 </template>
 
@@ -378,6 +349,7 @@ const handleOpenSuggested = () => {
 .coach-markdown :deep(.coach-san-chip) {
   display: inline-flex;
   align-items: center;
+  gap: 0.15rem;
   cursor: pointer;
   border-radius: 2px;
   border: 1px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
@@ -391,8 +363,47 @@ const handleOpenSuggested = () => {
   transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.coach-markdown :deep(.coach-san-chip:hover) {
+.coach-markdown :deep(.coach-san-chip:hover),
+.coach-markdown :deep(.coach-draw-chip:hover),
+.coach-markdown :deep(.coach-draw-inline:hover) {
   border-color: var(--color-brand);
   background: var(--color-overlay);
+}
+
+.coach-markdown :deep(.coach-san-chip--draw) {
+  border-color: color-mix(in srgb, var(--color-brand) 70%, transparent);
+}
+
+.coach-markdown :deep(.coach-draw-inline) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  cursor: pointer;
+  line-height: 1.3;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.coach-markdown :deep(.coach-draw-chip) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 0.15rem;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 50%, transparent);
+  background: var(--color-elevated);
+  padding: 0 0.22rem;
+  font-family: var(--font-condensed);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-brand);
+  line-height: 1.25;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.coach-markdown :deep(.coach-draw-mark) {
+  font-size: 0.7rem;
+  color: var(--color-brand);
+  opacity: 0.9;
 }
 </style>

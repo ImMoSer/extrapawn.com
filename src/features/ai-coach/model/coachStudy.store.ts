@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import logger from '@/shared/lib/logger'
-import { STANDARD_START_FEN } from '@/shared/lib/pgn/pgnTypes'
+import { buildChapterSanPathIndex } from '@/shared/lib/markdown/renderCoachMarkdown'
+import { STANDARD_START_FEN, type PgnNode } from '@/shared/lib/pgn/pgnTypes'
 import {
   createStudy,
   deleteStudy,
@@ -20,6 +21,11 @@ import {
   type StudyTurnRecord,
   type SuggestedChapterCard,
 } from './coachStudy.types'
+import {
+  buildChapterFen4PathIndex,
+  buildDiscussedPathsMap,
+  formatStudyAnchorMoveLabel,
+} from './coachStudyCanvas'
 import { useStudyBoardEngine } from './useStudyBoardEngine'
 import { useStudyImport } from './useStudyImport'
 import { useStudyStreamHandler } from './useStudyStreamHandler'
@@ -39,6 +45,11 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
   const isLoadingWorkspace = ref(false)
   const pendingNewChapter = ref(false)
   const suggestedChapter = ref<SuggestedChapterCard | null>(null)
+
+  // Unified Canvas: Live Board Context Anchor & Bidirectional Chat <-> PGN Signals
+  const anchorEnabled = ref(true)
+  const scrollToTurnRequest = ref<{ turnId: number; nonce: number } | null>(null)
+  const focusChatInputRequest = ref(0)
 
   const activeChapter = computed<StudyChapterRecord | null>(() => {
     if (!activeChapterId.value) return null
@@ -98,9 +109,11 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     getCurrentFen: () => boardRef?.currentFen.value ?? STANDARD_START_FEN,
     getActiveUciPath: () => boardRef?.activeUciPath.value ?? [],
     getPlayMode: () => boardRef?.playMode.value ?? 'study',
+    getAnchorEnabled: () => anchorEnabled.value,
     stopAutoPlay: () => boardRef?.stopAutoPlay(),
     loadChapterIntoTree: (ch, preserve, autoBot) =>
       boardRef?.loadChapterIntoTree(ch, preserve, autoBot),
+    applyCoachInlineShapes: (shapes) => boardRef?.applyCoachInlineShapes(shapes),
     setPendingTakebackPromote: (val) => boardRef?.setPendingTakebackPromote(val),
     applyPlayModeSettings: (opts) => boardRef?.applyPlayModeSettings(opts),
   })
@@ -159,53 +172,25 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     activeChapter,
     isStreaming: stream.isStreaming,
     onPersistCursor: persistActiveChapterCursor,
-    onCoachGameMove: async (ev) => {
-      await stream.sendCoachMessage({
-        text: '',
-        displayUserText: ev.moveSan,
-        language: ev.language,
-        eventKind: 'student_moved',
-        extraPayload: {
-          student_move_uci: ev.moveUci,
-          fen_before: ev.fenBefore,
-          active_uci_path: ev.uciPathBefore,
-          play_mode: 'coach_game',
-          expected_chapter_revision: activeChapter.value?.revision,
-        },
-      })
-    },
-    onSparringWakeCoach: async (ev) => {
-      await stream.sendCoachMessage({
-        text: '',
-        language: ev.language,
-        eventKind: 'move_played',
-        hideOptimisticUserBubble: true,
-        extraPayload: {
-          fen_before: ev.fenBefore,
-          last_move_uci: ev.lastMoveUci,
-          player_tablebase: ev.playerTablebase,
-          arbiter_cp: ev.arbiterCp,
-          arbiter_mate: ev.arbiterMate,
-          play_mode: 'sparring',
-        },
-      })
-    },
-    onSparringBriefCommentary: async (ev) => {
-      await stream.sendCoachMessage({
-        text: '',
-        language: ev.language,
-        eventKind: 'student_moved',
-        hideOptimisticUserBubble: true,
-        extraPayload: {
-          student_move_uci: ev.moveUci,
-          fen_before: ev.fenBefore,
-          active_uci_path: ev.uciPathBefore,
-          play_mode: 'sparring',
-        },
-      })
+    onBoardInteracted: () => {
+      anchorEnabled.value = true
     },
   })
   boardRef = board
+
+  const sanPathIndex = computed(() => buildChapterSanPathIndex(board.rootNode.value))
+  const fen4PathIndex = computed(() => buildChapterFen4PathIndex(board.rootNode.value))
+  const discussedPathsMap = computed(() =>
+    buildDiscussedPathsMap(
+      visibleTurns.value,
+      sanPathIndex.value,
+      fen4PathIndex.value,
+      board.rootNode.value.fenAfter,
+    ),
+  )
+  const anchorInfo = computed(() =>
+    formatStudyAnchorMoveLabel(board.currentNode.value, board.rootNode.value),
+  )
 
   const importer = useStudyImport({
     activeStudy,
@@ -217,6 +202,20 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     cancelCursorDebounce,
     sendCoachMessage: stream.sendCoachMessage,
   })
+
+  function setAnchorEnabled(value: boolean): void {
+    anchorEnabled.value = value
+  }
+
+  function requestScrollToTurn(turnId: number): void {
+    scrollToTurnRequest.value = { turnId, nonce: Date.now() + Math.random() }
+  }
+
+  function requestFocusChatForNode(node: PgnNode): void {
+    board.navigateToNode(node)
+    anchorEnabled.value = true
+    focusChatInputRequest.value += 1
+  }
 
   async function fetchStudies(): Promise<void> {
     isLoadingStudies.value = true
@@ -257,6 +256,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
       activeStudy.value = data.session
       chapters.value = data.chapters
       turns.value = data.recent_turns
+      anchorEnabled.value = true
 
       const targetId =
         data.session.active_chapter_id &&
@@ -283,6 +283,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     cancelCursorDebounce()
     pendingNewChapter.value = false
     suggestedChapter.value = null
+    anchorEnabled.value = true
     stream.latestMeta.value = null
     stream.streamError.value = null
     activeChapterId.value = chapterId
@@ -305,6 +306,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     }
     if (activeChapterId.value === chapterId) {
       stream.latestMeta.value = null
+      anchorEnabled.value = true
       const next = chapters.value[0] ?? null
       activeChapterId.value = next?.id ?? null
       if (next) {
@@ -335,6 +337,8 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     turns.value = []
     pendingNewChapter.value = false
     suggestedChapter.value = null
+    anchorEnabled.value = true
+    scrollToTurnRequest.value = null
   }
 
   return {
@@ -359,6 +363,12 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     rootComment: board.rootComment,
     activeUciPath: board.activeUciPath,
     promotionState: board.promotionState,
+    sanPathIndex,
+    discussedPathsMap,
+    anchorEnabled,
+    anchorInfo,
+    scrollToTurnRequest,
+    focusChatInputRequest,
     isStreaming: stream.isStreaming,
     streamingText: stream.streamingText,
     coachStatusLabel: stream.coachStatusLabel,
@@ -370,9 +380,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     isAutoPlaying: board.isAutoPlaying,
     playMode: board.playMode,
     engineProfile: board.engineProfile,
-    commentaryLevel: board.commentaryLevel,
-    isSparringActive: board.isSparringActive,
-    isCoachGameActive: board.isCoachGameActive,
+    isBotAutoReplyActive: board.isBotAutoReplyActive,
     isBotThinking: board.isBotThinking,
     isImporting: importer.isImporting,
     importStatusLabel: importer.importStatusLabel,
@@ -385,8 +393,12 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     selectChapter,
     dismissSuggestedChapter,
     removeChapter,
+    setAnchorEnabled,
+    requestScrollToTurn,
+    requestFocusChatForNode,
     navigateToNode: board.navigateToNode,
     navigateToPath: board.navigateToPath,
+    applyCoachInlineShapes: board.applyCoachInlineShapes,
     navigateStep: board.navigateStep,
     toggleAutoPlay: board.toggleAutoPlay,
     stopAutoPlay: board.stopAutoPlay,
@@ -395,8 +407,8 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     setUserShapes: board.setUserShapes,
     triggerNewChapterPrompt,
     cancelNewChapterPrompt,
-    toggleSparring: board.toggleSparring,
-    toggleCoachGame: board.toggleCoachGame,
+    setEngineProfile: board.setEngineProfile,
+    toggleBotAutoReply: board.toggleBotAutoReply,
     handleBoardUserMove: board.handleBoardUserMove,
     completePromotion: board.completePromotion,
     sendCoachMessage: stream.sendCoachMessage,

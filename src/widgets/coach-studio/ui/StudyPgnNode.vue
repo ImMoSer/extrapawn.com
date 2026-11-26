@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useCoachStudyStore } from '@/features/ai-coach'
+import { buildPathFromNode } from '@/shared/lib/pgn/pgnTreeOps'
 import { NAG_MAPPING, type PgnNode } from '@/shared/lib/pgn/pgnTypes'
+import { ChatbubbleOutline } from '@vicons/ionicons5'
+import { NIcon } from 'naive-ui'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -13,11 +17,16 @@ const props = withDefaults(
   },
 )
 
+const { t } = useI18n()
 const studyStore = useCoachStudyStore()
 
 const isActive = computed(() => studyStore.currentNode === props.node)
 const hasShapes = computed(() => Boolean(props.node.shapes && props.node.shapes.length > 0))
 const isLongComment = computed(() => (props.node.comment?.length ?? 0) > 28)
+const nodePath = computed(() => (props.node.ply > 0 ? buildPathFromNode(props.node) : ''))
+const discussedTurnId = computed<number | null>(() =>
+  nodePath.value ? (studyStore.discussedPathsMap.get(nodePath.value) ?? null) : null,
+)
 
 const moveNumber = computed(() => {
   const ply = props.node.ply
@@ -76,6 +85,17 @@ const variations = computed(() => props.node.children.slice(1))
 const handleNavigate = () => {
   studyStore.navigateToNode(props.node)
 }
+
+const handleDiscussNode = () => {
+  studyStore.requestFocusChatForNode(props.node)
+}
+
+const handleJumpToDiscussion = () => {
+  studyStore.navigateToNode(props.node)
+  if (discussedTurnId.value !== null) {
+    studyStore.requestScrollToTurn(discussedTurnId.value)
+  }
+}
 </script>
 
 <template>
@@ -90,6 +110,7 @@ const handleNavigate = () => {
       <button
         type="button"
         :data-pgn-active="isActive ? 'true' : undefined"
+        :title="t('pages.study.discussMoveHint')"
         class="inline-flex cursor-pointer items-center gap-1 rounded-sm border px-1.5 py-px font-condensed text-[0.95rem] font-semibold transition-colors"
         :class="[
           isActive
@@ -98,6 +119,7 @@ const handleNavigate = () => {
           qualityColorClass,
         ]"
         @click="handleNavigate"
+        @contextmenu.prevent="handleDiscussNode"
       >
         <span>{{ node.san }}{{ nagInfo ? nagInfo.symbol : '' }}</span>
         <span
@@ -105,6 +127,16 @@ const handleNavigate = () => {
           class="inline-block h-1.5 w-1.5 rounded-full bg-success"
           aria-hidden="true"
         />
+      </button>
+
+      <button
+        v-if="discussedTurnId !== null"
+        type="button"
+        class="ml-0.5 inline-flex cursor-pointer items-center rounded-sm border-none bg-transparent p-0.5 text-brand transition-colors hover:bg-elevated hover:text-text-primary"
+        :title="t('pages.study.jumpToDiscussion')"
+        @click.stop="handleJumpToDiscussion"
+      >
+        <NIcon :size="11"><ChatbubbleOutline /></NIcon>
       </button>
 
       <span

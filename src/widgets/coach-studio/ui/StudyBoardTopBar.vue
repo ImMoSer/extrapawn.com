@@ -1,21 +1,32 @@
 <script setup lang="ts">
 import {
+  STUDY_BOT_PROFILES,
   formatDisplayChapterTitle,
   useCoachStudyStore,
-  type StudyLanguage,
+  type StudyEngineProfile,
 } from '@/features/ai-coach'
-import { ChatbubbleEllipsesOutline, FlashOutline, StopOutline } from '@vicons/ionicons5'
+import { FlashOutline, StopOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const studyStore = useCoachStudyStore()
 
-const currentLanguage = computed<StudyLanguage>(() => {
-  const loc = locale.value
-  if (loc === 'en' || loc === 'de') return loc
-  return 'ru'
+const PROFILE_LABELS: Record<StudyEngineProfile, string> = {
+  mozero: 'mozero',
+  maia_1500: 'Maia 1500',
+  maia_1700: 'Maia 1700',
+  maia_1900: 'Maia 1900',
+  maia_2200: 'Maia 2200',
+}
+
+const availableProfiles = computed<StudyEngineProfile[]>(() => {
+  const current = studyStore.engineProfile
+  if (STUDY_BOT_PROFILES.includes(current)) {
+    return [...STUDY_BOT_PROFILES]
+  }
+  return [...STUDY_BOT_PROFILES, current]
 })
 
 const titleText = computed(() => {
@@ -29,12 +40,18 @@ const statusLabel = computed(() => {
   if (studyStore.isStreaming) {
     return studyStore.coachStatusLabel || t('pages.study.coachThinking')
   }
-  if (studyStore.isBotThinking) return `${studyStore.engineProfile}...`
+  if (studyStore.isBotThinking) return `${PROFILE_LABELS[studyStore.engineProfile]}...`
   if (studyStore.isAutoPlaying) return t('pages.study.autoPlaying')
-  if (studyStore.isCoachGameActive) return t('pages.study.coachGameActive')
-  if (studyStore.isSparringActive) return studyStore.engineProfile
   return ''
 })
+
+const handleProfileChange = (ev: Event) => {
+  const select = ev.target as HTMLSelectElement | null
+  const val = select?.value as StudyEngineProfile | undefined
+  if (val && val in PROFILE_LABELS) {
+    studyStore.setEngineProfile(val)
+  }
+}
 </script>
 
 <template>
@@ -51,46 +68,38 @@ const statusLabel = computed(() => {
       </span>
     </div>
 
+    <!-- Silent $0 Bot Auto-Reply Controls -->
     <div class="flex shrink-0 items-center gap-1.5">
-      <!-- Live Interactive Coach Game Toggle -->
-      <button
-        type="button"
-        class="inline-flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-45"
-        :class="
-          studyStore.isCoachGameActive
-            ? 'border-brand/60 bg-elevated text-brand hover:bg-overlay'
-            : 'border-border bg-elevated text-text-primary hover:border-border-hover hover:bg-overlay'
-        "
-        :disabled="studyStore.isStreaming || studyStore.isBotThinking"
-        @click="studyStore.toggleCoachGame()"
+      <select
+        :value="studyStore.engineProfile"
+        :aria-label="t('pages.study.botProfileLabel')"
+        :title="t('pages.study.botProfileLabel')"
+        :disabled="studyStore.isBotThinking || studyStore.isStreaming"
+        class="cursor-pointer rounded-md border border-border bg-elevated px-1.5 py-1 font-condensed text-[0.72rem] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary focus:border-brand focus:outline-none disabled:opacity-45"
+        @change="handleProfileChange"
       >
-        <NIcon :size="14" class="shrink-0">
-          <StopOutline v-if="studyStore.isCoachGameActive" />
-          <ChatbubbleEllipsesOutline v-else />
-        </NIcon>
-        <span class="truncate">
-          {{ studyStore.isCoachGameActive ? t('pages.study.stopCoachGame') : t('pages.study.coachGame') }}
-        </span>
-      </button>
+        <option v-for="prof in availableProfiles" :key="prof" :value="prof">
+          {{ PROFILE_LABELS[prof] }}
+        </option>
+      </select>
 
-      <!-- Sparring Engine Toggle (mozero / maia) -->
       <button
         type="button"
         class="inline-flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-45"
         :class="
-          studyStore.isSparringActive
+          studyStore.isBotAutoReplyActive
             ? 'border-warning/60 bg-elevated text-warning hover:bg-overlay'
             : 'border-border bg-elevated text-text-primary hover:border-border-hover hover:bg-overlay'
         "
         :disabled="studyStore.isStreaming"
-        @click="studyStore.toggleSparring(currentLanguage)"
+        @click="studyStore.toggleBotAutoReply()"
       >
         <NIcon :size="14" class="shrink-0">
-          <StopOutline v-if="studyStore.isSparringActive" />
+          <StopOutline v-if="studyStore.isBotAutoReplyActive" />
           <FlashOutline v-else />
         </NIcon>
         <span class="truncate">
-          {{ studyStore.isSparringActive ? t('pages.study.stopSparring') : t('pages.study.sparring') }}
+          {{ studyStore.isBotAutoReplyActive ? t('pages.study.stopBot') : t('pages.study.botAuto') }}
         </span>
       </button>
     </div>
