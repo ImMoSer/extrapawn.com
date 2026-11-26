@@ -10,12 +10,27 @@ import { normalizeDrawTokens } from './coachDrawShapes'
 export type ChapterSanPathIndex = ReadonlyMap<string, string>
 
 const MOVE_TOKEN_RE =
-  /(^|[\s([{"'«„`>*])((?:\d+\.(?:\.\.)?\s*)?(?:O-O-O|O-O|[KQRBN][a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?|[a-h]x[a-h][1-8](?:=[QRBN])?[+#]?|[a-h][1-8](?:=[QRBN])?[+#]?))(?=[?!]*($|[\s.,;:!?)\]}"'»“`<*]))/g
+  /(^|[\s([{"'«„`>*])((?:\d+\.(?:\.\.)?\s*)?(?:O-O-O|O-O|[KQRBN][a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?|[a-h]x[a-h][1-8](?:=[QRBN])?[+#]?|[a-h][1-8](?:=[QRBN])?[+#]?)(?:[?!]{2})?)(?=[?!]*($|[\s.,;:!?)\]}"'»“`<*]))/g
 
 const CODE_WITH_DRAW_RE = /`([^`\n]+)`(?:\s*\[\s*draw\s*:\s*([^\]]+)\])?/gi
 const STANDALONE_DRAW_RE = /\[\s*draw\s*:\s*([^\]]+)\]/gi
 const HAS_MOVE_NUM_RE = /^\d+\./
 const PLACEHOLDER_RE = /\u0000CHIP(\d+)\u0000/g
+
+export interface ExtractMentionedPathsOptions {
+  numberedOnly?: boolean
+}
+
+function detectSanNagClass(label: string): string {
+  const trimmed = label.trim()
+  if (trimmed.endsWith('??')) return 'coach-san-chip--blunder'
+  if (trimmed.endsWith('?!')) return 'coach-san-chip--inaccuracy'
+  if (trimmed.endsWith('!?')) return 'coach-san-chip--interesting'
+  if (trimmed.endsWith('!!')) return 'coach-san-chip--brilliant'
+  if (trimmed.endsWith('?')) return 'coach-san-chip--mistake'
+  if (trimmed.endsWith('!')) return 'coach-san-chip--good'
+  return ''
+}
 
 function escapeHtml(raw: string): string {
   return raw
@@ -89,16 +104,24 @@ export function buildChapterSanPathIndex(rootNode: PgnNode): ChapterSanPathIndex
 export function extractMentionedPathsFromText(
   rawText: string,
   sanIndex: ChapterSanPathIndex,
+  options?: ExtractMentionedPathsOptions,
 ): string[] {
   if (!rawText || sanIndex.size === 0) return []
+  const numberedOnly = Boolean(options?.numberedOnly)
   const found = new Set<string>()
+
+  const maybeAdd = (rawToken: string): void => {
+    const clean = normalizeLookupKey(rawToken)
+    if (!clean) return
+    if (numberedOnly && !HAS_MOVE_NUM_RE.test(clean)) return
+    const path = resolveSanPath(rawToken, sanIndex)
+    if (path) found.add(path)
+  }
 
   CODE_WITH_DRAW_RE.lastIndex = 0
   let cm: RegExpExecArray | null = CODE_WITH_DRAW_RE.exec(rawText)
   while (cm !== null) {
-    const inner = (cm[1] ?? '').trim()
-    const path = resolveSanPath(inner, sanIndex)
-    if (path) found.add(path)
+    maybeAdd((cm[1] ?? '').trim())
     cm = CODE_WITH_DRAW_RE.exec(rawText)
   }
 
@@ -106,9 +129,7 @@ export function extractMentionedPathsFromText(
   MOVE_TOKEN_RE.lastIndex = 0
   let mm: RegExpExecArray | null = MOVE_TOKEN_RE.exec(withoutDraw)
   while (mm !== null) {
-    const tok = mm[2] ?? ''
-    const path = resolveSanPath(tok, sanIndex)
-    if (path) found.add(path)
+    maybeAdd(mm[2] ?? '')
     mm = MOVE_TOKEN_RE.exec(withoutDraw)
   }
 
@@ -118,15 +139,19 @@ export function extractMentionedPathsFromText(
 function buildSanChipHtml(label: string, path: string, drawTokens: string[]): string {
   const safePath = escapeHtml(path)
   const safeLabel = escapeHtml(label)
+  const nagClass = detectSanNagClass(label)
+  const classes = ['coach-san-chip']
+  if (nagClass) classes.push(nagClass)
   if (drawTokens.length > 0) {
+    classes.push('coach-san-chip--draw')
     const safeDraw = escapeHtml(drawTokens.join(','))
     return (
-      `<button type="button" class="coach-san-chip coach-san-chip--draw" ` +
+      `<button type="button" class="${classes.join(' ')}" ` +
       `data-pgn-path="${safePath}" data-draw="${safeDraw}">` +
       `${safeLabel}<span class="coach-draw-mark" aria-hidden="true">↗</span></button>`
     )
   }
-  return `<button type="button" class="coach-san-chip" data-pgn-path="${safePath}">${safeLabel}</button>`
+  return `<button type="button" class="${classes.join(' ')}" data-pgn-path="${safePath}">${safeLabel}</button>`
 }
 
 function buildStandaloneDrawHtml(drawTokens: string[]): string {

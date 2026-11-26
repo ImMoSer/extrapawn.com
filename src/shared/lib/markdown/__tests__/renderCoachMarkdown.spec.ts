@@ -63,9 +63,17 @@ describe('renderCoachMarkdown & coachDrawShapes (AI Coach 3.0)', () => {
     const htmlWrongNum = renderCoachMarkdown('На `5. Kc2` хода нет в этой главе.', index)
     expect(htmlWrongNum).not.toContain('data-pgn-path')
 
-    // Reverse lookup of discussed moves
+    // Reverse lookup of discussed moves (all vs numberedOnly)
     const mentioned = extractMentionedPathsFromText(md, index)
     expect(mentioned.length).toBeGreaterThanOrEqual(3)
+    const numberedOnly = extractMentionedPathsFromText(md, index, { numberedOnly: true })
+    expect(numberedOnly.length).toBe(2)
+
+    // Colored NAG classes on SAN chips
+    const nagHtml = renderCoachMarkdown('Ошибка `1. Kc2??` и `2. Kd3?!` (лучше `Kc7!!`).', index)
+    expect(nagHtml).toContain('coach-san-chip--blunder')
+    expect(nagHtml).toContain('coach-san-chip--inaccuracy')
+    expect(nagHtml).toContain('coach-san-chip--brilliant')
   })
 
   it('validates Lichess G/R/B/Y draw tokens and rejects zero-length or invalid squares', () => {

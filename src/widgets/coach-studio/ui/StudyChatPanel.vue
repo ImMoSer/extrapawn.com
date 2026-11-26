@@ -20,7 +20,20 @@ const studyStore = useCoachStudyStore()
 const composerRef = ref<InstanceType<typeof StudyChatComposer> | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 const highlightedTurnId = ref<number | null>(null)
+let highlightedFocusEl: HTMLElement | null = null
 let highlightTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearActiveHighlight(): void {
+  if (highlightTimer !== null) {
+    clearTimeout(highlightTimer)
+    highlightTimer = null
+  }
+  highlightedTurnId.value = null
+  if (highlightedFocusEl) {
+    highlightedFocusEl.classList.remove('coach-focus-highlight')
+    highlightedFocusEl = null
+  }
+}
 
 const currentLanguage = computed<StudyLanguage>(() => {
   const loc = locale.value
@@ -83,15 +96,35 @@ watch(
   async (req) => {
     if (!req) return
     await nextTick()
-    const targetEl = scrollRef.value?.querySelector<HTMLElement>(`[data-turn-id="${req.turnId}"]`)
-    if (!targetEl) return
-    targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const turnEl = scrollRef.value?.querySelector<HTMLElement>(`[data-turn-id="${req.turnId}"]`)
+    if (!turnEl) return
+
+    clearActiveHighlight()
+
+    // Prefer scrolling and highlighting the exact paragraph/bullet discussing `req.pgnPath`
+    if (req.pgnPath) {
+      const escapedPath =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(req.pgnPath)
+          : req.pgnPath.replace(/"/g, '\\"')
+      const chipEl = turnEl.querySelector<HTMLElement>(`[data-pgn-path="${escapedPath}"]`)
+      const blockEl = chipEl?.closest<HTMLElement>('li, p') ?? chipEl
+      if (blockEl) {
+        blockEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        blockEl.classList.add('coach-focus-highlight')
+        highlightedFocusEl = blockEl
+        highlightTimer = setTimeout(() => {
+          clearActiveHighlight()
+        }, 1800)
+        return
+      }
+    }
+
+    turnEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
     highlightedTurnId.value = req.turnId
-    if (highlightTimer !== null) clearTimeout(highlightTimer)
     highlightTimer = setTimeout(() => {
-      highlightedTurnId.value = null
-      highlightTimer = null
-    }, 1600)
+      clearActiveHighlight()
+    }, 1800)
   },
 )
 
@@ -107,10 +140,7 @@ watch(
 )
 
 onUnmounted(() => {
-  if (highlightTimer !== null) {
-    clearTimeout(highlightTimer)
-    highlightTimer = null
-  }
+  clearActiveHighlight()
 })
 
 defineExpose({ focusInput })
@@ -372,6 +402,60 @@ const handleOpenSuggested = () => {
 
 .coach-markdown :deep(.coach-san-chip--draw) {
   border-color: color-mix(in srgb, var(--color-brand) 70%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--blunder) {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--blunder:hover) {
+  border-color: var(--color-danger);
+}
+
+.coach-markdown :deep(.coach-san-chip--mistake) {
+  color: var(--color-orange);
+  border-color: color-mix(in srgb, var(--color-orange) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--mistake:hover) {
+  border-color: var(--color-orange);
+}
+
+.coach-markdown :deep(.coach-san-chip--inaccuracy) {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--inaccuracy:hover) {
+  border-color: var(--color-warning);
+}
+
+.coach-markdown :deep(.coach-san-chip--brilliant) {
+  color: var(--color-mint);
+  border-color: color-mix(in srgb, var(--color-mint) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--brilliant:hover) {
+  border-color: var(--color-mint);
+}
+
+.coach-markdown :deep(.coach-san-chip--good) {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-san-chip--interesting) {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 55%, transparent);
+}
+
+.coach-markdown :deep(.coach-focus-highlight) {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+  padding: 0.15rem 0.35rem;
+  transition: background-color 250ms ease;
 }
 
 .coach-markdown :deep(.coach-draw-inline) {

@@ -17,6 +17,16 @@ import { STANDARD_START_FEN } from '@/shared/lib/pgn/pgnTypes'
 import type { StudyChapterRecord, StudySideColor } from './coachStudy.types'
 import { useStudyPlayModes } from './useStudyPlayModes'
 
+const NAG_CODE_TO_BOARD_QUALITY: Readonly<Record<number, string>> = {
+  1: 'great',
+  2: 'mistake',
+  3: 'brilliant',
+  4: 'blunder',
+  6: 'inaccuracy',
+}
+
+type StudyBoardShape = DrawShape & { customNag?: string }
+
 function computePositionState(fen: string): {
   turn: ChessgroundColor
   dests: Dests
@@ -134,10 +144,30 @@ export function useStudyBoardEngine(callbacks: StudyBoardEngineCallbacks) {
     return [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key]
   })
 
+  const currentMoveNagShape = computed<StudyBoardShape | null>(() => {
+    const node = currentNode.value
+    if (node.ply <= 0 || node.nag === undefined || !node.uci || node.uci.length < 4) {
+      return null
+    }
+    const quality = NAG_CODE_TO_BOARD_QUALITY[node.nag]
+    if (!quality) return null
+    return {
+      orig: node.uci.slice(2, 4) as Key,
+      customNag: quality,
+    }
+  })
+
   const drawableShapes = computed<DrawShape[]>(() => {
-    if (transientShapes.value.length > 0) return transientShapes.value
-    if (hideNodeShapes.value) return []
-    return currentNode.value.shapes ?? []
+    const base: StudyBoardShape[] =
+      transientShapes.value.length > 0
+        ? [...transientShapes.value]
+        : hideNodeShapes.value
+          ? []
+          : [...(currentNode.value.shapes ?? [])]
+    if (currentMoveNagShape.value) {
+      base.push(currentMoveNagShape.value)
+    }
+    return base
   })
 
   const rootComment = computed<string>(() => rootNode.value.comment || '')

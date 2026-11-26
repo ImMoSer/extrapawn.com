@@ -11,6 +11,7 @@ import {
 import {
   buildChapterFen4PathIndex,
   buildDiscussedPathsMap,
+  buildMainlinePathPlyMap,
   extractFen4,
   formatStudyAnchorMoveLabel,
   isNodeOnMainline,
@@ -103,10 +104,11 @@ describe('coachStudyCanvas bidirectional linking & anchor labels', () => {
     expect(formatStudyAnchorMoveLabel(bb5, root)).toEqual({ moveLabel: '3.Bb5?', isBranch: false })
   })
 
-  it('maps discussed PGN nodes from both assistant move mentions and anchored user questions', () => {
+  it('maps discussed PGN nodes cleanly without opening-citation or side-variation spam', () => {
     const root = parsed.rootNode
     const sanIndex = buildChapterSanPathIndex(root)
     const fen4Index = buildChapterFen4PathIndex(root)
+    const mainlinePlies = buildMainlinePathPlyMap(root)
 
     const e4 = root.children[0]!
     const e5 = e4.children[0]!
@@ -123,7 +125,8 @@ describe('coachStudyCanvas bidirectional linking & anchor labels', () => {
       makeTurn({
         id: 11,
         role: 'assistant',
-        content: 'После `3.Bb5`[draw: Gb5c6] и `1...e5` позиция острая.',
+        content:
+          'В начале `1.e4` `1...e5` (вариант `1...c5`), а ключевой момент — `3.Bb5??`[draw: Gb5c6].',
       }),
       makeTurn({
         id: 12,
@@ -133,16 +136,21 @@ describe('coachStudyCanvas bidirectional linking & anchor labels', () => {
       }),
     ]
 
-    const discussed = buildDiscussedPathsMap(turns, sanIndex, fen4Index, root.fenAfter)
+    const discussed = buildDiscussedPathsMap(turns, sanIndex, fen4Index, root.fenAfter, mainlinePlies)
 
+    const e4Path = sanIndex.get('1.e4')!
     const e5Path = sanIndex.get('1...e5')!
+    const c5Path = sanIndex.get('1...c5')!
     const nc6Path = sanIndex.get('2...Nc6')!
     const bb5Path = sanIndex.get('3.Bb5')!
 
-    // Latest turn discussing 1...e5 is turn 12; turn 10 anchored at 2...Nc6; turn 11 discussed 3.Bb5
+    // Assistant opening citation `1.e4` (ply 1) and side variation `1...c5` are skipped;
+    // user explicit mention `1...e5` (turn 12), anchored user question `2...Nc6` (turn 10),
+    // and assistant mainline ply 5 (`3.Bb5`) (turn 11) ARE mapped cleanly!
+    expect(discussed.get(e4Path)).toBeUndefined()
+    expect(discussed.get(c5Path)).toBeUndefined()
     expect(discussed.get(e5Path)).toBe(12)
     expect(discussed.get(nc6Path)).toBe(10)
     expect(discussed.get(bb5Path)).toBe(11)
-    expect(discussed.get(sanIndex.get('1.e4')!)).toBeUndefined()
   })
 })

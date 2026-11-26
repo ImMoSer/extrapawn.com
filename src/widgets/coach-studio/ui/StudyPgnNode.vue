@@ -28,6 +28,12 @@ const discussedTurnId = computed<number | null>(() =>
   nodePath.value ? (studyStore.discussedPathsMap.get(nodePath.value) ?? null) : null,
 )
 
+/**
+ * Standard Lichess PGN numbering:
+ * - White moves always display `N.`
+ * - Black moves display `N...` ONLY at branch start, root start, or immediately after
+ *   a parent comment or sibling variation block (never spamming `12... 13...` inside lines).
+ */
 const moveNumber = computed(() => {
   const ply = props.node.ply
   if (ply === 0) return ''
@@ -42,12 +48,17 @@ const moveNumber = computed(() => {
 
   if (isWhiteMove) return `${fullMove}.`
 
-  const isFirstChild =
-    props.node.parent?.ply === 0 && props.node.parent.children[0] === props.node
-  const isStartOfVariation =
-    props.node.parent && props.node.parent.children[0] !== props.node
+  const parent = props.node.parent
+  if (!parent) return `${fullMove}...`
 
-  if (isFirstChild || isStartOfVariation || props.depth > 0) {
+  const isFirstFromRoot = parent.ply === 0
+  const isStartOfVariation = parent.children[0] !== props.node
+  const parentHadComment = Boolean(parent.comment)
+  const parentHadSiblingVariations = Boolean(
+    parent.parent && parent.parent.children[0] === parent && parent.parent.children.length > 1,
+  )
+
+  if (isFirstFromRoot || isStartOfVariation || parentHadComment || parentHadSiblingVariations) {
     return `${fullMove}...`
   }
   return ''
@@ -79,8 +90,28 @@ const qualityColorClass = computed(() => {
   }
 })
 
+/**
+ * Ensures NAG semantic color (`text-danger`, `text-orange`, `text-warning`, etc.)
+ * is never overridden by Tailwind `text-text-primary` or `text-brand`.
+ */
+const moveTextColorClass = computed(() => {
+  if (qualityColorClass.value) return qualityColorClass.value
+  return isActive.value ? 'text-brand' : 'text-text-primary'
+})
+
 const mainlineChild = computed(() => props.node.children[0])
-const variations = computed(() => props.node.children.slice(1))
+
+/**
+ * Standard PGN / Lichess layout: alternatives to `node` (siblings at `parent.children.slice(1)`)
+ * render IMMEDIATELY BELOW `node` (after its comment) and BEFORE `node`'s own continuation.
+ */
+const siblingVariations = computed<PgnNode[]>(() => {
+  const parent = props.node.parent
+  if (!parent || parent.children[0] !== props.node || parent.children.length <= 1) {
+    return []
+  }
+  return parent.children.slice(1)
+})
 
 const handleNavigate = () => {
   studyStore.navigateToNode(props.node)
@@ -93,14 +124,17 @@ const handleDiscussNode = () => {
 const handleJumpToDiscussion = () => {
   studyStore.navigateToNode(props.node)
   if (discussedTurnId.value !== null) {
-    studyStore.requestScrollToTurn(discussedTurnId.value)
+    studyStore.requestScrollToTurn(discussedTurnId.value, nodePath.value || undefined)
   }
 }
 </script>
 
 <template>
-  <div class="inline" :class="{ 'text-text-secondary': depth > 0 }">
-    <span v-if="node.ply > 0" class="mr-1 inline-flex items-baseline py-0.5 whitespace-nowrap">
+  <!-- Root wrapper delegates directly to first mainline move -->
+  <StudyPgnNode v-if="node.ply === 0 && mainlineChild" :node="mainlineChild" :depth="0" />
+
+  <div v-else-if="node.ply > 0" class="inline" :class="{ 'text-text-secondary': depth > 0 }">
+    <span class="mr-1 inline-flex items-baseline py-0.5 whitespace-nowrap">
       <span
         v-if="moveNumber"
         class="mr-[3px] text-[0.82em] font-normal text-text-secondary select-none"
@@ -114,9 +148,9 @@ const handleJumpToDiscussion = () => {
         class="inline-flex cursor-pointer items-center gap-1 rounded-sm border px-1.5 py-px font-condensed text-[0.95rem] font-semibold transition-colors"
         :class="[
           isActive
-            ? 'border-brand/60 bg-brand/15 font-bold text-brand'
-            : 'border-transparent bg-transparent text-text-primary hover:bg-elevated',
-          qualityColorClass,
+            ? 'border-brand/60 bg-brand/15 font-bold'
+            : 'border-transparent bg-transparent hover:bg-elevated',
+          moveTextColorClass,
         ]"
         @click="handleNavigate"
         @contextmenu.prevent="handleDiscussNode"
@@ -148,23 +182,27 @@ const handleJumpToDiscussion = () => {
     </span>
 
     <div
-      v-if="node.ply > 0 && node.comment && isLongComment"
+      v-if="node.comment && isLongComment"
       class="my-1 block rounded-r-sm border-l-2 border-brand bg-elevated/75 px-2 py-1 font-display text-[0.78rem] leading-snug whitespace-normal text-text-secondary"
     >
       {{ node.comment }}
     </div>
 
-    <div class="inline">
+    <!-- Sibling alternative variations render IMMEDIATELY BELOW this move (1:1 Lichess order) -->
+    <div
+      v-if="siblingVariations.length > 0"
+      class="my-1.5 ml-2.5 block rounded-r-md border-l-2 border-border-hover bg-elevated/35 py-1 pl-2.5"
+    >
       <div
-        v-if="variations.length > 0"
-        class="my-1.5 ml-2.5 block rounded-r-md border-l-2 border-border-hover bg-elevated/35 py-1 pl-2.5"
+        v-for="(vNode, idx) in siblingVariations"
+        :key="`${vNode.id}-${idx}`"
+        class="mb-1 block last:mb-0"
       >
-        <div v-for="(vNode, idx) in variations" :key="`${vNode.id}-${idx}`" class="mb-1 block last:mb-0">
-          <StudyPgnNode :node="vNode" :depth="depth + 1" />
-        </div>
+        <StudyPgnNode :node="vNode" :depth="depth + 1" />
       </div>
-
-      <StudyPgnNode v-if="mainlineChild" :node="mainlineChild" :depth="depth" />
     </div>
+
+    <!-- Continue mainline below -->
+    <StudyPgnNode v-if="mainlineChild" :node="mainlineChild" :depth="depth" />
   </div>
 </template>

@@ -24,6 +24,7 @@ import {
 import {
   buildChapterFen4PathIndex,
   buildDiscussedPathsMap,
+  buildMainlinePathPlyMap,
   formatStudyAnchorMoveLabel,
 } from './coachStudyCanvas'
 import { useStudyBoardEngine } from './useStudyBoardEngine'
@@ -48,7 +49,7 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
 
   // Unified Canvas: Live Board Context Anchor & Bidirectional Chat <-> PGN Signals
   const anchorEnabled = ref(true)
-  const scrollToTurnRequest = ref<{ turnId: number; nonce: number } | null>(null)
+  const scrollToTurnRequest = ref<{ turnId: number; pgnPath?: string; nonce: number } | null>(null)
   const focusChatInputRequest = ref(0)
 
   const activeChapter = computed<StudyChapterRecord | null>(() => {
@@ -180,12 +181,14 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
 
   const sanPathIndex = computed(() => buildChapterSanPathIndex(board.rootNode.value))
   const fen4PathIndex = computed(() => buildChapterFen4PathIndex(board.rootNode.value))
+  const mainlinePathPlies = computed(() => buildMainlinePathPlyMap(board.rootNode.value))
   const discussedPathsMap = computed(() =>
     buildDiscussedPathsMap(
       visibleTurns.value,
       sanPathIndex.value,
       fen4PathIndex.value,
       board.rootNode.value.fenAfter,
+      mainlinePathPlies.value,
     ),
   )
   const anchorInfo = computed(() =>
@@ -207,8 +210,8 @@ export const useCoachStudyStore = defineStore('coachStudy', () => {
     anchorEnabled.value = value
   }
 
-  function requestScrollToTurn(turnId: number): void {
-    scrollToTurnRequest.value = { turnId, nonce: Date.now() + Math.random() }
+  function requestScrollToTurn(turnId: number, pgnPath?: string): void {
+    scrollToTurnRequest.value = { turnId, pgnPath, nonce: Date.now() + Math.random() }
   }
 
   function requestFocusChatForNode(node: PgnNode): void {
